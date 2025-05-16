@@ -12,7 +12,7 @@ export function AppLayout() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="patrimonio-theme">
-      <SidebarProvider defaultCollapsed={false}>
+      <SidebarProvider defaultOpen={true}>
         <div className="flex min-h-screen w-full bg-background">
           <AppSidebar />
           <div className="flex flex-col flex-1">

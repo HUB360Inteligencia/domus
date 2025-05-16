@@ -19,8 +19,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSection,
-  SidebarSectionTitle,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,73 +42,93 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarMenu>
-          <SidebarMenuItem href="/">
-            <SidebarMenuButton>
-              <LayoutDashboard className="h-5 w-5 mr-2" />
-              Dashboard
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/">
+                <LayoutDashboard className="h-5 w-5 mr-2" />
+                Dashboard
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
-          <SidebarMenuItem href="/properties">
-            <SidebarMenuButton>
-              <Building className="h-5 w-5 mr-2" />
-              Imóveis
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/properties">
+                <Building className="h-5 w-5 mr-2" />
+                Imóveis
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
-          <SidebarMenuItem href="/contracts">
-            <SidebarMenuButton>
-              <FileText className="h-5 w-5 mr-2" />
-              Contratos
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/contracts">
+                <FileText className="h-5 w-5 mr-2" />
+                Contratos
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
-          <SidebarMenuItem href="/documents">
-            <SidebarMenuButton>
-              <Upload className="h-5 w-5 mr-2" />
-              Documentos
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/documents">
+                <Upload className="h-5 w-5 mr-2" />
+                Documentos
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
-          <SidebarMenuItem href="/finances">
-            <SidebarMenuButton>
-              <Receipt className="h-5 w-5 mr-2" />
-              Finanças
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/finances">
+                <Receipt className="h-5 w-5 mr-2" />
+                Finanças
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
-          <SidebarMenuItem href="/users">
-            <SidebarMenuButton>
-              <Users className="h-5 w-5 mr-2" />
-              Usuários
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/users">
+                <Users className="h-5 w-5 mr-2" />
+                Usuários
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
         
-        <SidebarSection>
-          <SidebarSectionTitle>Inteligência artificial</SidebarSectionTitle>
-          <SidebarMenu>
-            <SidebarMenuItem href="/ai-assistant">
-              <SidebarMenuButton>
-                <MessageSquare className="h-5 w-5 mr-2" />
-                Assistente IA
-                <Badge className="ml-auto" variant="secondary">Novo</Badge>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarSection>
+        <SidebarGroup>
+          <SidebarGroupLabel>Inteligência artificial</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/ai-assistant">
+                    <MessageSquare className="h-5 w-5 mr-2" />
+                    Assistente IA
+                    <Badge className="ml-auto" variant="secondary">Novo</Badge>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         
-        <SidebarSection>
-          <SidebarSectionTitle>Sistema</SidebarSectionTitle>
-          <SidebarMenu>
-            <SidebarMenuItem href="/settings">
-              <SidebarMenuButton>
-                <Settings className="h-5 w-5 mr-2" />
-                Configurações
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarSection>
+        <SidebarGroup>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/settings">
+                    <Settings className="h-5 w-5 mr-2" />
+                    Configurações
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t">
