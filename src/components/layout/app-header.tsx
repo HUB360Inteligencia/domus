@@ -1,5 +1,5 @@
 
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,9 +15,22 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
 
 export function AppHeader() {
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const getInitials = () => {
+    if (!user || !user.profile) return "?";
+    
+    const firstName = user.profile.first_name || "";
+    const lastName = user.profile.last_name || "";
+    
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
@@ -83,19 +96,42 @@ export function AppHeader() {
               className="rounded-full h-8 w-8 ml-1"
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt="Avatar" />
-                <AvatarFallback className="bg-petroleum">AP</AvatarFallback>
+                <AvatarImage src={user?.profile?.avatar_url || ""} alt="Avatar" />
+                <AvatarFallback className="bg-petroleum">{getInitials()}</AvatarFallback>
               </Avatar>
               <span className="sr-only">Menu do usuário</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              {user?.profile?.first_name} {user?.profile?.last_name}
+              <div className="text-xs font-normal text-muted-foreground">
+                {user?.email}
+              </div>
+              {user?.role && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold capitalize">
+                    {user.role === 'admin' ? 'Administrador' :
+                     user.role === 'manager' ? 'Gestor' :
+                     user.role === 'user' ? 'Usuário' : 'Visualizador'}
+                  </span>
+                </div>
+              )}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/profile")}>
+              <User className="mr-2 h-4 w-4" />
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <Settings className="mr-2 h-4 w-4" />
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sair</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut().then(() => navigate("/login"))}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
