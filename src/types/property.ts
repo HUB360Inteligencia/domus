@@ -11,7 +11,7 @@ export interface Property {
   city: string;
   state: string;
   zip_code?: string;
-  type: string;
+  type: PropertyType | string; // Allow both PropertyType and string for flexibility
   status: PropertyStatus;
   value: number;
   area?: number;

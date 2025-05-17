@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Property, PropertyFormData } from '@/types/property';
+import { Property, PropertyFormData, PropertyStatus } from '@/types/property';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
@@ -24,7 +24,11 @@ export const useProperties = () => {
       throw new Error(error.message);
     }
 
-    return data || [];
+    // Transform the data to ensure status is of type PropertyStatus
+    return (data || []).map(item => ({
+      ...item,
+      status: item.status as PropertyStatus
+    }));
   };
 
   const fetchPropertyById = async (id: string): Promise<Property | null> => {
@@ -41,7 +45,11 @@ export const useProperties = () => {
       throw new Error(error.message);
     }
 
-    return data;
+    // Transform the data to ensure status is of type PropertyStatus
+    return data ? {
+      ...data,
+      status: data.status as PropertyStatus
+    } : null;
   };
 
   const createProperty = async (propertyData: PropertyFormData): Promise<Property> => {
@@ -63,7 +71,11 @@ export const useProperties = () => {
       throw new Error(error.message);
     }
 
-    return data;
+    // Transform the data to ensure status is of type PropertyStatus
+    return {
+      ...data,
+      status: data.status as PropertyStatus
+    };
   };
 
   const updateProperty = async ({ id, ...propertyData }: PropertyFormData & { id: string }): Promise<Property> => {
@@ -81,7 +93,11 @@ export const useProperties = () => {
       throw new Error(error.message);
     }
 
-    return data;
+    // Transform the data to ensure status is of type PropertyStatus
+    return {
+      ...data,
+      status: data.status as PropertyStatus
+    };
   };
 
   const deleteProperty = async (id: string): Promise<void> => {
@@ -98,7 +114,7 @@ export const useProperties = () => {
     }
   };
 
-  const uploadPropertyImage = async (id: string, imageFile: File): Promise<string> => {
+  const uploadPropertyImage = async ({ id, imageFile }: { id: string; imageFile: File }): Promise<string> => {
     if (!user) throw new Error('User not authenticated');
     
     const filePath = `${user.id}/${id}/${Date.now()}-${imageFile.name}`;
@@ -177,8 +193,7 @@ export const useProperties = () => {
   });
 
   const uploadPropertyImageMutation = useMutation({
-    mutationFn: ({ id, imageFile }: { id: string; imageFile: File }) => 
-      uploadPropertyImage(id, imageFile),
+    mutationFn: uploadPropertyImage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', selectedPropertyId] });
