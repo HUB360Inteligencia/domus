@@ -6,15 +6,12 @@ import { ContractList } from "@/components/contract-list";
 import { OverviewChart } from "@/components/overview-chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProperties } from "@/hooks/use-properties";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Sample data
-const propertyStats = {
-  total: 12,
-  available: 3,
-  rented: 8,
-  airbnb: 1
-};
-
+// Sample data for contracts and finances that we'll replace later
 const contractStats = {
   total: 10,
   active: 8,
@@ -26,39 +23,6 @@ const financialStats = {
   annualIncome: "R$ 462.000,00",
   occupancyRate: "91%"
 };
-
-const properties = [
-  {
-    id: "prop1",
-    title: "Apartamento Centro",
-    address: "Rua das Flores, 123",
-    city: "São Paulo",
-    state: "SP",
-    type: "Apartamento",
-    status: "rented" as const,
-    value: 6500
-  },
-  {
-    id: "prop2",
-    title: "Casa de Praia",
-    address: "Av. Beira Mar, 1000",
-    city: "Florianópolis",
-    state: "SC",
-    type: "Casa",
-    status: "airbnb" as const,
-    value: 12000
-  },
-  {
-    id: "prop3",
-    title: "Sala Comercial",
-    address: "Av. Paulista, 1000",
-    city: "São Paulo",
-    state: "SP",
-    type: "Comercial",
-    status: "available" as const,
-    value: 4500
-  }
-];
 
 const contracts = [
   {
@@ -130,8 +94,34 @@ const upcomingEvents = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { properties, isLoading } = useProperties();
+  const [propertyStats, setPropertyStats] = useState({
+    total: 0,
+    available: 0,
+    rented: 0,
+    airbnb: 0
+  });
+
+  useEffect(() => {
+    // Calculate property statistics
+    if (properties.length > 0) {
+      const total = properties.length;
+      const available = properties.filter(p => p.status === 'available').length;
+      const rented = properties.filter(p => p.status === 'rented').length;
+      const airbnb = properties.filter(p => p.status === 'airbnb').length;
+      
+      setPropertyStats({
+        total,
+        available,
+        rented,
+        airbnb
+      });
+    }
+  }, [properties]);
+
   const handlePropertySelect = (id: string) => {
-    console.log("Property selected:", id);
+    navigate(`/properties?id=${id}`);
   };
 
   const handleContractView = (id: string) => {
@@ -177,6 +167,11 @@ export default function Dashboard() {
     }
   };
 
+  // Select the 3 most recent properties to display in the dashboard
+  const recentProperties = [...properties]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -184,38 +179,54 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total de Imóveis"
-          value={propertyStats.total.toString()}
-          description={`${propertyStats.available} disponíveis, ${propertyStats.rented} alugados, ${propertyStats.airbnb} em Airbnb`}
-          icon={Building}
-          iconColor="text-petroleum"
-        />
-        <StatsCard
-          title="Contratos Ativos"
-          value={contractStats.active.toString()}
-          description={`${contractStats.expiringSoon} contratos a vencer em breve`}
-          icon={FileText}
-          iconColor="text-petroleum"
-        />
-        <StatsCard
-          title="Faturamento Mensal"
-          value={financialStats.monthlyIncome}
-          description={`Anual: ${financialStats.annualIncome}`}
-          icon={TrendingUp}
-          iconColor="text-petroleum"
-          trend="up"
-          trendValue="+5%"
-        />
-        <StatsCard
-          title="Taxa de Ocupação"
-          value={financialStats.occupancyRate}
-          description="Imóveis ocupados vs. total"
-          icon={CheckCircle}
-          iconColor="text-petroleum"
-          trend="up"
-          trendValue="+3%"
-        />
+        {isLoading ? (
+          <>
+            {Array(4).fill(0).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-8 w-2/3 mb-2" />
+                  <Skeleton className="h-12 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatsCard
+              title="Total de Imóveis"
+              value={propertyStats.total.toString()}
+              description={`${propertyStats.available} disponíveis, ${propertyStats.rented} alugados, ${propertyStats.airbnb} em Airbnb`}
+              icon={Building}
+              iconColor="text-petroleum"
+            />
+            <StatsCard
+              title="Contratos Ativos"
+              value={contractStats.active.toString()}
+              description={`${contractStats.expiringSoon} contratos a vencer em breve`}
+              icon={FileText}
+              iconColor="text-petroleum"
+            />
+            <StatsCard
+              title="Faturamento Mensal"
+              value={financialStats.monthlyIncome}
+              description={`Anual: ${financialStats.annualIncome}`}
+              icon={TrendingUp}
+              iconColor="text-petroleum"
+              trend="up"
+              trendValue="+5%"
+            />
+            <StatsCard
+              title="Taxa de Ocupação"
+              value={financialStats.occupancyRate}
+              description="Imóveis ocupados vs. total"
+              icon={CheckCircle}
+              iconColor="text-petroleum"
+              trend="up"
+              trendValue="+3%"
+            />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -259,15 +270,38 @@ export default function Dashboard() {
           <TabsTrigger value="contracts">Contratos</TabsTrigger>
         </TabsList>
         <TabsContent value="properties" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {properties.map(property => (
-              <PropertyCard 
-                key={property.id}
-                {...property}
-                onSelect={handlePropertySelect}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array(3).fill(0).map((_, i) => (
+                <Card key={i}>
+                  <div className="h-48 bg-muted" />
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentProperties.map(property => (
+                <PropertyCard 
+                  key={property.id}
+                  id={property.id}
+                  title={property.title}
+                  address={property.address}
+                  city={property.city}
+                  state={property.state}
+                  type={property.type}
+                  status={property.status}
+                  value={property.value}
+                  imageUrl={property.image_url}
+                  onSelect={handlePropertySelect}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="contracts">
           <ContractList 

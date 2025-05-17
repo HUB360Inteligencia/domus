@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/app-layout";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
+import PropertyDetailPage from "./pages/PropertyDetailPage";
+import PropertyFormPage from "./pages/PropertyFormPage";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -39,6 +41,9 @@ const App = () => (
             }>
               <Route path="/" element={<Dashboard />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/detail" element={<PropertyDetailPage />} />
+              <Route path="/properties/new" element={<PropertyFormPage />} />
+              <Route path="/properties/edit" element={<PropertyFormPage />} />
               <Route path="/contracts" element={<Dashboard />} />
               <Route path="/documents" element={<Dashboard />} />
               <Route path="/finances" element={<Dashboard />} />
