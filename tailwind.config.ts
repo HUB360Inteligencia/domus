@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -63,25 +62,22 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Custom petroleum blue color
-				'petroleum': {
-					DEFAULT: '#0A5B6C',
-					50: '#E0F2F5',
-					100: '#B3DEE6',
-					200: '#80C8D5',
-					300: '#4DB2C4',
-					400: '#269CB3',
-					500: '#0A5B6C',
-					600: '#094D5C',
-					700: '#073E49',
-					800: '#052F37',
-					900: '#021317',
-				}
+				dark: {
+					blue: {
+						DEFAULT: '#000a23',
+						100: '#000a23',
+						200: '#021552',
+					}
+				},
+				'pure-black': '#000000',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				'2xl': '1rem',
+				'3xl': '1.5rem',
+				'4xl': '2rem',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -96,7 +92,21 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+			},
+			backgroundImage: {
+				'dark-gradient': 'linear-gradient(to bottom right, #000a23, #021552)',
+				'dark-gradient-hover': 'linear-gradient(to right, #000a23, #021552)',
+				'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+				'dark-glass-gradient': 'linear-gradient(135deg, rgba(0,10,35,0.7), rgba(2,21,82,0.5))',
+				'image-gradient': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%)',
+			},
+			boxShadow: {
+				'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.18)',
+				'glass-lg': '0 10px 40px 0 rgba(0, 0, 0, 0.25)',
+				'glass-hover': '0 12px 48px 0 rgba(0, 0, 0, 0.3)',
+				'card': '0 10px 30px -5px rgba(0, 0, 0, 0.2)',
+				'card-hover': '0 20px 40px -5px rgba(0, 0, 0, 0.3)',
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

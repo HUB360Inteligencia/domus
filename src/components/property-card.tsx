@@ -62,22 +62,25 @@ export function PropertyCard({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card variant="glass" className="overflow-hidden group">
       <div className="h-40 bg-muted relative">
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={imageUrl}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
+            <div className="image-overlay-glass opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Home className="h-10 w-10 text-muted-foreground opacity-50" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-dark-blue-100 to-dark-blue-200">
+            <Home className="h-10 w-10 text-white/50" />
           </div>
         )}
         <div
           className={cn(
-            "absolute top-3 right-3 px-2 py-1 text-xs font-medium text-white rounded",
+            "absolute top-3 right-3 px-2.5 py-1 text-xs font-medium text-white rounded-full backdrop-blur-sm",
             statusConfig[status].color
           )}
         >
@@ -96,13 +99,13 @@ export function PropertyCard({
               {city}, {state}
             </div>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs rounded-full">
             {type}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-xl font-bold text-petroleum-500">
+        <div className="text-xl font-bold text-petroleum-500 dark:text-white">
           {formatCurrency(value)}
         </div>
         <div className="text-xs text-muted-foreground">
@@ -113,7 +116,7 @@ export function PropertyCard({
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className="w-full rounded-full backdrop-blur-sm bg-white/10 border border-white/20 hover:bg-white/20"
           onClick={() => onSelect && onSelect(id)}
         >
           Ver detalhes

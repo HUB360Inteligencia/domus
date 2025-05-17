@@ -1,16 +1,20 @@
 
 import { RegisterForm } from "@/components/auth/register-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { BeamsBackground } from "@/components/ui/beams-background";
 
 export default function Register() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <CardContent className="pt-6">
-            <RegisterForm />
-          </CardContent>
-        </Card>
+    <div className="relative min-h-screen w-full overflow-hidden">
+      <BeamsBackground intensity="medium" />
+      <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card variant="glass" className="backdrop-blur-xl">
+            <CardContent className="pt-6">
+              <RegisterForm />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
