@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/app-layout";
 import Dashboard from "./pages/Dashboard";
+import Properties from "./pages/Properties";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -37,7 +38,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/properties" element={<Dashboard />} />
+              <Route path="/properties" element={<Properties />} />
               <Route path="/contracts" element={<Dashboard />} />
               <Route path="/documents" element={<Dashboard />} />
               <Route path="/finances" element={<Dashboard />} />

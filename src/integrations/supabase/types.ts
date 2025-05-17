@@ -60,6 +60,69 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string
+          area: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string
+          created_at: string
+          description: string | null
+          features: Json | null
+          id: string
+          image_url: string | null
+          state: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+          value: number
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          image_url?: string | null
+          state: string
+          status: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+          value: number
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          image_url?: string | null
+          state?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string | null
