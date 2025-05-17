@@ -1,4 +1,6 @@
 
+import { Json } from '@/integrations/supabase/types';
+
 export type PropertyStatus = 'available' | 'rented' | 'airbnb' | 'maintenance' | 'sold';
 
 export type PropertyType = 'apartment' | 'house' | 'commercial' | 'land' | 'rural';
@@ -17,7 +19,7 @@ export interface Property {
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
-  features?: Record<string, any>;
+  features?: Json | Record<string, any>; // Accept both Json type from Supabase and Record type
   image_url?: string;
   user_id: string;
   created_at: string;
