@@ -1,4 +1,3 @@
-
 import { Building, CheckCircle, Clock, HomeIcon, TrendingUp, User, AlertCircle, FileText, CalendarClock } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
 import { PropertyCard } from "@/components/property-card";
@@ -10,6 +9,7 @@ import { useProperties } from "@/hooks/use-properties";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PropertyStatus } from "@/types/property";
 
 // Sample data for contracts and finances that we'll replace later
 const contractStats = {

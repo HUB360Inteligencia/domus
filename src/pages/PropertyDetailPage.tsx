@@ -3,13 +3,12 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PropertyDetail } from '@/components/properties/property-detail';
 import { useProperties } from '@/hooks/use-properties';
-import { Property } from '@/types/property';
 
 export default function PropertyDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [propertyId, setPropertyId] = useState<string | null>(null);
-  const { setSelectedPropertyId, selectedProperty, isLoading, deleteProperty } = useProperties();
+  const { setSelectedPropertyId, selectedProperty, isLoading, deleteProperty, isDeleting } = useProperties();
   
   useEffect(() => {
     // Extract propertyId from URL query parameters
@@ -18,8 +17,11 @@ export default function PropertyDetailPage() {
     if (id) {
       setPropertyId(id);
       setSelectedPropertyId(id);
+    } else {
+      // If no ID is provided in the URL, redirect to the properties list
+      navigate('/properties');
     }
-  }, [location.search, setSelectedPropertyId]);
+  }, [location.search, setSelectedPropertyId, navigate]);
 
   const handleBack = () => {
     navigate('/properties');
@@ -43,7 +45,7 @@ export default function PropertyDetailPage() {
       onBack={handleBack}
       onEdit={handleEdit}
       onDelete={handleDelete}
-      isDeleting={false} // You need to add this state to the useProperties hook
+      isDeleting={isDeleting}
     />
   );
 }

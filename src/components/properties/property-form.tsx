@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -29,38 +28,38 @@ const formSchema = z.object({
 });
 
 interface PropertyFormProps {
-  property?: Property;
-  onSubmit: (data: PropertyFormData) => void;
-  onUploadImage?: (file: File) => void;
+  initialData?: Property;
+  onSubmit: (data: PropertyFormData, imageFile?: File) => void;
+  onCancel: () => void;
   isLoading?: boolean;
   isUploading?: boolean;
 }
 
 export function PropertyForm({
-  property,
+  initialData,
   onSubmit,
-  onUploadImage,
+  onCancel,
   isLoading = false,
   isUploading = false,
 }: PropertyFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(property?.image_url || null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: property?.title || '',
-      description: property?.description || '',
-      address: property?.address || '',
-      city: property?.city || '',
-      state: property?.state || '',
-      zip_code: property?.zip_code || '',
-      type: property?.type || 'apartment',
-      status: property?.status || 'available',
-      value: property?.value || 0,
-      area: property?.area || undefined,
-      bedrooms: property?.bedrooms || undefined,
-      bathrooms: property?.bathrooms || undefined,
+      title: initialData?.title || '',
+      description: initialData?.description || '',
+      address: initialData?.address || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      zip_code: initialData?.zip_code || '',
+      type: initialData?.type || 'apartment',
+      status: initialData?.status || 'available',
+      value: initialData?.value || 0,
+      area: initialData?.area || undefined,
+      bedrooms: initialData?.bedrooms || undefined,
+      bathrooms: initialData?.bathrooms || undefined,
     },
   });
 
@@ -72,14 +71,8 @@ export function PropertyForm({
     }
   };
 
-  const handleUpload = () => {
-    if (imageFile && onUploadImage) {
-      onUploadImage(imageFile);
-    }
-  };
-
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
-    onSubmit(data as PropertyFormData);
+    onSubmit(data as PropertyFormData, imageFile || undefined);
   };
 
   return (
@@ -289,7 +282,14 @@ export function PropertyForm({
                 />
               </div>
               
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-between mt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onCancel}
+                >
+                  Cancelar
+                </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -331,26 +331,9 @@ export function PropertyForm({
             </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={handleUpload} 
-            disabled={!imageFile || isUploading}
-            className="w-full"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" /> 
-                Enviar Imagem
-              </>
-            )}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
 }
+
+export type { PropertyFormProps };
