@@ -51,12 +51,12 @@ export default function PropertyFormPage() {
         
         navigate('/properties');
       } else {
-        // Create new property
-        const result = await createProperty(data);
+        // Create new property with proper return handling
+        const newProperty = await createProperty(data);
         
         // If there's an image and the property was created successfully
-        if (imageFile && result && result.id) {
-          await uploadPropertyImage({ id: result.id, imageFile });
+        if (imageFile && newProperty && newProperty.id) {
+          await uploadPropertyImage({ id: newProperty.id, imageFile });
         }
         
         navigate('/properties');

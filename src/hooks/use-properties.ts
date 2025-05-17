@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -212,7 +213,9 @@ export const useProperties = () => {
     isDeleting: deletePropertyMutation.isPending,
     isUploading: uploadPropertyImageMutation.isPending,
     setSelectedPropertyId,
-    createProperty: createPropertyMutation.mutate,
+    createProperty: async (data: PropertyFormData): Promise<Property> => {
+      return await createPropertyMutation.mutateAsync(data);
+    },
     updateProperty: updatePropertyMutation.mutate,
     deleteProperty: deletePropertyMutation.mutate,
     uploadPropertyImage: uploadPropertyImageMutation.mutate,

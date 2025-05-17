@@ -121,7 +121,7 @@ export default function Dashboard() {
   }, [properties]);
 
   const handlePropertySelect = (id: string) => {
-    navigate(`/properties?id=${id}`);
+    navigate(`/properties/detail?id=${id}`);
   };
 
   const handleContractView = (id: string) => {

@@ -11,8 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building, MapPin, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type PropertyStatus = "available" | "rented" | "airbnb";
+import { PropertyStatus } from "@/types/property";
 
 interface PropertyCardProps {
   id: string;
@@ -51,6 +50,14 @@ export function PropertyCard({
     airbnb: {
       label: "Airbnb",
       color: "bg-red-500",
+    },
+    maintenance: {
+      label: "Em manutenção",
+      color: "bg-amber-500",
+    },
+    sold: {
+      label: "Vendido",
+      color: "bg-purple-500",
     },
   };
 
