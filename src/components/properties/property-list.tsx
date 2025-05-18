@@ -1,11 +1,13 @@
 
-import { useState } from 'react';
-import { Building, Search, Plus, Loader2, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building, Search, Plus, Loader2, Filter, AlertCircle } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyCard } from '@/components/property-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/lib/auth';
 
 interface PropertyListProps {
   properties: Property[];
@@ -18,7 +20,27 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  
+  // Clear error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
+  // Check authentication status
+  useEffect(() => {
+    console.log('Auth status:', { isAuthenticated: !!user, userId: user?.id });
+    
+    if (!user) {
+      setError('Não autenticado. Por favor, faça login para ver seus imóveis.');
+    }
+  }, [user]);
+
+  // Filter properties based on search and filters
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = searchTerm
       ? property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,6 +72,14 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-2">
         <h2 className="text-3xl font-bold">Imóveis</h2>
         <Button onClick={onAddNew}>
@@ -70,12 +100,12 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
         </div>
         <div className="flex items-center space-x-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={filterType || ''} onValueChange={(value) => setFilterType(value || null)}>
+          <Select value={filterType || "all"} onValueChange={(value) => setFilterType(value === "all" ? null : value)}>
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Filtrar por tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os tipos</SelectItem>
+              <SelectItem value="all">Todos os tipos</SelectItem>
               <SelectItem value="apartment">Apartamento</SelectItem>
               <SelectItem value="house">Casa</SelectItem>
               <SelectItem value="commercial">Comercial</SelectItem>
@@ -85,12 +115,12 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
           </Select>
         </div>
         <div>
-          <Select value={filterStatus || ''} onValueChange={(value) => setFilterStatus(value || null)}>
+          <Select value={filterStatus || "all"} onValueChange={(value) => setFilterStatus(value === "all" ? null : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="available">Disponível</SelectItem>
               <SelectItem value="rented">Alugado</SelectItem>
               <SelectItem value="airbnb">Airbnb</SelectItem>
@@ -101,6 +131,8 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
         </div>
       </div>
 
+      {console.log('Properties data:', properties)}
+      
       {filteredProperties.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {filteredProperties.map((property) => (

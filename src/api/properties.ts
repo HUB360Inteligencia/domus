@@ -7,6 +7,18 @@ import { Property, PropertyFormData, PropertyStatus } from "@/types/property";
  */
 export const fetchProperties = async (): Promise<Property[]> => {
   try {
+    console.log('Fetching properties from Supabase...');
+    const session = await supabase.auth.getSession();
+    console.log('Session state:', { 
+      exists: !!session.data.session,
+      expired: session.data.session ? new Date(session.data.session.expires_at * 1000) < new Date() : false
+    });
+
+    if (!session.data.session) {
+      console.error('No active session found');
+      throw new Error('Usuário não autenticado');
+    }
+
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -14,8 +26,10 @@ export const fetchProperties = async (): Promise<Property[]> => {
 
     if (error) {
       console.error('Error fetching properties:', error);
-      throw new Error(error.message);
+      throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
     }
+
+    console.log('Properties fetched successfully:', data?.length || 0);
 
     // Transform the data to ensure status is of type PropertyStatus
     return (data || []).map(item => ({
@@ -35,6 +49,12 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
   if (!id) return null;
   
   try {
+    const session = await supabase.auth.getSession();
+    if (!session.data.session) {
+      console.error('No active session found');
+      throw new Error('Usuário não autenticado');
+    }
+
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -43,7 +63,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
 
     if (error) {
       console.error(`Error fetching property ${id}:`, error);
-      throw new Error(error.message);
+      throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
     }
 
     // Transform the data to ensure status is of type PropertyStatus
