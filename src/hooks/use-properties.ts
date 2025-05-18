@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFormData, PropertyStatus } from '@/types/property';
@@ -14,152 +13,101 @@ export const useProperties = () => {
   const fetchProperties = async (): Promise<Property[]> => {
     if (!user) return [];
     
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching properties:', error);
-      throw new Error(error.message);
+      if (error) {
+        console.error('Error fetching properties:', error);
+        throw new Error(error.message);
+      }
+
+      // Transform the data to ensure status is of type PropertyStatus
+      return (data || []).map(item => ({
+        ...item,
+        status: item.status as PropertyStatus
+      }));
+    } catch (err) {
+      console.error('Failed to fetch properties:', err);
+      throw err;
     }
-
-    // Transform the data to ensure status is of type PropertyStatus
-    return (data || []).map(item => ({
-      ...item,
-      status: item.status as PropertyStatus
-    }));
   };
 
   const fetchPropertyById = async (id: string): Promise<Property | null> => {
     if (!user || !id) return null;
     
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .eq('id', id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (error) {
-      console.error(`Error fetching property ${id}:`, error);
-      throw new Error(error.message);
-    }
+      if (error) {
+        console.error(`Error fetching property ${id}:`, error);
+        throw new Error(error.message);
+      }
 
-    // Transform the data to ensure status is of type PropertyStatus
-    return data ? {
-      ...data,
-      status: data.status as PropertyStatus
-    } : null;
-  };
-
-  const createProperty = async (propertyData: PropertyFormData): Promise<Property> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .insert([
-        {
-          ...propertyData,
-          user_id: user.id,
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating property:', error);
-      throw new Error(error.message);
-    }
-
-    // Transform the data to ensure status is of type PropertyStatus
-    return {
-      ...data,
-      status: data.status as PropertyStatus
-    };
-  };
-
-  const updateProperty = async ({ id, ...propertyData }: PropertyFormData & { id: string }): Promise<Property> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .update(propertyData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Error updating property ${id}:`, error);
-      throw new Error(error.message);
-    }
-
-    // Transform the data to ensure status is of type PropertyStatus
-    return {
-      ...data,
-      status: data.status as PropertyStatus
-    };
-  };
-
-  const deleteProperty = async (id: string): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const { error } = await supabase
-      .from('properties')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error(`Error deleting property ${id}:`, error);
-      throw new Error(error.message);
+      // Transform the data to ensure status is of type PropertyStatus
+      return data ? {
+        ...data,
+        status: data.status as PropertyStatus
+      } : null;
+    } catch (err) {
+      console.error(`Failed to fetch property ${id}:`, err);
+      throw err;
     }
   };
 
-  const uploadPropertyImage = async ({ id, imageFile }: { id: string; imageFile: File }): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const filePath = `${user.id}/${id}/${Date.now()}-${imageFile.name}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('property_images')
-      .upload(filePath, imageFile);
-
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      throw new Error(uploadError.message);
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('property_images')
-      .getPublicUrl(filePath);
-
-    // Update property with image URL
-    const { error: updateError } = await supabase
-      .from('properties')
-      .update({ image_url: urlData.publicUrl })
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Error updating property with image URL:', updateError);
-      throw new Error(updateError.message);
-    }
-
-    return urlData.publicUrl;
-  };
+  // Use useCallback to stabilize function references
+  const setSelectedPropertyIdCallback = useCallback((id: string | null) => {
+    setSelectedPropertyId(id);
+  }, []);
 
   // Queries and mutations
   const propertiesQuery = useQuery({
     queryKey: ['properties'],
     queryFn: fetchProperties,
+    retry: 2,
+    staleTime: 60000, // 1 minute
   });
 
   const propertyQuery = useQuery({
     queryKey: ['property', selectedPropertyId],
     queryFn: () => fetchPropertyById(selectedPropertyId as string),
     enabled: !!selectedPropertyId,
+    retry: 2,
+    staleTime: 30000, // 30 seconds
   });
 
   const createPropertyMutation = useMutation({
-    mutationFn: createProperty,
+    mutationFn: async (propertyData: PropertyFormData): Promise<Property> => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .insert([
+          {
+            ...propertyData,
+            user_id: user.id,
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating property:', error);
+        throw new Error(error.message);
+      }
+
+      // Transform the data to ensure status is of type PropertyStatus
+      return {
+        ...data,
+        status: data.status as PropertyStatus
+      };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       toast.success('Imóvel criado com sucesso!');
@@ -212,7 +160,7 @@ export const useProperties = () => {
     isUpdating: updatePropertyMutation.isPending,
     isDeleting: deletePropertyMutation.isPending,
     isUploading: uploadPropertyImageMutation.isPending,
-    setSelectedPropertyId,
+    setSelectedPropertyId: setSelectedPropertyIdCallback,
     createProperty: async (data: PropertyFormData): Promise<Property> => {
       return await createPropertyMutation.mutateAsync(data);
     },

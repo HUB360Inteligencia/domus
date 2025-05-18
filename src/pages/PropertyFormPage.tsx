@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
@@ -24,19 +24,24 @@ export default function PropertyFormPage() {
     isUploading
   } = useProperties();
 
+  // Use useCallback to stabilize this function reference
+  const loadPropertyData = useCallback((id: string) => {
+    setSelectedPropertyId(id);
+  }, [setSelectedPropertyId]);
+
   useEffect(() => {
     // Check if we're in edit mode by looking for an ID in the URL
     const params = new URLSearchParams(location.search);
     const id = params.get('id');
     if (id) {
       setPropertyId(id);
-      setSelectedPropertyId(id);
+      loadPropertyData(id);
       setIsEditMode(true);
     } else {
       setIsEditMode(false);
       setPropertyId(null);
     }
-  }, [location.search, setSelectedPropertyId]);
+  }, [location.search, loadPropertyData]);
 
   const handleSubmit = async (data: PropertyFormData, imageFile?: File) => {
     try {
