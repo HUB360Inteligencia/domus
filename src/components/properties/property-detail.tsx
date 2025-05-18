@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle } from 'lucide-react';
 import { Property } from '@/types/property';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PropertyMap } from './property-map';
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -164,6 +164,16 @@ export function PropertyDetail({
                 <p className="text-muted-foreground">
                   {property.description || "Sem descrição disponível."}
                 </p>
+              </div>
+              
+              {/* Map section */}
+              <div>
+                <h3 className="font-medium text-lg mb-2">Localização</h3>
+                <PropertyMap 
+                  address={property.address}
+                  city={property.city}
+                  state={property.state}
+                />
               </div>
               
               <div>

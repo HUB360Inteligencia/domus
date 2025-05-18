@@ -5,6 +5,7 @@ import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
 import { PropertyFormData } from '@/types/property';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function PropertyFormPage() {
   const location = useLocation();
@@ -26,6 +27,7 @@ export default function PropertyFormPage() {
 
   // Use useCallback to stabilize this function reference
   const loadPropertyData = useCallback((id: string) => {
+    console.log('Loading property data for ID:', id);
     setSelectedPropertyId(id);
   }, [setSelectedPropertyId]);
 
@@ -34,40 +36,58 @@ export default function PropertyFormPage() {
     const params = new URLSearchParams(location.search);
     const id = params.get('id');
     if (id) {
+      console.log('Edit mode detected for property ID:', id);
       setPropertyId(id);
       loadPropertyData(id);
       setIsEditMode(true);
     } else {
+      console.log('Create mode detected');
       setIsEditMode(false);
       setPropertyId(null);
+      // Reset selected property when in create mode
+      setSelectedPropertyId(null);
     }
-  }, [location.search, loadPropertyData]);
+  }, [location.search, loadPropertyData, setSelectedPropertyId]);
+
+  // Debug log to track selectedProperty changes
+  useEffect(() => {
+    if (isEditMode) {
+      console.log('Selected property updated:', selectedProperty);
+    }
+  }, [selectedProperty, isEditMode]);
 
   const handleSubmit = async (data: PropertyFormData, imageFile?: File) => {
     try {
       if (isEditMode && propertyId) {
         // Update existing property
-        updateProperty({ id: propertyId, ...data });
+        console.log('Updating property with data:', { id: propertyId, ...data });
+        await updateProperty({ id: propertyId, ...data });
         
         // If there's a new image, upload it
         if (imageFile) {
-          uploadPropertyImage({ id: propertyId, imageFile });
+          console.log('Uploading new image for property');
+          await uploadPropertyImage({ id: propertyId, imageFile });
         }
         
+        toast.success('Imóvel atualizado com sucesso!');
         navigate('/properties');
       } else {
         // Create new property with proper return handling
+        console.log('Creating new property with data:', data);
         const newProperty = await createProperty(data);
         
         // If there's an image and the property was created successfully
         if (imageFile && newProperty && newProperty.id) {
-          uploadPropertyImage({ id: newProperty.id, imageFile });
+          console.log('Uploading image for new property');
+          await uploadPropertyImage({ id: newProperty.id, imageFile });
         }
         
+        toast.success('Imóvel criado com sucesso!');
         navigate('/properties');
       }
     } catch (error) {
       console.error('Error saving property:', error);
+      toast.error('Erro ao salvar imóvel: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     }
   };
 
@@ -91,6 +111,7 @@ export default function PropertyFormPage() {
       </h1>
       
       <PropertyForm
+        key={selectedProperty?.id || 'new'} // Add key to force re-render when changing property
         initialData={isEditMode ? selectedProperty : undefined}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

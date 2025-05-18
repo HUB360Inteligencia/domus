@@ -31,8 +31,14 @@ export const usePropertyQueries = (selectedPropertyId: string | null) => {
     queryKey: ['property', selectedPropertyId],
     queryFn: async () => {
       try {
-        if (!selectedPropertyId) return null;
-        return await fetchPropertyById(selectedPropertyId);
+        if (!selectedPropertyId) {
+          console.log('No property ID provided for fetching details');
+          return null;
+        }
+        console.log(`Fetching property details for ID: ${selectedPropertyId}`);
+        const data = await fetchPropertyById(selectedPropertyId);
+        console.log('Property detail fetch result:', data);
+        return data;
       } catch (error) {
         console.error(`Error fetching property ${selectedPropertyId}:`, error);
         toast.error(`Erro ao carregar detalhes do imóvel: ${error.message || 'Erro desconhecido'}`);

@@ -49,6 +49,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
   if (!id) return null;
   
   try {
+    console.log(`Fetching property details for ID: ${id}`);
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
       console.error('No active session found');
@@ -65,6 +66,8 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       console.error(`Error fetching property ${id}:`, error);
       throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
     }
+
+    console.log('Property detail fetch result:', data ? 'Success' : 'Not found');
 
     // Transform the data to ensure status is of type PropertyStatus
     return data ? {
@@ -113,6 +116,8 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
 export const updateProperty = async (propertyData: PropertyFormData & { id: string }): Promise<Property> => {
   const { id, ...data } = propertyData;
   
+  console.log(`Updating property ${id} with data:`, data);
+  
   const { data: updatedData, error } = await supabase
     .from('properties')
     .update(data)
@@ -124,6 +129,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
     console.error('Error updating property:', error);
     throw new Error(error.message);
   }
+
+  console.log('Property updated successfully:', updatedData);
 
   return {
     ...updatedData,
@@ -155,9 +162,11 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
   const fileName = `${id}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
   const filePath = `${fileName}`;
 
+  console.log(`Uploading image for property ${id} to property_images bucket`);
+
   const { error: uploadError } = await supabase
     .storage
-    .from('properties')
+    .from('property_images')
     .upload(filePath, imageFile);
 
   if (uploadError) {
@@ -168,8 +177,10 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
   // Get the public URL
   const { data } = supabase
     .storage
-    .from('properties')
+    .from('property_images')
     .getPublicUrl(filePath);
+
+  console.log('Image uploaded successfully, URL:', data.publicUrl);
 
   // Update the property with the image URL
   const { error: updateError } = await supabase
@@ -183,4 +194,20 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
   }
 
   return data.publicUrl;
+};
+
+/**
+ * Get coordinates from an address using a geocoding service
+ */
+export const geocodeAddress = async (address: string): Promise<{ lat: number, lng: number } | null> => {
+  try {
+    // This is a placeholder. We'll implement real geocoding in a later step
+    console.log('Geocoding address:', address);
+    
+    // Return mock coordinates for now
+    return { lat: -23.550520, lng: -46.633308 }; // São Paulo coordinates as placeholder
+  } catch (error) {
+    console.error('Error geocoding address:', error);
+    return null;
+  }
 };

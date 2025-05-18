@@ -1,70 +1,94 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
+// Follow this setup guide to integrate the Deno runtime into your project:
+// https://docs.supabase.com/guides/functions/connect-to-supabase
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Get Supabase credentials from environment variables
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+console.log("Creating property_images bucket...");
 
-// Create a Supabase client with the service role key
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-Deno.serve(async (req) => {
-  try {
-    // Check if the bucket already exists
-    const { data: existingBuckets, error: listError } = await supabase
-      .storage
-      .listBuckets();
-
-    if (listError) {
-      return new Response(JSON.stringify({
-        error: 'Failed to list buckets',
-        details: listError
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+serve(async (req) => {
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    {
+      global: {
+        headers: { Authorization: req.headers.get("Authorization")! },
+      },
     }
+  );
 
-    const bucketExists = existingBuckets.some(bucket => bucket.name === 'property_images');
-    
-    if (!bucketExists) {
-      // Create the property_images bucket
-      const { error: createError } = await supabase
-        .storage
-        .createBucket('property_images', {
-          public: true,
-          fileSizeLimit: 5242880, // 5MB in bytes
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-        });
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 
-      if (createError) {
-        return new Response(JSON.stringify({
-          error: 'Failed to create bucket',
-          details: createError
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
+  // Check if the bucket already exists
+  const { data: buckets, error: getBucketsError } = await adminClient.storage.listBuckets();
+  if (getBucketsError) {
+    console.log("Error getting buckets:", getBucketsError.message);
+    return new Response(JSON.stringify({ error: getBucketsError.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
+  const bucketExists = buckets?.some(bucket => bucket.name === "property_images");
+  
+  if (bucketExists) {
+    console.log("Bucket property_images already exists");
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: bucketExists ? 'Bucket already exists' : 'Bucket created successfully'
-      }), 
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: 'Server error', details: err.message }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ 
+        status: "success", 
+        message: "Bucket property_images already exists",
+        bucketName: "property_images" 
+      }),
+      { headers: { "Content-Type": "application/json" } }
     );
   }
+
+  // Create the bucket if it doesn't exist
+  const { data, error } = await adminClient.storage.createBucket("property_images", {
+    public: true,
+    fileSizeLimit: 5242880, // 5MB in bytes
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/jpg", "image/webp"]
+  });
+
+  if (error) {
+    console.log("Error creating bucket:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Create a policy to allow public read access
+  const { error: policyError } = await adminClient.storage.from("property_images").createPolicy({
+    name: "Public Read Access",
+    type: "storage.objects",
+    definition: {
+      statements: [
+        {
+          effect: "allow",
+          action: "select",
+          principal: "*"
+        }
+      ],
+      resource: {
+        paths: ["**"]
+      }
+    }
+  });
+
+  if (policyError) {
+    console.log("Error creating policy:", policyError.message);
+  }
+
+  return new Response(
+    JSON.stringify({ 
+      status: "success", 
+      message: "Bucket property_images created successfully",
+      bucketName: "property_images"
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 });

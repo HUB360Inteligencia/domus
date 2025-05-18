@@ -1,8 +1,9 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Building, Upload, Loader2 } from 'lucide-react';
+import { Building, Upload, Loader2, Search } from 'lucide-react';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Property, PropertyFormData } from '@/types/property';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
@@ -28,7 +31,7 @@ const formSchema = z.object({
 });
 
 interface PropertyFormProps {
-  initialData?: Property;
+  initialData?: Property | null;
   onSubmit: (data: PropertyFormData, imageFile?: File) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -44,6 +47,10 @@ export function PropertyForm({
 }: PropertyFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
+  const [isSearchingCEP, setIsSearchingCEP] = useState(false);
+
+  // Log the initialData to debug
+  console.log('PropertyForm initialData:', initialData);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,6 +70,31 @@ export function PropertyForm({
     },
   });
 
+  // Effect to update form values when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      console.log('Updating form with initialData:', initialData);
+      form.reset({
+        title: initialData.title || '',
+        description: initialData.description || '',
+        address: initialData.address || '',
+        city: initialData.city || '',
+        state: initialData.state || '',
+        zip_code: initialData.zip_code || '',
+        type: initialData.type || 'apartment',
+        status: initialData.status || 'available',
+        value: initialData.value || 0,
+        area: initialData.area || undefined,
+        bedrooms: initialData.bedrooms || undefined,
+        bathrooms: initialData.bathrooms || undefined,
+      });
+      
+      if (initialData.image_url) {
+        setImagePreview(initialData.image_url);
+      }
+    }
+  }, [initialData, form]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -72,7 +104,39 @@ export function PropertyForm({
   };
 
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
+    console.log('Form submitted with data:', data);
     onSubmit(data as PropertyFormData, imageFile || undefined);
+  };
+
+  const handleCEPLookup = async () => {
+    const cep = form.getValues('zip_code');
+    
+    if (!cep || cep.replace(/\D/g, '').length !== 8) {
+      toast.error('CEP inválido. Digite um CEP com 8 dígitos.');
+      return;
+    }
+    
+    setIsSearchingCEP(true);
+    
+    try {
+      const addressData = await fetchAddressFromCEP(cep);
+      
+      if (addressData.erro) {
+        toast.error('CEP não encontrado.');
+        return;
+      }
+      
+      // Update form fields with the retrieved data
+      form.setValue('address', addressData.logradouro || '');
+      form.setValue('city', addressData.localidade || '');
+      form.setValue('state', addressData.uf || '');
+      
+      toast.success('Endereço encontrado!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao buscar CEP');
+    } finally {
+      setIsSearchingCEP(false);
+    }
   };
 
   return (
@@ -112,6 +176,42 @@ export function PropertyForm({
                 )}
               />
               
+              {/* CEP Field with search button */}
+              <FormField
+                control={form.control}
+                name="zip_code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CEP</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="CEP (apenas números)" 
+                          {...field}
+                          onChange={(e) => {
+                            const formattedCEP = formatCEP(e.target.value);
+                            field.onChange(formattedCEP);
+                          }}
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleCEPLookup}
+                        disabled={isSearchingCEP}
+                      >
+                        {isSearchingCEP ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -142,35 +242,19 @@ export function PropertyForm({
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Estado" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="zip_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input placeholder="CEP" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Estado" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -179,7 +263,7 @@ export function PropertyForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo de imóvel" />
@@ -204,7 +288,7 @@ export function PropertyForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o status" />
