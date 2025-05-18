@@ -47,11 +47,11 @@ export default function PropertyFormPage() {
     try {
       if (isEditMode && propertyId) {
         // Update existing property
-        await updateProperty({ id: propertyId, ...data });
+        updateProperty({ id: propertyId, ...data });
         
         // If there's a new image, upload it
         if (imageFile) {
-          await uploadPropertyImage({ id: propertyId, imageFile });
+          uploadPropertyImage({ id: propertyId, imageFile });
         }
         
         navigate('/properties');
@@ -61,7 +61,7 @@ export default function PropertyFormPage() {
         
         // If there's an image and the property was created successfully
         if (imageFile && newProperty && newProperty.id) {
-          await uploadPropertyImage({ id: newProperty.id, imageFile });
+          uploadPropertyImage({ id: newProperty.id, imageFile });
         }
         
         navigate('/properties');

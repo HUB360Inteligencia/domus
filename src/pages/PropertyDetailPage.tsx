@@ -39,7 +39,8 @@ export default function PropertyDetailPage() {
 
   const handleDelete = async () => {
     if (propertyId) {
-      await deleteProperty(propertyId);
+      // Pass the id as an argument to the deleteProperty function
+      deleteProperty(propertyId);
       navigate('/properties');
     }
   };
