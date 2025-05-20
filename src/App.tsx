@@ -27,6 +27,11 @@ const ContractDetailPage = lazy(() => import("@/pages/ContractDetailPage"));
 const DocumentsPage = lazy(() => import("@/pages/DocumentsPage"));
 const DocumentFormPage = lazy(() => import("@/pages/DocumentFormPage"));
 
+// Users Pages
+const UsersPage = lazy(() => import("@/pages/users/UsersPage"));
+const UserDetailPage = lazy(() => import("@/pages/users/UserDetailPage"));
+const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
+
 // Error Pages
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
@@ -104,6 +109,20 @@ function App() {
                 <Route index element={<DocumentsPage />} />
                 <Route path="new" element={<DocumentFormPage />} />
                 <Route path="view" element={<NotFound />} />
+              </Route>
+
+              {/* User Management Routes */}
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute requiredPermission="users.view">
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<UsersPage />} />
+                <Route path=":userId" element={<UserDetailPage />} />
+                <Route path="invite" element={<UserInvitePage />} />
               </Route>
 
               {/* Error routes */}
