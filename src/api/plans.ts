@@ -1,12 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 export interface Plan {
   id: string;
   name: string;
   description?: string;
   price: number;
-  features?: Record<string, any>;
+  features?: Json; // Changed from Record<string, any> to Json
   max_properties?: number;
   max_users?: number;
   interval: 'monthly' | 'yearly';

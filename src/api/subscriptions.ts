@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "./clients";
 import { Plan } from "./plans";
+import { Json } from "@/integrations/supabase/types";
 
 export interface Subscription {
   id: string;
@@ -9,8 +10,8 @@ export interface Subscription {
   plan_id: string;
   starts_at: string;
   ends_at?: string;
-  status: 'active' | 'canceled' | 'expired' | 'trial';
-  payment_status: 'paid' | 'pending' | 'failed';
+  status: string; // Changed from string literal union to string to match database
+  payment_status: string; // Changed from string literal union to string
   is_auto_renewal: boolean;
   created_at: string;
   updated_at: string;
@@ -22,7 +23,7 @@ export interface Invoice {
   id: string;
   subscription_id: string;
   amount: number;
-  status: 'paid' | 'pending' | 'failed' | 'canceled';
+  status: string; // Changed from string literal union to string
   due_date: string;
   paid_at?: string;
   payment_method?: string;
