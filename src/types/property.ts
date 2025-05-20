@@ -24,6 +24,8 @@ export interface Property {
   user_id: string;
   created_at: string;
   updated_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface PropertyFormData {
@@ -40,4 +42,6 @@ export interface PropertyFormData {
   bedrooms?: number;
   bathrooms?: number;
   features?: Record<string, any>;
+  latitude?: number | null;
+  longitude?: number | null;
 }
