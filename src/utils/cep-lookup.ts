@@ -44,3 +44,29 @@ export const formatCEP = (cep: string): string => {
   
   return `${cleanCEP.slice(0, 5)}-${cleanCEP.slice(5, 8)}`;
 };
+
+/**
+ * Creates a complete address string for geocoding
+ */
+export const createFullAddressString = (
+  address: string,
+  propertyNumber?: string,
+  city?: string,
+  state?: string
+): string => {
+  let fullAddress = address;
+  
+  if (propertyNumber) {
+    fullAddress += `, ${propertyNumber}`;
+  }
+  
+  if (city) {
+    fullAddress += `, ${city}`;
+  }
+  
+  if (state) {
+    fullAddress += `, ${state}`;
+  }
+  
+  return fullAddress;
+};

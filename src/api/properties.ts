@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Property, PropertyFormData, PropertyStatus } from "@/types/property";
+import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
 
 /**
  * Fetches all properties for the current user
@@ -232,17 +233,25 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
 /**
  * Get coordinates from an address using Mapbox Geocoding API
  */
-export const geocodeAddress = async (address: string): Promise<{ lat: number, lng: number } | null> => {
+export const geocodeAddress = async (
+  address: string,
+  propertyNumber?: string,
+  city?: string,
+  state?: string
+): Promise<{ lat: number, lng: number } | null> => {
   try {
     console.log('Geocoding address:', address);
     
+    // Create a full address string
+    const fullAddress = `${address}${propertyNumber ? `, ${propertyNumber}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}`;
+    
     // Create a cache key for this address
-    const cacheKey = `geocode_${address.replace(/\s+/g, '_').toLowerCase()}`;
+    const cacheKey = `geocode_${fullAddress.replace(/\s+/g, '_').toLowerCase()}`;
     
     // Check if we have cached results
     const cachedResult = sessionStorage.getItem(cacheKey);
     if (cachedResult) {
-      console.log('Using cached geocode result for:', address);
+      console.log('Using cached geocode result for:', fullAddress);
       return JSON.parse(cachedResult);
     }
     
@@ -252,7 +261,7 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number, ln
     if (mapboxToken) {
       try {
         // Use Mapbox Geocoding API
-        const encodedAddress = encodeURIComponent(address);
+        const encodedAddress = encodeURIComponent(fullAddress);
         const response = await fetch(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&limit=1`
         );
@@ -300,7 +309,7 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number, ln
     };
     
     // Try to find the city in our address and return its coordinates
-    const lowercaseAddress = address.toLowerCase();
+    const lowercaseAddress = fullAddress.toLowerCase();
     for (const [city, coords] of Object.entries(cityCoordinates)) {
       if (lowercaseAddress.includes(city)) {
         // Add small random offset to make properties in the same city appear slightly different

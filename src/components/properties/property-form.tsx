@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Property, PropertyFormData } from '@/types/property';
+import { FurnishedStatus, Property, PropertyFormData } from '@/types/property';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { toast } from 'sonner';
@@ -20,6 +20,9 @@ const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
   description: z.string().optional(),
   address: z.string().min(5, { message: 'O endereço deve ter pelo menos 5 caracteres' }),
+  property_number: z.string().optional(),
+  complement: z.string().optional(),
+  neighborhood: z.string().optional(),
   city: z.string().min(2, { message: 'A cidade deve ter pelo menos 2 caracteres' }),
   state: z.string().min(2, { message: 'O estado deve ter pelo menos 2 caracteres' }),
   zip_code: z.string().optional(),
@@ -29,6 +32,10 @@ const formSchema = z.object({
   area: z.coerce.number().positive().optional(),
   bedrooms: z.coerce.number().int().optional(),
   bathrooms: z.coerce.number().int().optional(),
+  garage_spots: z.coerce.number().int().optional(),
+  condo_fee: z.coerce.number().optional(),
+  floor_number: z.coerce.number().int().optional(),
+  furnished: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
 });
@@ -71,6 +78,9 @@ export function PropertyForm({
       title: initialData?.title || '',
       description: initialData?.description || '',
       address: initialData?.address || '',
+      property_number: initialData?.property_number || '',
+      complement: initialData?.complement || '',
+      neighborhood: initialData?.neighborhood || '',
       city: initialData?.city || '',
       state: initialData?.state || '',
       zip_code: initialData?.zip_code || '',
@@ -80,6 +90,10 @@ export function PropertyForm({
       area: initialData?.area || undefined,
       bedrooms: initialData?.bedrooms || undefined,
       bathrooms: initialData?.bathrooms || undefined,
+      garage_spots: initialData?.garage_spots || undefined,
+      condo_fee: initialData?.condo_fee || undefined,
+      floor_number: initialData?.floor_number || undefined,
+      furnished: initialData?.furnished || 'not_furnished',
       latitude: initialData?.latitude !== undefined && initialData.latitude !== null 
         ? Number(initialData.latitude) 
         : undefined,
@@ -96,6 +110,9 @@ export function PropertyForm({
         title: initialData.title || '',
         description: initialData.description || '',
         address: initialData.address || '',
+        property_number: initialData.property_number || '',
+        complement: initialData.complement || '',
+        neighborhood: initialData.neighborhood || '',
         city: initialData.city || '',
         state: initialData.state || '',
         zip_code: initialData.zip_code || '',
@@ -105,6 +122,10 @@ export function PropertyForm({
         area: initialData.area || undefined,
         bedrooms: initialData.bedrooms || undefined,
         bathrooms: initialData.bathrooms || undefined,
+        garage_spots: initialData.garage_spots || undefined,
+        condo_fee: initialData.condo_fee || undefined,
+        floor_number: initialData.floor_number || undefined,
+        furnished: initialData.furnished || 'not_furnished',
         latitude: initialData.latitude !== undefined && initialData.latitude !== null 
           ? Number(initialData.latitude) 
           : undefined,
@@ -170,6 +191,7 @@ export function PropertyForm({
       
       // Update form fields with the retrieved data
       form.setValue('address', addressData.logradouro || '');
+      form.setValue('neighborhood', addressData.bairro || '');
       form.setValue('city', addressData.localidade || '');
       form.setValue('state', addressData.uf || '');
       
@@ -186,6 +208,7 @@ export function PropertyForm({
 
   // Get the current address values from the form
   const currentAddress = form.watch('address');
+  const currentPropertyNumber = form.watch('property_number');
   const currentCity = form.watch('city');
   const currentState = form.watch('state');
   
@@ -265,21 +288,68 @@ export function PropertyForm({
                 )}
               />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Address fields - now including number, complement, and neighborhood */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="address"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Logradouro</FormLabel>
                       <FormControl>
-                        <Input placeholder="Endereço completo" {...field} />
+                        <Input placeholder="Rua, Avenida, etc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="property_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Apto, Bloco, etc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bairro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="city"
@@ -293,21 +363,21 @@ export function PropertyForm({
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Estado" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Estado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Map section */}
               {canShowMap && showMap && (
@@ -321,6 +391,7 @@ export function PropertyForm({
                   <div className="border rounded-md overflow-hidden">
                     <PropertyMap
                       address={currentAddress}
+                      propertyNumber={currentPropertyNumber}
                       city={currentCity}
                       state={currentState}
                       initialCoords={mapCoordinates}
@@ -383,19 +454,36 @@ export function PropertyForm({
                 />
               </div>
               
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Valor do imóvel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Property value and condo fee */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Valor do imóvel" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="condo_fee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do Condomínio</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Valor do condomínio" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
@@ -412,6 +500,45 @@ export function PropertyForm({
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="floor_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Andar</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Número do andar" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="furnished"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobiliado</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || "not_furnished"}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma opção" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="not_furnished">Não mobiliado</SelectItem>
+                          <SelectItem value="partially_furnished">Parcialmente mobiliado</SelectItem>
+                          <SelectItem value="fully_furnished">Totalmente mobiliado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="bedrooms"
@@ -434,6 +561,20 @@ export function PropertyForm({
                       <FormLabel>Banheiros</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="Número de banheiros" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="garage_spots"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vagas de Garagem</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Número de vagas" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

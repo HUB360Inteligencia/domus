@@ -67,13 +67,20 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           city: string
+          complement: string | null
+          condo_fee: number | null
           created_at: string
           description: string | null
           features: Json | null
+          floor_number: number | null
+          furnished: string | null
+          garage_spots: number | null
           id: string
           image_url: string | null
           latitude: number | null
           longitude: number | null
+          neighborhood: string | null
+          property_number: string | null
           state: string
           status: string
           title: string
@@ -89,13 +96,20 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city: string
+          complement?: string | null
+          condo_fee?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null
+          floor_number?: number | null
+          furnished?: string | null
+          garage_spots?: number | null
           id?: string
           image_url?: string | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
+          property_number?: string | null
           state: string
           status: string
           title: string
@@ -111,13 +125,20 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string
+          complement?: string | null
+          condo_fee?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null
+          floor_number?: number | null
+          furnished?: string | null
+          garage_spots?: number | null
           id?: string
           image_url?: string | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
+          property_number?: string | null
           state?: string
           status?: string
           title?: string

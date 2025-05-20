@@ -5,11 +5,16 @@ export type PropertyStatus = 'available' | 'rented' | 'airbnb' | 'maintenance' |
 
 export type PropertyType = 'apartment' | 'house' | 'commercial' | 'land' | 'rural';
 
+export type FurnishedStatus = 'not_furnished' | 'partially_furnished' | 'fully_furnished';
+
 export interface Property {
   id: string;
   title: string;
   description?: string;
   address: string;
+  property_number?: string;
+  complement?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   zip_code?: string;
@@ -19,6 +24,10 @@ export interface Property {
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
+  garage_spots?: number;
+  condo_fee?: number;
+  floor_number?: number;
+  furnished?: FurnishedStatus;
   features?: Json | Record<string, any>; // Accept both Json type from Supabase and Record type
   image_url?: string;
   user_id: string;
@@ -32,6 +41,9 @@ export interface PropertyFormData {
   title: string;
   description: string;
   address: string;
+  property_number?: string;
+  complement?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   zip_code?: string;
@@ -41,6 +53,10 @@ export interface PropertyFormData {
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
+  garage_spots?: number;
+  condo_fee?: number;
+  floor_number?: number;
+  furnished?: FurnishedStatus;
   features?: Record<string, any>;
   latitude?: number | null;
   longitude?: number | null;
