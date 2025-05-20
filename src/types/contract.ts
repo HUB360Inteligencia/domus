@@ -6,6 +6,12 @@ export interface Contract {
   id: string;
   title: string;
   property_id: string | null;
+  property?: { // Added optional property field for join data
+    title?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+  };
   tenant_name: string;
   tenant_document: string | null;
   tenant_contact: string | null;

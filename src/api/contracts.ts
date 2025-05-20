@@ -17,7 +17,7 @@ export const fetchContracts = async (): Promise<Contract[]> => {
 
     const { data, error } = await supabase
       .from('contracts')
-      .select('*, properties(title)')
+      .select('*, property:properties(title, address, city, state)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -55,7 +55,7 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
 
     const { data, error } = await supabase
       .from('contracts')
-      .select('*, properties(title, address, city, state)')
+      .select('*, property:properties(title, address, city, state)')
       .eq('id', id)
       .single();
 
@@ -173,6 +173,10 @@ export const uploadContractDocument = async ({
   file: File;
   isEncrypted?: boolean;
 }): Promise<string> => {
+  // Get current user
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('User not authenticated');
+
   // Create a unique file name
   const fileExt = file.name.split('.').pop();
   const fileName = `${contractId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -201,15 +205,16 @@ export const uploadContractDocument = async ({
   // Add the document to the documents table
   const { error: dbError } = await supabase
     .from('documents')
-    .insert([{
+    .insert({
       name: file.name,
       file_path: filePath,
       file_type: file.type,
       file_size: file.size,
       category: 'contract',
       contract_id: contractId,
-      is_encrypted: isEncrypted
-    }]);
+      is_encrypted: isEncrypted,
+      user_id: user.data.user.id
+    });
 
   if (dbError) {
     console.error('Error recording document in database:', dbError);

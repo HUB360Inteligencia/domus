@@ -74,8 +74,8 @@ export function ContractList({
     return contracts.map(contract => {
       let propertyName = "";
       
-      if (contract.properties) {
-        propertyName = contract.properties.title || "";
+      if (contract.property) {
+        propertyName = contract.property.title || "";
       }
       
       return {

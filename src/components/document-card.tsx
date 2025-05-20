@@ -1,5 +1,5 @@
 
-import { DocumentText, Download, Eye, Lock, LockOpen, Trash } from "lucide-react";
+import { FileText, Download, Eye, Lock, LockOpen, Trash } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +66,7 @@ export function DocumentCard({
         <div className="flex flex-col h-full">
           <div className="p-4 flex items-start gap-4">
             <div className="bg-gray-100 p-3 rounded-lg">
-              <DocumentText className="h-6 w-6 text-gray-500" />
+              <FileText className="h-6 w-6 text-gray-500" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">

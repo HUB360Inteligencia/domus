@@ -1,3 +1,4 @@
+
 import { Building, CheckCircle, Clock, HomeIcon, TrendingUp, User, AlertCircle, FileText, CalendarClock } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
 import { PropertyCard } from "@/components/property-card";
@@ -10,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertyStatus } from "@/types/property";
+import { Contract, ContractStatus } from "@/types/contract";
 
 // Sample data for contracts and finances that we'll replace later
 const contractStats = {
@@ -24,36 +26,79 @@ const financialStats = {
   occupancyRate: "91%"
 };
 
-const contracts = [
+// Sample contract data that matches the Contract type
+const sampleContracts: Contract[] = [
   {
     id: "con1",
     title: "Contrato de Aluguel #2023-01",
-    property: "Apartamento Centro",
-    tenant: "Ana Paula Silva",
-    startDate: "2023-01-15",
-    endDate: "2024-01-14",
+    property_id: "prop1",
+    property: { title: "Apartamento Centro" },
+    tenant_name: "Ana Paula Silva",
+    tenant_document: "123.456.789-00",
+    tenant_contact: "11-98765-4321",
+    start_date: "2023-01-15",
+    end_date: "2024-01-14",
     value: 6500,
-    status: "active" as const
+    payment_day: 15,
+    deposit_value: 6500,
+    status: "active",
+    terms: null,
+    document_url: null,
+    has_renewal_option: true,
+    renewal_terms: null,
+    special_conditions: null,
+    created_at: "2023-01-10T12:00:00Z",
+    updated_at: "2023-01-10T12:00:00Z",
+    user_id: "user1",
+    signature_status: "completed"
   },
   {
     id: "con2",
     title: "Contrato de Aluguel #2023-02",
-    property: "Sala Comercial Paulista",
-    tenant: "Empresa ABC Ltda",
-    startDate: "2023-03-01",
-    endDate: "2023-03-01",
+    property_id: "prop2",
+    property: { title: "Sala Comercial Paulista" },
+    tenant_name: "Empresa ABC Ltda",
+    tenant_document: "12.345.678/0001-90",
+    tenant_contact: "11-3456-7890",
+    start_date: "2023-03-01",
+    end_date: "2024-03-01",
     value: 9800,
-    status: "active" as const
+    payment_day: 5,
+    deposit_value: 19600,
+    status: "active",
+    terms: null,
+    document_url: null,
+    has_renewal_option: false,
+    renewal_terms: null,
+    special_conditions: null,
+    created_at: "2023-02-20T14:30:00Z",
+    updated_at: "2023-02-20T14:30:00Z",
+    user_id: "user1",
+    signature_status: "completed"
   },
   {
     id: "con3",
     title: "Contrato de Aluguel #2022-08",
-    property: "Casa na Praia",
-    tenant: "Roberto Mendes",
-    startDate: "2022-12-15",
-    endDate: "2023-06-15",
+    property_id: "prop3",
+    property: { title: "Casa na Praia" },
+    tenant_name: "Roberto Mendes",
+    tenant_document: "987.654.321-00",
+    tenant_contact: "11-97654-3210",
+    start_date: "2022-12-15",
+    end_date: "2023-06-15",
     value: 12000,
-    status: "expired" as const
+    payment_day: 10,
+    deposit_value: 12000,
+    status: "expired",
+    terms: null,
+    document_url: null,
+    has_renewal_option: true,
+    renewal_terms: null,
+    special_conditions: null,
+    created_at: "2022-12-01T10:15:00Z",
+    updated_at: "2022-12-01T10:15:00Z",
+    user_id: "user1",
+    signature_status: "completed"
   }
 ];
 
@@ -305,7 +350,7 @@ export default function Dashboard() {
         </TabsContent>
         <TabsContent value="contracts">
           <ContractList 
-            contracts={contracts} 
+            contracts={sampleContracts} 
             onView={handleContractView}
             onEdit={handleContractEdit}
             onDownload={handleContractDownload}
