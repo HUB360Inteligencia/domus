@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -6,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { AppLayout } from "@/components/layout/app-layout";
+import { AdminLayout } from "@/components/layout/admin-layout";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 
@@ -35,6 +35,8 @@ const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
 // Admin Pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminClientsPage = lazy(() => import("@/pages/admin/ClientsPage"));
+const ClientDetailPage from "@/pages/admin/ClientDetailPage";
+const ClientFormPage from "@/pages/admin/ClientFormPage";
 
 // Error Pages
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -134,14 +136,15 @@ function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute requiredPermission="clients.view">
-                    <AppLayout />
+                    <AdminLayout />
                   </ProtectedRoute>
                 }
               >
                 <Route index element={<AdminDashboard />} />
                 <Route path="clients" element={<AdminClientsPage />} />
-                <Route path="clients/:clientId" element={<div>Cliente detalhe (em desenvolvimento)</div>} />
-                <Route path="clients/new" element={<div>Novo Cliente (em desenvolvimento)</div>} />
+                <Route path="clients/:clientId" element={<ClientDetailPage />} />
+                <Route path="clients/new" element={<ClientFormPage />} />
+                <Route path="clients/edit/:clientId" element={<ClientFormPage />} />
                 <Route path="plans" element={<div>Planos (em desenvolvimento)</div>} />
                 <Route path="subscriptions" element={<div>Assinaturas (em desenvolvimento)</div>} />
               </Route>
