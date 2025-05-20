@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useContracts } from "@/hooks/use-contracts";
 import { DocumentCard } from "@/components/document-card";
 import { toast } from "sonner";
+import { Document } from "@/types/contract";
 
 export default function DocumentsPage() {
   const navigate = useNavigate();
@@ -26,20 +27,20 @@ export default function DocumentsPage() {
   // Get unique categories
   const categories = Array.from(new Set(documents.map(doc => doc.category)));
 
-  const handleViewDocument = (documentId: string) => {
-    window.open(`/documents/view?id=${documentId}`, '_blank');
+  const handleViewDocument = (document: Document) => {
+    window.open(`/documents/view?id=${document.id}`, '_blank');
   };
 
-  const handleDownloadDocument = (documentUrl: string) => {
-    window.open(documentUrl, '_blank');
+  const handleDownloadDocument = (document: Document) => {
+    window.open(document.file_path, '_blank');
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
+  const handleDeleteDocument = async (document: Document) => {
     const confirmed = window.confirm("Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.");
     
     if (confirmed) {
       try {
-        await deleteDocument(documentId);
+        await deleteDocument(document);
         toast.success("Documento excluído com sucesso");
       } catch (error) {
         toast.error("Erro ao excluir documento");
@@ -106,9 +107,9 @@ export default function DocumentsPage() {
                 <DocumentCard
                   key={document.id}
                   document={document}
-                  onView={() => handleViewDocument(document.id)}
-                  onDownload={() => handleDownloadDocument(document.file_path)}
-                  onDelete={() => handleDeleteDocument(document.id)}
+                  onView={() => handleViewDocument(document)}
+                  onDownload={() => handleDownloadDocument(document)}
+                  onDelete={() => handleDeleteDocument(document)}
                 />
               ))}
             </div>
