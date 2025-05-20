@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/ui/page-header";
 import { Separator } from "@/components/ui/separator";
 import { useContracts } from "@/hooks/use-contracts";
-import { Document } from "@/types/contract";
+import { Document as ContractDocument } from "@/types/contract";
 
 export default function ContractDetailPage() {
   const navigate = useNavigate();
@@ -26,7 +26,6 @@ export default function ContractDetailPage() {
     isLoadingSelectedContract,
     deleteContract,
     updateContractStatus,
-    downloadDocument
   } = useContracts();
 
   useEffect(() => {
@@ -45,17 +44,15 @@ export default function ContractDetailPage() {
     );
   }
 
-  const handleDownloadDocument = async (document: Document) => {
+  const handleDownloadDocument = async (document: ContractDocument) => {
     try {
-      const { url, filename } = await downloadDocument(document);
-      
       // Create a temporary anchor element to download the file
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
+      const a = document.createElement('a');
+      a.href = document.file_path;
+      a.download = document.name;
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
     } catch (error) {
       console.error("Error downloading document:", error);
     }
@@ -91,8 +88,8 @@ export default function ContractDetailPage() {
               <CardTitle>Detalhes do Contrato</CardTitle>
               <div className="flex items-center">
                 <Badge variant={
-                  selectedContract.status === "active" ? "success" :
-                  selectedContract.status === "pending" ? "warning" :
+                  selectedContract.status === "active" ? "default" :
+                  selectedContract.status === "pending" ? "secondary" :
                   selectedContract.status === "expired" ? "destructive" :
                   "outline"
                 }>
@@ -108,7 +105,7 @@ export default function ContractDetailPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-1">Descrição</h3>
                 <p className="text-muted-foreground">
-                  {selectedContract.description || "Sem descrição"}
+                  {selectedContract.terms || "Sem descrição"}
                 </p>
               </div>
               
@@ -150,7 +147,7 @@ export default function ContractDetailPage() {
                 <div>
                   <h3 className="text-sm font-semibold mb-1">Tipo de Contrato</h3>
                   <p className="text-muted-foreground">
-                    {selectedContract.contract_type || "Não definido"}
+                    {"Padrão"}
                   </p>
                 </div>
               </div>
@@ -214,7 +211,7 @@ export default function ContractDetailPage() {
                 <Button
                   variant={selectedContract.status === "active" ? "default" : "outline"}
                   className="justify-start mb-2"
-                  onClick={() => updateContractStatus(selectedContract.id, "active")}
+                  onClick={() => updateContractStatus({ id: selectedContract.id, status: "active" })}
                 >
                   <Check className="mr-2 h-4 w-4 text-green-500" />
                   Marcar como Ativo
@@ -223,7 +220,7 @@ export default function ContractDetailPage() {
                 <Button
                   variant={selectedContract.status === "pending" ? "default" : "outline"}
                   className="justify-start mb-2"
-                  onClick={() => updateContractStatus(selectedContract.id, "pending")}
+                  onClick={() => updateContractStatus({ id: selectedContract.id, status: "pending" })}
                 >
                   <AlertCircle className="mr-2 h-4 w-4 text-yellow-500" />
                   Marcar como Pendente
@@ -232,7 +229,7 @@ export default function ContractDetailPage() {
                 <Button
                   variant={selectedContract.status === "expired" ? "default" : "outline"}
                   className="justify-start mb-2"
-                  onClick={() => updateContractStatus(selectedContract.id, "expired")}
+                  onClick={() => updateContractStatus({ id: selectedContract.id, status: "expired" })}
                 >
                   <X className="mr-2 h-4 w-4 text-red-500" />
                   Marcar como Expirado
@@ -241,7 +238,7 @@ export default function ContractDetailPage() {
                 <Button
                   variant={selectedContract.status === "draft" ? "default" : "outline"}
                   className="justify-start"
-                  onClick={() => updateContractStatus(selectedContract.id, "draft")}
+                  onClick={() => updateContractStatus({ id: selectedContract.id, status: "draft" })}
                 >
                   <File className="mr-2 h-4 w-4 text-gray-500" />
                   Marcar como Rascunho

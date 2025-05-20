@@ -19,7 +19,7 @@ export default function ContractsPage() {
   // Filter contracts based on search term and active tab
   const filteredContracts = contracts.filter(contract => {
     const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (contract.description && contract.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      (contract.terms && contract.terms.toLowerCase().includes(searchTerm.toLowerCase()));
       
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "active") return matchesSearch && contract.status === "active";

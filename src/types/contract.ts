@@ -1,5 +1,5 @@
 
-export type ContractStatus = 'active' | 'pending' | 'expired' | 'canceled';
+export type ContractStatus = 'active' | 'pending' | 'expired' | 'canceled' | 'draft';
 export type SignatureStatus = 'unsigned' | 'pending' | 'completed' | 'rejected';
 
 export interface Contract {
