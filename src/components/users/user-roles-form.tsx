@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useUpdateUserRole } from "@/hooks/use-users";
 
 // Type for app_role from Supabase
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -39,6 +40,8 @@ interface Role {
 export function UserRolesForm({ userId, currentRole }: UserRolesFormProps) {
   const [selectedRole, setSelectedRole] = useState<AppRole | string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const updateUserRole = useUpdateUserRole();
 
   // Buscar todas as funções disponíveis
   const { data: roles, isLoading } = useQuery({
@@ -63,24 +66,10 @@ export function UserRolesForm({ userId, currentRole }: UserRolesFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Buscar ID da função selecionada
-      const { data: roleData } = await supabase
-        .from("roles")
-        .select("id")
-        .eq("name", selectedRole as AppRole)
-        .single();
-
-      if (!roleData) throw new Error("Função não encontrada");
-
-      // Atualizar função do usuário
-      const { error: updateError } = await supabase
-        .from("user_roles")
-        .update({ role_id: roleData.id })
-        .eq("user_id", userId);
-
-      if (updateError) throw updateError;
-
-      toast.success("Função atualizada com sucesso");
+      await updateUserRole.mutateAsync({
+        userId,
+        role: selectedRole
+      });
     } catch (error) {
       console.error("Erro ao atualizar função:", error);
       toast.error("Erro ao atualizar função");
