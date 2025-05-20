@@ -2,6 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchUsers, fetchUserById, updateUserProfile, updateUserRole, deleteUser, UserWithRole } from "@/api/users";
+import { Database } from "@/integrations/supabase/types";
+
+// Type for app_role from Supabase
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 // Hook para listar usuários
 export function useUsers() {
@@ -50,7 +54,7 @@ export function useUpdateUserRole() {
   
   return useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      updateUserRole(userId, role),
+      updateUserRole(userId, role as AppRole),
     onSuccess: (_, variables) => {
       toast.success("Função atualizada com sucesso");
       queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
