@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property, PropertyFormData, PropertyStatus } from "@/types/property";
 
@@ -201,11 +200,60 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
  */
 export const geocodeAddress = async (address: string): Promise<{ lat: number, lng: number } | null> => {
   try {
-    // This is a placeholder. We'll implement real geocoding in a later step
     console.log('Geocoding address:', address);
     
-    // Return mock coordinates for now
-    return { lat: -23.550520, lng: -46.633308 }; // São Paulo coordinates as placeholder
+    // Create a cache key for this address
+    const cacheKey = `geocode_${address.replace(/\s+/g, '_').toLowerCase()}`;
+    
+    // Check if we have cached results
+    const cachedResult = sessionStorage.getItem(cacheKey);
+    if (cachedResult) {
+      console.log('Using cached geocode result for:', address);
+      return JSON.parse(cachedResult);
+    }
+    
+    // For now, let's use location-based coordinates for common Brazilian cities
+    // Later we can integrate with a real geocoding service
+    
+    // Map of cities to their approximate coordinates
+    const cityCoordinates: Record<string, { lat: number, lng: number }> = {
+      'são paulo': { lat: -23.550520, lng: -46.633308 },
+      'rio de janeiro': { lat: -22.906847, lng: -43.172896 },
+      'brasília': { lat: -15.7942, lng: -47.8822 },
+      'salvador': { lat: -12.9714, lng: -38.5014 },
+      'fortaleza': { lat: -3.7319, lng: -38.5267 },
+      'belo horizonte': { lat: -19.9167, lng: -43.9345 },
+      'manaus': { lat: -3.1190, lng: -60.0217 },
+      'curitiba': { lat: -25.4284, lng: -49.2733 },
+      'recife': { lat: -8.0476, lng: -34.8770 },
+      'porto alegre': { lat: -30.0346, lng: -51.2177 },
+    };
+    
+    // Try to find the city in our address and return its coordinates
+    const lowercaseAddress = address.toLowerCase();
+    for (const [city, coords] of Object.entries(cityCoordinates)) {
+      if (lowercaseAddress.includes(city)) {
+        // Add small random offset to make properties in the same city appear slightly different
+        const randomLat = (Math.random() - 0.5) * 0.01;
+        const randomLng = (Math.random() - 0.5) * 0.01;
+        
+        const result = { 
+          lat: coords.lat + randomLat, 
+          lng: coords.lng + randomLng
+        };
+        
+        // Cache the result
+        sessionStorage.setItem(cacheKey, JSON.stringify(result));
+        return result;
+      }
+    }
+    
+    // If city not found in our list, return default coordinates with random offset
+    const defaultCoords = { lat: -23.550520 + (Math.random() - 0.5) * 0.05, lng: -46.633308 + (Math.random() - 0.5) * 0.05 };
+    
+    // Cache the result
+    sessionStorage.setItem(cacheKey, JSON.stringify(defaultCoords));
+    return defaultCoords;
   } catch (error) {
     console.error('Error geocoding address:', error);
     return null;

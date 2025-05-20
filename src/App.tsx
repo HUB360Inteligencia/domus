@@ -1,73 +1,57 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from "@/components/theme-provider"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppLayout } from "./components/layout/app-layout";
-import Dashboard from "./pages/Dashboard";
-import Properties from "./pages/Properties";
-import PropertyDetailPage from "./pages/PropertyDetailPage";
-import PropertyFormPage from "./pages/PropertyFormPage";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import AuthCallback from "./pages/auth/AuthCallback";
-import Unauthorized from "./pages/Unauthorized";
-import { AuthProvider } from "./components/auth/auth-provider";
-import { ProtectedRoute } from "./components/auth/protected-route";
+import Index from './pages/Index';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import AuthCallback from './pages/AuthCallback';
+import Dashboard from './pages/Dashboard';
+import Properties from './pages/Properties';
+import PropertyDetailPage from './pages/PropertyDetailPage';
+import PropertyFormPage from './pages/PropertyFormPage';
+import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
 
-const queryClient = new QueryClient();
+import AppLayout from './layouts/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './lib/auth';
+import { MapboxProvider } from './contexts/MapboxContext';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
+function App() {
+  const queryClient = new QueryClient();
+
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="lovable-theme">
+      <QueryClientProvider client={queryClient}>
+        <MapboxProvider>
+          <AuthProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/properties" element={<Properties />} />
+                    <Route path="/properties/detail" element={<PropertyDetailPage />} />
+                    <Route path="/properties/new" element={<PropertyFormPage />} />
+                    <Route path="/properties/edit" element={<PropertyFormPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Route>
+                <Route path="/unauthorized" element={<Unauthorized />} />
+              </Routes>
+            </Router>
+          </AuthProvider>
+        </MapboxProvider>
         <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Rotas de autenticação */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Rotas protegidas dentro do layout */}
-            <Route element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/properties/detail" element={<PropertyDetailPage />} />
-              <Route path="/properties/new" element={<PropertyFormPage />} />
-              <Route path="/properties/edit" element={<PropertyFormPage />} />
-              <Route path="/contracts" element={<Dashboard />} />
-              <Route path="/documents" element={<Dashboard />} />
-              <Route path="/finances" element={<Dashboard />} />
-              
-              {/* Rotas com permissões específicas */}
-              <Route path="/users" element={
-                <ProtectedRoute requiredPermission="users.view">
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/ai-assistant" element={<Dashboard />} />
-              <Route path="/settings" element={
-                <ProtectedRoute requiredPermission="settings.view">
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-            </Route>
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;
