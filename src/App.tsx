@@ -1,74 +1,116 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 
-import Index from './pages/Index';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import AuthCallback from './pages/auth/AuthCallback';
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import PropertyFormPage from './pages/PropertyFormPage';
-import ContractsPage from './pages/ContractsPage';
-import ContractDetailPage from './pages/ContractDetailPage';
-import DocumentsPage from './pages/DocumentsPage';
-import NotFound from './pages/NotFound';
-import Unauthorized from './pages/Unauthorized';
+// Auth Pages
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Register = lazy(() => import("@/pages/auth/Register"));
+const AuthCallback = lazy(() => import("@/pages/auth/AuthCallback"));
 
-import { AppLayout } from './components/layout/app-layout';
-import { ProtectedRoute } from './components/auth/protected-route';
-import { AuthProvider } from './components/auth/auth-provider';
-import { MapboxProvider } from './contexts/MapboxContext';
+// App Pages
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Properties = lazy(() => import("@/pages/Properties"));
+const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
+const PropertyFormPage = lazy(() => import("@/pages/PropertyFormPage"));
+const ContractsPage = lazy(() => import("@/pages/ContractsPage"));
+const ContractDetailPage = lazy(() => import("@/pages/ContractDetailPage"));
+const DocumentsPage = lazy(() => import("@/pages/DocumentsPage"));
+const DocumentFormPage = lazy(() => import("@/pages/DocumentFormPage"));
+
+// Error Pages
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
+
+// Landing Page
+const Index = lazy(() => import("@/pages/Index"));
 
 function App() {
-  const queryClient = new QueryClient();
-
   return (
-    <ThemeProvider defaultTheme="light" storageKey="lovable-theme">
-      <QueryClientProvider client={queryClient}>
-        <MapboxProvider>
-          <AuthProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  
-                  {/* Properties Routes */}
-                  <Route path="/properties" element={<Properties />} />
-                  <Route path="/properties/detail" element={<PropertyDetailPage />} />
-                  <Route path="/properties/new" element={<PropertyFormPage />} />
-                  <Route path="/properties/edit" element={<PropertyFormPage />} />
-                  
-                  {/* Contracts Routes */}
-                  <Route path="/contracts" element={<ContractsPage />} />
-                  <Route path="/contracts/detail" element={<ContractDetailPage />} />
-                  <Route path="/contracts/new" element={<PropertyFormPage />} />
-                  <Route path="/contracts/edit" element={<PropertyFormPage />} />
+    <BrowserRouter>
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="flex h-screen w-full items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-petroleum" />
+            </div>
+          }
+        >
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
-                  {/* Documents Routes */}
-                  <Route path="/documents" element={<DocumentsPage />} />
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-                <Route path="/unauthorized" element={<Unauthorized />} />
-              </Routes>
-            </Router>
-          </AuthProvider>
-        </MapboxProvider>
+            {/* Protected routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+            </Route>
+
+            <Route
+              path="/properties"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Properties />} />
+              <Route path="new" element={<PropertyFormPage />} />
+              <Route path="edit" element={<PropertyFormPage />} />
+              <Route path="detail" element={<PropertyDetailPage />} />
+            </Route>
+
+            <Route
+              path="/contracts"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ContractsPage />} />
+              <Route path="detail" element={<ContractDetailPage />} />
+              <Route path="new" element={<PropertyFormPage />} />
+              <Route path="edit" element={<PropertyFormPage />} />
+            </Route>
+
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<DocumentsPage />} />
+              <Route path="new" element={<DocumentFormPage />} />
+              <Route path="view" element={<NotFound />} />
+            </Route>
+
+            {/* Error routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </Suspense>
+        <SonnerToaster position="top-right" richColors />
         <Toaster />
-      </QueryClientProvider>
-    </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
