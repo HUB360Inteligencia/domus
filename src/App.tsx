@@ -15,7 +15,7 @@ import PropertyFormPage from './pages/PropertyFormPage';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 
-import AppLayout from './components/layout/app-layout';
+import { AppLayout } from './components/layout/app-layout';
 import { ProtectedRoute } from './components/auth/protected-route';
 import { AuthProvider } from './components/auth/auth-provider';
 import { MapboxProvider } from './contexts/MapboxContext';
@@ -34,15 +34,17 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AppLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/properties" element={<Properties />} />
-                    <Route path="/properties/detail" element={<PropertyDetailPage />} />
-                    <Route path="/properties/new" element={<PropertyFormPage />} />
-                    <Route path="/properties/edit" element={<PropertyFormPage />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
+                <Route element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/properties/detail" element={<PropertyDetailPage />} />
+                  <Route path="/properties/new" element={<PropertyFormPage />} />
+                  <Route path="/properties/edit" element={<PropertyFormPage />} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
                 <Route path="/unauthorized" element={<Unauthorized />} />
               </Routes>
