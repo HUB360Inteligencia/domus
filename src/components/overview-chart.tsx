@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { useTheme } from "@/components/theme-provider";
 
-interface ChartData {
+export interface ChartData {
   name: string;
   income: number;
   expenses: number;

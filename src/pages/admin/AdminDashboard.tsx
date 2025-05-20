@@ -23,11 +23,11 @@ interface ClientsByPlanData {
   value: number;
 }
 
-// Interface for revenue chart data
-interface RevenueChartData {
+// Interface for chart data that matches the OverviewChart component's expected format
+interface ChartData {
   name: string;
-  revenue: number;
-  newClients: number;
+  income: number;
+  expenses: number;
 }
 
 export default function AdminDashboard() {
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   const { data: plans, isLoading: isPlansLoading } = usePlans();
   
   const [clientsByPlan, setClientsByPlan] = useState<ClientsByPlanData[]>([]);
-  const [revenueData, setRevenueData] = useState<RevenueChartData[]>([]);
+  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
   const [financialStats, setFinancialStats] = useState({
     mrr: "R$ 0,00",
     totalClients: 0,
@@ -69,17 +69,20 @@ export default function AdminDashboard() {
         growthRate: "+8%"
       });
       
-      // Generate revenue chart data (for demo)
+      // Generate revenue chart data (for demo) - updated to match the ChartData interface
       const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
       const demoRevenueData = months.map((month, index) => {
         // Starting baseline with some growth
         const baseRevenue = 30000 + (index * 5000);
         // Add some randomness
         const revenue = baseRevenue + Math.floor(Math.random() * 10000);
+        // Add expenses (typically lower than income for profitable companies)
+        const expenses = baseRevenue * 0.7 + Math.floor(Math.random() * 5000);
+        
         return {
           name: month,
-          revenue,
-          newClients: Math.floor(Math.random() * 15) + 5
+          income: revenue,
+          expenses: expenses
         };
       });
       
