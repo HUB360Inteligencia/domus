@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -35,8 +36,8 @@ const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
 // Admin Pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminClientsPage = lazy(() => import("@/pages/admin/ClientsPage"));
-const ClientDetailPage from "@/pages/admin/ClientDetailPage";
-const ClientFormPage from "@/pages/admin/ClientFormPage";
+const ClientDetailPage = lazy(() => import("@/pages/admin/ClientDetailPage"));
+const ClientFormPage = lazy(() => import("@/pages/admin/ClientFormPage"));
 
 // Error Pages
 const NotFound = lazy(() => import("@/pages/NotFound"));
