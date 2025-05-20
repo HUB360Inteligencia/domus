@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Map as MapIcon, AlertCircle, Locate, MapPin } from 'lucide-react';
 import { geocodeAddress, updatePropertyCoordinates } from '@/api/properties';
@@ -12,6 +11,9 @@ interface PropertyMapProps {
   city: string;
   state: string;
   propertyId?: string;
+  property_number?: string; // Changed from propertyNumber to property_number to match DB schema
+  complement?: string;
+  neighborhood?: string;
   initialCoords?: { lat: number; lng: number } | null;
   editable?: boolean;
   onCoordsChange?: (coords: { lat: number; lng: number }) => void;
@@ -23,6 +25,8 @@ export function PropertyMap({
   city, 
   state, 
   propertyId,
+  property_number,
+  complement,
   initialCoords,
   editable = false,
   onCoordsChange,
@@ -39,7 +43,8 @@ export function PropertyMap({
   const [isDragging, setIsDragging] = useState(false);
   
   const { token, isLoading: isTokenLoading } = useMapbox();
-  const fullAddress = `${address}, ${city}, ${state}`;
+  // Create a full address string that includes property number and complement
+  const fullAddress = `${address}${property_number ? `, ${property_number}` : ''}${complement ? `, ${complement}` : ''}, ${city}, ${state}`;
 
   // Load Mapbox script dynamically
   useEffect(() => {
@@ -73,7 +78,7 @@ export function PropertyMap({
     const getCoordinates = async () => {
       setIsLocating(true);
       try {
-        const coords = await geocodeAddress(fullAddress);
+        const coords = await geocodeAddress(address, property_number, city, state);
         if (coords) {
           setCoordinates(coords);
           setError(null);
@@ -92,7 +97,7 @@ export function PropertyMap({
     };
 
     getCoordinates();
-  }, [fullAddress, token, initialCoords, onCoordsChange]);
+  }, [fullAddress, token, initialCoords, onCoordsChange, address, city, state, property_number]);
 
   // Initialize map when both script is loaded and coordinates are available
   useEffect(() => {

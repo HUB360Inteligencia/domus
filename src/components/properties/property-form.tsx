@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -391,7 +390,7 @@ export function PropertyForm({
                   <div className="border rounded-md overflow-hidden">
                     <PropertyMap
                       address={currentAddress}
-                      propertyNumber={currentPropertyNumber}
+                      property_number={currentPropertyNumber}
                       city={currentCity}
                       state={currentState}
                       initialCoords={mapCoordinates}

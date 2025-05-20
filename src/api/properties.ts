@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
 
@@ -31,10 +30,11 @@ export const fetchProperties = async (): Promise<Property[]> => {
 
     console.log('Properties fetched successfully:', data?.length || 0);
 
-    // Transform the data to ensure status is of type PropertyStatus
+    // Transform the data to ensure property types are correctly cast
     return (data || []).map(item => ({
       ...item,
-      status: item.status as PropertyStatus
+      status: item.status as PropertyStatus,
+      furnished: item.furnished as FurnishedStatus
     }));
   } catch (err) {
     console.error('Failed to fetch properties:', err);
@@ -69,10 +69,11 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
 
     console.log('Property detail fetch result:', data ? 'Success' : 'Not found');
 
-    // Transform the data to ensure status is of type PropertyStatus
+    // Transform the data to ensure property types are correctly cast
     return data ? {
       ...data,
-      status: data.status as PropertyStatus
+      status: data.status as PropertyStatus,
+      furnished: data.furnished as FurnishedStatus
     } : null;
   } catch (err) {
     console.error(`Failed to fetch property ${id}:`, err);
@@ -134,7 +135,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
 
   return {
     ...updatedData,
-    status: updatedData.status as PropertyStatus
+    status: updatedData.status as PropertyStatus,
+    furnished: updatedData.furnished as FurnishedStatus
   };
 };
 
@@ -168,7 +170,8 @@ export const updatePropertyCoordinates = async ({
 
   return {
     ...data,
-    status: data.status as PropertyStatus
+    status: data.status as PropertyStatus,
+    furnished: data.furnished as FurnishedStatus
   };
 };
 
