@@ -33,6 +33,7 @@ const UserDetailPage = lazy(() => import("@/pages/users/UserDetailPage"));
 const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
 
 // Admin Pages
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminClientsPage = lazy(() => import("@/pages/admin/ClientsPage"));
 
 // Error Pages
@@ -137,7 +138,7 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/admin/clients" replace />} />
+                <Route index element={<AdminDashboard />} />
                 <Route path="clients" element={<AdminClientsPage />} />
                 <Route path="clients/:clientId" element={<div>Cliente detalhe (em desenvolvimento)</div>} />
                 <Route path="clients/new" element={<div>Novo Cliente (em desenvolvimento)</div>} />
