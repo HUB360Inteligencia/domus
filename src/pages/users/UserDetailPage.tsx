@@ -61,7 +61,7 @@ export default function UserDetailPage() {
     return (
       <div className="container py-6">
         <PageHeader
-          heading="Usuário não encontrado"
+          title="Usuário não encontrado"
           description="O usuário requisitado não foi encontrado."
         >
           <Button onClick={() => navigate("/users")}>Voltar</Button>
@@ -73,7 +73,7 @@ export default function UserDetailPage() {
   return (
     <div className="container py-6">
       <PageHeader
-        heading={`${user.profile?.first_name || ''} ${user.profile?.last_name || ''}`}
+        title={`${user.profile?.first_name || ''} ${user.profile?.last_name || ''}`}
         description={user.profile?.email}
       >
         <Button onClick={() => navigate("/users")}>Voltar</Button>

@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "@/lib/auth";
 
-export interface UserWithRole extends AuthUser {
+export interface UserWithRole extends Omit<AuthUser, 'role'> {
   role?: string;
   created_at?: string;
 }

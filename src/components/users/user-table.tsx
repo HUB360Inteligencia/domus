@@ -39,7 +39,7 @@ import { useAuth } from "@/lib/auth";
 import { AuthUser } from "@/lib/auth";
 import { toast } from "sonner";
 
-interface User extends AuthUser {
+interface User extends Omit<AuthUser, 'role'> {
   email?: string;
   role?: string;
   created_at?: string;

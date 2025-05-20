@@ -24,9 +24,9 @@ export default function UsersPage() {
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data, error } = await fetch("/api/users");
-      if (error) throw error;
-      return data || [];
+      const response = await fetch("/api/users");
+      if (!response.ok) throw new Error("Failed to fetch users");
+      return response.json();
     },
   });
 
@@ -44,7 +44,7 @@ export default function UsersPage() {
   return (
     <div className="container mx-auto py-6 space-y-4">
       <PageHeader
-        heading="Gerenciamento de Usuários"
+        title="Gerenciamento de Usuários"
         description="Gerencie os usuários e suas permissões no sistema."
       >
         {canInviteUsers && (

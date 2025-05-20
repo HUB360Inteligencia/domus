@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,11 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { UserRole } from "@/lib/auth";
 
 interface UserRolesFormProps {
   userId: string;
-  currentRole?: UserRole | null;
+  currentRole?: string | null;
 }
 
 interface Role {

@@ -92,7 +92,7 @@ export default function UserInvitePage() {
   return (
     <div className="container py-6">
       <PageHeader
-        heading="Convidar Usuário"
+        title="Convidar Usuário"
         description="Envie um convite por email para um novo usuário."
       >
         <Button onClick={() => navigate("/users")}>Voltar</Button>
