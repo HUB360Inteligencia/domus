@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
 
@@ -104,10 +105,11 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
     throw new Error(error.message);
   }
 
-  // Transform the data to ensure status is of type PropertyStatus
+  // Transform the data to ensure property types are correctly cast
   return {
     ...data,
-    status: data.status as PropertyStatus
+    status: data.status as PropertyStatus,
+    furnished: data.furnished as FurnishedStatus
   };
 };
 
