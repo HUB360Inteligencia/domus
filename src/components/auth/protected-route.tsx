@@ -14,7 +14,7 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   const { user, session, isLoading, hasPermission } = useAuth();
   const location = useLocation();
 
-  // Verificar se o token está expirado
+  // Verificar se o token está expirado, mas só redirecionar se realmente estiver
   useEffect(() => {
     if (session) {
       const tokenExpiry = new Date(session.expires_at * 1000);
@@ -23,7 +23,7 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
       if (isExpired) {
         console.log('Token expired in protected route, cleaning up auth state');
         cleanupAuthState();
-        // Forçar atualização da página ao invés de usar Navigate
+        // Só redirecionar se o token estiver realmente expirado
         window.location.href = '/login';
       }
     }
@@ -39,9 +39,8 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
 
   if (!user || !session) {
     console.log('No user or session in protected route, redirecting to login');
-    // Limpar estado de autenticação antes de redirecionar
-    cleanupAuthState();
-    // Redirect to login but save the current location they tried to access
+    // Não limpar o estado de autenticação aqui para evitar problemas
+    // Apenas redirecionar para login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

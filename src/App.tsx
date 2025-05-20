@@ -12,6 +12,9 @@ import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import PropertyFormPage from './pages/PropertyFormPage';
+import ContractsPage from './pages/ContractsPage';
+import ContractDetailPage from './pages/ContractDetailPage';
+import DocumentsPage from './pages/DocumentsPage';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 
@@ -40,20 +43,22 @@ function App() {
                   </ProtectedRoute>
                 }>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  
+                  {/* Properties Routes */}
                   <Route path="/properties" element={<Properties />} />
                   <Route path="/properties/detail" element={<PropertyDetailPage />} />
                   <Route path="/properties/new" element={<PropertyFormPage />} />
                   <Route path="/properties/edit" element={<PropertyFormPage />} />
                   
                   {/* Contracts Routes */}
-                  <Route path="/contracts" element={<Properties />} />
-                  <Route path="/contracts/detail" element={<PropertyDetailPage />} />
+                  <Route path="/contracts" element={<ContractsPage />} />
+                  <Route path="/contracts/detail" element={<ContractDetailPage />} />
                   <Route path="/contracts/new" element={<PropertyFormPage />} />
                   <Route path="/contracts/edit" element={<PropertyFormPage />} />
 
                   {/* Documents Routes */}
-                  <Route path="/documents" element={<Properties />} />
-
+                  <Route path="/documents" element={<DocumentsPage />} />
+                  
                   <Route path="*" element={<NotFound />} />
                 </Route>
                 <Route path="/unauthorized" element={<Unauthorized />} />
