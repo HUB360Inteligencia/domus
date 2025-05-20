@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Separator } from "@/components/ui/separator";
 import { useContracts } from "@/hooks/use-contracts";
 import { Document as ContractDocument } from "@/types/contract";
+import { downloadDocument } from "@/api/documents";
 
 export default function ContractDetailPage() {
   const navigate = useNavigate();
@@ -44,12 +45,12 @@ export default function ContractDetailPage() {
     );
   }
 
-  const handleDownloadDocument = async (document: ContractDocument) => {
+  const handleDownloadDocument = async (doc: ContractDocument) => {
     try {
       // Create a temporary anchor element to download the file
-      const a = document.createElement('a');
-      a.href = document.file_path;
-      a.download = document.name;
+      const a = window.document.createElement('a');
+      a.href = doc.file_path;
+      a.download = doc.name;
       window.document.body.appendChild(a);
       a.click();
       window.document.body.removeChild(a);
@@ -97,6 +98,7 @@ export default function ContractDetailPage() {
                    selectedContract.status === "pending" ? "Pendente" :
                    selectedContract.status === "expired" ? "Expirado" :
                    selectedContract.status === "draft" ? "Rascunho" :
+                   selectedContract.status === "canceled" ? "Cancelado" :
                    selectedContract.status}
                 </Badge>
               </div>
