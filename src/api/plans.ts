@@ -10,7 +10,7 @@ export interface Plan {
   features?: Json; // Changed from Record<string, any> to Json
   max_properties?: number;
   max_users?: number;
-  interval: 'monthly' | 'yearly';
+  interval: string; // Changed from 'monthly' | 'yearly' to string to match database
   is_active: boolean;
   created_at: string;
   updated_at: string;
