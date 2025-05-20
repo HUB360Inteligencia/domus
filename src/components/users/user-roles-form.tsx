@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Database } from "@/integrations/supabase/types";
 
 import {
   Card,
@@ -20,19 +22,22 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Type for app_role from Supabase
+type AppRole = Database["public"]["Enums"]["app_role"];
+
 interface UserRolesFormProps {
   userId: string;
-  currentRole?: string | null;
+  currentRole?: AppRole | string | null;
 }
 
 interface Role {
   id: string;
-  name: string;
+  name: AppRole;
   description: string | null;
 }
 
 export function UserRolesForm({ userId, currentRole }: UserRolesFormProps) {
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<AppRole | string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Buscar todas as funções disponíveis
@@ -62,7 +67,7 @@ export function UserRolesForm({ userId, currentRole }: UserRolesFormProps) {
       const { data: roleData } = await supabase
         .from("roles")
         .select("id")
-        .eq("name", selectedRole)
+        .eq("name", selectedRole as AppRole)
         .single();
 
       if (!roleData) throw new Error("Função não encontrada");

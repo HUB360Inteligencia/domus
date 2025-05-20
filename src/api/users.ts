@@ -1,9 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "@/lib/auth";
+import { Database } from "@/integrations/supabase/types";
+
+// Type for app_role from Supabase
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export interface UserWithRole extends Omit<AuthUser, 'role'> {
-  role?: string;
+  role?: AppRole | string;
   created_at?: string;
 }
 
@@ -99,7 +103,7 @@ export async function updateUserProfile(
 }
 
 // Atualizar função do usuário
-export async function updateUserRole(userId: string, roleName: string) {
+export async function updateUserRole(userId: string, roleName: AppRole) {
   try {
     // Buscar ID da função pelo nome
     const { data: roleData, error: roleError } = await supabase
