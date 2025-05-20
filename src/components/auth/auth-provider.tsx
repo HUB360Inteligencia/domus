@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext, AuthUser, fetchUserProfile, fetchUserRole } from '@/lib/auth';
@@ -21,6 +22,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const profile = await fetchUserProfile(session.user.id);
       const role = await fetchUserRole(session.user.id);
+      
+      console.log('User role fetched:', role);
 
       setUser({
         id: session.user.id,
@@ -39,7 +42,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         'users.view', 
         'users.invite',
         'settings.view', 
-        'settings.edit'
+        'settings.edit',
+        'clients.view', // Added clients.view to pre-fetched permissions
       ];
       
       const permissionResults = {};
@@ -49,6 +53,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           permission_name: perm
         });
         permissionResults[perm] = data || false;
+        console.log(`Permission check for ${perm}:`, data);
       }
       
       setPermissions(permissionResults);
@@ -282,29 +287,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   function hasPermission(permission: string): boolean {
+    console.log(`Checking permission ${permission} for user with role:`, user?.role);
+    
     // If already cached, return immediately
     if (permissions[permission] !== undefined) {
+      console.log(`Permission ${permission} cached result:`, permissions[permission]);
       return permissions[permission];
     }
     
-    // Super admin bypass
-    if (user?.role === 'admin') {
+    // Super admin bypass - FIXED: now checks for both 'admin' and 'system_admin' roles
+    if (user?.role === 'admin' || user?.role === 'system_admin') {
+      console.log(`User has admin/system_admin role, granting permission ${permission}`);
       return true;
     }
     
     // No admin so we need to fetch permission asynchronously
     if (user) {
+      console.log(`Fetching permission ${permission} for user ${user.id}`);
       supabase.rpc('user_has_permission', { 
         user_id: user.id,
         permission_name: permission
-      }).then(({ data }) => {
-        setPermissions(prev => ({
-          ...prev,
-          [permission]: data || false
-        }));
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error(`Error checking permission ${permission}:`, error);
+        } else {
+          console.log(`Permission ${permission} RPC result:`, data);
+          setPermissions(prev => ({
+            ...prev,
+            [permission]: data || false
+          }));
+        }
       });
     }
     
+    // Since we couldn't determine immediately, default to false
+    // This will be updated when the RPC call completes
+    console.log(`Default deny for permission ${permission} (async check in progress)`);
     return false;
   }
 

@@ -14,6 +14,17 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   const { user, session, isLoading, hasPermission } = useAuth();
   const location = useLocation();
 
+  // Add logging for debugging permission checks
+  useEffect(() => {
+    if (requiredPermission && user) {
+      console.log(`ProtectedRoute checking permission: ${requiredPermission} for user:`, {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      });
+    }
+  }, [requiredPermission, user]);
+
   // Verificar se o token está expirado, mas só redirecionar se realmente estiver
   useEffect(() => {
     if (session) {
@@ -45,8 +56,14 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   }
 
   // Check for required permission if specified
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (requiredPermission) {
+    const hasAccess = hasPermission(requiredPermission);
+    console.log(`Permission check result for ${requiredPermission}:`, hasAccess);
+    
+    if (!hasAccess) {
+      console.log(`Access denied for ${requiredPermission}, redirecting to unauthorized`);
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return <>{children}</>;
