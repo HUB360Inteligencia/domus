@@ -1,9 +1,9 @@
-
 import { useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext, AuthUser, fetchUserProfile, fetchUserRole } from '@/lib/auth';
 import { Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { cleanupAuthState } from '@/utils/auth-cleanup';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -18,76 +18,137 @@ export function AuthProvider({ children }: AuthProviderProps) {
   async function refreshUserData(session: Session) {
     if (!session?.user) return;
 
-    const profile = await fetchUserProfile(session.user.id);
-    const role = await fetchUserRole(session.user.id);
+    try {
+      const profile = await fetchUserProfile(session.user.id);
+      const role = await fetchUserRole(session.user.id);
 
-    setUser({
-      id: session.user.id,
-      email: session.user.email,
-      profile,
-      role
-    });
-
-    // Pre-fetch some common permissions for better performance
-    const commonPermissions = [
-      'properties.view', 
-      'properties.create', 
-      'properties.edit',
-      'contracts.view', 
-      'contracts.create', 
-      'users.view', 
-      'users.invite',
-      'settings.view', 
-      'settings.edit'
-    ];
-    
-    const permissionResults = {};
-    for (const perm of commonPermissions) {
-      const { data } = await supabase.rpc('user_has_permission', { 
-        user_id: session.user.id,
-        permission_name: perm
+      setUser({
+        id: session.user.id,
+        email: session.user.email,
+        profile,
+        role
       });
-      permissionResults[perm] = data || false;
+
+      // Pre-fetch some common permissions for better performance
+      const commonPermissions = [
+        'properties.view', 
+        'properties.create', 
+        'properties.edit',
+        'contracts.view', 
+        'contracts.create', 
+        'users.view', 
+        'users.invite',
+        'settings.view', 
+        'settings.edit'
+      ];
+      
+      const permissionResults = {};
+      for (const perm of commonPermissions) {
+        const { data } = await supabase.rpc('user_has_permission', { 
+          user_id: session.user.id,
+          permission_name: perm
+        });
+        permissionResults[perm] = data || false;
+      }
+      
+      setPermissions(permissionResults);
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      // If we get an error fetching user data, the session might be invalid
+      if (String(error).includes('401') || String(error).includes('Unauthorized')) {
+        handleSessionError();
+      }
     }
+  }
+
+  // Handle expired or invalid sessions
+  function handleSessionError() {
+    console.log('Handling session error, cleaning up auth state');
+    cleanupAuthState();
+    setUser(null);
+    setSession(null);
+    setPermissions({});
     
-    setPermissions(permissionResults);
+    // Redirect to login with a page reload to clear any React state
+    window.location.href = '/login';
   }
 
   useEffect(() => {
+    let mounted = true;
+
     async function getInitialSession() {
       setIsLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
+        // Set up auth state listener FIRST to avoid missing auth events
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          console.log('Auth state changed:', event);
+          
+          if (mounted) {
+            setSession(newSession);
+          }
+          
+          if (event === 'SIGNED_IN' && newSession) {
+            // Use setTimeout to avoid potential deadlocks with Supabase client
+            setTimeout(() => {
+              if (mounted) {
+                refreshUserData(newSession);
+              }
+            }, 0);
+          } else if (event === 'SIGNED_OUT') {
+            if (mounted) {
+              setUser(null);
+              setPermissions({});
+            }
+          } else if (event === 'TOKEN_REFRESHED') {
+            console.log('Token refreshed successfully');
+          }
+        });
+
+        // THEN check for existing session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('Initial session check:', initialSession ? 'Session exists' : 'No session');
         
-        if (session) {
-          await refreshUserData(session);
+        if (mounted) {
+          setSession(initialSession);
+        
+          if (initialSession) {
+            await refreshUserData(initialSession);
+          }
+          
+          setIsLoading(false);
         }
+
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Error getting initial session:', error);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     getInitialSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      setSession(newSession);
-      
-      if (event === 'SIGNED_IN' && newSession) {
-        await refreshUserData(newSession);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setPermissions({});
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function signIn(email: string, password: string) {
     try {
+      // Limpar estado de autenticação anterior
+      cleanupAuthState();
+      
+      // Tentar fazer logout global para garantir estado limpo
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continuar mesmo se falhar
+        console.log('Error during global signout:', err);
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -97,6 +158,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         toast.error(error.message);
         return Promise.reject(error);
       }
+      
+      // Forçar atualização da página para obter estado limpo
+      window.location.href = '/dashboard';
+      
     } catch (error) {
       toast.error('Ocorreu um erro durante o login');
       return Promise.reject(error);
@@ -105,6 +170,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function signUp(email: string, password: string, userData?: { first_name?: string; last_name?: string }) {
     try {
+      // Limpar estado de autenticação anterior
+      cleanupAuthState();
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -127,10 +195,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function signOut() {
     try {
-      await supabase.auth.signOut();
+      // Limpar estado de autenticação
+      cleanupAuthState();
+      
+      // Tentar fazer logout global
+      await supabase.auth.signOut({ scope: 'global' });
+      
       toast.success('Você saiu com sucesso');
+      
+      // Forçar atualização da página para obter estado limpo
+      window.location.href = '/login';
     } catch (error) {
       toast.error('Ocorreu um erro ao sair');
+      // Ainda assim, tente redirecionar para login
+      window.location.href = '/login';
       return Promise.reject(error);
     }
   }
