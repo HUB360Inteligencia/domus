@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +49,7 @@ export default function ClientFormPage() {
   });
 
   // Preencher o formulário com os dados existentes quando estiver editando
-  useState(() => {
+  useEffect(() => {
     if (isEditing && existingClient) {
       form.reset({
         name: existingClient.name,
@@ -59,7 +59,7 @@ export default function ClientFormPage() {
         is_active: existingClient.is_active,
       });
     }
-  });
+  }, [existingClient, isEditing, form]);
 
   async function onSubmit(data: ClientFormValues) {
     setIsSubmitting(true);
@@ -68,7 +68,16 @@ export default function ClientFormPage() {
         await updateClientMutation.mutateAsync(data);
         toast.success("Cliente atualizado com sucesso!");
       } else {
-        const newClient = await createClientMutation.mutateAsync(data);
+        // Ensure all required fields are present for create operation
+        const newClientData = {
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          document_number: data.document_number,
+          is_active: data.is_active
+        };
+        
+        const newClient = await createClientMutation.mutateAsync(newClientData);
         toast.success("Cliente criado com sucesso!");
         navigate(`/admin/clients/${newClient.id}`);
       }
