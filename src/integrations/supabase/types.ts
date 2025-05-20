@@ -9,6 +9,274 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clauses: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_standard: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          is_standard?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_standard?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contract_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          created_at: string
+          deposit_value: number | null
+          document_url: string | null
+          end_date: string
+          has_renewal_option: boolean | null
+          id: string
+          payment_day: number
+          property_id: string | null
+          renewal_terms: string | null
+          signature_status: string | null
+          special_conditions: string | null
+          start_date: string
+          status: string
+          tenant_contact: string | null
+          tenant_document: string | null
+          tenant_name: string
+          terms: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          deposit_value?: number | null
+          document_url?: string | null
+          end_date: string
+          has_renewal_option?: boolean | null
+          id?: string
+          payment_day: number
+          property_id?: string | null
+          renewal_terms?: string | null
+          signature_status?: string | null
+          special_conditions?: string | null
+          start_date: string
+          status: string
+          tenant_contact?: string | null
+          tenant_document?: string | null
+          tenant_name: string
+          terms?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          deposit_value?: number | null
+          document_url?: string | null
+          end_date?: string
+          has_renewal_option?: boolean | null
+          id?: string
+          payment_day?: number
+          property_id?: string | null
+          renewal_terms?: string | null
+          signature_status?: string | null
+          special_conditions?: string | null
+          start_date?: string
+          status?: string
+          tenant_contact?: string | null
+          tenant_document?: string | null
+          tenant_name?: string
+          terms?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          category: string
+          contract_id: string | null
+          created_at: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          is_encrypted: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          contract_id?: string | null
+          created_at?: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          is_encrypted?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          contract_id?: string | null
+          created_at?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          is_encrypted?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          app_notifications: boolean | null
+          contract_expiration_alert: boolean | null
+          contract_expiration_days: number[] | null
+          contract_payment_alert: boolean | null
+          contract_renewal_alert: boolean | null
+          created_at: string
+          email_notifications: boolean | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_notifications?: boolean | null
+          contract_expiration_alert?: boolean | null
+          contract_expiration_days?: number[] | null
+          contract_payment_alert?: boolean | null
+          contract_renewal_alert?: boolean | null
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_notifications?: boolean | null
+          contract_expiration_alert?: boolean | null
+          contract_expiration_days?: number[] | null
+          contract_payment_alert?: boolean | null
+          contract_renewal_alert?: boolean | null
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          related_id: string | null
+          related_to: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_id?: string | null
+          related_to?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_id?: string | null
+          related_to?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string | null

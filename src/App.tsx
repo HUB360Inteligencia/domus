@@ -44,6 +44,16 @@ function App() {
                   <Route path="/properties/detail" element={<PropertyDetailPage />} />
                   <Route path="/properties/new" element={<PropertyFormPage />} />
                   <Route path="/properties/edit" element={<PropertyFormPage />} />
+                  
+                  {/* Contracts Routes */}
+                  <Route path="/contracts" element={<Properties />} />
+                  <Route path="/contracts/detail" element={<PropertyDetailPage />} />
+                  <Route path="/contracts/new" element={<PropertyFormPage />} />
+                  <Route path="/contracts/edit" element={<PropertyFormPage />} />
+
+                  {/* Documents Routes */}
+                  <Route path="/documents" element={<Properties />} />
+
                   <Route path="*" element={<NotFound />} />
                 </Route>
                 <Route path="/unauthorized" element={<Unauthorized />} />
