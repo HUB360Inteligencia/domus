@@ -1,12 +1,13 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import Index from './pages/Index';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import AuthCallback from './pages/AuthCallback';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import AuthCallback from './pages/auth/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
 import PropertyDetailPage from './pages/PropertyDetailPage';
@@ -14,9 +15,9 @@ import PropertyFormPage from './pages/PropertyFormPage';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 
-import AppLayout from './layouts/AppLayout';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './lib/auth';
+import AppLayout from './components/layout/app-layout';
+import { ProtectedRoute } from './components/auth/protected-route';
+import { AuthProvider } from './components/auth/auth-provider';
 import { MapboxProvider } from './contexts/MapboxContext';
 
 function App() {
