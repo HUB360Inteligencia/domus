@@ -35,6 +35,15 @@ export interface Property {
   updated_at: string;
   latitude?: number | null;
   longitude?: number | null;
+  // Novos campos
+  purchase_date?: string | null;
+  purchase_value?: number | null;
+  tenant_name?: string | null;
+  tenant_contact?: string | null;
+  agency_name?: string | null;
+  agency_responsible?: string | null;
+  agency_contact?: string | null;
+  square_meter_value?: number | null;
 }
 
 export interface PropertyFormData {
@@ -60,4 +69,13 @@ export interface PropertyFormData {
   features?: Record<string, any>;
   latitude?: number | null;
   longitude?: number | null;
+  // Novos campos
+  purchase_date?: string | null;
+  purchase_value?: number | null;
+  tenant_name?: string | null;
+  tenant_contact?: string | null;
+  agency_name?: string | null;
+  agency_responsible?: string | null;
+  agency_contact?: string | null;
+  square_meter_value?: number | null;
 }

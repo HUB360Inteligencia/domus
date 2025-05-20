@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Building, Upload, Loader2, Search, MapPin } from 'lucide-react';
+import { Building, Upload, Loader2, Search, MapPin, Calendar } from 'lucide-react';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { toast } from 'sonner';
 import { PropertyMap } from './property-map';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
@@ -37,6 +43,15 @@ const formSchema = z.object({
   furnished: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  // Novos campos
+  purchase_date: z.string().optional().nullable(),
+  purchase_value: z.coerce.number().positive().optional().nullable(),
+  tenant_name: z.string().optional().nullable(),
+  tenant_contact: z.string().optional().nullable(),
+  agency_name: z.string().optional().nullable(),
+  agency_responsible: z.string().optional().nullable(),
+  agency_contact: z.string().optional().nullable(),
+  square_meter_value: z.coerce.number().positive().optional().nullable(),
 });
 
 interface PropertyFormProps {
@@ -59,6 +74,7 @@ export function PropertyForm({
   const [isSearchingCEP, setIsSearchingCEP] = useState(false);
   const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   // Check if we have initial coordinates
   useEffect(() => {
@@ -99,8 +115,29 @@ export function PropertyForm({
       longitude: initialData?.longitude !== undefined && initialData.longitude !== null 
         ? Number(initialData.longitude) 
         : undefined,
+      // Novos campos
+      purchase_date: initialData?.purchase_date || null,
+      purchase_value: initialData?.purchase_value || null,
+      tenant_name: initialData?.tenant_name || null,
+      tenant_contact: initialData?.tenant_contact || null,
+      agency_name: initialData?.agency_name || null,
+      agency_responsible: initialData?.agency_responsible || null,
+      agency_contact: initialData?.agency_contact || null,
+      square_meter_value: initialData?.square_meter_value || null,
     },
   });
+
+  // Calcular valor do m² automaticamente quando área ou valor são alterados
+  const area = form.watch('area');
+  const value = form.watch('value');
+  const status = form.watch('status');
+  
+  useEffect(() => {
+    if (area && value && area > 0) {
+      const squareMeterValue = value / area;
+      form.setValue('square_meter_value', squareMeterValue);
+    }
+  }, [area, value, form]);
 
   // Effect to update form values when initialData changes
   useEffect(() => {
@@ -131,6 +168,15 @@ export function PropertyForm({
         longitude: initialData.longitude !== undefined && initialData.longitude !== null 
           ? Number(initialData.longitude) 
           : undefined,
+        // Novos campos
+        purchase_date: initialData.purchase_date || null,
+        purchase_value: initialData.purchase_value || null,
+        tenant_name: initialData.tenant_name || null,
+        tenant_contact: initialData.tenant_contact || null,
+        agency_name: initialData.agency_name || null,
+        agency_responsible: initialData.agency_responsible || null,
+        agency_contact: initialData.agency_contact || null,
+        square_meter_value: initialData.square_meter_value || null,
       });
       
       if (initialData.image_url) {
@@ -215,422 +261,624 @@ export function PropertyForm({
   const canShowMap = !!currentAddress && !!currentCity && !!currentState;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>Informações do Imóvel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Título do imóvel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Descrição do imóvel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* CEP Field with search button */}
-              <FormField
-                control={form.control}
-                name="zip_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CEP</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl>
-                        <Input 
-                          placeholder="CEP (apenas números)" 
-                          {...field}
-                          onChange={(e) => {
-                            const formattedCEP = formatCEP(e.target.value);
-                            field.onChange(formattedCEP);
-                          }}
-                        />
-                      </FormControl>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={handleCEPLookup}
-                        disabled={isSearchingCEP}
-                      >
-                        {isSearchingCEP ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Search className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Address fields - now including number, complement, and neighborhood */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Logradouro</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Rua, Avenida, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="property_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Número" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="complement"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Complemento</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Apto, Bloco, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="neighborhood"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bairro</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Bairro" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cidade" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Estado" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Map section */}
-              {canShowMap && showMap && (
-                <div className="pt-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <FormLabel className="text-base">Localização no Mapa</FormLabel>
-                    <div className="text-xs text-muted-foreground">
-                      Arraste o marcador para ajustar a posição do imóvel
-                    </div>
-                  </div>
-                  <div className="border rounded-md overflow-hidden">
-                    <PropertyMap
-                      address={currentAddress}
-                      property_number={currentPropertyNumber}
-                      city={currentCity}
-                      state={currentState}
-                      initialCoords={mapCoordinates}
-                      editable={true}
-                      onCoordsChange={handleCoordsChange}
+    <div className="space-y-6">
+      <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-4 mb-4">
+          <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
+          <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
+          <TabsTrigger value="rental">Dados do Locatário</TabsTrigger>
+          <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
+        </TabsList>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <TabsContent value="details" className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações do Imóvel</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Título</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Título do imóvel" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Descrição do imóvel" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* CEP Field with search button */}
+                    <FormField
+                      control={form.control}
+                      name="zip_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input 
+                                placeholder="CEP (apenas números)" 
+                                {...field}
+                                onChange={(e) => {
+                                  const formattedCEP = formatCEP(e.target.value);
+                                  field.onChange(formattedCEP);
+                                }}
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={handleCEPLookup}
+                              disabled={isSearchingCEP}
+                            >
+                              {isSearchingCEP ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Search className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Address fields - now including number, complement, and neighborhood */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Logradouro</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Rua, Avenida, etc." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="property_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Número</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Número" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="complement"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Complemento</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Apto, Bloco, etc." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="neighborhood"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bairro</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Bairro" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cidade</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Cidade" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estado</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Estado" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Map section */}
+                    {canShowMap && showMap && (
+                      <div className="pt-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel className="text-base">Localização no Mapa</FormLabel>
+                          <div className="text-xs text-muted-foreground">
+                            Arraste o marcador para ajustar a posição do imóvel
+                          </div>
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                          <PropertyMap
+                            address={currentAddress}
+                            property_number={currentPropertyNumber}
+                            city={currentCity}
+                            state={currentState}
+                            initialCoords={mapCoordinates}
+                            editable={true}
+                            onCoordsChange={handleCoordsChange}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo de imóvel" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="apartment">Apartamento</SelectItem>
+                                <SelectItem value="house">Casa</SelectItem>
+                                <SelectItem value="commercial">Comercial</SelectItem>
+                                <SelectItem value="land">Terreno</SelectItem>
+                                <SelectItem value="rural">Rural</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="available">Disponível</SelectItem>
+                                <SelectItem value="rented">Alugado</SelectItem>
+                                <SelectItem value="airbnb">Airbnb</SelectItem>
+                                <SelectItem value="maintenance">Em manutenção</SelectItem>
+                                <SelectItem value="sold">Vendido</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* Property value and condo fee */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="value"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Valor do imóvel" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="condo_fee"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Condomínio</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Valor do condomínio" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="square_meter_value"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do m²</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Valor do m²" {...field} readOnly />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="area"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Área (m²)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Área" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="floor_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Andar</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Número do andar" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="furnished"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mobiliado</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || "not_furnished"}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma opção" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="not_furnished">Não mobiliado</SelectItem>
+                                <SelectItem value="partially_furnished">Parcialmente mobiliado</SelectItem>
+                                <SelectItem value="fully_furnished">Totalmente mobiliado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="bedrooms"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quartos</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Número de quartos" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="bathrooms"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Banheiros</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Número de banheiros" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="garage_spots"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Vagas de Garagem</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Número de vagas" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="purchase" className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dados de Compra</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="purchase_date"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Data de Compra</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
+                                    ) : (
+                                      <span>Selecione uma data</span>
+                                    )}
+                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={field.value ? new Date(field.value) : undefined}
+                                  onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                                  initialFocus
+                                  locale={ptBR}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="purchase_value"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor de Compra</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Valor de compra do imóvel" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="rental" className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dados do Locatário</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-muted-foreground mb-4">
+                      {status === 'rented' ? 
+                        "Preencha os dados do locatário atual." : 
+                        "Os dados do locatário são aplicáveis apenas quando o imóvel está alugado."}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="tenant_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome do Locatário</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Nome completo do locatário" 
+                                {...field} 
+                                value={field.value || ''}
+                                disabled={status !== 'rented'} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="tenant_contact"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contato do Locatário</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Telefone ou email" 
+                                {...field} 
+                                value={field.value || ''}
+                                disabled={status !== 'rented'} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="agency" className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dados da Imobiliária</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="agency_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da Imobiliária</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome da imobiliária" {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="agency_responsible"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Responsável na Imobiliária</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nome do corretor responsável" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="agency_contact"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contato da Imobiliária</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Telefone ou email" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              {activeTab === "details" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Imagem do Imóvel</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="h-48 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Property preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Building className="h-20 w-20 text-muted-foreground" />
+                      )}
+                    </div>
+                    
+                    <div>
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="mb-2"
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de imóvel" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="apartment">Apartamento</SelectItem>
-                          <SelectItem value="house">Casa</SelectItem>
-                          <SelectItem value="commercial">Comercial</SelectItem>
-                          <SelectItem value="land">Terreno</SelectItem>
-                          <SelectItem value="rural">Rural</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="available">Disponível</SelectItem>
-                          <SelectItem value="rented">Alugado</SelectItem>
-                          <SelectItem value="airbnb">Airbnb</SelectItem>
-                          <SelectItem value="maintenance">Em manutenção</SelectItem>
-                          <SelectItem value="sold">Vendido</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {/* Property value and condo fee */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Valor do imóvel" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="condo_fee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor do Condomínio</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Valor do condomínio" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="area"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Área (m²)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Área" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="floor_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Andar</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Número do andar" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="furnished"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mobiliado</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || "not_furnished"}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma opção" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="not_furnished">Não mobiliado</SelectItem>
-                          <SelectItem value="partially_furnished">Parcialmente mobiliado</SelectItem>
-                          <SelectItem value="fully_furnished">Totalmente mobiliado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="bedrooms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quartos</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Número de quartos" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="bathrooms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Banheiros</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Número de banheiros" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="garage_spots"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vagas de Garagem</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Número de vagas" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="flex justify-between mt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onCancel}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>Salvar</>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Imagem do Imóvel</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="h-48 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Property preview" className="w-full h-full object-cover" />
-            ) : (
-              <Building className="h-20 w-20 text-muted-foreground" />
-            )}
-          </div>
-          
-          <div>
-            <Input 
-              type="file" 
-              accept="image/*"
-              onChange={handleImageChange}
-              className="mb-2"
-            />
-            <div className="text-xs text-muted-foreground">
-              Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <div className="flex justify-between mt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>Salvar</>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </Tabs>
     </div>
   );
 }

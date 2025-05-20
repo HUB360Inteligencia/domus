@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building, MapPin, Home } from "lucide-react";
+import { Building, MapPin, Home, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PropertyStatus } from "@/types/property";
 
@@ -22,6 +22,8 @@ interface PropertyCardProps {
   type: string;
   status: PropertyStatus;
   value: number;
+  area?: number;
+  square_meter_value?: number;
   imageUrl?: string;
   onSelect?: (id: string) => void;
 }
@@ -35,6 +37,8 @@ export function PropertyCard({
   type,
   status,
   value,
+  area,
+  square_meter_value,
   imageUrl,
   onSelect,
 }: PropertyCardProps) {
@@ -118,6 +122,13 @@ export function PropertyCard({
         <div className="text-xs text-muted-foreground">
           {status === "available" ? "Valor de venda" : "Valor do aluguel"}
         </div>
+        
+        {area && square_meter_value && (
+          <div className="flex items-center mt-2 text-xs text-muted-foreground gap-1">
+            <Square className="h-3 w-3" />
+            <span>{area} m² ({formatCurrency(square_meter_value)}/m²)</span>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex justify-end">
         <Button

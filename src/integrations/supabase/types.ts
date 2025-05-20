@@ -331,6 +331,9 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          agency_contact: string | null
+          agency_name: string | null
+          agency_responsible: string | null
           area: number | null
           bathrooms: number | null
           bedrooms: number | null
@@ -349,8 +352,13 @@ export type Database = {
           longitude: number | null
           neighborhood: string | null
           property_number: string | null
+          purchase_date: string | null
+          purchase_value: number | null
+          square_meter_value: number | null
           state: string
           status: string
+          tenant_contact: string | null
+          tenant_name: string | null
           title: string
           type: string
           updated_at: string
@@ -360,6 +368,9 @@ export type Database = {
         }
         Insert: {
           address: string
+          agency_contact?: string | null
+          agency_name?: string | null
+          agency_responsible?: string | null
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -378,8 +389,13 @@ export type Database = {
           longitude?: number | null
           neighborhood?: string | null
           property_number?: string | null
+          purchase_date?: string | null
+          purchase_value?: number | null
+          square_meter_value?: number | null
           state: string
           status: string
+          tenant_contact?: string | null
+          tenant_name?: string | null
           title: string
           type: string
           updated_at?: string
@@ -389,6 +405,9 @@ export type Database = {
         }
         Update: {
           address?: string
+          agency_contact?: string | null
+          agency_name?: string | null
+          agency_responsible?: string | null
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -407,8 +426,13 @@ export type Database = {
           longitude?: number | null
           neighborhood?: string | null
           property_number?: string | null
+          purchase_date?: string | null
+          purchase_value?: number | null
+          square_meter_value?: number | null
           state?: string
           status?: string
+          tenant_contact?: string | null
+          tenant_name?: string | null
           title?: string
           type?: string
           updated_at?: string

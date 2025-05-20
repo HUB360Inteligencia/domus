@@ -1,12 +1,15 @@
 
 import { useState } from 'react';
-import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle } from 'lucide-react';
+import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle, Calendar, Users, Building2 } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PropertyMap } from './property-map';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -33,16 +36,22 @@ export function PropertyDetail({
     setDeleteDialogOpen(false);
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '-';
     return value.toLocaleString('pt-BR', {
       style: 'currency', 
       currency: 'BRL',
     });
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR').format(date);
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('pt-BR').format(date);
+    } catch (e) {
+      return '-';
+    }
   };
 
   const getStatusConfig = (status: string) => {
@@ -132,154 +141,298 @@ export function PropertyDetail({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card className="overflow-hidden">
-            {property.image_url ? (
-              <div className="h-64 w-full">
-                <img 
-                  src={property.image_url} 
-                  alt={property.title}
-                  className="w-full h-full object-cover" 
-                />
-              </div>
-            ) : (
-              <div className="h-64 bg-gradient-to-br from-dark-blue-100 to-dark-blue-200 flex items-center justify-center">
-                <Home className="h-24 w-24 text-white/50" />
-              </div>
-            )}
-            
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Badge className={`${statusConfig.color} text-white`}>
-                    {statusConfig.label}
-                  </Badge>
-                  <CardTitle className="text-2xl mt-2">{property.title}</CardTitle>
-                </div>
-                <div className="text-xl font-bold text-petroleum">
-                  {formatCurrency(property.value)}
-                  <div className="text-xs text-muted-foreground font-normal">
-                    {property.status === 'available' || property.status === 'sold' ? 'Valor de venda' : 'Valor do aluguel'}
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="grid grid-cols-4 mb-4">
+          <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
+          <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
+          <TabsTrigger value="rental">Dados do Locatário</TabsTrigger>
+          <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <Card className="overflow-hidden">
+                {property.image_url ? (
+                  <div className="h-64 w-full">
+                    <img 
+                      src={property.image_url} 
+                      alt={property.title}
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                <MapPin className="h-3 w-3 mr-1" />
-                {property.address}, {property.city}, {property.state}
-                {property.zip_code && ` - ${property.zip_code}`}
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-lg mb-2">Descrição</h3>
-                <p className="text-muted-foreground">
-                  {property.description || "Sem descrição disponível."}
-                </p>
-              </div>
-              
-              {/* Map section with edit location functionality */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-lg">Localização</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsEditingLocation(!isEditingLocation)}
-                  >
-                    {isEditingLocation ? 'Concluir Edição' : 'Ajustar Localização'}
-                  </Button>
-                </div>
-                <PropertyMap 
-                  address={property.address}
-                  city={property.city}
-                  state={property.state}
-                  propertyId={property.id}
-                  initialCoords={initialCoords}
-                  editable={isEditingLocation}
-                />
-              </div>
-              
-              <div>
-                <h3 className="font-medium text-lg mb-2">Características</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="flex items-center">
-                    <Home className="h-4 w-4 mr-2 text-muted-foreground" />
+                ) : (
+                  <div className="h-64 bg-gradient-to-br from-dark-blue-100 to-dark-blue-200 flex items-center justify-center">
+                    <Home className="h-24 w-24 text-white/50" />
+                  </div>
+                )}
+                
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium">Tipo</div>
-                      <div className="text-sm text-muted-foreground">
-                        {getPropertyTypeLabel(property.type)}
+                      <Badge className={`${statusConfig.color} text-white`}>
+                        {statusConfig.label}
+                      </Badge>
+                      <CardTitle className="text-2xl mt-2">{property.title}</CardTitle>
+                    </div>
+                    <div className="text-xl font-bold text-petroleum">
+                      {formatCurrency(property.value)}
+                      <div className="text-xs text-muted-foreground font-normal">
+                        {property.status === 'available' || property.status === 'sold' ? 'Valor de venda' : 'Valor do aluguel'}
                       </div>
                     </div>
                   </div>
                   
-                  {property.area && (
-                    <div className="flex items-center">
-                      <Square className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm font-medium">Área</div>
-                        <div className="text-sm text-muted-foreground">{property.area} m²</div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex items-center text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    {property.address}, {property.city}, {property.state}
+                    {property.zip_code && ` - ${property.zip_code}`}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Descrição</h3>
+                    <p className="text-muted-foreground">
+                      {property.description || "Sem descrição disponível."}
+                    </p>
+                  </div>
                   
-                  {property.bedrooms && (
-                    <div className="flex items-center">
-                      <Bed className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm font-medium">Quartos</div>
-                        <div className="text-sm text-muted-foreground">{property.bedrooms}</div>
-                      </div>
+                  {/* Map section with edit location functionality */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-lg">Localização</h3>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsEditingLocation(!isEditingLocation)}
+                      >
+                        {isEditingLocation ? 'Concluir Edição' : 'Ajustar Localização'}
+                      </Button>
                     </div>
-                  )}
+                    <div className="border rounded-md overflow-hidden">
+                      <PropertyMap 
+                        address={property.address}
+                        city={property.city}
+                        state={property.state}
+                        propertyId={property.id}
+                        initialCoords={initialCoords}
+                        editable={isEditingLocation}
+                      />
+                    </div>
+                  </div>
                   
-                  {property.bathrooms && (
-                    <div className="flex items-center">
-                      <Bath className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm font-medium">Banheiros</div>
-                        <div className="text-sm text-muted-foreground">{property.bathrooms}</div>
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Características</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="flex items-center">
+                        <Home className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm font-medium">Tipo</div>
+                          <div className="text-sm text-muted-foreground">
+                            {getPropertyTypeLabel(property.type)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {property.area && (
+                        <div className="flex items-center">
+                          <Square className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm font-medium">Área</div>
+                            <div className="text-sm text-muted-foreground">{property.area} m²</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {property.square_meter_value && (
+                        <div className="flex items-center">
+                          <Square className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm font-medium">Valor do m²</div>
+                            <div className="text-sm text-muted-foreground">{formatCurrency(property.square_meter_value)}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {property.bedrooms && (
+                        <div className="flex items-center">
+                          <Bed className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm font-medium">Quartos</div>
+                            <div className="text-sm text-muted-foreground">{property.bedrooms}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {property.bathrooms && (
+                        <div className="flex items-center">
+                          <Bath className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm font-medium">Banheiros</div>
+                            <div className="text-sm text-muted-foreground">{property.bathrooms}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Adicionais</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">ID do imóvel</div>
+                    <div className="font-mono text-sm">{property.id}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Criado em</div>
+                    <div>{formatDate(property.created_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Atualizado em</div>
+                    <div>{formatDate(property.updated_at)}</div>
+                  </div>
+                  {hasCoordinates && (
+                    <div>
+                      <div className="text-sm text-muted-foreground">Coordenadas</div>
+                      <div className="font-mono text-xs break-all">
+                        {property.latitude}, {property.longitude}
                       </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="purchase">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados de Compra</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-medium">Data de Compra</h3>
+                  <div className="flex items-center mt-1">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <div className="text-muted-foreground">
+                      {property.purchase_date ? formatDate(property.purchase_date) : "Não informado"}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium">Valor de Compra</h3>
+                  <div className="flex items-center mt-1">
+                    <div className="text-petroleum font-semibold">
+                      {property.purchase_value ? formatCurrency(property.purchase_value) : "Não informado"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
         
-        <div>
+        <TabsContent value="rental">
           <Card>
             <CardHeader>
-              <CardTitle>Informações Adicionais</CardTitle>
+              <CardTitle>Dados do Locatário</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground">ID do imóvel</div>
-                <div className="font-mono text-sm">{property.id}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Criado em</div>
-                <div>{formatDate(property.created_at)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Atualizado em</div>
-                <div>{formatDate(property.updated_at)}</div>
-              </div>
-              {hasCoordinates && (
-                <div>
-                  <div className="text-sm text-muted-foreground">Coordenadas</div>
-                  <div className="font-mono text-xs break-all">
-                    {property.latitude}, {property.longitude}
+              {property.status === 'rented' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-medium">Nome do Locatário</h3>
+                    <div className="flex items-center mt-1">
+                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div className="text-muted-foreground">
+                        {property.tenant_name || "Não informado"}
+                      </div>
+                    </div>
                   </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium">Contato do Locatário</h3>
+                    <div className="flex items-center mt-1">
+                      <div className="text-muted-foreground">
+                        {property.tenant_contact || "Não informado"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>Este imóvel não está alugado atualmente.</p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="agency">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados da Imobiliária</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {property.agency_name || property.agency_responsible || property.agency_contact ? (
+                <div className="grid grid-cols-1 gap-6">
+                  {property.agency_name && (
+                    <div>
+                      <h3 className="text-sm font-medium">Nome da Imobiliária</h3>
+                      <div className="flex items-center mt-1">
+                        <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <div className="text-muted-foreground">
+                          {property.agency_name}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {property.agency_responsible && (
+                      <div>
+                        <h3 className="text-sm font-medium">Responsável na Imobiliária</h3>
+                        <div className="flex items-center mt-1">
+                          <div className="text-muted-foreground">
+                            {property.agency_responsible}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {property.agency_contact && (
+                      <div>
+                        <h3 className="text-sm font-medium">Contato da Imobiliária</h3>
+                        <div className="flex items-center mt-1">
+                          <div className="text-muted-foreground">
+                            {property.agency_contact}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-muted-foreground">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p>Não há dados da imobiliária cadastrados para este imóvel.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
