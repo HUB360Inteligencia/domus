@@ -1,26 +1,42 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Map as MapIcon, AlertCircle } from 'lucide-react';
-import { geocodeAddress } from '@/api/properties';
+import { Map as MapIcon, AlertCircle, Locate, MapPin } from 'lucide-react';
+import { geocodeAddress, updatePropertyCoordinates } from '@/api/properties';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { Button } from '@/components/ui/button';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
+import { toast } from 'sonner';
 
 interface PropertyMapProps {
   address: string;
   city: string;
   state: string;
+  propertyId?: string;
+  initialCoords?: { lat: number; lng: number } | null;
+  editable?: boolean;
+  onCoordsChange?: (coords: { lat: number; lng: number }) => void;
   className?: string;
 }
 
-export function PropertyMap({ address, city, state, className = '' }: PropertyMapProps) {
+export function PropertyMap({ 
+  address, 
+  city, 
+  state, 
+  propertyId,
+  initialCoords,
+  editable = false,
+  onCoordsChange,
+  className = '' 
+}: PropertyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(initialCoords || null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   const { token, isLoading: isTokenLoading } = useMapbox();
   const fullAddress = `${address}, ${city}, ${state}`;
@@ -50,27 +66,33 @@ export function PropertyMap({ address, city, state, className = '' }: PropertyMa
     loadMapboxScript();
   }, [token]);
 
-  // Get coordinates for the address
+  // Get coordinates for the address if they aren't provided
   useEffect(() => {
-    if (!token) return;
+    if (!token || initialCoords) return;
     
     const getCoordinates = async () => {
+      setIsLocating(true);
       try {
         const coords = await geocodeAddress(fullAddress);
         if (coords) {
           setCoordinates(coords);
           setError(null);
+          if (onCoordsChange) {
+            onCoordsChange(coords);
+          }
         } else {
           setError('Não foi possível encontrar coordenadas para este endereço.');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error getting coordinates:', err);
         setError('Erro ao carregar o mapa.');
+      } finally {
+        setIsLocating(false);
       }
     };
 
     getCoordinates();
-  }, [fullAddress, token]);
+  }, [fullAddress, token, initialCoords, onCoordsChange]);
 
   // Initialize map when both script is loaded and coordinates are available
   useEffect(() => {
@@ -84,22 +106,60 @@ export function PropertyMap({ address, city, state, className = '' }: PropertyMa
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
         center: [coordinates.lng, coordinates.lat],
-        zoom: 15
+        zoom: 15,
+        attributionControl: true
       });
 
       // Add navigation control (zoom buttons)
       mapRef.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
 
-      // Add a marker at the property location
-      markerRef.current = new window.mapboxgl.Marker({ color: '#3B82F6' })
-        .setLngLat([coordinates.lng, coordinates.lat])
-        .addTo(mapRef.current);
+      // Add a draggable marker at the property location
+      markerRef.current = new window.mapboxgl.Marker({
+        color: '#3B82F6',
+        draggable: editable
+      })
+      .setLngLat([coordinates.lng, coordinates.lat])
+      .addTo(mapRef.current);
 
       // Add popup with address info
       new window.mapboxgl.Popup({ offset: 25 })
         .setLngLat([coordinates.lng, coordinates.lat])
         .setHTML(`<p class="font-medium">${fullAddress}</p>`)
         .addTo(mapRef.current);
+
+      // Add drag events if the marker is draggable
+      if (editable && markerRef.current) {
+        markerRef.current.on('dragstart', () => {
+          setIsDragging(true);
+        });
+
+        markerRef.current.on('dragend', () => {
+          const lngLat = markerRef.current.getLngLat();
+          const newCoords = { lat: lngLat.lat, lng: lngLat.lng };
+          setCoordinates(newCoords);
+          setIsDragging(false);
+          
+          if (onCoordsChange) {
+            onCoordsChange(newCoords);
+          }
+          
+          // If we have a propertyId, update the database with new coordinates
+          if (propertyId) {
+            updatePropertyCoordinates({
+              id: propertyId,
+              latitude: newCoords.lat,
+              longitude: newCoords.lng
+            })
+            .then(() => {
+              toast.success('Localização atualizada com sucesso');
+            })
+            .catch((err) => {
+              toast.error('Erro ao atualizar localização');
+              console.error('Error updating coordinates:', err);
+            });
+          }
+        });
+      }
 
       // Clean up on unmount
       return () => {
@@ -109,7 +169,49 @@ export function PropertyMap({ address, city, state, className = '' }: PropertyMa
       console.error('Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-  }, [mapLoaded, coordinates, token, fullAddress]);
+  }, [mapLoaded, coordinates, token, fullAddress, editable, propertyId, onCoordsChange]);
+
+  const handleRefreshLocation = async () => {
+    if (!token) return;
+    
+    setIsLocating(true);
+    try {
+      const coords = await geocodeAddress(fullAddress);
+      if (coords) {
+        setCoordinates(coords);
+        setError(null);
+        
+        if (mapRef.current && markerRef.current) {
+          mapRef.current.flyTo({
+            center: [coords.lng, coords.lat],
+            zoom: 15,
+            essential: true
+          });
+          markerRef.current.setLngLat([coords.lng, coords.lat]);
+        }
+        
+        if (onCoordsChange) {
+          onCoordsChange(coords);
+        }
+        
+        if (propertyId) {
+          await updatePropertyCoordinates({
+            id: propertyId,
+            latitude: coords.lat,
+            longitude: coords.lng
+          });
+          toast.success('Localização atualizada com sucesso');
+        }
+      } else {
+        toast.error('Não foi possível geocodificar este endereço');
+      }
+    } catch (err) {
+      console.error('Error refreshing location:', err);
+      toast.error('Erro ao atualizar localização');
+    } finally {
+      setIsLocating(false);
+    }
+  };
 
   if (isTokenLoading) {
     return (
@@ -150,14 +252,23 @@ export function PropertyMap({ address, city, state, className = '' }: PropertyMa
         <div className="text-center p-4">
           <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
           <p className="text-muted-foreground">{error}</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-4"
-            onClick={() => setTokenDialogOpen(true)}
-          >
-            Alterar Token Mapbox
-          </Button>
+          <div className="flex gap-2 justify-center mt-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRefreshLocation}
+              disabled={isLocating}
+            >
+              {isLocating ? 'Buscando...' : 'Tentar novamente'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setTokenDialogOpen(true)}
+            >
+              Alterar Token Mapbox
+            </Button>
+          </div>
           <MapboxTokenDialog 
             isOpen={tokenDialogOpen} 
             onClose={() => setTokenDialogOpen(false)} 
@@ -181,6 +292,25 @@ export function PropertyMap({ address, city, state, className = '' }: PropertyMa
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="h-64 rounded-lg shadow-sm" />
+      {editable && (
+        <div className="absolute top-2 left-2 z-10 flex gap-2">
+          <Button 
+            size="sm" 
+            variant="secondary"
+            onClick={handleRefreshLocation}
+            disabled={isLocating}
+            className="shadow-md bg-white text-gray-800 border border-gray-200"
+          >
+            <Locate className={`h-4 w-4 mr-1 ${isLocating ? 'animate-spin' : ''}`} />
+            {isLocating ? 'Localizando...' : 'Atualizar localização'}
+          </Button>
+        </div>
+      )}
+      {isDragging && editable && (
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-4 py-2 rounded-full text-sm z-10 shadow-lg">
+          <MapPin className="inline-block h-4 w-4 mr-1" /> Arraste para ajustar a localização
+        </div>
+      )}
     </div>
   );
 }

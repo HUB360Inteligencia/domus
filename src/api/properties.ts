@@ -138,6 +138,40 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
 };
 
 /**
+ * Updates a property's coordinates
+ */
+export const updatePropertyCoordinates = async ({ 
+  id, 
+  latitude, 
+  longitude 
+}: { 
+  id: string; 
+  latitude: number; 
+  longitude: number 
+}): Promise<Property> => {
+  console.log(`Updating coordinates for property ${id}:`, { latitude, longitude });
+
+  const { data, error } = await supabase
+    .from('properties')
+    .update({ latitude, longitude })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating property coordinates:', error);
+    throw new Error(error.message);
+  }
+
+  console.log('Property coordinates updated successfully');
+
+  return {
+    ...data,
+    status: data.status as PropertyStatus
+  };
+};
+
+/**
  * Deletes a property
  */
 export const deleteProperty = async (id: string): Promise<void> => {
@@ -196,7 +230,7 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
 };
 
 /**
- * Get coordinates from an address using a geocoding service
+ * Get coordinates from an address using Mapbox Geocoding API
  */
 export const geocodeAddress = async (address: string): Promise<{ lat: number, lng: number } | null> => {
   try {
@@ -212,8 +246,44 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number, ln
       return JSON.parse(cachedResult);
     }
     
-    // For now, let's use location-based coordinates for common Brazilian cities
-    // Later we can integrate with a real geocoding service
+    // Get user's Mapbox token from context
+    const mapboxToken = localStorage.getItem('mapbox_token');
+    
+    if (mapboxToken) {
+      try {
+        // Use Mapbox Geocoding API
+        const encodedAddress = encodeURIComponent(address);
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&limit=1`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Mapbox API returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          // Mapbox returns coordinates as [longitude, latitude]
+          const [lng, lat] = data.features[0].center;
+          
+          const result = { lat, lng };
+          
+          // Cache the result
+          sessionStorage.setItem(cacheKey, JSON.stringify(result));
+          console.log('Geocoded using Mapbox API:', result);
+          return result;
+        } else {
+          console.log('No features returned from Mapbox Geocoding API');
+        }
+      } catch (error) {
+        console.error('Error using Mapbox Geocoding API:', error);
+        // Continue to fallback method if Mapbox fails
+      }
+    }
+    
+    // Fallback: Use our predefined list of city coordinates with random offset
+    console.log('Using fallback geocoding with predefined coordinates');
     
     // Map of cities to their approximate coordinates
     const cityCoordinates: Record<string, { lat: number, lng: number }> = {

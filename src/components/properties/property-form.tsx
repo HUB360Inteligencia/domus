@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Building, Upload, Loader2, Search } from 'lucide-react';
+import { Building, Upload, Loader2, Search, MapPin } from 'lucide-react';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Property, PropertyFormData } from '@/types/property';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { toast } from 'sonner';
+import { PropertyMap } from './property-map';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
@@ -28,6 +29,8 @@ const formSchema = z.object({
   area: z.coerce.number().positive().optional(),
   bedrooms: z.coerce.number().int().optional(),
   bathrooms: z.coerce.number().int().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 interface PropertyFormProps {
@@ -48,9 +51,19 @@ export function PropertyForm({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
   const [isSearchingCEP, setIsSearchingCEP] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
-  // Log the initialData to debug
-  console.log('PropertyForm initialData:', initialData);
+  // Check if we have initial coordinates
+  useEffect(() => {
+    if (initialData?.latitude && initialData.longitude) {
+      setMapCoordinates({
+        lat: Number(initialData.latitude),
+        lng: Number(initialData.longitude)
+      });
+      setShowMap(true);
+    }
+  }, [initialData]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,13 +80,18 @@ export function PropertyForm({
       area: initialData?.area || undefined,
       bedrooms: initialData?.bedrooms || undefined,
       bathrooms: initialData?.bathrooms || undefined,
+      latitude: initialData?.latitude !== undefined && initialData.latitude !== null 
+        ? Number(initialData.latitude) 
+        : undefined,
+      longitude: initialData?.longitude !== undefined && initialData.longitude !== null 
+        ? Number(initialData.longitude) 
+        : undefined,
     },
   });
 
   // Effect to update form values when initialData changes
   useEffect(() => {
     if (initialData) {
-      console.log('Updating form with initialData:', initialData);
       form.reset({
         title: initialData.title || '',
         description: initialData.description || '',
@@ -87,10 +105,24 @@ export function PropertyForm({
         area: initialData.area || undefined,
         bedrooms: initialData.bedrooms || undefined,
         bathrooms: initialData.bathrooms || undefined,
+        latitude: initialData.latitude !== undefined && initialData.latitude !== null 
+          ? Number(initialData.latitude) 
+          : undefined,
+        longitude: initialData.longitude !== undefined && initialData.longitude !== null 
+          ? Number(initialData.longitude) 
+          : undefined,
       });
       
       if (initialData.image_url) {
         setImagePreview(initialData.image_url);
+      }
+
+      if (initialData.latitude && initialData.longitude) {
+        setMapCoordinates({
+          lat: Number(initialData.latitude),
+          lng: Number(initialData.longitude)
+        });
+        setShowMap(true);
       }
     }
   }, [initialData, form]);
@@ -103,8 +135,18 @@ export function PropertyForm({
     }
   };
 
+  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
+    setMapCoordinates(coords);
+    form.setValue('latitude', coords.lat);
+    form.setValue('longitude', coords.lng);
+  };
+
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log('Form submitted with data:', data);
+    // If we have map coordinates, make sure they're included in the submission
+    if (mapCoordinates) {
+      data.latitude = mapCoordinates.lat;
+      data.longitude = mapCoordinates.lng;
+    }
     onSubmit(data as PropertyFormData, imageFile || undefined);
   };
 
@@ -131,6 +173,9 @@ export function PropertyForm({
       form.setValue('city', addressData.localidade || '');
       form.setValue('state', addressData.uf || '');
       
+      // Show the map once we have address data
+      setShowMap(true);
+      
       toast.success('Endereço encontrado!');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao buscar CEP');
@@ -138,6 +183,14 @@ export function PropertyForm({
       setIsSearchingCEP(false);
     }
   };
+
+  // Get the current address values from the form
+  const currentAddress = form.watch('address');
+  const currentCity = form.watch('city');
+  const currentState = form.watch('state');
+  
+  // Only show the map if we have at least address and city
+  const canShowMap = !!currentAddress && !!currentCity && !!currentState;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -255,6 +308,28 @@ export function PropertyForm({
                   </FormItem>
                 )}
               />
+
+              {/* Map section */}
+              {canShowMap && showMap && (
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel className="text-base">Localização no Mapa</FormLabel>
+                    <div className="text-xs text-muted-foreground">
+                      Arraste o marcador para ajustar a posição do imóvel
+                    </div>
+                  </div>
+                  <div className="border rounded-md overflow-hidden">
+                    <PropertyMap
+                      address={currentAddress}
+                      city={currentCity}
+                      state={currentState}
+                      initialCoords={mapCoordinates}
+                      editable={true}
+                      onCoordsChange={handleCoordsChange}
+                    />
+                  </div>
+                </div>
+              )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField

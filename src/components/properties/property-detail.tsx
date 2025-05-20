@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle } from 'lucide-react';
 import { Property } from '@/types/property';
@@ -25,6 +26,7 @@ export function PropertyDetail({
   isDeleting,
 }: PropertyDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
 
   const handleDelete = () => {
     onDelete();
@@ -98,6 +100,18 @@ export function PropertyDetail({
 
   const statusConfig = getStatusConfig(property.status);
 
+  // Check if the property has coordinates
+  const hasCoordinates = 
+    property.latitude !== undefined && 
+    property.latitude !== null && 
+    property.longitude !== undefined && 
+    property.longitude !== null;
+
+  // If property has coordinates, use them
+  const initialCoords = hasCoordinates 
+    ? { lat: Number(property.latitude), lng: Number(property.longitude) } 
+    : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -166,13 +180,25 @@ export function PropertyDetail({
                 </p>
               </div>
               
-              {/* Map section */}
+              {/* Map section with edit location functionality */}
               <div>
-                <h3 className="font-medium text-lg mb-2">Localização</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-lg">Localização</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsEditingLocation(!isEditingLocation)}
+                  >
+                    {isEditingLocation ? 'Concluir Edição' : 'Ajustar Localização'}
+                  </Button>
+                </div>
                 <PropertyMap 
                   address={property.address}
                   city={property.city}
                   state={property.state}
+                  propertyId={property.id}
+                  initialCoords={initialCoords}
+                  editable={isEditingLocation}
                 />
               </div>
               
@@ -242,6 +268,14 @@ export function PropertyDetail({
                 <div className="text-sm text-muted-foreground">Atualizado em</div>
                 <div>{formatDate(property.updated_at)}</div>
               </div>
+              {hasCoordinates && (
+                <div>
+                  <div className="text-sm text-muted-foreground">Coordenadas</div>
+                  <div className="font-mono text-xs break-all">
+                    {property.latitude}, {property.longitude}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

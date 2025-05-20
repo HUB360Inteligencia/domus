@@ -72,6 +72,8 @@ export type Database = {
           features: Json | null
           id: string
           image_url: string | null
+          latitude: number | null
+          longitude: number | null
           state: string
           status: string
           title: string
@@ -92,6 +94,8 @@ export type Database = {
           features?: Json | null
           id?: string
           image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
           state: string
           status: string
           title: string
@@ -112,6 +116,8 @@ export type Database = {
           features?: Json | null
           id?: string
           image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
           state?: string
           status?: string
           title?: string
