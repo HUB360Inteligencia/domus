@@ -32,6 +32,9 @@ const UsersPage = lazy(() => import("@/pages/users/UsersPage"));
 const UserDetailPage = lazy(() => import("@/pages/users/UserDetailPage"));
 const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
 
+// Admin Pages
+const AdminClientsPage = lazy(() => import("@/pages/admin/ClientsPage"));
+
 // Error Pages
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
@@ -123,6 +126,23 @@ function App() {
                 <Route index element={<UsersPage />} />
                 <Route path=":userId" element={<UserDetailPage />} />
                 <Route path="invite" element={<UserInvitePage />} />
+              </Route>
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredPermission="clients.view">
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/admin/clients" replace />} />
+                <Route path="clients" element={<AdminClientsPage />} />
+                <Route path="clients/:clientId" element={<div>Cliente detalhe (em desenvolvimento)</div>} />
+                <Route path="clients/new" element={<div>Novo Cliente (em desenvolvimento)</div>} />
+                <Route path="plans" element={<div>Planos (em desenvolvimento)</div>} />
+                <Route path="subscriptions" element={<div>Assinaturas (em desenvolvimento)</div>} />
               </Route>
 
               {/* Error routes */}
