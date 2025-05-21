@@ -36,8 +36,10 @@ export const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // Fix: Pass the id parameter to usePropertyDetails
-  const { data: property, isLoading, error } = usePropertyQueries().usePropertyDetails(id || '');
+  // Use the usePropertyDetails hook with the ID
+  const { usePropertyDetails } = usePropertyQueries();
+  const { data: property, isLoading, error } = usePropertyDetails(id || '');
+  
   const { deleteProperty } = usePropertyMutations();
 
   if (isLoading) {
@@ -254,8 +256,13 @@ export const PropertyDetail = () => {
             <CardContent className="h-[400px] p-0">
               {property.latitude && property.longitude ? (
                 <PropertyMap 
-                  properties={[property]} 
-                  center={{ lat: Number(property.latitude), lng: Number(property.longitude) }}
+                  address={property.address}
+                  city={property.city}
+                  state={property.state}
+                  propertyId={property.id}
+                  property_number={property.property_number}
+                  complement={property.complement}
+                  initialCoords={{ lat: Number(property.latitude), lng: Number(property.longitude) }}
                   zoom={15}
                 />
               ) : (
@@ -285,7 +292,15 @@ export const PropertyDetail = () => {
         </TabsContent>
 
         <TabsContent value="expenses" className="pt-6">
-          <ExpenseList propertyId={property.id} />
+          <ExpenseList 
+            expenses={[]}
+            isLoading={false} 
+            onAddClick={() => {}}
+            onEditClick={() => {}}
+            onDeleteClick={() => {}}
+            onUploadReceiptClick={() => {}}
+            isDeleting={false}
+          />
         </TabsContent>
 
         <TabsContent value="activities" className="pt-6">
