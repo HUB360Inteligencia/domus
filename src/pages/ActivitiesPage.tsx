@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, CalendarDays, Kanban, List } from "lucide-react";
@@ -26,6 +27,7 @@ export default function ActivitiesPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddActivity = () => {
     setCurrentActivity(null);
@@ -46,6 +48,7 @@ export default function ActivitiesPage() {
   };
 
   const handleSaveActivity = async (data: Partial<Activity>) => {
+    setIsSubmitting(true);
     try {
       if (currentActivity) {
         await updateActivity({ 
@@ -58,6 +61,8 @@ export default function ActivitiesPage() {
       setIsFormOpen(false);
     } catch (error) {
       console.error("Erro ao salvar atividade:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -135,7 +140,7 @@ export default function ActivitiesPage() {
           </DialogHeader>
           <ActivityForm
             activity={currentActivity}
-            isSubmitting={false}
+            isSubmitting={isSubmitting}
             onSubmit={handleSaveActivity}
             onCancel={() => setIsFormOpen(false)}
           />

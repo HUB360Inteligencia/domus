@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth';
 // Layouts
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AuthLayout from '@/layouts/AuthLayout';
+import { AdminLayout } from '@/components/layout/admin-layout';
 
 // Pages
 import LoginPage from '@/pages/LoginPage';
@@ -32,6 +33,12 @@ import ProfilePage from '@/pages/ProfilePage';
 import ClientsPage from '@/pages/ClientsPage';
 import ClientDetailsPage from '@/pages/ClientDetailsPage';
 import UsersPage from '@/pages/users/UsersPage';
+
+// Admin Pages
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import ClientDetailPage from '@/pages/admin/ClientDetailPage';
+import ClientFormPage from '@/pages/admin/ClientFormPage';
+import ClientsAdminPage from '@/pages/admin/ClientsPage';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -134,16 +141,38 @@ function App() {
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="properties" element={<PropertiesPage />} />
                   <Route path="properties/:id" element={<PropertyDetailsPage />} />
+                  <Route path="properties/edit/:id" element={<PropertyDetailsPage />} />
+                  <Route path="properties/new" element={<PropertyDetailsPage />} />
                   <Route path="contracts" element={<ContractsPage />} />
                   <Route path="contracts/:id" element={<ContractDetailsPage />} />
+                  <Route path="contracts/edit/:id" element={<ContractDetailsPage />} />
+                  <Route path="contracts/new" element={<ContractDetailsPage />} />
                   <Route path="finances" element={<FinancesPage />} />
                   <Route path="documents" element={<DocumentsPage />} />
                   <Route path="activities" element={<ActivitiesPage />} />
                   <Route path="clients" element={<ClientsPage />} />
                   <Route path="clients/:id" element={<ClientDetailsPage />} />
+                  <Route path="clients/new" element={<ClientDetailsPage isNew />} />
+                  <Route path="clients/edit/:id" element={<ClientDetailsPage isEdit />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="users" element={<UsersPage />} />
+                </Route>
+
+                {/* Admin routes */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="clients" element={<ClientsAdminPage />} />
+                  <Route path="clients/:clientId" element={<ClientDetailPage />} />
+                  <Route path="clients/edit/:clientId" element={<ClientFormPage />} />
+                  <Route path="clients/new" element={<ClientFormPage />} />
                 </Route>
 
                 {/* 404 route */}
