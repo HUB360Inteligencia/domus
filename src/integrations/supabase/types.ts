@@ -42,6 +42,44 @@ export type Database = {
         }
         Relationships: []
       }
+      client_users: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          role: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -419,6 +457,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activation_token: string | null
+          activation_token_expires_at: string | null
           avatar_url: string | null
           created_at: string | null
           email: string | null
@@ -428,6 +468,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          activation_token?: string | null
+          activation_token_expires_at?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -437,6 +479,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          activation_token?: string | null
+          activation_token_expires_at?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null

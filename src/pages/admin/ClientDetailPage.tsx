@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
   User, 
@@ -10,7 +10,8 @@ import {
   CheckCircle,
   AlertCircle,
   Edit,
-  ArrowLeft
+  ArrowLeft,
+  UserPlus
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,12 +22,29 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ClientUsersList } from "@/components/client-users/client-users-list";
+import { ClientUserForm } from "@/components/client-users/client-user-form";
 
 export default function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
   const { data: client, isLoading: isClientLoading } = useClient(clientId);
   const { data: subscriptions, isLoading: isSubscriptionsLoading } = useClientSubscriptions(clientId);
+  
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+
+  const handleAddUserClick = () => {
+    setIsAddUserDialogOpen(true);
+  };
+
+  const handleUserAddSuccess = () => {
+    setIsAddUserDialogOpen(false);
+  };
 
   if (isClientLoading) {
     return (
@@ -191,6 +209,23 @@ export default function ClientDetailPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-8">
+        <ClientUsersList 
+          clientId={clientId!} 
+          onAddUserClick={handleAddUserClick} 
+        />
+
+        <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+          <DialogContent className="sm:max-w-md md:max-w-lg">
+            <ClientUserForm 
+              clientId={clientId!}
+              onSuccess={handleUserAddSuccess}
+              onCancel={() => setIsAddUserDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

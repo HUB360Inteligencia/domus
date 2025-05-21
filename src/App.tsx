@@ -148,6 +148,7 @@ function App() {
                 <Route path="clients/edit/:clientId" element={<ClientFormPage />} />
                 <Route path="plans" element={<div>Planos (em desenvolvimento)</div>} />
                 <Route path="subscriptions" element={<div>Assinaturas (em desenvolvimento)</div>} />
+                <Route path="subscriptions/new" element={<div>Nova Assinatura (em desenvolvimento)</div>} />
               </Route>
 
               {/* Error routes */}
