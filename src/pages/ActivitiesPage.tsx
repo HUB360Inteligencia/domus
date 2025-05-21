@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
@@ -24,7 +25,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { Activity } from '@/types/activity';
+import { Activity, ActivityStatus } from '@/types/activity';
 import { useActivities } from '@/hooks/use-activities';
 import { useProperties } from '@/hooks/use-properties';
 import { useContracts } from '@/hooks/use-contracts';
