@@ -57,82 +57,49 @@ export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> 
   })) || [];
 }
 
-// Create a new user for a client
+// Create a new user for a client using the edge function
 export async function createClientUser(userData: CreateClientUserData): Promise<ClientUser> {
-  // Step 1: Create the user in auth.users
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: userData.email,
-    password: userData.password,
-    email_confirm: true,
-    user_metadata: {
-      first_name: userData.first_name,
-      last_name: userData.last_name,
+  const { data, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "createUser",
+      userData
     }
   });
 
-  if (authError) throw authError;
+  if (error) throw error;
+  if (data.error) throw new Error(data.error.message || "Error creating user");
   
-  if (!authData.user) {
-    throw new Error("Erro ao criar usuário");
-  }
-
-  // Step 2: Create entry in client_users table
-  const { data: clientUserData, error: clientUserError } = await supabase
-    .from("client_users")
-    .insert({
-      user_id: authData.user.id,
-      client_id: userData.client_id,
-      is_primary: userData.is_primary || false,
-      role: userData.role || 'user',
-    })
-    .select("*")
-    .single();
-
-  if (clientUserError) {
-    // Cleanup: If there was an error, delete the auth user we just created
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    throw clientUserError;
-  }
-
-  return {
-    ...clientUserData,
-    profile: {
-      email: userData.email,
-      first_name: userData.first_name,
-      last_name: userData.last_name,
-    }
-  };
+  return data.data;
 }
 
-// Reset password for an existing user
+// Reset password for an existing user using the edge function
 export async function resetUserPassword(data: ResetPasswordData): Promise<{ success: boolean }> {
-  const { error } = await supabase.auth.admin.updateUserById(
-    data.user_id,
-    { password: data.password }
-  );
+  const { data: response, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "resetPassword",
+      data
+    }
+  });
 
   if (error) throw error;
+  if (response.error) throw new Error(response.error.message || "Error resetting password");
   
   return { success: true };
 }
 
-// Generate an activation token for a user
+// Generate an activation token for a user using the edge function
 export async function generateActivationToken(userId: string): Promise<string> {
-  const token = uuidv4();
-  const expires = new Date();
-  expires.setHours(expires.getHours() + 24); // Token valid for 24 hours
-  
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      activation_token: token,
-      activation_token_expires_at: expires.toISOString()
-    })
-    .eq("id", userId);
-  
+  const { data: response, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "generateToken",
+      userId
+    }
+  });
+
   if (error) throw error;
+  if (response.error) throw new Error(response.error.message || "Error generating token");
   
-  return token;
+  return response.data.token;
 }
 
 // Get the client ID for the current authenticated user
