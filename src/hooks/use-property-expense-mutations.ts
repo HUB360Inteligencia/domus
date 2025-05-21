@@ -39,7 +39,7 @@ export const usePropertyExpenseMutations = (propertyId: string) => {
   });
 
   const deleteExpenseMutation = useMutation({
-    mutationFn: deletePropertyExpense,
+    mutationFn: (id: string) => deletePropertyExpense(id),
     onSuccess: () => {
       invalidateQueries();
       toast.success('Despesa excluída com sucesso');

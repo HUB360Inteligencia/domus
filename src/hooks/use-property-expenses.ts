@@ -39,6 +39,10 @@ export const usePropertyExpenses = (propertyId: string | null) => {
   const handleUpdateExpense = (id: string, data: Partial<PropertyExpenseFormData>) => {
     updateExpense({ id, data });
   };
+  
+  const handleDeleteExpense = (id: string) => {
+    deleteExpense(id);
+  };
 
   return {
     // Data
@@ -60,7 +64,7 @@ export const usePropertyExpenses = (propertyId: string | null) => {
     // Actions
     createExpense: handleCreateExpense,
     updateExpense: handleUpdateExpense,
-    deleteExpense,
+    deleteExpense: handleDeleteExpense,
     uploadReceipt,
     refetchExpenses
   };
