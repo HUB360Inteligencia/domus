@@ -67,7 +67,11 @@ export function PropertyDetail({
 
   // Fixed function to handle expense deletion - now correctly passing the id parameter
   const handleDeleteExpense = (id: string) => {
-    deleteExpense(id);
+    // We need to pass both propertyId and expense id
+    // The deleteExpense function expects both parameters
+    if (propertyId) {
+      deleteExpense(id);
+    }
   };
 
   const formatCurrency = (value: number | null | undefined) => {

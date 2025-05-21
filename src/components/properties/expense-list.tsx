@@ -67,7 +67,7 @@ export function ExpenseList({
   isDeleting
 }: ExpenseListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('all'); // Changed from empty string to 'all'
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<PropertyExpense | null>(null);
 
@@ -75,7 +75,7 @@ export function ExpenseList({
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           expense.maintenance_details?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === '' || expense.expense_type === typeFilter;
+    const matchesType = typeFilter === 'all' || expense.expense_type === typeFilter; // Changed condition to check for 'all'
     return matchesSearch && matchesType;
   });
 
@@ -134,7 +134,7 @@ export function ExpenseList({
             <SelectValue placeholder="Tipo de Despesa" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os tipos</SelectItem>
+            <SelectItem value="all">Todos os tipos</SelectItem> {/* Changed from empty string to "all" */}
             {Object.entries(expenseTypeMap).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
@@ -212,11 +212,11 @@ export function ExpenseList({
           <FileText className="h-10 w-10 text-muted-foreground/60" />
           <h3 className="mt-4 text-lg font-medium">Nenhuma despesa encontrada</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            {searchTerm || typeFilter ? 
+            {searchTerm || typeFilter !== 'all' ? 
               'Tente ajustar os filtros de busca.' : 
               'Cadastre sua primeira despesa para este imóvel.'}
           </p>
-          {!searchTerm && !typeFilter && (
+          {!searchTerm && typeFilter === 'all' && (
             <Button onClick={onAddClick} className="mt-4">
               <Plus className="mr-2 h-4 w-4" />
               Adicionar Despesa
