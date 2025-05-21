@@ -13,7 +13,7 @@ export function AdminLayout() {
       <SidebarProvider defaultOpen={true}>
         <div className="flex min-h-screen w-full bg-background">
           <AppSidebar />
-          <div className="flex flex-col flex-1">
+          <div className="flex flex-col flex-1 lg:ml-64">
             <AppHeader />
             <main className="flex-1 p-6">
               <Outlet />

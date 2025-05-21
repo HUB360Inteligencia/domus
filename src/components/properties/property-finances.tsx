@@ -32,6 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePropertyQueries } from '@/hooks/use-property-queries';
 import { Property } from '@/types/property';
 import { FinancialTransaction } from '@/types/financial';
+import { toast } from 'sonner';
 
 export const PropertyFinances = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,16 +41,61 @@ export const PropertyFinances = () => {
   
   // Fix: Get the usePropertyDetails method from usePropertyQueries
   const { usePropertyDetails } = usePropertyQueries();
-  const { data: property } = usePropertyDetails(propertyId);
+  const { 
+    data: property,
+    isLoading: isLoadingProperty,
+    error: propertyError
+  } = usePropertyDetails(propertyId);
   
-  const { data: transactions, isLoading } = useQuery({
+  const { 
+    data: transactions = [], 
+    isLoading: isLoadingTransactions,
+    error: transactionsError
+  } = useQuery({
     queryKey: ['property-finances', propertyId],
     queryFn: () => fetchPropertyFinancialTransactions(propertyId),
     enabled: !!propertyId,
   });
 
+  // Handle errors
+  if (propertyError || transactionsError) {
+    console.error('Error loading property finances:', { propertyError, transactionsError });
+    return (
+      <Card className="w-full">
+        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[300px] text-center">
+          <div className="text-xl font-semibold mb-2">Erro ao carregar dados financeiros</div>
+          <p className="text-muted-foreground mb-4">
+            Ocorreu um erro ao buscar as informações financeiras deste imóvel. Tente novamente mais tarde.
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle loading state
+  if (isLoadingProperty || isLoadingTransactions) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="text-center space-y-2">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <div className="text-muted-foreground">Carregando dados financeiros...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!property || !propertyId) {
-    return <div className="text-center py-8">Imóvel não encontrado.</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="text-xl font-semibold mb-2">Imóvel não encontrado</div>
+        <p className="text-muted-foreground">
+          Não foi possível encontrar informações para este imóvel.
+        </p>
+      </div>
+    );
   }
 
   const incomeTransactions = transactions?.filter(t => t.transaction_type === 'income') || [];
@@ -208,7 +254,10 @@ export const PropertyFinances = () => {
               <DialogTitle>Nova Transação para {property.title}</DialogTitle>
             </DialogHeader>
             <TransactionForm 
-              onSuccess={() => setIsDialogOpen(false)} 
+              onSuccess={() => {
+                setIsDialogOpen(false);
+                toast.success("Transação adicionada com sucesso");
+              }} 
               defaultPropertyId={propertyId}
             />
           </DialogContent>
@@ -354,7 +403,7 @@ export const PropertyFinances = () => {
         <TabsContent value="transactions">
           <TransactionList 
             transactions={transactions || []} 
-            isLoading={isLoading} 
+            isLoading={isLoadingTransactions} 
             propertyId={propertyId}
           />
         </TabsContent>

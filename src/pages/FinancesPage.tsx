@@ -22,6 +22,8 @@ import {
 } from '@/hooks/use-financial-transactions';
 import { useProperties } from '@/hooks/use-properties';
 import { FinancialReportFilters } from '@/types/financial';
+import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function FinancesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -29,20 +31,45 @@ export default function FinancesPage() {
   const [activeTab, setActiveTab] = useState('overview');
   
   const { 
-    data: transactions, 
-    isLoading: isLoadingTransactions 
+    data: transactions = [], 
+    isLoading: isLoadingTransactions,
+    error: transactionsError
   } = useFinancialTransactions(filters);
   
   const { 
     data: analytics, 
-    isLoading: isLoadingAnalytics 
+    isLoading: isLoadingAnalytics,
+    error: analyticsError 
   } = useFinancialAnalytics(filters);
   
-  const { properties, isLoading: isLoadingProperties } = useProperties();
+  const { properties = [], isLoading: isLoadingProperties } = useProperties();
 
   const handleFilterChange = (newFilters: FinancialReportFilters) => {
     setFilters(newFilters);
   };
+
+  if (transactionsError || analyticsError) {
+    console.error('Error loading financial data:', { transactionsError, analyticsError });
+    return (
+      <div className="container max-w-7xl mx-auto py-6 space-y-6">
+        <PageHeader
+          title="Finanças"
+          description="Gerencie suas receitas e despesas, acompanhe o desempenho financeiro dos seus imóveis."
+        />
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-6 min-h-[300px] text-center">
+            <div className="text-xl font-semibold mb-2">Não foi possível carregar os dados financeiros</div>
+            <p className="text-muted-foreground mb-4">
+              Ocorreu um erro ao buscar os dados financeiros. Tente novamente mais tarde.
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-7xl mx-auto py-6 space-y-6">
@@ -61,7 +88,10 @@ export default function FinancesPage() {
             <DialogHeader>
               <DialogTitle>Nova Transação Financeira</DialogTitle>
             </DialogHeader>
-            <TransactionForm onSuccess={() => setIsDialogOpen(false)} />
+            <TransactionForm onSuccess={() => {
+              setIsDialogOpen(false);
+              toast.success("Transação adicionada com sucesso");
+            }} />
           </DialogContent>
         </Dialog>
       </PageHeader>
@@ -84,24 +114,36 @@ export default function FinancesPage() {
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
-          {analytics && properties && !isLoadingAnalytics && !isLoadingProperties ? (
-            <FinancialAnalytics 
-              analytics={analytics} 
-              properties={properties}
-            />
-          ) : (
+          {isLoadingAnalytics || isLoadingProperties ? (
             <div className="flex justify-center py-12">
               <div className="text-center space-y-2">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
                 <div className="text-muted-foreground">Carregando análises financeiras...</div>
               </div>
             </div>
+          ) : !analytics || !properties ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-6 min-h-[300px] text-center">
+                <div className="text-xl font-semibold mb-2">Nenhum dado financeiro encontrado</div>
+                <p className="text-muted-foreground mb-4">
+                  Você ainda não possui transações financeiras registradas.
+                </p>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  Adicionar primeira transação
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <FinancialAnalytics 
+              analytics={analytics} 
+              properties={properties}
+            />
           )}
         </TabsContent>
         
         <TabsContent value="transactions">
           <TransactionList 
-            transactions={transactions || []} 
+            transactions={transactions} 
             isLoading={isLoadingTransactions} 
           />
         </TabsContent>
