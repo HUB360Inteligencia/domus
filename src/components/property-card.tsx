@@ -42,7 +42,7 @@ export function PropertyCard({
   imageUrl,
   onSelect,
 }: PropertyCardProps) {
-  const statusConfig: Record<string, { label: string; color: string }> = {
+  const statusConfig = {
     available: {
       label: "Disponível",
       color: "bg-emerald-500",
@@ -62,18 +62,6 @@ export function PropertyCard({
     sold: {
       label: "Vendido",
       color: "bg-purple-500",
-    },
-    active: {
-      label: "Ativo",
-      color: "bg-green-500",
-    },
-    inactive: {
-      label: "Inativo",
-      color: "bg-gray-500",
-    },
-    pending: {
-      label: "Pendente",
-      color: "bg-yellow-500",
     },
   };
 
@@ -104,10 +92,10 @@ export function PropertyCard({
         <div
           className={cn(
             "absolute top-3 right-3 px-2.5 py-1 text-xs font-medium text-white rounded-full backdrop-blur-sm",
-            statusConfig[status]?.color || "bg-gray-500"
+            statusConfig[status].color
           )}
         >
-          {statusConfig[status]?.label || status}
+          {statusConfig[status].label}
         </div>
       </div>
       <CardHeader>

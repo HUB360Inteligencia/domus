@@ -1,3 +1,4 @@
+
 import { Building, CheckCircle, Clock, HomeIcon, TrendingUp, User, AlertCircle, FileText, CalendarClock } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
 import { PropertyCard } from "@/components/property-card";
@@ -10,10 +11,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContractStats, useFinancialStats, useFinancialChartData, useUpcomingEvents, useRecentContracts } from "@/hooks/use-contract-analytics";
-import { useActivities } from '@/hooks/use-activities';
-import { ActivitiesDashboardWidget } from '@/components/activities/activities-dashboard-widget';
-import { PageHeader } from "@/components/page-header";
-import { PropertyStatus } from "@/types/property";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,8 +20,7 @@ export default function Dashboard() {
   const { data: chartData, isLoading: isLoadingChartData } = useFinancialChartData();
   const { data: upcomingEvents, isLoading: isLoadingEvents } = useUpcomingEvents();
   const { data: contracts, isLoading: isLoadingContracts } = useRecentContracts();
-  const { activities, isLoadingActivities } = useActivities();
-
+  
   const [propertyStats, setPropertyStats] = useState({
     total: 0,
     available: 0,
@@ -36,9 +32,9 @@ export default function Dashboard() {
     // Calculate property statistics
     if (properties.length > 0) {
       const total = properties.length;
-      const available = properties.filter(p => p.status === 'available' as PropertyStatus).length;
+      const available = properties.filter(p => p.status === 'available').length;
       const rented = properties.filter(p => p.status === 'rented').length;
-      const airbnb = properties.filter(p => p.status === 'airbnb' as PropertyStatus).length;
+      const airbnb = properties.filter(p => p.status === 'airbnb').length;
       
       setPropertyStats({
         total,
@@ -105,12 +101,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Visão geral da sua gestão patrimonial"
-      />
-      
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
           <>
             {Array(4).fill(0).map((_, i) => (
@@ -159,12 +154,6 @@ export default function Dashboard() {
             />
           </>
         )}
-        
-        {/* Widget de Atividades */}
-        <ActivitiesDashboardWidget 
-          activities={activities || []}
-          isLoading={isLoadingActivities}
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

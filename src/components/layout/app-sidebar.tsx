@@ -8,8 +8,7 @@ import {
   MessageSquare,
   Receipt,
   Settings,
-  Calendar,
-  ListFilter
+  Home
 } from "lucide-react";
 
 import {
@@ -66,15 +65,6 @@ export function AppSidebar() {
               <Link to="/contracts">
                 <FileText className="h-5 w-5 mr-2" />
                 Contratos
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/activities">
-                <Calendar className="h-5 w-5 mr-2" />
-                Atividades
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
