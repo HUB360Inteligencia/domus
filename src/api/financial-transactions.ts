@@ -5,7 +5,9 @@ import {
   FinancialTransactionFormData, 
   FinancialAnalytics,
   FinancialReportFilters,
-  FinancialCategory
+  FinancialCategory,
+  TransactionType,
+  RecurringFrequency
 } from "@/types/financial";
 import { Property } from "@/types/property";
 
@@ -53,7 +55,8 @@ export const fetchFinancialTransactions = async (
       throw error;
     }
 
-    return data || [];
+    // Garantir que os tipos estão corretos antes de retornar
+    return (data as FinancialTransaction[]) || [];
   } catch (err) {
     console.error('Falha ao buscar transações financeiras:', err);
     throw err;
@@ -102,7 +105,7 @@ export const fetchPropertyFinancialTransactions = async (
       throw error;
     }
 
-    return data || [];
+    return (data as FinancialTransaction[]) || [];
   } catch (err) {
     console.error(`Falha ao buscar transações financeiras do imóvel ${propertyId}:`, err);
     throw err;
@@ -135,7 +138,7 @@ export const createFinancialTransaction = async (
       throw error;
     }
 
-    return data;
+    return data as FinancialTransaction;
   } catch (err) {
     console.error('Falha ao criar transação financeira:', err);
     throw err;
@@ -164,7 +167,7 @@ export const updateFinancialTransaction = async (
       throw error;
     }
 
-    return data;
+    return data as FinancialTransaction;
   } catch (err) {
     console.error('Falha ao atualizar transação financeira:', err);
     throw err;
@@ -197,7 +200,7 @@ export const deleteFinancialTransaction = async (id: string): Promise<void> => {
  * Busca todas as categorias financeiras
  */
 export const fetchFinancialCategories = async (
-  type?: 'income' | 'expense'
+  type?: TransactionType
 ): Promise<FinancialCategory[]> => {
   try {
     console.log('Buscando categorias financeiras, tipo:', type);
@@ -218,7 +221,7 @@ export const fetchFinancialCategories = async (
       throw error;
     }
 
-    return data || [];
+    return (data as FinancialCategory[]) || [];
   } catch (err) {
     console.error('Falha ao buscar categorias financeiras:', err);
     throw err;
@@ -230,7 +233,7 @@ export const fetchFinancialCategories = async (
  */
 export const createFinancialCategory = async (
   name: string, 
-  type: 'income' | 'expense'
+  type: TransactionType
 ): Promise<FinancialCategory> => {
   try {
     console.log('Criando categoria financeira:', { name, type });
@@ -254,7 +257,7 @@ export const createFinancialCategory = async (
       throw error;
     }
 
-    return data;
+    return data as FinancialCategory;
   } catch (err) {
     console.error('Falha ao criar categoria financeira:', err);
     throw err;

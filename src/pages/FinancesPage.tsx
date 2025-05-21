@@ -38,10 +38,7 @@ export default function FinancesPage() {
     isLoading: isLoadingAnalytics 
   } = useFinancialAnalytics(filters);
   
-  const { 
-    data: properties, 
-    isLoading: isLoadingProperties 
-  } = useProperties();
+  const { properties, isLoading: isLoadingProperties } = useProperties();
 
   const handleFilterChange = (newFilters: FinancialReportFilters) => {
     setFilters(newFilters);

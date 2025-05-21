@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -36,8 +35,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useProperties } from '@/hooks/use-properties';
 import { useFinancialCategories, useFinancialMutations } from '@/hooks/use-financial-transactions';
-import { FinancialTransaction, FinancialTransactionFormData } from '@/types/financial';
-import { property } from 'lodash';
+import { FinancialTransaction, FinancialTransactionFormData, TransactionType, RecurringFrequency } from '@/types/financial';
 
 const transactionSchema = z.object({
   property_id: z.string().nullable(),
@@ -64,7 +62,7 @@ interface TransactionFormProps {
   transaction?: FinancialTransaction;
   onSuccess?: () => void;
   defaultPropertyId?: string | null;
-  defaultTransactionType?: 'income' | 'expense';
+  defaultTransactionType?: TransactionType;
 }
 
 export const TransactionForm = ({
@@ -75,9 +73,9 @@ export const TransactionForm = ({
 }: TransactionFormProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState<'income' | 'expense'>('expense');
+  const [newCategoryType, setNewCategoryType] = useState<TransactionType>('expense');
 
-  const { data: properties, isLoading: isLoadingProperties } = useProperties();
+  const { properties } = useProperties();
   const { data: incomeCategories, isLoading: isLoadingIncomeCategories } = useFinancialCategories('income');
   const { data: expenseCategories, isLoading: isLoadingExpenseCategories } = useFinancialCategories('expense');
   const { createTransaction, updateTransaction, createCategory } = useFinancialMutations();
@@ -166,7 +164,7 @@ export const TransactionForm = ({
   const transactionType = form.watch('transaction_type');
   const isRecurring = form.watch('recurring');
   const categories = transactionType === 'income' ? incomeCategories : expenseCategories;
-  const isLoading = isLoadingProperties || isLoadingIncomeCategories || isLoadingExpenseCategories;
+  const isLoading = isLoadingIncomeCategories || isLoadingExpenseCategories;
 
   const paymentMethods = [
     'Dinheiro',

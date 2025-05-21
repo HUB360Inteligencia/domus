@@ -49,7 +49,7 @@ export const TransactionList = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const { data: properties } = useProperties();
+  const { properties } = useProperties();
   const { deleteTransaction } = useFinancialMutations();
 
   const handleDelete = async () => {

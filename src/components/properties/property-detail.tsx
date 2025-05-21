@@ -36,6 +36,7 @@ export const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  // Fix: Pass the id parameter to usePropertyDetails
   const { data: property, isLoading, error } = usePropertyQueries().usePropertyDetails(id || '');
   const { deleteProperty } = usePropertyMutations();
 
@@ -61,7 +62,7 @@ export const PropertyDetail = () => {
 
   const handleDelete = async () => {
     try {
-      await deleteProperty.mutateAsync(property.id);
+      await deleteProperty(property.id);
       toast.success('Imóvel excluído com sucesso');
       navigate('/properties');
     } catch (error) {

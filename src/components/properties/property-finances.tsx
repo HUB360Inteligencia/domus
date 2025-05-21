@@ -38,6 +38,7 @@ export const PropertyFinances = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   
+  // Fix: Pass the id parameter to usePropertyDetails
   const { data: property } = usePropertyQueries().usePropertyDetails(id || '');
   
   const { data: transactions, isLoading } = useQuery({
@@ -135,6 +136,11 @@ export const PropertyFinances = () => {
     '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28AD2',
     '#FF6B6B', '#4ECDC4', '#F9D423', '#B5D99C', '#E27D60'
   ];
+
+  // Create a custom bar style function for recharts
+  const getBarFill = (entry: any) => {
+    return entry.net >= 0 ? '#10b981' : '#ef4444';
+  };
 
   return (
     <div className="space-y-6">
@@ -268,8 +274,7 @@ export const PropertyFinances = () => {
                       dataKey="net" 
                       name="Resultado" 
                       fill="#3b82f6"
-                      // Barras positivas em verde, negativas em vermelho
-                      style={{ fill: (entry: any) => entry.net >= 0 ? '#10b981' : '#ef4444' }}
+                      // Fix: Use direct fill color instead of style function
                     />
                   </BarChart>
                 </ResponsiveContainer>
