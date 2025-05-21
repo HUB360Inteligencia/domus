@@ -171,7 +171,7 @@ function getClientDistributionFromSubscriptions(subscriptions: any[]): { planNam
   // Convert to array format
   return Object.entries(planCounts).map(([planName, count]) => ({
     planName,
-    count
+    count: Number(count) // Ensure count is explicitly a number
   }));
 }
 

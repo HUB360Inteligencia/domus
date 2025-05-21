@@ -259,5 +259,10 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
     throw error;
   }
 
-  return data || [];
+  // Transform the data to ensure contract types are correctly cast
+  return (data || []).map(item => ({
+    ...item,
+    status: item.status as ContractStatus,
+    signature_status: item.signature_status as SignatureStatus
+  }));
 }
