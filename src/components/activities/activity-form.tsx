@@ -45,7 +45,7 @@ import {
   CardContent
 } from '@/components/ui/card';
 
-import { Activity, ActivityFormData, ActivityCategory } from '@/types/activity';
+import { Activity, ActivityFormData, ActivityCategory, ActivityType, ActivityStatus, ActivityPriority } from '@/types/activity';
 import { Property } from '@/types/property';
 import { Contract } from '@/types/contract';
 
@@ -76,7 +76,7 @@ interface ActivityFormProps {
   selectedCategories?: string[];
   onSubmit: (data: ActivityFormData) => Promise<void>;
   onCancel: () => void;
-  onCreateCategory?: (name: string, description?: string) => Promise<void>;
+  onCreateCategory?: (data: { name: string, description?: string }) => Promise<ActivityCategory>;
   isSubmitting: boolean;
 }
 
@@ -146,6 +146,10 @@ export function ActivityForm({
     
     const activityData: ActivityFormData = {
       ...rest,
+      title: rest.title, // Ensure title is not optional
+      activity_type: rest.activity_type as ActivityType,
+      status: rest.status as ActivityStatus,
+      priority: rest.priority as ActivityPriority,
       due_date: due_date ? due_date.toISOString() : null,
       start_date: start_date ? start_date.toISOString() : null,
       categories: selectedCategoryIds
@@ -166,16 +170,17 @@ export function ActivityForm({
     if (!newCategoryName.trim() || !onCreateCategory) return;
     
     try {
-      const newCategory = await onCreateCategory(
-        newCategoryName.trim(),
-        newCategoryDescription.trim() || undefined
-      );
+      const newCategory = await onCreateCategory({
+        name: newCategoryName.trim(),
+        description: newCategoryDescription.trim() || undefined
+      });
+      
       setNewCategoryName('');
       setNewCategoryDescription('');
       setShowNewCategoryDialog(false);
       
       // Adicionar a nova categoria às selecionadas
-      if (newCategory && newCategory.id) {
+      if (newCategory) {
         setSelectedCategoryIds(prev => [...prev, newCategory.id]);
       }
     } catch (error) {

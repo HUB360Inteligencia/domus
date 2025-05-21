@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
@@ -5,20 +6,20 @@ import {
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-import { Home } from './pages/Home';
-import { SignIn } from './pages/SignIn';
-import { SignUp } from './pages/SignUp';
-import { PropertiesPage } from './pages/PropertiesPage';
-import { PropertyDetailPage } from './pages/PropertyDetailPage';
-import { PropertyEditPage } from './pages/PropertyEditPage';
-import { ClientsPage } from './pages/ClientsPage';
-import { ContractsPage } from './pages/ContractsPage';
+import Home from './pages/Index';
+import { SignIn } from './pages/auth/Login';
+import { SignUp } from './pages/auth/Register';
+import { PropertiesPage } from './pages/Properties';
+import PropertyDetailPage from './pages/PropertyDetailPage';
+import PropertyFormPage from './pages/PropertyFormPage';
+import ClientsPage from './pages/admin/ClientsPage';
+import ContractsPage from './pages/ContractsPage';
 import { AppLayout } from './components/layout/app-layout';
 import { AdminLayout } from './components/layout/admin-layout';
-import { SettingsPage } from './pages/SettingsPage';
+import SettingsPage from './pages/SettingsPage';
 import { RequireAuth } from './components/auth/require-auth';
 import { RequireAdmin } from './components/auth/require-admin';
-import { Dashboard } from './pages/Dashboard';
+import Dashboard from './pages/Dashboard';
 import { Toaster } from "@/components/ui/toaster"
 import ActivitiesPage from './pages/ActivitiesPage';
 
@@ -53,7 +54,7 @@ function createRouter() {
         },
         {
           path: '/properties/edit',
-          element: <RequireAuth><PropertyEditPage /></RequireAuth>
+          element: <RequireAuth><PropertyFormPage /></RequireAuth>
         },
         {
           path: '/clients',

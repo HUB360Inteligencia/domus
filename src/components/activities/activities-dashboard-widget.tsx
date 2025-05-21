@@ -131,9 +131,11 @@ export function ActivitiesDashboardWidget({
           )}
         </div>
         
-        <Button variant="outline" size="sm" className="w-full" asComponent={Link} to="/activities">
-          <LayoutList className="h-4 w-4 mr-2" />
-          Ver todas as atividades
+        <Button variant="outline" size="sm" className="w-full" asChild>
+          <Link to="/activities">
+            <LayoutList className="h-4 w-4 mr-2" />
+            Ver todas as atividades
+          </Link>
         </Button>
       </CardContent>
     </Card>

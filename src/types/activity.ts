@@ -9,7 +9,7 @@ export interface Activity {
   id: string;
   title: string;
   description: string | null;
-  activity_type: string;
+  activity_type: ActivityType;
   status: ActivityStatus;
   priority: ActivityPriority;
   due_date: string | null;
@@ -47,7 +47,7 @@ export interface ActivityCategory {
 export interface ActivityFormData {
   title: string;
   description?: string;
-  activity_type: string;
+  activity_type: ActivityType;
   status?: ActivityStatus;
   priority?: ActivityPriority;
   due_date?: string | null;

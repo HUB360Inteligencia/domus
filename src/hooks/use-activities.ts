@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Activity, ActivityFormData } from '@/types/activity';
+import { Activity, ActivityFormData, ActivityCategory } from '@/types/activity';
 import * as ActivitiesAPI from '@/api/activities';
 
 export function useActivities() {

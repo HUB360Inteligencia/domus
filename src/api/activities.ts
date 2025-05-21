@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, ActivityCategory, ActivityFormData } from "@/types/activity";
+import { Activity, ActivityCategory, ActivityFormData, ActivityStatus } from "@/types/activity";
 
 /**
  * Busca todas as atividades do usuário atual
@@ -18,7 +17,7 @@ export const fetchActivities = async (): Promise<Activity[]> => {
     const { data, error } = await supabase
       .from('activities')
       .select('*')
-      .order('due_date', { ascending: true, nullsLast: true });
+      .order('due_date', { ascending: true });
 
     if (error) {
       console.error('Erro ao buscar atividades:', error);
@@ -26,7 +25,7 @@ export const fetchActivities = async (): Promise<Activity[]> => {
     }
 
     console.log('Atividades buscadas com sucesso:', data?.length || 0);
-    return data || [];
+    return data as Activity[] || [];
   } catch (err) {
     console.error('Falha ao buscar atividades:', err);
     throw err;
@@ -54,7 +53,7 @@ export const fetchActivityById = async (id: string): Promise<Activity | null> =>
     }
 
     console.log('Resultado da busca de atividade:', data ? 'Sucesso' : 'Não encontrada');
-    return data;
+    return data as Activity;
   } catch (err) {
     console.error(`Falha ao buscar atividade ${id}:`, err);
     throw err;
@@ -74,14 +73,14 @@ export const fetchActivitiesByProperty = async (propertyId: string): Promise<Act
       .from('activities')
       .select('*')
       .eq('property_id', propertyId)
-      .order('due_date', { ascending: true, nullsLast: true });
+      .order('due_date', { ascending: true });
 
     if (error) {
       console.error(`Erro ao buscar atividades para propriedade ${propertyId}:`, error);
       throw new Error(error.message);
     }
 
-    return data || [];
+    return data as Activity[] || [];
   } catch (err) {
     console.error(`Falha ao buscar atividades para propriedade ${propertyId}:`, err);
     throw err;
@@ -205,7 +204,7 @@ export const updateActivity = async (id: string, activityData: Partial<ActivityF
 /**
  * Atualiza apenas o status de uma atividade (útil para o drag-and-drop no Kanban)
  */
-export const updateActivityStatus = async (id: string, status: string): Promise<Activity> => {
+export const updateActivityStatus = async (id: string, status: ActivityStatus): Promise<Activity> => {
   try {
     console.log(`Atualizando status da atividade ${id} para ${status}`);
     
@@ -227,7 +226,7 @@ export const updateActivityStatus = async (id: string, status: string): Promise<
       throw new Error(error.message);
     }
 
-    return data;
+    return data as Activity;
   } catch (err) {
     console.error(`Falha ao atualizar status da atividade ${id}:`, err);
     throw err;
