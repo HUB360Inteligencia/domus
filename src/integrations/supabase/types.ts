@@ -444,6 +444,95 @@ export type Database = {
           },
         ]
       }
+      financial_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          payment_method: string | null
+          property_id: string | null
+          recurring: boolean | null
+          recurring_end_date: string | null
+          recurring_frequency: string | null
+          subcategory: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          property_id?: string | null
+          recurring?: boolean | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          subcategory?: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          property_id?: string | null
+          recurring?: boolean | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          subcategory?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
