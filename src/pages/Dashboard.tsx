@@ -35,9 +35,9 @@ export default function Dashboard() {
     // Calculate property statistics
     if (properties.length > 0) {
       const total = properties.length;
-      const available = properties.filter(p => p.status === 'available').length;
+      const available = properties.filter(p => p.status === 'available' as PropertyStatus).length;
       const rented = properties.filter(p => p.status === 'rented').length;
-      const airbnb = properties.filter(p => p.status === 'airbnb').length;
+      const airbnb = properties.filter(p => p.status === 'airbnb' as PropertyStatus).length;
       
       setPropertyStats({
         total,

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Activity, ActivityFormData, ActivityCategory } from '@/types/activity';
+import { Activity, ActivityFormData, ActivityCategory, ActivityType, ActivityStatus } from '@/types/activity';
 import * as ActivitiesAPI from '@/api/activities';
 
 export function useActivities() {
@@ -88,8 +88,8 @@ export function useActivities() {
   const { 
     mutateAsync: updateActivityStatus 
   } = useMutation({
-    mutationFn: ({ id, status }: { id: string, status: string }) => 
-      ActivitiesAPI.updateActivityStatus(id, status as ActivityStatus),
+    mutationFn: ({ id, status }: { id: string, status: ActivityStatus }) => 
+      ActivitiesAPI.updateActivityStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
     },

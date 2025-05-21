@@ -1,10 +1,11 @@
+
 import { Json } from '@/integrations/supabase/types';
 
-export type PropertyStatus = 'active' | 'inactive' | 'pending' | 'sold' | 'rented';
+export type PropertyStatus = 'active' | 'inactive' | 'pending' | 'sold' | 'rented' | 'available' | 'airbnb';
 
 export type PropertyType = 'apartment' | 'house' | 'commercial' | 'land' | 'rural';
 
-export type FurnishedStatus = 'furnished' | 'unfurnished' | 'partially';
+export type FurnishedStatus = 'furnished' | 'unfurnished' | 'partially' | 'partially_furnished' | 'not_furnished';
 
 export interface Property {
   id: string;
