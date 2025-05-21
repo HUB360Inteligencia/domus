@@ -146,8 +146,8 @@ function App() {
                 {/* 404 route */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              <Toaster position="top-right" richColors />
             </Router>
-            <Toaster position="top-right" richColors />
           </ModalProvider>
         </AuthProvider>
       </QueryProvider>
