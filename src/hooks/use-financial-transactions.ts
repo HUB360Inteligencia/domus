@@ -7,7 +7,8 @@ import {
   deleteFinancialTransaction,
   fetchFinancialCategories,
   createFinancialCategory,
-  calculateFinancialAnalytics
+  calculateFinancialAnalytics,
+  uploadTransactionReceipt
 } from '@/api/financial-transactions';
 import { fetchProperties } from '@/api/properties';
 import { toast } from 'sonner';
@@ -140,11 +141,24 @@ export const useFinancialMutations = () => {
       toast.error(`Erro ao criar categoria: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     },
   });
+  
+  const uploadReceipt = useMutation({
+    mutationFn: ({ file, transactionId }: { file: File, transactionId: string }) => 
+      uploadTransactionReceipt(file, transactionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
+      toast.success('Comprovante enviado com sucesso.');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao enviar comprovante: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    },
+  });
 
   return {
     createTransaction,
     updateTransaction,
     deleteTransaction,
     createCategory,
+    uploadReceipt
   };
 };

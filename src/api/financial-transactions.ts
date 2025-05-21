@@ -196,6 +196,58 @@ export const deleteFinancialTransaction = async (id: string): Promise<void> => {
 };
 
 /**
+ * Faz upload do comprovante de uma transação financeira
+ */
+export const uploadTransactionReceipt = async (
+  file: File,
+  transactionId: string
+): Promise<string> => {
+  try {
+    console.log(`Fazendo upload do comprovante para a transação ${transactionId}`);
+    
+    // Verificar se o usuário está autenticado
+    const user = await supabase.auth.getUser();
+    if (!user.data.user) throw new Error('Usuário não autenticado');
+    
+    // Gerar nome do arquivo único
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${transactionId}_${Date.now()}.${fileExt}`;
+    const filePath = `transaction_receipts/${user.data.user.id}/${fileName}`;
+    
+    // Fazer upload do arquivo para o bucket de armazenamento
+    const { error: uploadError } = await supabase.storage
+      .from('financial_docs')
+      .upload(filePath, file);
+      
+    if (uploadError) {
+      console.error('Erro ao fazer upload do comprovante:', uploadError);
+      throw uploadError;
+    }
+    
+    // Obter a URL pública do arquivo
+    const { data } = supabase.storage
+      .from('financial_docs')
+      .getPublicUrl(filePath);
+      
+    // Atualizar a transação com a URL do comprovante
+    const { error: updateError } = await supabase
+      .from('financial_transactions')
+      .update({ receipt_url: data.publicUrl })
+      .eq('id', transactionId);
+      
+    if (updateError) {
+      console.error('Erro ao atualizar URL do comprovante:', updateError);
+      throw updateError;
+    }
+    
+    return data.publicUrl;
+  } catch (err) {
+    console.error('Falha ao fazer upload do comprovante:', err);
+    throw err;
+  }
+};
+
+/**
  * Busca todas as categorias financeiras
  */
 export const fetchFinancialCategories = async (

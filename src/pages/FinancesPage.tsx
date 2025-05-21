@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, XIcon } from 'lucide-react';
 import { 
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionForm } from '@/components/finances/transaction-form';
+import { TransactionFormMobile } from '@/components/finances/transaction-form-mobile';
 import { TransactionList } from '@/components/finances/transaction-list';
 import { FinancialAnalytics } from '@/components/finances/financial-analytics';
 import { FinancialFilters } from '@/components/finances/financial-filters';
@@ -25,11 +26,14 @@ import { FinancialReportFilters } from '@/types/financial';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { InfoIcon } from 'lucide-react';
+import { useMobile } from '@/hooks/use-mobile';
 
 export default function FinancesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [filters, setFilters] = useState<FinancialReportFilters>({});
   const [activeTab, setActiveTab] = useState('overview');
+  const isMobile = useMobile();
   
   const { 
     data: transactions = [], 
@@ -92,7 +96,7 @@ export default function FinancesPage() {
       >
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex gap-2">
+            <Button className={`flex gap-2 ${isMobile ? 'hidden' : 'flex'}`}>
               <PlusIcon className="h-4 w-4" />
               Adicionar Transação
             </Button>
@@ -143,7 +147,7 @@ export default function FinancesPage() {
                   <p className="text-muted-foreground mb-6">
                     Você ainda não possui transações financeiras registradas. Adicione sua primeira transação para começar a ver análises.
                   </p>
-                  <Button onClick={() => setIsDialogOpen(true)}>
+                  <Button onClick={() => isMobile ? setIsQuickAddOpen(true) : setIsDialogOpen(true)}>
                     Adicionar primeira transação
                   </Button>
                 </CardContent>
@@ -180,6 +184,39 @@ export default function FinancesPage() {
           <FinancialReport />
         </TabsContent>
       </Tabs>
+
+      {/* Mobile Quick Add Dialog */}
+      <Dialog open={isQuickAddOpen} onOpenChange={setIsQuickAddOpen}>
+        <DialogContent className="px-4 py-4 sm:max-w-[500px]">
+          <div className="flex justify-between items-center mb-4">
+            <DialogTitle>Adicionar Transação</DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsQuickAddOpen(false)}
+            >
+              <XIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <TransactionFormMobile onSuccess={() => {
+            setIsQuickAddOpen(false);
+            toast.success("Transação adicionada com sucesso");
+          }} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Floating Action Button */}
+      {isMobile && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <Button 
+            size="lg" 
+            className="h-14 w-14 rounded-full shadow-lg"
+            onClick={() => setIsQuickAddOpen(true)}
+          >
+            <PlusIcon className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

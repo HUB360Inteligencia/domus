@@ -25,6 +25,7 @@ export interface FinancialTransaction {
   recurring_frequency?: RecurringFrequency | null;
   recurring_end_date?: string | null;
   payment_method?: string | null;
+  receipt_url?: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -42,6 +43,7 @@ export interface FinancialTransactionFormData {
   recurring_frequency?: RecurringFrequency | null;
   recurring_end_date?: string | null;
   payment_method?: string | null;
+  receipt_url?: string | null;
 }
 
 export interface FinancialAnalytics {

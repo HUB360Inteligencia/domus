@@ -480,6 +480,7 @@ export type Database = {
           id: string
           payment_method: string | null
           property_id: string | null
+          receipt_url: string | null
           recurring: boolean | null
           recurring_end_date: string | null
           recurring_frequency: string | null
@@ -497,6 +498,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           property_id?: string | null
+          receipt_url?: string | null
           recurring?: boolean | null
           recurring_end_date?: string | null
           recurring_frequency?: string | null
@@ -514,6 +516,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           property_id?: string | null
+          receipt_url?: string | null
           recurring?: boolean | null
           recurring_end_date?: string | null
           recurring_frequency?: string | null
