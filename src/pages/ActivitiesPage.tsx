@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
@@ -150,7 +149,10 @@ export default function ActivitiesPage() {
   
   const handleStatusChange = async (activityId: string, newStatus: string) => {
     try {
-      await updateActivityStatus({ id: activityId, status: newStatus });
+      await updateActivityStatus({ 
+        id: activityId, 
+        status: newStatus as ActivityStatus 
+      });
       
       // Mostrar toast de sucesso ao mudar status
       const statusMap: Record<string, string> = {

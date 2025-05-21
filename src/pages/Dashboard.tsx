@@ -13,6 +13,7 @@ import { useContractStats, useFinancialStats, useFinancialChartData, useUpcoming
 import { useActivities } from '@/hooks/use-activities';
 import { ActivitiesDashboardWidget } from '@/components/activities/activities-dashboard-widget';
 import { PageHeader } from "@/components/page-header";
+import { PropertyStatus } from "@/types/property";
 
 export default function Dashboard() {
   const navigate = useNavigate();
