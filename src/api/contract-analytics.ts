@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Contract } from "@/types/contract";
+import { Contract, ContractStatus, SignatureStatus } from "@/types/contract";
 
 export interface ContractStats {
   total: number;
