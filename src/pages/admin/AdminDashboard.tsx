@@ -16,26 +16,20 @@ import { StatsCard } from "@/components/stats-card";
 import { OverviewChart } from "@/components/overview-chart";
 import { useClients } from "@/hooks/use-clients";
 import { usePlans } from "@/hooks/use-plans";
-
-// Interface for client distribution data
-interface ClientsByPlanData {
-  name: string;
-  value: number;
-}
-
-// Interface for chart data that matches the OverviewChart component's expected format
-interface ChartData {
-  name: string;
-  income: number;
-  expenses: number;
-}
+import { 
+  useSubscriptionAnalytics, 
+  useMrr, 
+  useClientDistributionByPlan 
+} from "@/hooks/use-subscription-analytics";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminDashboard() {
   const { data: clients, isLoading: isClientsLoading } = useClients();
   const { data: plans, isLoading: isPlansLoading } = usePlans();
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useSubscriptionAnalytics();
+  const { data: mrr, isLoading: isMrrLoading } = useMrr();
+  const { data: clientsByPlan, isLoading: isDistributionLoading } = useClientDistributionByPlan();
   
-  const [clientsByPlan, setClientsByPlan] = useState<ClientsByPlanData[]>([]);
-  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
   const [financialStats, setFinancialStats] = useState({
     mrr: "R$ 0,00",
     totalClients: 0,
@@ -44,57 +38,23 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    // Generate demo data for now - this would be replaced with real data from API
-    if (plans && plans.length > 0) {
-      const demoClientsByPlan = plans.map(plan => ({
-        name: plan.name,
-        value: Math.floor(Math.random() * 50) + 1
-      }));
-      
-      setClientsByPlan(demoClientsByPlan);
-      
-      // Calculate total clients (for demo)
-      const totalClients = demoClientsByPlan.reduce((acc, curr) => acc + curr.value, 0);
-      
-      // Generate MRR (for demo)
-      const mrr = plans.reduce((acc, plan) => {
-        const clientCount = demoClientsByPlan.find(c => c.name === plan.name)?.value || 0;
-        return acc + (plan.price * clientCount);
-      }, 0);
+    if (analyticsData && !isAnalyticsLoading) {
+      const formatter = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 0,
+      });
       
       setFinancialStats({
-        mrr: `R$ ${mrr.toLocaleString('pt-BR')}`,
-        totalClients,
-        activeRate: "92%",
-        growthRate: "+8%"
+        mrr: formatter.format(analyticsData.currentMrr),
+        totalClients: analyticsData.clientMetrics.totalClients,
+        activeRate: `${analyticsData.clientMetrics.retentionRate}%`,
+        growthRate: `+${analyticsData.mrrGrowthRate}%`
       });
-      
-      // Generate revenue chart data (for demo) - updated to match the ChartData interface
-      const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
-      const demoRevenueData = months.map((month, index) => {
-        // Starting baseline with some growth
-        const baseRevenue = 30000 + (index * 5000);
-        // Add some randomness
-        const revenue = baseRevenue + Math.floor(Math.random() * 10000);
-        // Add expenses (typically lower than income for profitable companies)
-        const expenses = baseRevenue * 0.7 + Math.floor(Math.random() * 5000);
-        
-        return {
-          name: month,
-          income: revenue,
-          expenses: expenses
-        };
-      });
-      
-      setRevenueData(demoRevenueData);
     }
-  }, [plans]);
+  }, [analyticsData, isAnalyticsLoading]);
 
-  // Prepare data for client distribution chart
-  const clientDistributionData = clientsByPlan.map(item => ({
-    name: item.name,
-    value: item.value
-  }));
+  const isLoading = isClientsLoading || isPlansLoading || isAnalyticsLoading || isMrrLoading || isDistributionLoading;
 
   return (
     <div className="space-y-6">
@@ -103,50 +63,83 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Faturamento Mensal (MRR)"
-          value={financialStats.mrr}
-          description="Receita mensal recorrente"
-          icon={CircleDollarSign}
-          iconColor="text-emerald-500"
-          trend="up"
-          trendValue={financialStats.growthRate}
-        />
-        <StatsCard
-          title="Total de Clientes"
-          value={financialStats.totalClients.toString()}
-          description="Clientes ativos na plataforma"
-          icon={Users}
-          iconColor="text-blue-500"
-          trend="up"
-          trendValue="+12%"
-        />
-        <StatsCard
-          title="Taxa de Retenção"
-          value={financialStats.activeRate}
-          description="Clientes que renovaram"
-          icon={CircleCheck}
-          iconColor="text-purple-500"
-          trend="up"
-          trendValue="+2%"
-        />
-        <StatsCard
-          title="Taxa de Crescimento"
-          value={financialStats.growthRate}
-          description="Em relação ao mês anterior"
-          icon={TrendingUp}
-          iconColor="text-amber-500"
-          trend="up"
-          trendValue="+3%"
-        />
+        {isLoading ? (
+          <>
+            {Array(4).fill(0).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-8 w-2/3 mb-2" />
+                  <Skeleton className="h-12 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatsCard
+              title="Faturamento Mensal (MRR)"
+              value={financialStats.mrr}
+              description="Receita mensal recorrente"
+              icon={CircleDollarSign}
+              iconColor="text-emerald-500"
+              trend="up"
+              trendValue={financialStats.growthRate}
+            />
+            <StatsCard
+              title="Total de Clientes"
+              value={financialStats.totalClients.toString()}
+              description="Clientes ativos na plataforma"
+              icon={Users}
+              iconColor="text-blue-500"
+              trend="up"
+              trendValue="+12%"
+            />
+            <StatsCard
+              title="Taxa de Retenção"
+              value={financialStats.activeRate}
+              description="Clientes que renovaram"
+              icon={CircleCheck}
+              iconColor="text-purple-500"
+              trend="up"
+              trendValue="+2%"
+            />
+            <StatsCard
+              title="Taxa de Crescimento"
+              value={financialStats.growthRate}
+              description="Em relação ao mês anterior"
+              icon={TrendingUp}
+              iconColor="text-amber-500"
+              trend="up"
+              trendValue="+3%"
+            />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <OverviewChart 
-            data={revenueData} 
-            title="Crescimento de Receita (2024)" 
-          />
+          {isAnalyticsLoading ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Crescimento de Receita (2024)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <OverviewChart 
+              data={analyticsData?.historicalMrr.map(item => ({
+                name: item.month,
+                income: item.value,
+                expenses: item.value * 0.3  // Estimating expenses as 30% of income
+              })) || []} 
+              title="Crescimento de Receita (2024)" 
+            />
+          )}
         </div>
         <Card>
           <CardHeader>
@@ -154,17 +147,35 @@ export default function AdminDashboard() {
             <CardDescription>Clientes por plano de assinatura</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {clientsByPlan.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full bg-petroleum opacity-${(index + 5) * 10}`}></div>
-                    <span className="font-medium">{item.name}</span>
+            {isDistributionLoading ? (
+              <div className="space-y-4">
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="w-3 h-3 rounded-full" />
+                      <Skeleton className="w-24 h-5" />
+                    </div>
+                    <Skeleton className="w-10 h-5" />
                   </div>
-                  <span className="font-bold">{item.value}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : clientsByPlan && clientsByPlan.length > 0 ? (
+              <div className="space-y-4">
+                {clientsByPlan.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full bg-petroleum opacity-${(index + 5) * 10}`}></div>
+                      <span className="font-medium">{item.planName}</span>
+                    </div>
+                    <span className="font-bold">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                Nenhum dado disponível
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -183,7 +194,6 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                {/* Client acquisition chart would go here */}
                 <p className="text-center text-muted-foreground pt-32">Gráfico de aquisição de clientes será implementado em breve</p>
               </div>
             </CardContent>
@@ -197,7 +207,6 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                {/* Average subscription value chart would go here */}
                 <p className="text-center text-muted-foreground pt-32">Gráfico de valor médio de assinaturas será implementado em breve</p>
               </div>
             </CardContent>
@@ -211,7 +220,6 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-80">
-                {/* Plan performance chart would go here */}
                 <p className="text-center text-muted-foreground pt-32">Gráfico de desempenho dos planos será implementado em breve</p>
               </div>
             </CardContent>

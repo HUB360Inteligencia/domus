@@ -10,137 +10,17 @@ import { useProperties } from "@/hooks/use-properties";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PropertyStatus } from "@/types/property";
-import { Contract, ContractStatus } from "@/types/contract";
-
-// Sample data for contracts and finances that we'll replace later
-const contractStats = {
-  total: 10,
-  active: 8,
-  expiringSoon: 2
-};
-
-const financialStats = {
-  monthlyIncome: "R$ 38.500,00",
-  annualIncome: "R$ 462.000,00",
-  occupancyRate: "91%"
-};
-
-// Sample contract data that matches the Contract type
-const sampleContracts: Contract[] = [
-  {
-    id: "con1",
-    title: "Contrato de Aluguel #2023-01",
-    property_id: "prop1",
-    property: { title: "Apartamento Centro" },
-    tenant_name: "Ana Paula Silva",
-    tenant_document: "123.456.789-00",
-    tenant_contact: "11-98765-4321",
-    start_date: "2023-01-15",
-    end_date: "2024-01-14",
-    value: 6500,
-    payment_day: 15,
-    deposit_value: 6500,
-    status: "active",
-    terms: null,
-    document_url: null,
-    has_renewal_option: true,
-    renewal_terms: null,
-    special_conditions: null,
-    created_at: "2023-01-10T12:00:00Z",
-    updated_at: "2023-01-10T12:00:00Z",
-    user_id: "user1",
-    signature_status: "completed"
-  },
-  {
-    id: "con2",
-    title: "Contrato de Aluguel #2023-02",
-    property_id: "prop2",
-    property: { title: "Sala Comercial Paulista" },
-    tenant_name: "Empresa ABC Ltda",
-    tenant_document: "12.345.678/0001-90",
-    tenant_contact: "11-3456-7890",
-    start_date: "2023-03-01",
-    end_date: "2024-03-01",
-    value: 9800,
-    payment_day: 5,
-    deposit_value: 19600,
-    status: "active",
-    terms: null,
-    document_url: null,
-    has_renewal_option: false,
-    renewal_terms: null,
-    special_conditions: null,
-    created_at: "2023-02-20T14:30:00Z",
-    updated_at: "2023-02-20T14:30:00Z",
-    user_id: "user1",
-    signature_status: "completed"
-  },
-  {
-    id: "con3",
-    title: "Contrato de Aluguel #2022-08",
-    property_id: "prop3",
-    property: { title: "Casa na Praia" },
-    tenant_name: "Roberto Mendes",
-    tenant_document: "987.654.321-00",
-    tenant_contact: "11-97654-3210",
-    start_date: "2022-12-15",
-    end_date: "2023-06-15",
-    value: 12000,
-    payment_day: 10,
-    deposit_value: 12000,
-    status: "expired",
-    terms: null,
-    document_url: null,
-    has_renewal_option: true,
-    renewal_terms: null,
-    special_conditions: null,
-    created_at: "2022-12-01T10:15:00Z",
-    updated_at: "2022-12-01T10:15:00Z",
-    user_id: "user1",
-    signature_status: "completed"
-  }
-];
-
-const chartData = [
-  { name: 'Jan', income: 45000, expenses: 12000 },
-  { name: 'Fev', income: 45000, expenses: 14000 },
-  { name: 'Mar', income: 48000, expenses: 12000 },
-  { name: 'Abr', income: 48000, expenses: 15000 },
-  { name: 'Mai', income: 52000, expenses: 18000 },
-  { name: 'Jun', income: 52000, expenses: 13000 },
-];
-
-const upcomingEvents = [
-  {
-    id: "ev1",
-    title: "Vencimento de Contrato",
-    property: "Apartamento Centro",
-    date: "2024-06-15",
-    type: "contract",
-    priority: "high"
-  },
-  {
-    id: "ev2",
-    title: "Vencimento IPTU",
-    property: "Casa de Praia",
-    date: "2024-06-20",
-    type: "payment",
-    priority: "medium"
-  },
-  {
-    id: "ev3",
-    title: "Manutenção Ar Condicionado",
-    property: "Sala Comercial",
-    date: "2024-06-25",
-    type: "maintenance",
-    priority: "low"
-  }
-];
+import { useContractStats, useFinancialStats, useFinancialChartData, useUpcomingEvents, useRecentContracts } from "@/hooks/use-contract-analytics";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { properties, isLoading } = useProperties();
+  const { properties, isLoading: isLoadingProperties } = useProperties();
+  const { data: contractStats, isLoading: isLoadingContractStats } = useContractStats();
+  const { data: financialStats, isLoading: isLoadingFinancialStats } = useFinancialStats();
+  const { data: chartData, isLoading: isLoadingChartData } = useFinancialChartData();
+  const { data: upcomingEvents, isLoading: isLoadingEvents } = useUpcomingEvents();
+  const { data: contracts, isLoading: isLoadingContracts } = useRecentContracts();
+  
   const [propertyStats, setPropertyStats] = useState({
     total: 0,
     available: 0,
@@ -170,11 +50,11 @@ export default function Dashboard() {
   };
 
   const handleContractView = (id: string) => {
-    console.log("View contract:", id);
+    navigate(`/contracts/detail?id=${id}`);
   };
 
   const handleContractEdit = (id: string) => {
-    console.log("Edit contract:", id);
+    navigate(`/contracts/edit?id=${id}`);
   };
 
   const handleContractDownload = (id: string) => {
@@ -216,6 +96,8 @@ export default function Dashboard() {
   const recentProperties = [...properties]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 3);
+    
+  const isLoading = isLoadingProperties || isLoadingContractStats || isLoadingFinancialStats;
 
   return (
     <div className="space-y-6">
@@ -247,15 +129,15 @@ export default function Dashboard() {
             />
             <StatsCard
               title="Contratos Ativos"
-              value={contractStats.active.toString()}
-              description={`${contractStats.expiringSoon} contratos a vencer em breve`}
+              value={(contractStats?.active || 0).toString()}
+              description={`${contractStats?.expiringSoon || 0} contratos a vencer em breve`}
               icon={FileText}
               iconColor="text-petroleum"
             />
             <StatsCard
               title="Faturamento Mensal"
-              value={financialStats.monthlyIncome}
-              description={`Anual: ${financialStats.annualIncome}`}
+              value={financialStats?.monthlyIncome || "R$ 0,00"}
+              description={`Anual: ${financialStats?.annualIncome || "R$ 0,00"}`}
               icon={TrendingUp}
               iconColor="text-petroleum"
               trend="up"
@@ -263,7 +145,7 @@ export default function Dashboard() {
             />
             <StatsCard
               title="Taxa de Ocupação"
-              value={financialStats.occupancyRate}
+              value={financialStats?.occupancyRate || "0%"}
               description="Imóveis ocupados vs. total"
               icon={CheckCircle}
               iconColor="text-petroleum"
@@ -276,7 +158,20 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <OverviewChart data={chartData} title="Receitas e Despesas (2024)" />
+          {isLoadingChartData ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Receitas e Despesas (2024)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 flex items-center justify-center">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <OverviewChart data={chartData || []} title="Receitas e Despesas (2024)" />
+          )}
         </div>
         <Card>
           <CardHeader>
@@ -286,25 +181,44 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingEvents.map(event => (
-                <div 
-                  key={event.id} 
-                  className="flex items-start gap-3 pb-3 border-b last:border-b-0 last:pb-0"
-                >
-                  <div className={`p-1.5 rounded-md bg-muted ${getPriorityColor(event.priority)}`}>
-                    {getEventIcon(event.type)}
+            {isLoadingEvents ? (
+              <div className="space-y-4">
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3 pb-3 border-b last:border-b-0 last:pb-0">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <div className="w-full">
+                      <Skeleton className="h-5 w-3/4 mb-1" />
+                      <Skeleton className="h-4 w-1/2 mb-1" />
+                      <Skeleton className="h-4 w-1/4" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{event.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {event.property}
-                    </p>
-                    <p className="text-xs mt-0.5">{formatDate(event.date)}</p>
+                ))}
+              </div>
+            ) : upcomingEvents && upcomingEvents.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingEvents.map(event => (
+                  <div 
+                    key={event.id} 
+                    className="flex items-start gap-3 pb-3 border-b last:border-b-0 last:pb-0"
+                  >
+                    <div className={`p-1.5 rounded-md bg-muted ${getPriorityColor(event.priority)}`}>
+                      {getEventIcon(event.type)}
+                    </div>
+                    <div>
+                      <p className="font-medium">{event.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {event.property}
+                      </p>
+                      <p className="text-xs mt-0.5">{formatDate(event.date)}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                Nenhum evento próximo encontrado
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -315,7 +229,7 @@ export default function Dashboard() {
           <TabsTrigger value="contracts">Contratos</TabsTrigger>
         </TabsList>
         <TabsContent value="properties" className="space-y-4">
-          {isLoading ? (
+          {isLoadingProperties ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array(3).fill(0).map((_, i) => (
                 <Card key={i}>
@@ -330,31 +244,61 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentProperties.map(property => (
-                <PropertyCard 
-                  key={property.id}
-                  id={property.id}
-                  title={property.title}
-                  address={property.address}
-                  city={property.city}
-                  state={property.state}
-                  type={property.type}
-                  status={property.status}
-                  value={property.value}
-                  imageUrl={property.image_url}
-                  onSelect={handlePropertySelect}
-                />
-              ))}
+              {recentProperties.length > 0 ? (
+                recentProperties.map(property => (
+                  <PropertyCard 
+                    key={property.id}
+                    id={property.id}
+                    title={property.title}
+                    address={property.address}
+                    city={property.city}
+                    state={property.state}
+                    type={property.type}
+                    status={property.status}
+                    value={property.value}
+                    imageUrl={property.image_url}
+                    onSelect={handlePropertySelect}
+                  />
+                ))
+              ) : (
+                <div className="col-span-3 py-8 text-center text-muted-foreground">
+                  Nenhum imóvel cadastrado
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
         <TabsContent value="contracts">
-          <ContractList 
-            contracts={sampleContracts} 
-            onView={handleContractView}
-            onEdit={handleContractEdit}
-            onDownload={handleContractDownload}
-          />
+          {isLoadingContracts ? (
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  {Array(3).fill(0).map((_, i) => (
+                    <div key={i} className="flex flex-col space-y-3">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            contracts && contracts.length > 0 ? (
+              <ContractList 
+                contracts={contracts} 
+                onView={handleContractView}
+                onEdit={handleContractEdit}
+                onDownload={handleContractDownload}
+              />
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">Nenhum contrato cadastrado</p>
+                </CardContent>
+              </Card>
+            )
+          )}
         </TabsContent>
       </Tabs>
     </div>
