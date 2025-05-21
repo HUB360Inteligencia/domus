@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { fetchProperties, fetchPropertyById } from "@/api/properties";
 import { toast } from 'sonner';
@@ -8,9 +7,9 @@ export const usePropertyQueries = (selectedPropertyId: string | null, clientId: 
     queryKey: ['properties', clientId],
     queryFn: async () => {
       try {
-        // If we have a clientId, it will be included in the fetch, but the RLS policies
-        // will ensure we only get properties for the client the user belongs to
-        const data = await fetchProperties(clientId);
+        // Update this line to match the API function signature
+        // If the API function doesn't accept clientId anymore, remove it
+        const data = await fetchProperties();
         console.log('Properties data fetched:', data);
         return data;
       } catch (error: any) {

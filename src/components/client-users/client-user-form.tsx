@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useCreateClientUser, useResetUserPassword, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUser } from "@/api/client-users";
 

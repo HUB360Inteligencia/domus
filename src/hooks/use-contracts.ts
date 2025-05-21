@@ -16,6 +16,7 @@ export const useContracts = () => {
     setSelectedContractId(id);
   }, []);
 
+  // Update this line to pass only selectedContractId, as useContractQueries is now checking clientId internally
   const { 
     contracts, 
     selectedContract, 
@@ -35,7 +36,7 @@ export const useContracts = () => {
     refetchDocuments,
     refetchContractDocuments,
     refetchNotifications
-  } = useContractQueries(selectedContractId, clientId);
+  } = useContractQueries(selectedContractId);
   
   const {
     createContract,
