@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -31,6 +30,7 @@ import NotFoundPage from '@/pages/NotFoundPage';
 import ProfilePage from '@/pages/ProfilePage';
 import ClientsPage from '@/pages/ClientsPage';
 import ClientDetailsPage from '@/pages/ClientDetailsPage';
+import UsersPage from '@/pages/UsersPage';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -129,6 +129,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 >
+                  <Route index element={<Navigate to="/dashboard" />} />
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="properties" element={<PropertiesPage />} />
                   <Route path="properties/:id" element={<PropertyDetailsPage />} />
@@ -141,6 +142,7 @@ function App() {
                   <Route path="clients/:id" element={<ClientDetailsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="profile" element={<ProfilePage />} />
+                  <Route path="users" element={<UsersPage />} />
                 </Route>
 
                 {/* 404 route */}
