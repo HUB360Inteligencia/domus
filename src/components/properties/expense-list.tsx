@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,7 +42,7 @@ interface ExpenseListProps {
   isLoading: boolean;
   onAddClick: () => void;
   onEditClick: (expense: PropertyExpense) => void;
-  onDeleteClick: (expense: PropertyExpense) => void;
+  onDeleteClick: (id: string) => void;
   onUploadReceiptClick: (expense: PropertyExpense) => void;
   isDeleting: boolean;
 }
@@ -87,7 +86,7 @@ export function ExpenseList({
 
   const handleDelete = () => {
     if (expenseToDelete) {
-      onDeleteClick(expenseToDelete);
+      onDeleteClick(expenseToDelete.id);
     }
     setDeleteDialogOpen(false);
   };

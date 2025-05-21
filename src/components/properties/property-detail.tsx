@@ -65,6 +65,10 @@ export function PropertyDetail({
     setDeleteDialogOpen(false);
   };
 
+  const handleDeleteExpense = (id: string) => {
+    deleteExpense(id);
+  };
+
   const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) return '-';
     return value.toLocaleString('pt-BR', {
@@ -502,7 +506,7 @@ export function PropertyDetail({
           </Card>
         </TabsContent>
 
-        {/* New Expenses Tab */}
+        {/* Expenses Tab */}
         <TabsContent value="expenses">
           <div className="space-y-6">
             {/* Expense Analytics */}
@@ -526,7 +530,7 @@ export function PropertyDetail({
                   isLoading={isLoadingExpenses}
                   onAddClick={handleAddExpenseClick}
                   onEditClick={handleEditExpenseClick}
-                  onDeleteClick={deleteExpense}
+                  onDeleteClick={handleDeleteExpense}
                   onUploadReceiptClick={handleUploadReceiptClick}
                   isDeleting={isDeletingExpense}
                 />
