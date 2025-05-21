@@ -21,6 +21,7 @@ import { RequireAuth } from './components/auth/require-auth';
 import { RequireAdmin } from './components/auth/require-admin';
 import ActivitiesPage from './pages/ActivitiesPage';
 import { Toaster } from "@/components/ui/toaster"
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 function App() {
   return (
@@ -74,9 +75,25 @@ function createRouter() {
       element: <RequireAdmin><AdminLayout /></RequireAdmin>,
       children: [
         {
-          path: '/',
-          element: <Home />
+          path: "",  // Changed from "/" to "" to make it a relative path
+          element: <AdminDashboard />  // Changed to use AdminDashboard instead of Home
         },
+        {
+          path: "clients",
+          element: <ClientsPage />
+        },
+        {
+          path: "clients/:clientId",
+          element: <React.lazy(() => import('./pages/admin/ClientDetailPage')) />
+        },
+        {
+          path: "clients/new",
+          element: <React.lazy(() => import('./pages/admin/ClientFormPage')) />
+        },
+        {
+          path: "clients/edit/:clientId",
+          element: <React.lazy(() => import('./pages/admin/ClientFormPage')) />
+        }
       ]
     },
     {
