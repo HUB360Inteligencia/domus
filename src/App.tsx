@@ -22,6 +22,7 @@ import { RequireAdmin } from './components/auth/require-admin';
 import ActivitiesPage from './pages/ActivitiesPage';
 import { Toaster } from "@/components/ui/toaster"
 import AdminDashboard from './pages/admin/AdminDashboard';
+import { AuthProvider } from './components/auth/auth-provider';
 
 // Use React.lazy outside of JSX
 const ClientDetailPage = React.lazy(() => import('./pages/admin/ClientDetailPage'));
@@ -29,10 +30,12 @@ const ClientFormPage = React.lazy(() => import('./pages/admin/ClientFormPage'));
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={createRouter()} />
-      <Toaster />
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={createRouter()} />
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
@@ -112,3 +115,4 @@ function createRouter() {
 }
 
 export default App;
+
