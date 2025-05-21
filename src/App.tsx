@@ -1,11 +1,13 @@
+
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/contexts/query-provider';
 import { ModalProvider } from '@/contexts/modal-context';
 import { initializeStorage } from '@/api/storage';
+import { useAuth } from '@/lib/auth';
 
 // Layouts
 import DashboardLayout from '@/layouts/DashboardLayout';
