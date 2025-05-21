@@ -1,15 +1,15 @@
 
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/components/auth/auth-provider';
+import { useAuth } from '@/lib/auth';
 
 interface RequireAuthProps {
   children: React.ReactNode;
 }
 
 export const RequireAuth = ({ children }: RequireAuthProps) => {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  if (loading) {
+  if (isLoading) {
     return <div>Carregando...</div>;
   }
   

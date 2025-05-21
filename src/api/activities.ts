@@ -133,7 +133,7 @@ export const createActivity = async (activityData: ActivityFormData): Promise<Ac
       }
     }
 
-    return data;
+    return data as unknown as Activity;
   } catch (err) {
     console.error('Falha ao criar atividade:', err);
     throw err;
@@ -194,7 +194,7 @@ export const updateActivity = async (id: string, activityData: Partial<ActivityF
       }
     }
 
-    return data;
+    return data as unknown as Activity;
   } catch (err) {
     console.error(`Falha ao atualizar atividade ${id}:`, err);
     throw err;

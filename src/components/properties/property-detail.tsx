@@ -78,13 +78,13 @@ export function PropertyDetail({
 
   const getStatusBadge = (status: PropertyStatus) => {
     switch (status) {
-      case 'active':
+      case "active" as any:
         return <Badge variant="outline">Ativo</Badge>;
-      case 'inactive':
+      case "inactive" as any:
         return <Badge variant="secondary">Inativo</Badge>;
-      case 'rented':
+      case "rented":
         return <Badge className="bg-blue-500 text-white">Alugado</Badge>;
-      case 'sold':
+      case "sold":
         return <Badge className="bg-green-500 text-white">Vendido</Badge>;
       default:
         return <Badge>{status}</Badge>;
@@ -93,11 +93,11 @@ export function PropertyDetail({
 
   const getFurnishedBadge = (furnished: FurnishedStatus) => {
     switch (furnished) {
-      case 'furnished':
+      case "furnished" as any:
         return <Badge variant="outline">Mobiliado</Badge>;
-      case 'partially_furnished':
+      case "partially_furnished":
         return <Badge variant="secondary">Semi-mobiliado</Badge>;
-      case 'not_furnished':
+      case "not_furnished":
         return <Badge>Não mobiliado</Badge>;
       default:
         return <Badge>{furnished}</Badge>;

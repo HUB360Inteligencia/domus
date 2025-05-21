@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { PlusCircle, Loader2, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,11 +111,12 @@ export function PropertyActivities({ propertyId }: PropertyActivitiesProps) {
           <Button 
             variant="outline" 
             size="sm" 
-            asComponent={Link} 
-            to={`/activities?property_id=${propertyId}`}
+            asChild
           >
-            <LayoutList className="h-4 w-4 mr-2" />
-            Ver Todas
+            <Link to={`/activities?propertyId=${propertyId}`}>
+              <LayoutList className="h-4 w-4 mr-2" />
+              Ver Todas as atividades
+            </Link>
           </Button>
           <Button size="sm" onClick={handleAddActivity}>
             <PlusCircle className="h-4 w-4 mr-2" />

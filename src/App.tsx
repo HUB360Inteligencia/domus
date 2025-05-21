@@ -7,21 +7,20 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import Home from './pages/Index';
-import { SignIn } from './pages/auth/Login';
-import { SignUp } from './pages/auth/Register';
-import { PropertiesPage } from './pages/Properties';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Properties from './pages/Properties';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import PropertyFormPage from './pages/PropertyFormPage';
 import ClientsPage from './pages/admin/ClientsPage';
 import ContractsPage from './pages/ContractsPage';
 import { AppLayout } from './components/layout/app-layout';
 import { AdminLayout } from './components/layout/admin-layout';
-import SettingsPage from './pages/SettingsPage';
+import Dashboard from './pages/Dashboard';
 import { RequireAuth } from './components/auth/require-auth';
 import { RequireAdmin } from './components/auth/require-admin';
-import Dashboard from './pages/Dashboard';
-import { Toaster } from "@/components/ui/toaster"
 import ActivitiesPage from './pages/ActivitiesPage';
+import { Toaster } from "@/components/ui/toaster"
 
 function App() {
   return (
@@ -46,7 +45,7 @@ function createRouter() {
         },
         {
           path: '/properties',
-          element: <RequireAuth><PropertiesPage /></RequireAuth>
+          element: <RequireAuth><Properties /></RequireAuth>
         },
         {
           path: '/properties/:id',
@@ -63,10 +62,6 @@ function createRouter() {
         {
           path: '/contracts',
           element: <RequireAuth><ContractsPage /></RequireAuth>
-        },
-        {
-          path: '/settings',
-          element: <RequireAuth><SettingsPage /></RequireAuth>
         },
         {
           path: '/activities',
@@ -86,11 +81,11 @@ function createRouter() {
     },
     {
       path: '/signin',
-      element: <SignIn />
+      element: <Login />
     },
     {
       path: '/signup',
-      element: <SignUp />
+      element: <Register />
     }
   ]);
 }
