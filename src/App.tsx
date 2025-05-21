@@ -23,6 +23,10 @@ import ActivitiesPage from './pages/ActivitiesPage';
 import { Toaster } from "@/components/ui/toaster"
 import AdminDashboard from './pages/admin/AdminDashboard';
 
+// Use React.lazy outside of JSX
+const ClientDetailPage = React.lazy(() => import('./pages/admin/ClientDetailPage'));
+const ClientFormPage = React.lazy(() => import('./pages/admin/ClientFormPage'));
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -84,15 +88,15 @@ function createRouter() {
         },
         {
           path: "clients/:clientId",
-          element: <React.lazy(() => import('./pages/admin/ClientDetailPage')) />
+          element: <ClientDetailPage />
         },
         {
           path: "clients/new",
-          element: <React.lazy(() => import('./pages/admin/ClientFormPage')) />
+          element: <ClientFormPage />
         },
         {
           path: "clients/edit/:clientId",
-          element: <React.lazy(() => import('./pages/admin/ClientFormPage')) />
+          element: <ClientFormPage />
         }
       ]
     },
