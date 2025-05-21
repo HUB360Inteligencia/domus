@@ -24,6 +24,7 @@ import { useProperties } from '@/hooks/use-properties';
 import { FinancialReportFilters } from '@/types/financial';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
+import { InfoIcon } from 'lucide-react';
 
 export default function FinancesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,6 +48,18 @@ export default function FinancesPage() {
   const handleFilterChange = (newFilters: FinancialReportFilters) => {
     setFilters(newFilters);
   };
+
+  // Log para ajudar a depurar o problema
+  console.log('FinancesPage render:', { 
+    transactionsCount: transactions?.length || 0,
+    analyticsExists: !!analytics,
+    propertiesCount: properties?.length || 0,
+    isLoadingTransactions,
+    isLoadingAnalytics,
+    isLoadingProperties,
+    transactionsError,
+    analyticsError
+  });
 
   if (transactionsError || analyticsError) {
     console.error('Error loading financial data:', { transactionsError, analyticsError });
@@ -121,23 +134,38 @@ export default function FinancesPage() {
                 <div className="text-muted-foreground">Carregando análises financeiras...</div>
               </div>
             </div>
-          ) : !analytics || !properties ? (
+          ) : analytics && properties ? (
+            transactions.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                  <InfoIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Nenhuma transação encontrada</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Você ainda não possui transações financeiras registradas. Adicione sua primeira transação para começar a ver análises.
+                  </p>
+                  <Button onClick={() => setIsDialogOpen(true)}>
+                    Adicionar primeira transação
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <FinancialAnalytics 
+                analytics={analytics} 
+                properties={properties}
+              />
+            )
+          ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center p-6 min-h-[300px] text-center">
-                <div className="text-xl font-semibold mb-2">Nenhum dado financeiro encontrado</div>
+                <div className="text-xl font-semibold mb-2">Nenhum dado financeiro disponível</div>
                 <p className="text-muted-foreground mb-4">
-                  Você ainda não possui transações financeiras registradas.
+                  Não foi possível carregar as análises financeiras.
                 </p>
-                <Button onClick={() => setIsDialogOpen(true)}>
-                  Adicionar primeira transação
+                <Button onClick={() => window.location.reload()}>
+                  Tentar novamente
                 </Button>
               </CardContent>
             </Card>
-          ) : (
-            <FinancialAnalytics 
-              analytics={analytics} 
-              properties={properties}
-            />
           )}
         </TabsContent>
         

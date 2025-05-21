@@ -13,10 +13,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon, InfoIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FinancialAnalytics as FinancialAnalyticsType } from '@/types/financial';
 import { Property } from '@/types/property';
+import { Button } from '@/components/ui/button';
 
 interface FinancialAnalyticsProps {
   analytics: FinancialAnalyticsType;
@@ -24,6 +25,15 @@ interface FinancialAnalyticsProps {
 }
 
 export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalyticsProps) => {
+  // Log para ajudar a depurar
+  console.log('FinancialAnalytics render:', {
+    analytics,
+    propertiesCount: properties.length,
+    incomeCategories: Object.keys(analytics?.incomeByCategory || {}).length,
+    expenseCategories: Object.keys(analytics?.expensesByCategory || {}).length,
+    monthlyDataPoints: analytics?.monthlyData?.length || 0
+  });
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -37,25 +47,42 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
 
   // Dados para o gráfico de categorias de despesa
   const expensesChartData = useMemo(() => {
+    if (!analytics?.expensesByCategory) return [];
     return Object.entries(analytics.expensesByCategory).map(([category, amount]) => ({
       name: category,
       value: Number(amount)
     }));
-  }, [analytics.expensesByCategory]);
+  }, [analytics?.expensesByCategory]);
 
   // Dados para o gráfico de categorias de receita
   const incomeChartData = useMemo(() => {
+    if (!analytics?.incomeByCategory) return [];
     return Object.entries(analytics.incomeByCategory).map(([category, amount]) => ({
       name: category,
       value: Number(amount)
     }));
-  }, [analytics.incomeByCategory]);
+  }, [analytics?.incomeByCategory]);
 
   // Cores para os gráficos
   const COLORS = [
     '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28AD2',
     '#FF6B6B', '#4ECDC4', '#F9D423', '#B5D99C', '#E27D60'
   ];
+
+  // Se não houver analytics ou properties válidos, exibir mensagem de erro
+  if (!analytics || !properties || !properties.length) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+          <InfoIcon className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-xl font-semibold mb-2">Dados financeiros indisponíveis</h3>
+          <p className="text-muted-foreground mb-4">
+            Não foi possível carregar os dados financeiros ou não existem imóveis cadastrados.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="grid gap-6">
@@ -67,7 +94,7 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
             <ArrowUpIcon className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(analytics.totalIncome)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(analytics.totalIncome || 0)}</div>
           </CardContent>
         </Card>
 
@@ -78,7 +105,7 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
             <ArrowDownIcon className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(analytics.totalExpenses)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(analytics.totalExpenses || 0)}</div>
           </CardContent>
         </Card>
 
@@ -96,7 +123,7 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
             <div className={`text-2xl font-bold ${
               analytics.netIncome >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
-              {formatCurrency(analytics.netIncome)}
+              {formatCurrency(analytics.netIncome || 0)}
             </div>
           </CardContent>
         </Card>
@@ -108,9 +135,9 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
             <TrendingUpIcon className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPercentage(analytics.annualROI)}</div>
+            <div className="text-2xl font-bold">{formatPercentage(analytics.annualROI || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              Mensal: {formatPercentage(analytics.monthlyROI)}
+              Mensal: {formatPercentage(analytics.monthlyROI || 0)}
             </p>
           </CardContent>
         </Card>
@@ -123,42 +150,48 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
             <CardTitle>Receitas vs Despesas (Mensal)</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={analytics.monthlyData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 40,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" angle={-45} textAnchor="end" height={70} />
-                <YAxis tickFormatter={(value) => `R$ ${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
-                <Bar dataKey="income" name="Receitas" fill="#10b981" />
-                <Bar dataKey="expense" name="Despesas" fill="#ef4444" />
-              </BarChart>
-            </ResponsiveContainer>
+            {analytics.monthlyData && analytics.monthlyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={analytics.monthlyData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 40,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" angle={-45} textAnchor="end" height={70} />
+                  <YAxis tickFormatter={(value) => `R$ ${value}`} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Legend />
+                  <Bar dataKey="income" name="Receitas" fill="#10b981" />
+                  <Bar dataKey="expense" name="Despesas" fill="#ef4444" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Nenhuma transação registrada nos últimos meses</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Valor Total do Patrimônio */}
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Valor Total do Patrimônio: {formatCurrency(analytics.propertyValues.totalValue)}</CardTitle>
+            <CardTitle>Valor Total do Patrimônio: {formatCurrency(analytics.propertyValues?.totalValue || 0)}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col space-y-4">
             <div className="h-60">
-              {properties.length > 0 && (
+              {properties.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={properties.map(p => ({ 
-                        name: p.title,
-                        value: Number(p.value)
+                        name: p.title || 'Sem título',
+                        value: Number(p.value) || 0
                       }))}
                       cx="50%"
                       cy="50%"
@@ -175,6 +208,10 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   </PieChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">Nenhum imóvel com valor registrado</p>
+                </div>
               )}
             </div>
             <div className="space-y-1">
@@ -185,9 +222,9 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
                       className="w-3 h-3 rounded-full mr-2" 
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    <span>{property.title}</span>
+                    <span>{property.title || 'Sem título'}</span>
                   </div>
-                  <span>{formatCurrency(Number(property.value))}</span>
+                  <span>{formatCurrency(Number(property.value) || 0)}</span>
                 </div>
               ))}
             </div>
@@ -271,30 +308,36 @@ export const FinancialAnalytics = ({ analytics, properties }: FinancialAnalytics
           <CardTitle>Análise de ROI por Imóvel</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted border-b">
-                  <th className="py-2 px-4 text-left">Imóvel</th>
-                  <th className="py-2 px-4 text-right">Valor</th>
-                  <th className="py-2 px-4 text-right">ROI Mensal</th>
-                  <th className="py-2 px-4 text-right">ROI Anual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analytics.propertiesROI.map((item) => (
-                  <tr key={item.propertyId} className="border-b">
-                    <td className="py-2 px-4">{item.propertyTitle}</td>
-                    <td className="py-2 px-4 text-right">
-                      {formatCurrency(analytics.propertyValues.byProperty[item.propertyId] || 0)}
-                    </td>
-                    <td className="py-2 px-4 text-right">{formatPercentage(item.monthlyROI)}</td>
-                    <td className="py-2 px-4 text-right">{formatPercentage(item.annualROI)}</td>
+          {analytics.propertiesROI && analytics.propertiesROI.length > 0 ? (
+            <div className="rounded-md border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted border-b">
+                    <th className="py-2 px-4 text-left">Imóvel</th>
+                    <th className="py-2 px-4 text-right">Valor</th>
+                    <th className="py-2 px-4 text-right">ROI Mensal</th>
+                    <th className="py-2 px-4 text-right">ROI Anual</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {analytics.propertiesROI.map((item) => (
+                    <tr key={item.propertyId} className="border-b">
+                      <td className="py-2 px-4">{item.propertyTitle || 'Sem título'}</td>
+                      <td className="py-2 px-4 text-right">
+                        {formatCurrency(analytics.propertyValues?.byProperty[item.propertyId] || 0)}
+                      </td>
+                      <td className="py-2 px-4 text-right">{formatPercentage(item.monthlyROI || 0)}</td>
+                      <td className="py-2 px-4 text-right">{formatPercentage(item.annualROI || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24">
+              <p className="text-muted-foreground">Nenhuma análise de ROI disponível</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

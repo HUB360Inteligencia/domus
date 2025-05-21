@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FinancialTransaction, 
@@ -272,8 +271,11 @@ export const calculateFinancialAnalytics = async (
   filters?: FinancialReportFilters
 ): Promise<FinancialAnalytics> => {
   try {
+    console.log('Calculating financial analytics with properties:', properties.length);
+    
     // Buscar todas as transações financeiras com os filtros fornecidos
     const transactions = await fetchFinancialTransactions(filters);
+    console.log('Transactions fetched for analytics:', transactions.length);
     
     // Valores iniciais
     const result: FinancialAnalytics = {
@@ -397,10 +399,28 @@ export const calculateFinancialAnalytics = async (
     // Ordenar propriedades por ROI
     result.propertiesROI.sort((a, b) => b.roi - a.roi);
     
+    console.log('Financial analytics calculated successfully');
     return result;
   } catch (err) {
     console.error('Falha ao calcular análises financeiras:', err);
-    throw err;
+    // Em vez de falhar completamente, retornar um objeto de análise com zeros
+    // para que a interface possa mostrar algo, em vez de quebrar
+    return {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netIncome: 0,
+      roi: 0,
+      monthlyROI: 0,
+      annualROI: 0,
+      propertyValues: {
+        totalValue: 0,
+        byProperty: {}
+      },
+      incomeByCategory: {},
+      expensesByCategory: {},
+      monthlyData: [],
+      propertiesROI: []
+    };
   }
 };
 

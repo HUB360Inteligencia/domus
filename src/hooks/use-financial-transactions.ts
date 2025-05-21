@@ -31,12 +31,56 @@ export const useFinancialAnalytics = (filters?: FinancialReportFilters) => {
   const propertiesQuery = useQuery({
     queryKey: ['properties'],
     queryFn: fetchProperties,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+  
+  console.log('Properties query state:', {
+    isLoading: propertiesQuery.isLoading,
+    isError: propertiesQuery.isError,
+    propertyCount: propertiesQuery.data?.length || 0
   });
 
   const analyticsQuery = useQuery({
     queryKey: ['financial-analytics', filters],
-    queryFn: () => calculateFinancialAnalytics(propertiesQuery.data || [], filters),
-    enabled: propertiesQuery.isSuccess,
+    queryFn: async () => {
+      try {
+        // Garantir que temos propriedades antes de calcular análises
+        if (!propertiesQuery.data || propertiesQuery.data.length === 0) {
+          console.log('No properties found, returning empty analytics');
+          // Se não houver propriedades, retornar objeto de análise vazio
+          return {
+            totalIncome: 0,
+            totalExpenses: 0,
+            netIncome: 0,
+            roi: 0,
+            monthlyROI: 0,
+            annualROI: 0,
+            propertyValues: {
+              totalValue: 0,
+              byProperty: {}
+            },
+            incomeByCategory: {},
+            expensesByCategory: {},
+            monthlyData: [],
+            propertiesROI: []
+          };
+        }
+        
+        // Calcular análises com as propriedades disponíveis
+        return await calculateFinancialAnalytics(propertiesQuery.data || [], filters);
+      } catch (error) {
+        console.error('Error calculating financial analytics:', error);
+        throw error;
+      }
+    },
+    enabled: !propertiesQuery.isLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+
+  console.log('Analytics query state:', {
+    isLoading: analyticsQuery.isLoading,
+    isError: analyticsQuery.isError,
+    hasData: !!analyticsQuery.data
   });
 
   return {
