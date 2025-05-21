@@ -1,18 +1,8 @@
-
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  BuildingIcon, 
-  MapPinIcon, 
-  BedDoubleIcon, 
-  BathIcon, 
-  SquareIcon,
-  EditIcon,
-  TrashIcon,
-  FileEditIcon
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { MapPin, Calendar, Edit, Trash2, Loader2, Plus, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,290 +12,281 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { usePropertyQueries } from '@/hooks/use-property-queries';
-import { usePropertyMutations } from '@/hooks/use-property-mutations';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+
+import { Property, FurnishedStatus, PropertyStatus } from '@/types/property';
 import { ExpenseList } from '@/components/properties/expense-list';
 import { PropertyActivities } from '@/components/activities/property-activities';
-import { PropertyMap } from '@/components/properties/property-map';
-import { toast } from 'sonner';
-import { PropertyFinances } from './property-finances';
 
-export const PropertyDetail = () => {
-  const { id } = useParams<{ id: string }>();
+interface PropertyDetailProps {
+  property: Property | null;
+  isLoading: boolean;
+  onBack: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
+}
+
+export function PropertyDetail({
+  property,
+  isLoading,
+  onBack,
+  onEdit,
+  onDelete,
+  isDeleting
+}: PropertyDetailProps) {
   const navigate = useNavigate();
-  
-  // Use the usePropertyDetails hook with the ID
-  const { usePropertyDetails } = usePropertyQueries();
-  const { data: property, isLoading, error } = usePropertyDetails(id || '');
-  
-  const { deleteProperty } = usePropertyMutations();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expenses, setExpenses] = useState([]);
+  const [isExpensesLoading, setIsExpensesLoading] = useState(false);
+  const [isExpensesDeleting, setIsExpensesDeleting] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false);
+  const [isEditExpenseDialogOpen, setIsEditExpenseDialogOpen] = useState(false);
+  const [isUploadReceiptDialogOpen, setIsUploadReceiptDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-  if (error || !property) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-2">Imóvel não encontrado</h2>
-        <p className="text-muted-foreground mb-4">
-          O imóvel que você está procurando não existe ou foi removido.
-        </p>
-        <Button onClick={() => navigate('/properties')}>Voltar para a lista</Button>
-      </div>
-    );
-  }
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+  };
 
-  const handleDelete = async () => {
-    try {
-      await deleteProperty(property.id);
-      toast.success('Imóvel excluído com sucesso');
-      navigate('/properties');
-    } catch (error) {
-      toast.error('Erro ao excluir imóvel');
+  const getStatusBadge = (status: PropertyStatus) => {
+    switch (status) {
+      case "active":
+        return <Badge variant="outline">Ativo</Badge>;
+      case "inactive":
+        return <Badge variant="secondary">Inativo</Badge>;
+      case "rented":
+        return <Badge className="bg-blue-500 text-white">Alugado</Badge>;
+      case "sold":
+        return <Badge className="bg-green-500 text-white">Vendido</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
   };
 
+  const getFurnishedBadge = (furnished: FurnishedStatus) => {
+    switch (furnished) {
+      case "furnished":
+        return <Badge variant="outline">Mobiliado</Badge>;
+      case "partially_furnished":
+      case "partially":
+        return <Badge variant="secondary">Semi-mobiliado</Badge>;
+      case "not_furnished":
+      case "unfurnished":
+        return <Badge>Não mobiliado</Badge>;
+      default:
+        return <Badge>{furnished}</Badge>;
+    }
+  };
+  
+  // Determine se a aba de despesas está ativa
+  const isExpensesTabActive = activeTab === 'expenses';
+
   return (
     <div className="space-y-6">
-      {/* Header com imagem e informações básicas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="col-span-1 md:col-span-2">
-          <CardContent className="p-0 aspect-video relative overflow-hidden">
-            {property.image_url ? (
-              <img
-                src={property.image_url}
-                alt={property.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <BuildingIcon className="h-20 w-20 text-muted-foreground opacity-20" />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>{property.title}</CardTitle>
-            <div className="flex items-center text-muted-foreground text-sm">
-              <MapPinIcon className="h-4 w-4 mr-1" />
-              {property.address}, {property.city}, {property.state}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-2">
-              {property.bedrooms && (
-                <div className="flex flex-col items-center justify-center p-3 bg-muted rounded-lg">
-                  <BedDoubleIcon className="h-5 w-5 mb-1 text-muted-foreground" />
-                  <span className="text-sm font-medium">{property.bedrooms}</span>
-                  <span className="text-xs text-muted-foreground">Quartos</span>
-                </div>
-              )}
-              
-              {property.bathrooms && (
-                <div className="flex flex-col items-center justify-center p-3 bg-muted rounded-lg">
-                  <BathIcon className="h-5 w-5 mb-1 text-muted-foreground" />
-                  <span className="text-sm font-medium">{property.bathrooms}</span>
-                  <span className="text-xs text-muted-foreground">Banheiros</span>
-                </div>
-              )}
-              
-              {property.area && (
-                <div className="flex flex-col items-center justify-center p-3 bg-muted rounded-lg">
-                  <SquareIcon className="h-5 w-5 mb-1 text-muted-foreground" />
-                  <span className="text-sm font-medium">{property.area}m²</span>
-                  <span className="text-xs text-muted-foreground">Área</span>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <span className={`text-sm font-medium ${
-                  property.status === 'rented' ? 'text-green-600' :
-                  property.status === 'available' ? 'text-blue-600' :
-                  'text-gray-600'
-                }`}>
-                  {property.status === 'rented' ? 'Alugado' :
-                   property.status === 'available' ? 'Disponível' :
-                   property.status === 'inactive' ? 'Indisponível' : property.status}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Tipo:</span>
-                <span className="text-sm font-medium">{property.type}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Valor:</span>
-                <span className="text-sm font-medium">
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(Number(property.value))}
-                </span>
-              </div>
-              
-              {property.condo_fee && (
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-sm text-muted-foreground">Condomínio:</span>
-                  <span className="text-sm font-medium">
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    }).format(Number(property.condo_fee))}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => navigate(`/properties/edit/${property.id}`)}
-              >
-                <EditIcon className="h-4 w-4 mr-1" />
-                Editar
-              </Button>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="flex-1">
-                    <TrashIcon className="h-4 w-4 mr-1" />
-                    Excluir
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={onBack} className="mr-2">
+            Voltar
+          </Button>
+          <h1 className="text-2xl font-bold">{property?.title}</h1>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={onEdit}>
+            <Edit className="mr-2 h-4 w-4" />
+            Editar
+          </Button>
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={isDeleting}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Excluindo...
+              </>
+            ) : 'Excluir'}
+          </Button>
+        </div>
       </div>
-
-      {/* Tabs para diferentes seções */}
-      <Tabs defaultValue="details">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="details">Detalhes</TabsTrigger>
-          <TabsTrigger value="finances">Finanças</TabsTrigger>
-          <TabsTrigger value="expenses">Despesas</TabsTrigger>
-          <TabsTrigger value="activities">Atividades</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="details" className="space-y-6 pt-6">
-          {/* Descrição e Características */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Descrição</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  {property.description || "Sem descrição disponível."}
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Características</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  {property.features && Array.isArray(property.features) ? (
-                    property.features.map((feature, index) => (
-                      <div key={index} className="flex items-center">
-                        <div className="h-2 w-2 bg-primary rounded-full mr-2"></div>
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground">Sem características cadastradas.</span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+      
+      {isLoading || !property ? (
+        <div className="flex items-center justify-center p-8 border rounded-md">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2">Carregando detalhes do imóvel...</span>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Detalhes</h3>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <MapPin className="mr-2 h-4 w-4" />
+                {property.address}, {property.property_number} - {property.neighborhood}, {property.city} - {property.state}
+              </div>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Calendar className="mr-2 h-4 w-4" />
+                Cadastrado em: {formatDate(property.created_at)}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Informações Adicionais</h3>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Status</TableCell>
+                    <TableCell>{getStatusBadge(property.status)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Tipo</TableCell>
+                    <TableCell>{property.type}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Valor</TableCell>
+                    <TableCell>{formatCurrency(property.value)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Mobiliado</TableCell>
+                    <TableCell>{getFurnishedBadge(property.furnished)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
           </div>
-
-          {/* Localização */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Localização</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[400px] p-0">
-              {property.latitude && property.longitude ? (
-                <PropertyMap 
-                  address={property.address}
-                  city={property.city}
-                  state={property.state}
-                  propertyId={property.id}
-                  property_number={property.property_number}
-                  complement={property.complement}
-                  initialCoords={{ lat: Number(property.latitude), lng: Number(property.longitude) }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-muted">
-                  <div className="text-center p-6">
-                    <MapPinIcon className="h-10 w-10 text-muted-foreground opacity-20 mx-auto mb-2" />
-                    <p className="text-muted-foreground">
-                      Este imóvel não possui coordenadas definidas.
-                    </p>
-                    <Button 
-                      variant="link" 
-                      onClick={() => navigate(`/properties/edit/${property.id}`)}
-                      className="mt-2"
-                    >
-                      <FileEditIcon className="h-4 w-4 mr-1" />
-                      Editar imóvel para adicionar localização
-                    </Button>
-                  </div>
+          
+          <Tabs defaultValue="info" className="w-full space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="expenses">Despesas</TabsTrigger>
+              <TabsTrigger value="activities">Atividades</TabsTrigger>
+              <TabsTrigger value="location">Localização</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="info" className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Descrição</h3>
+                <p className="text-sm text-muted-foreground">{property.description || 'Nenhuma descrição fornecida.'}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-medium">Detalhes Adicionais</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Quartos</TableCell>
+                        <TableCell>{property.bedrooms || 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Banheiros</TableCell>
+                        <TableCell>{property.bathrooms || 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Garagem</TableCell>
+                        <TableCell>{property.garage_spots || 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Área (m²)</TableCell>
+                        <TableCell>{property.area || 'N/A'}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="finances" className="space-y-6 pt-6">
-          <PropertyFinances />
-        </TabsContent>
-
-        <TabsContent value="expenses" className="pt-6">
-          <ExpenseList 
-            expenses={[]}
-            isLoading={false} 
-            onAddClick={() => {}}
-            onEditClick={() => {}}
-            onDeleteClick={() => {}}
-            onUploadReceiptClick={() => {}}
-            isDeleting={false}
-          />
-        </TabsContent>
-
-        <TabsContent value="activities" className="pt-6">
-          <PropertyActivities propertyId={property.id} />
-        </TabsContent>
-      </Tabs>
+                <div>
+                  <h3 className="text-lg font-medium">Informações Financeiras</h3>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Valor de Compra</TableCell>
+                        <TableCell>{property.purchase_value ? formatCurrency(property.purchase_value) : 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Data de Compra</TableCell>
+                        <TableCell>{property.purchase_date ? formatDate(property.purchase_date) : 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Taxa de Condomínio</TableCell>
+                        <TableCell>{property.condo_fee ? formatCurrency(property.condo_fee) : 'N/A'}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="expenses" className="space-y-6">
+              <ExpenseList
+                expenses={[]}
+                isLoading={false}
+                onAddClick={() => {}}
+                onEditClick={() => {}}
+                onDeleteClick={() => {}}
+                onUploadReceiptClick={() => {}}
+                isDeleting={false}
+              />
+            </TabsContent>
+            
+            <TabsContent value="activities" className="space-y-6">
+              {property && <PropertyActivities propertyId={property.id} />}
+            </TabsContent>
+            
+            <TabsContent value="location" className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Localização</h3>
+                <p className="text-sm text-muted-foreground">
+                  Latitude: {property.latitude || 'N/A'}, Longitude: {property.longitude || 'N/A'}
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} disabled={isDeleting}>
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : 'Excluir'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
-};
+}

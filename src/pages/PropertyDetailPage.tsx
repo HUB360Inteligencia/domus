@@ -45,9 +45,14 @@ export default function PropertyDetailPage() {
     }
   };
 
-  // The PropertyDetail component doesn't need props directly passed to it anymore
-  // It will use hooks internally to get the property data
   return (
-    <PropertyDetail />
+    <PropertyDetail
+      property={selectedProperty}
+      isLoading={isLoading}
+      onBack={handleBack}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      isDeleting={isDeleting}
+    />
   );
 }

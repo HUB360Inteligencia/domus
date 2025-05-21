@@ -10,7 +10,7 @@ interface ActivityBoardProps {
   onEdit: (activity: Activity) => void;
   onDelete: (activityId: string) => void;
   onConvert?: (activityId: string) => Promise<void>;
-  onAdd?: (status?: string) => void;
+  onAdd?: (status: string) => void;
 }
 
 export function ActivityBoard({

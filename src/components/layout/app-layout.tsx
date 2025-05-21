@@ -1,24 +1,24 @@
 
-import { ReactNode } from "react";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./app-sidebar";
 import { AppHeader } from "./app-header";
+import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
-interface AppLayoutProps {
-  children: ReactNode;
-}
+export function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-export function AppLayout({ children }: AppLayoutProps) {
   return (
     <ThemeProvider defaultTheme="light" storageKey="patrimonio-theme">
       <SidebarProvider defaultOpen={true}>
         <div className="flex min-h-screen w-full bg-background">
           <AppSidebar />
-          <div className="flex flex-col flex-1 lg:ml-64">
+          <div className="flex flex-col flex-1">
             <AppHeader />
             <main className="flex-1 p-6">
-              {children}
+              <Outlet />
             </main>
             <footer className="border-t py-4 px-6 text-center text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} Sistema de Gestão Patrimonial. Todos os direitos reservados.

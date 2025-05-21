@@ -1,191 +1,126 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, MoreHorizontal, File, FileText, Download, Trash } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-
-import { PageHeader } from "@/components/page-header";
+import { Loader2, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { fetchDocuments } from "@/api/documents";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import { useContracts } from "@/hooks/use-contracts";
+import { DocumentCard } from "@/components/document-card";
+import { toast } from "sonner";
+import { Document } from "@/types/contract";
 
 export default function DocumentsPage() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState<string>("all");
+  const { documents, isLoadingDocuments, deleteDocument } = useContracts();
 
-  const { data: documents = [], isLoading } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => fetchDocuments(),
-  });
-
-  const filteredDocuments = documents.filter(
-    (doc) =>
-      (categoryFilter === "all" || doc.category === categoryFilter) &&
-      (doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.category.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Filter documents by category and search term
+  const filteredDocuments = documents.filter(doc => 
+    (category === "all" || doc.category === category) && 
+    doc.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatFileSize = (sizeInBytes: number) => {
-    if (sizeInBytes < 1024) return `${sizeInBytes} B`;
-    else if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-    else if (sizeInBytes < 1024 * 1024 * 1024) return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
-    else return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  // Get unique categories
+  const categories = Array.from(new Set(documents.map(doc => doc.category)));
+
+  const handleViewDocument = (document: Document) => {
+    window.open(`/documents/view?id=${document.id}`, '_blank');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  const handleDownloadDocument = (document: Document) => {
+    window.open(document.file_path, '_blank');
   };
 
-  const handleDownload = (document: any) => {
-    // Implement document download functionality
-    console.log("Downloading document:", document.id);
-    window.open(document.file_path, "_blank");
-  };
-
-  const handleDelete = (document: any) => {
-    // Implement document deletion functionality
-    console.log("Deleting document:", document.id);
-  };
-
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) return <File className="h-4 w-4 text-red-500" />;
-    if (fileType.includes("image")) return <File className="h-4 w-4 text-blue-500" />;
-    if (fileType.includes("word") || fileType.includes("doc")) return <File className="h-4 w-4 text-blue-700" />;
-    if (fileType.includes("excel") || fileType.includes("sheet")) return <File className="h-4 w-4 text-green-600" />;
-    return <FileText className="h-4 w-4" />;
+  const handleDeleteDocument = async (document: Document) => {
+    const confirmed = window.confirm("Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.");
+    
+    if (confirmed) {
+      try {
+        await deleteDocument(document);
+        toast.success("Documento excluído com sucesso");
+      } catch (error) {
+        toast.error("Erro ao excluir documento");
+      }
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title="Documentos"
-          description="Gerencie seus documentos"
-        />
-        <Button
-          className="flex items-center gap-2"
-          onClick={() => navigate("/documents/new")}
-        >
-          <Plus className="h-4 w-4" /> Novo Documento
+      <PageHeader
+        title="Documentos"
+        description="Gerencie todos os seus documentos em um só lugar."
+        className="pb-4"
+      >
+        <Button onClick={() => navigate("/documents/new")}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Documento
         </Button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex items-center flex-1 relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      </PageHeader>
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
+            type="search"
             placeholder="Buscar documentos..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 w-full bg-background"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filtrar por categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas categorias</SelectItem>
-            <SelectItem value="contract">Contratos</SelectItem>
-            <SelectItem value="property">Imóveis</SelectItem>
-            <SelectItem value="legal">Documentos Legais</SelectItem>
-            <SelectItem value="receipt">Recibos</SelectItem>
-            <SelectItem value="other">Outros</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-auto">
+          <Select
+            value={category}
+            onValueChange={setCategory}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
+      
       <Card>
-        <CardContent className="p-6">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">Carregando...</div>
-          ) : filteredDocuments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 border rounded-md border-dashed">
-              <FileText className="h-10 w-10 text-muted-foreground/60 mb-2" />
-              <p className="text-muted-foreground mb-4">Nenhum documento encontrado.</p>
-              <Button onClick={() => navigate("/documents/new")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar documento
-              </Button>
+        <CardHeader>
+          <CardTitle>Documentos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingDocuments ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredDocuments.map((document) => (
+                <DocumentCard
+                  key={document.id}
+                  document={document}
+                  onView={() => handleViewDocument(document)}
+                  onDownload={() => handleDownloadDocument(document)}
+                  onDelete={() => handleDeleteDocument(document)}
+                />
+              ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Tamanho</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDocuments.map((document) => (
-                  <TableRow key={document.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        {getFileIcon(document.file_type)}
-                        <span>{document.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {document.category.charAt(0).toUpperCase() + document.category.slice(1)}
-                    </TableCell>
-                    <TableCell>{formatFileSize(document.file_size)}</TableCell>
-                    <TableCell>{formatDate(document.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleDownload(document)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => handleDelete(document)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="flex flex-col items-center justify-center py-10">
+              <p className="text-muted-foreground mb-4">Nenhum documento encontrado.</p>
+              <Button variant="outline" onClick={() => navigate("/documents/new")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Documento
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

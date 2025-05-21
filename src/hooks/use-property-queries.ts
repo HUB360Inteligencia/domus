@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchProperties, fetchPropertyById } from '@/api/properties';
 
-export const usePropertyQueries = (selectedPropertyId: string | null = null) => {
+export const usePropertyQueries = (selectedPropertyId: string | null) => {
   // Fetch all properties
   const { 
     data: properties = [], 
@@ -27,18 +27,6 @@ export const usePropertyQueries = (selectedPropertyId: string | null = null) => 
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Add a specific method to fetch property details by ID
-  const usePropertyDetails = (propertyId: string) => {
-    const { data, isLoading, error } = useQuery({
-      queryKey: ['property', propertyId],
-      queryFn: () => fetchPropertyById(propertyId),
-      enabled: !!propertyId,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    });
-    
-    return { data, isLoading, error };
-  };
-  
   return {
     properties,
     selectedProperty,
@@ -46,7 +34,6 @@ export const usePropertyQueries = (selectedPropertyId: string | null = null) => 
     isLoadingSelectedProperty,
     refetchProperties,
     refetchSelectedProperty,
-    isLoading: isLoadingProperties || isLoadingSelectedProperty,
-    usePropertyDetails
+    isLoading: isLoadingProperties || isLoadingSelectedProperty
   };
 };
