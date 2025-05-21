@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,6 +77,7 @@ interface ActivityFormProps {
   onCancel: () => void;
   onCreateCategory?: (data: { name: string, description?: string }) => Promise<ActivityCategory>;
   isSubmitting: boolean;
+  initialStatus?: ActivityStatus | null;
 }
 
 export function ActivityForm({
@@ -89,7 +89,8 @@ export function ActivityForm({
   onSubmit,
   onCancel,
   onCreateCategory,
-  isSubmitting
+  isSubmitting,
+  initialStatus = null
 }: ActivityFormProps) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(selectedCategories);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -102,7 +103,7 @@ export function ActivityForm({
       title: activity?.title || '',
       description: activity?.description || '',
       activity_type: activity?.activity_type || 'maintenance',
-      status: activity?.status || 'pending',
+      status: activity?.status || initialStatus || 'pending',
       priority: activity?.priority || 'medium',
       due_date: activity?.due_date ? new Date(activity.due_date) : null,
       start_date: activity?.start_date ? new Date(activity.start_date) : null,
@@ -115,7 +116,7 @@ export function ActivityForm({
     }
   });
 
-  // Atualizar formulário quando os dados da atividade mudarem
+  // Atualizar formulário quando os dados da atividade ou status inicial mudarem
   useEffect(() => {
     if (activity) {
       form.reset({
@@ -133,8 +134,10 @@ export function ActivityForm({
         responsible_notes: activity.responsible_notes || '',
         estimated_cost: activity.estimated_cost || null
       });
+    } else if (initialStatus) {
+      form.setValue('status', initialStatus);
     }
-  }, [activity, form]);
+  }, [activity, initialStatus, form]);
 
   // Atualizar categorias selecionadas quando as props mudarem
   useEffect(() => {
@@ -596,30 +599,28 @@ export function ActivityForm({
           </div>
         </div>
         
-        {activity && (
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(statusMap).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {Object.entries(statusMap).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={onCancel}>

@@ -45,6 +45,7 @@ export default function ActivitiesPage() {
   const [activityToDelete, setActivityToDelete] = useState<string | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [initialStatus, setInitialStatus] = useState<ActivityStatus | null>(null);
   const { toast } = useToast();
   
   // Hooks
@@ -107,9 +108,10 @@ export default function ActivitiesPage() {
     loadCategories();
   }, [editingActivity, fetchActivityCategories]);
   
-  const handleCreateActivity = () => {
+  const handleCreateActivity = (initialStatus?: ActivityStatus) => {
     setEditingActivity(null);
     setSelectedCategories([]);
+    setInitialStatus(initialStatus || null);
     setFormDialogOpen(true);
   };
   
@@ -137,12 +139,19 @@ export default function ActivitiesPage() {
   
   const handleFormSubmit = async (data: any) => {
     try {
+      // Se temos um status inicial e estamos criando uma nova atividade, use-o
+      if (initialStatus && !editingActivity) {
+        data.status = initialStatus;
+      }
+      
       if (editingActivity) {
         await updateActivity({ id: editingActivity.id, data });
       } else {
         await createActivity(data);
       }
+      
       setFormDialogOpen(false);
+      setInitialStatus(null);
     } catch (error) {
       console.error('Erro ao salvar atividade:', error);
     }
@@ -187,7 +196,7 @@ export default function ActivitiesPage() {
           title="Atividades"
           description="Gerencie as atividades e tarefas do seu negócio"
         >
-          <Button onClick={handleCreateActivity}>
+          <Button onClick={() => handleCreateActivity()}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Nova Atividade
           </Button>
@@ -229,6 +238,7 @@ export default function ActivitiesPage() {
                   onEdit={handleEditActivity}
                   onDelete={handleDeleteActivity}
                   onConvert={handleConvertToExpense}
+                  onAdd={(status) => handleCreateActivity(status as ActivityStatus)}
                 />
               </TabsContent>
               
@@ -270,6 +280,7 @@ export default function ActivitiesPage() {
               onCancel={() => setFormDialogOpen(false)}
               onCreateCategory={createCategory}
               isSubmitting={isCreating || isUpdating}
+              initialStatus={initialStatus}
             />
           </DialogContent>
         </Dialog>

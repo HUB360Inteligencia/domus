@@ -1,7 +1,5 @@
 
 import { useMemo } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import { Activity } from '@/types/activity';
 import { ActivityColumn } from './activity-column';
@@ -12,6 +10,7 @@ interface ActivityBoardProps {
   onEdit: (activity: Activity) => void;
   onDelete: (activityId: string) => void;
   onConvert?: (activityId: string) => Promise<void>;
+  onAdd?: (status: string) => void;
 }
 
 export function ActivityBoard({
@@ -19,7 +18,8 @@ export function ActivityBoard({
   onStatusChange,
   onEdit,
   onDelete,
-  onConvert
+  onConvert,
+  onAdd
 }: ActivityBoardProps) {
   const columns = useMemo(() => [
     {
@@ -45,21 +45,20 @@ export function ActivityBoard({
   ], [activities]);
   
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="flex gap-4 h-[calc(100vh-220px)] overflow-x-auto py-4">
-        {columns.map(column => (
-          <ActivityColumn
-            key={column.status}
-            title={column.title}
-            status={column.status}
-            activities={column.activities}
-            onDrop={onStatusChange}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onConvert={onConvert}
-          />
-        ))}
-      </div>
-    </DndProvider>
+    <div className="flex gap-4 h-[calc(100vh-220px)] overflow-x-auto py-4">
+      {columns.map(column => (
+        <ActivityColumn
+          key={column.status}
+          title={column.title}
+          status={column.status}
+          activities={column.activities}
+          onDrop={onStatusChange}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onConvert={onConvert}
+          onAdd={onAdd}
+        />
+      ))}
+    </div>
   );
 }

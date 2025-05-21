@@ -1,8 +1,10 @@
 
 import { useState } from 'react';
 import { useDrop } from 'react-dnd';
+import { PlusCircle } from 'lucide-react';
 import { Activity } from '@/types/activity';
 import { ActivityCard } from './activity-card';
+import { Button } from '@/components/ui/button';
 
 interface ActivityColumnProps {
   title: string;
@@ -12,6 +14,7 @@ interface ActivityColumnProps {
   onEdit: (activity: Activity) => void;
   onDelete: (activityId: string) => void;
   onConvert?: (activityId: string) => Promise<void>;
+  onAdd?: (status: string) => void;
 }
 
 export function ActivityColumn({
@@ -21,7 +24,8 @@ export function ActivityColumn({
   onDrop,
   onEdit,
   onDelete,
-  onConvert
+  onConvert,
+  onAdd
 }: ActivityColumnProps) {
   const [isOver, setIsOver] = useState(false);
   
@@ -59,7 +63,24 @@ export function ActivityColumn({
             onConvert={onConvert ? () => onConvert(activity.id) : undefined}
           />
         ))}
+        {activities.length === 0 && (
+          <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+            Sem atividades nesta coluna
+          </div>
+        )}
       </div>
+      {onAdd && (
+        <div className="p-2 border-t">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            onClick={() => onAdd(status)}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Nova Atividade
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
