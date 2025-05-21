@@ -137,7 +137,7 @@ export const PropertyDetail = () => {
                 }`}>
                   {property.status === 'rented' ? 'Alugado' :
                    property.status === 'available' ? 'Disponível' :
-                   property.status === 'unavailable' ? 'Indisponível' : property.status}
+                   property.status === 'inactive' ? 'Indisponível' : property.status}
                 </span>
               </div>
               
@@ -263,7 +263,6 @@ export const PropertyDetail = () => {
                   property_number={property.property_number}
                   complement={property.complement}
                   initialCoords={{ lat: Number(property.latitude), lng: Number(property.longitude) }}
-                  zoom={15}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-muted">
