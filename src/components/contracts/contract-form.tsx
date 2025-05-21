@@ -65,7 +65,7 @@ type ContractFormProps = {
 
 export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: ContractFormProps) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const { properties, isLoadingProperties } = useProperties();
+  const { properties, isLoading: isLoadingProperties } = useProperties();
   
   // Initialize the form with default values or initial data
   const form = useForm<z.infer<typeof contractFormSchema>>({
@@ -93,12 +93,22 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
   async function handleFormSubmit(data: z.infer<typeof contractFormSchema>) {
     // Format the form data for submission
     const formattedData: ContractFormData = {
-      ...data,
+      title: data.title,
+      property_id: data.property_id,
+      tenant_name: data.tenant_name,
+      tenant_document: data.tenant_document,
+      tenant_contact: data.tenant_contact,
       // Format dates to ISO string for backend
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date.toISOString().split('T')[0],
-      // Ensure property types
+      value: data.value,
+      payment_day: data.payment_day,
+      deposit_value: data.deposit_value,
       status: data.status as ContractStatus,
+      terms: data.terms,
+      has_renewal_option: data.has_renewal_option,
+      renewal_terms: data.renewal_terms,
+      special_conditions: data.special_conditions,
     };
 
     await onSubmit(formattedData, documentFile || undefined);
