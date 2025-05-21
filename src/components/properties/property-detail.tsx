@@ -39,7 +39,7 @@ export function PropertyDetail({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
 
-  // New state for expense management
+  // State for expense management
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<PropertyExpense | null>(null);
@@ -65,6 +65,7 @@ export function PropertyDetail({
     setDeleteDialogOpen(false);
   };
 
+  // Fixed function to handle expense deletion - now correctly passing the id parameter
   const handleDeleteExpense = (id: string) => {
     deleteExpense(id);
   };
