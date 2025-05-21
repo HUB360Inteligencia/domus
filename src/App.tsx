@@ -25,6 +25,7 @@ const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
 const PropertyFormPage = lazy(() => import("@/pages/PropertyFormPage"));
 const ContractsPage = lazy(() => import("@/pages/ContractsPage"));
 const ContractDetailPage = lazy(() => import("@/pages/ContractDetailPage"));
+const ContractFormPage = lazy(() => import("@/pages/ContractFormPage")); // Import the new ContractFormPage
 const DocumentsPage = lazy(() => import("@/pages/DocumentsPage"));
 const DocumentFormPage = lazy(() => import("@/pages/DocumentFormPage"));
 
@@ -101,8 +102,9 @@ function App() {
               >
                 <Route index element={<ContractsPage />} />
                 <Route path="detail" element={<ContractDetailPage />} />
-                <Route path="new" element={<PropertyFormPage />} />
-                <Route path="edit" element={<PropertyFormPage />} />
+                {/* Updated routes to use ContractFormPage instead of PropertyFormPage */}
+                <Route path="new" element={<ContractFormPage />} />
+                <Route path="edit" element={<ContractFormPage />} /> 
               </Route>
 
               <Route
