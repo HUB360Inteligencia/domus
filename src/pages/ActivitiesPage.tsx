@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, CalendarDays, Kanban, List } from "lucide-react";
@@ -135,7 +134,8 @@ export default function ActivitiesPage() {
             </DialogTitle>
           </DialogHeader>
           <ActivityForm
-            defaultValues={currentActivity || undefined}
+            activity={currentActivity}
+            isSubmitting={false}
             onSubmit={handleSaveActivity}
             onCancel={() => setIsFormOpen(false)}
           />
