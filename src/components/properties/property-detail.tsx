@@ -1,6 +1,8 @@
-
 import { useState } from 'react';
-import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle, Calendar, Users, Building2 } from 'lucide-react';
+import { 
+  Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, 
+  Loader2, AlertTriangle, Calendar, Users, Building2, Receipt, Plus
+} from 'lucide-react';
 import { Property } from '@/types/property';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +12,12 @@ import { PropertyMap } from './property-map';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ExpenseAnalyticsDisplay } from './expense-analytics';
+import { ExpenseForm } from './expense-form';
+import { ExpenseList } from './expense-list';
+import { ReceiptUpload } from './receipt-upload';
+import { usePropertyExpenses } from '@/hooks/use-property-expenses';
+import { PropertyExpense, PropertyExpenseFormData } from '@/types/property-expense';
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -30,6 +38,27 @@ export function PropertyDetail({
 }: PropertyDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
+
+  // New state for expense management
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<PropertyExpense | null>(null);
+
+  const propertyId = property?.id || null;
+
+  const {
+    expenses,
+    analytics,
+    isLoadingExpenses,
+    isCreating,
+    isUpdating,
+    isDeleting: isDeletingExpense,
+    isUploading,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+    uploadReceipt
+  } = usePropertyExpenses(propertyId);
 
   const handleDelete = () => {
     onDelete();
@@ -80,6 +109,45 @@ export function PropertyDetail({
       rural: 'Rural',
     };
     return types[type] || type;
+  };
+
+  // Expense form handlers
+  const handleAddExpenseClick = () => {
+    setSelectedExpense(null);
+    setShowExpenseForm(true);
+  };
+
+  const handleEditExpenseClick = (expense: PropertyExpense) => {
+    setSelectedExpense(expense);
+    setShowExpenseForm(true);
+  };
+
+  const handleExpenseFormSubmit = (data: PropertyExpenseFormData) => {
+    if (selectedExpense) {
+      updateExpense({
+        id: selectedExpense.id,
+        data
+      });
+    } else {
+      createExpense(data);
+    }
+    setShowExpenseForm(false);
+  };
+
+  const handleCancelExpenseForm = () => {
+    setShowExpenseForm(false);
+    setSelectedExpense(null);
+  };
+
+  // Receipt upload handlers
+  const handleUploadReceiptClick = (expense: PropertyExpense) => {
+    setSelectedExpense(expense);
+    setShowReceiptUpload(true);
+  };
+
+  const handleCancelReceiptUpload = () => {
+    setShowReceiptUpload(false);
+    setSelectedExpense(null);
   };
 
   if (isLoading) {
@@ -142,11 +210,12 @@ export function PropertyDetail({
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
           <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
           <TabsTrigger value="rental">Dados do Locatário</TabsTrigger>
           <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
+          <TabsTrigger value="expenses">Despesas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -432,7 +501,87 @@ export function PropertyDetail({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* New Expenses Tab */}
+        <TabsContent value="expenses">
+          <div className="space-y-6">
+            {/* Expense Analytics */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Análise de Despesas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExpenseAnalyticsDisplay analytics={analytics} />
+              </CardContent>
+            </Card>
+
+            {/* Expense List */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Histórico de Despesas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExpenseList
+                  expenses={expenses}
+                  isLoading={isLoadingExpenses}
+                  onAddClick={handleAddExpenseClick}
+                  onEditClick={handleEditExpenseClick}
+                  onDeleteClick={deleteExpense}
+                  onUploadReceiptClick={handleUploadReceiptClick}
+                  isDeleting={isDeletingExpense}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
+
+      {/* Expense Form Dialog */}
+      <Dialog open={showExpenseForm} onOpenChange={setShowExpenseForm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedExpense ? 'Editar Despesa' : 'Adicionar Nova Despesa'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {propertyId && (
+            <ExpenseForm
+              propertyId={propertyId}
+              expense={selectedExpense}
+              onSubmit={handleExpenseFormSubmit}
+              isSubmitting={isCreating || isUpdating}
+              onCancel={handleCancelExpenseForm}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Upload Dialog */}
+      <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedExpense?.receipt_url 
+                ? 'Visualizar/Alterar Comprovante' 
+                : 'Anexar Comprovante'}
+            </DialogTitle>
+            <DialogDescription>
+              Envie uma imagem ou PDF do comprovante de pagamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedExpense && (
+            <ReceiptUpload
+              expenseId={selectedExpense.id}
+              currentUrl={selectedExpense.receipt_url}
+              onUpload={uploadReceipt}
+              isUploading={isUploading}
+              onCancel={handleCancelReceiptUpload}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>

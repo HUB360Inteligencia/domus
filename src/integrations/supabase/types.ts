@@ -636,6 +636,53 @@ export type Database = {
           },
         ]
       }
+      property_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          expense_type: string
+          id: string
+          maintenance_details: string | null
+          paid_at: string
+          property_id: string
+          receipt_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          expense_type: string
+          id?: string
+          maintenance_details?: string | null
+          paid_at: string
+          property_id: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          maintenance_details?: string | null
+          paid_at?: string
+          property_id?: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string | null
