@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -37,17 +36,19 @@ import { FinancialTransaction } from '@/types/financial';
 export const PropertyFinances = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
+  const propertyId = id || '';
   
-  // Fix: Pass the id parameter to usePropertyDetails
-  const { data: property } = usePropertyQueries().usePropertyDetails(id || '');
+  // Fix: Get the usePropertyDetails method from usePropertyQueries
+  const { usePropertyDetails } = usePropertyQueries();
+  const { data: property } = usePropertyDetails(propertyId);
   
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ['property-finances', id],
-    queryFn: () => fetchPropertyFinancialTransactions(id || ''),
-    enabled: !!id,
+    queryKey: ['property-finances', propertyId],
+    queryFn: () => fetchPropertyFinancialTransactions(propertyId),
+    enabled: !!propertyId,
   });
 
-  if (!property || !id) {
+  if (!property || !propertyId) {
     return <div className="text-center py-8">Imóvel não encontrado.</div>;
   }
 
@@ -208,7 +209,7 @@ export const PropertyFinances = () => {
             </DialogHeader>
             <TransactionForm 
               onSuccess={() => setIsDialogOpen(false)} 
-              defaultPropertyId={id}
+              defaultPropertyId={propertyId}
             />
           </DialogContent>
         </Dialog>
@@ -274,7 +275,6 @@ export const PropertyFinances = () => {
                       dataKey="net" 
                       name="Resultado" 
                       fill="#3b82f6"
-                      // Fix: Use direct fill color instead of style function
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -355,7 +355,7 @@ export const PropertyFinances = () => {
           <TransactionList 
             transactions={transactions || []} 
             isLoading={isLoading} 
-            propertyId={id}
+            propertyId={propertyId}
           />
         </TabsContent>
       </Tabs>
