@@ -62,7 +62,7 @@ export const FinancialFilters = ({
   const handlePropertyChange = (value: string) => {
     const newFilters = { ...filters };
     
-    if (!value) {
+    if (value === "all") {
       delete newFilters.propertyIds;
     } else {
       newFilters.propertyIds = [value];
@@ -74,9 +74,9 @@ export const FinancialFilters = ({
   const handleTransactionTypeChange = (value: string) => {
     const newFilters = { ...filters };
     
-    if (!value) {
+    if (value === "all") {
       delete newFilters.transactionTypes;
-    } else if (value === 'all') {
+    } else if (value === "both") {
       newFilters.transactionTypes = ['income', 'expense'];
     } else {
       newFilters.transactionTypes = [value as TransactionType];
@@ -88,7 +88,7 @@ export const FinancialFilters = ({
   const handleCategoryChange = (value: string) => {
     const newFilters = { ...filters };
     
-    if (!value) {
+    if (value === "all") {
       delete newFilters.categories;
     } else {
       newFilters.categories = [value];
@@ -159,14 +159,14 @@ export const FinancialFilters = ({
           
           <div>
             <Select
-              value={filters.propertyIds?.length ? filters.propertyIds[0] : ''}
+              value={filters.propertyIds?.length ? filters.propertyIds[0] : 'all'}
               onValueChange={handlePropertyChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Imóvel" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Imóveis</SelectItem>
+                <SelectItem value="all">Todos os Imóveis</SelectItem>
                 {properties?.map((property) => (
                   <SelectItem key={property.id} value={property.id}>
                     {property.title}
@@ -179,8 +179,8 @@ export const FinancialFilters = ({
           <div>
             <Select
               value={
-                !filters.transactionTypes ? '' : 
-                filters.transactionTypes.length === 2 ? 'all' :
+                !filters.transactionTypes ? 'all' : 
+                filters.transactionTypes.length === 2 ? 'both' :
                 filters.transactionTypes[0]
               }
               onValueChange={handleTransactionTypeChange}
@@ -189,8 +189,8 @@ export const FinancialFilters = ({
                 <SelectValue placeholder="Tipo de Transação" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Tipos</SelectItem>
-                <SelectItem value="all">Receitas e Despesas</SelectItem>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
+                <SelectItem value="both">Receitas e Despesas</SelectItem>
                 <SelectItem value="income">Somente Receitas</SelectItem>
                 <SelectItem value="expense">Somente Despesas</SelectItem>
               </SelectContent>
@@ -202,14 +202,14 @@ export const FinancialFilters = ({
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-3/4">
           <Select
-            value={filters.categories?.length ? filters.categories[0] : ''}
+            value={filters.categories?.length ? filters.categories[0] : 'all'}
             onValueChange={handleCategoryChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as Categorias</SelectItem>
+              <SelectItem value="all">Todas as Categorias</SelectItem>
               {uniqueCategories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
