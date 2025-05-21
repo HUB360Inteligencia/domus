@@ -38,7 +38,7 @@ export default function DocumentsPage() {
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["documents"],
-    queryFn: fetchDocuments,
+    queryFn: () => fetchDocuments(),
   });
 
   const filteredDocuments = documents.filter(

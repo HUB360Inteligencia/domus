@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, CalendarDays, LayoutKanban, List } from "lucide-react";
+import { Plus, CalendarDays, Kanban, List } from "lucide-react";
 import { useActivities } from "@/hooks/use-activities";
 
 import { PageHeader } from "@/components/page-header";
@@ -22,6 +22,7 @@ export default function ActivitiesPage() {
     createActivity,
     updateActivity,
     deleteActivity,
+    updateActivityStatus,
   } = useActivities();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -48,13 +49,24 @@ export default function ActivitiesPage() {
   const handleSaveActivity = async (data: Partial<Activity>) => {
     try {
       if (currentActivity) {
-        await updateActivity(currentActivity.id, data);
+        await updateActivity({ 
+          id: currentActivity.id, 
+          data 
+        });
       } else {
         await createActivity(data as Omit<Activity, "id" | "created_at" | "updated_at">);
       }
       setIsFormOpen(false);
     } catch (error) {
       console.error("Erro ao salvar atividade:", error);
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await updateActivityStatus({ id, status: status as any });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
     }
   };
 
@@ -80,7 +92,7 @@ export default function ActivitiesPage() {
             Lista
           </TabsTrigger>
           <TabsTrigger value="board">
-            <LayoutKanban className="h-4 w-4 mr-2" />
+            <Kanban className="h-4 w-4 mr-2" />
             Quadro
           </TabsTrigger>
           <TabsTrigger value="calendar">
@@ -100,18 +112,17 @@ export default function ActivitiesPage() {
         <TabsContent value="board" className="mt-4">
           <ActivityBoard
             activities={activities || []}
-            isLoading={isLoadingActivities}
-            onAddActivity={handleAddActivity}
-            onEditActivity={handleEditActivity}
-            onDeleteActivity={handleDeleteActivity}
+            onStatusChange={handleStatusChange}
+            onEdit={handleEditActivity}
+            onDelete={handleDeleteActivity}
+            onAdd={handleAddActivity}
           />
         </TabsContent>
         <TabsContent value="calendar" className="mt-4">
           <ActivityCalendar
             activities={activities || []}
-            isLoading={isLoadingActivities}
-            onAddActivity={handleAddActivity}
-            onEditActivity={handleEditActivity}
+            onEdit={handleEditActivity}
+            onDelete={handleDeleteActivity}
           />
         </TabsContent>
       </Tabs>
@@ -124,8 +135,8 @@ export default function ActivitiesPage() {
             </DialogTitle>
           </DialogHeader>
           <ActivityForm
-            activity={currentActivity}
-            onSave={handleSaveActivity}
+            defaultValues={currentActivity || undefined}
+            onSubmit={handleSaveActivity}
             onCancel={() => setIsFormOpen(false)}
           />
         </DialogContent>
