@@ -1,170 +1,97 @@
+import React from 'react';
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/components/auth/auth-provider";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { AppLayout } from "@/components/layout/app-layout";
-import { AdminLayout } from "@/components/layout/admin-layout";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "sonner";
-
-// Create a QueryClient instance
-const queryClient = new QueryClient();
-
-// Auth Pages
-const Login = lazy(() => import("@/pages/auth/Login"));
-const Register = lazy(() => import("@/pages/auth/Register"));
-const AuthCallback = lazy(() => import("@/pages/auth/AuthCallback"));
-
-// App Pages
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Properties = lazy(() => import("@/pages/Properties"));
-const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
-const PropertyFormPage = lazy(() => import("@/pages/PropertyFormPage"));
-const ContractsPage = lazy(() => import("@/pages/ContractsPage"));
-const ContractDetailPage = lazy(() => import("@/pages/ContractDetailPage"));
-const ContractFormPage = lazy(() => import("@/pages/ContractFormPage")); // Import the new ContractFormPage
-const DocumentsPage = lazy(() => import("@/pages/DocumentsPage"));
-const DocumentFormPage = lazy(() => import("@/pages/DocumentFormPage"));
-
-// Users Pages
-const UsersPage = lazy(() => import("@/pages/users/UsersPage"));
-const UserDetailPage = lazy(() => import("@/pages/users/UserDetailPage"));
-const UserInvitePage = lazy(() => import("@/pages/users/UserInvitePage"));
-
-// Admin Pages
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const AdminClientsPage = lazy(() => import("@/pages/admin/ClientsPage"));
-const ClientDetailPage = lazy(() => import("@/pages/admin/ClientDetailPage"));
-const ClientFormPage = lazy(() => import("@/pages/admin/ClientFormPage"));
-
-// Error Pages
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
-
-// Landing Page
-const Index = lazy(() => import("@/pages/Index"));
+import { Home } from './pages/Home';
+import { SignIn } from './pages/SignIn';
+import { SignUp } from './pages/SignUp';
+import { PropertiesPage } from './pages/PropertiesPage';
+import { PropertyDetailPage } from './pages/PropertyDetailPage';
+import { PropertyEditPage } from './pages/PropertyEditPage';
+import { ClientsPage } from './pages/ClientsPage';
+import { ContractsPage } from './pages/ContractsPage';
+import { AppLayout } from './components/layout/app-layout';
+import { AdminLayout } from './components/layout/admin-layout';
+import { SettingsPage } from './pages/SettingsPage';
+import { RequireAuth } from './components/auth/require-auth';
+import { RequireAdmin } from './components/auth/require-admin';
+import { Dashboard } from './pages/Dashboard';
+import { Toaster } from "@/components/ui/toaster"
+import ActivitiesPage from './pages/ActivitiesPage';
 
 function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Suspense
-            fallback={
-              <div className="flex h-screen w-full items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-petroleum" />
-              </div>
-            }
-          >
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-
-              {/* Protected routes */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-              </Route>
-
-              <Route
-                path="/properties"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Properties />} />
-                <Route path="new" element={<PropertyFormPage />} />
-                <Route path="edit" element={<PropertyFormPage />} />
-                <Route path="detail" element={<PropertyDetailPage />} />
-              </Route>
-
-              <Route
-                path="/contracts"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<ContractsPage />} />
-                <Route path="detail" element={<ContractDetailPage />} />
-                {/* Updated routes to use ContractFormPage instead of PropertyFormPage */}
-                <Route path="new" element={<ContractFormPage />} />
-                <Route path="edit" element={<ContractFormPage />} /> 
-              </Route>
-
-              <Route
-                path="/documents"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<DocumentsPage />} />
-                <Route path="new" element={<DocumentFormPage />} />
-                <Route path="view" element={<NotFound />} />
-              </Route>
-
-              {/* User Management Routes */}
-              <Route
-                path="/users"
-                element={
-                  <ProtectedRoute requiredPermission="users.view">
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<UsersPage />} />
-                <Route path=":userId" element={<UserDetailPage />} />
-                <Route path="invite" element={<UserInvitePage />} />
-              </Route>
-
-              {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requiredPermission="clients.view">
-                    <AdminLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<AdminDashboard />} />
-                <Route path="clients" element={<AdminClientsPage />} />
-                <Route path="clients/:clientId" element={<ClientDetailPage />} />
-                <Route path="clients/new" element={<ClientFormPage />} />
-                <Route path="clients/edit/:clientId" element={<ClientFormPage />} />
-                <Route path="plans" element={<div>Planos (em desenvolvimento)</div>} />
-                <Route path="subscriptions" element={<div>Assinaturas (em desenvolvimento)</div>} />
-                <Route path="subscriptions/new" element={<div>Nova Assinatura (em desenvolvimento)</div>} />
-              </Route>
-
-              {/* Error routes */}
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="/404" element={<NotFound />} />
-              <Route path="*" element={<Navigate to="/404" replace />} />
-            </Routes>
-          </Suspense>
-          <SonnerToaster position="top-right" richColors />
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={createRouter()} />
+      <Toaster />
+    </QueryClientProvider>
   );
+}
+
+const queryClient = new QueryClient()
+
+function createRouter() {
+  return createBrowserRouter([
+    {
+      path: "/",
+      element: <AppLayout />,
+      children: [
+        {
+          path: '/',
+          element: <RequireAuth><Dashboard /></RequireAuth>
+        },
+        {
+          path: '/properties',
+          element: <RequireAuth><PropertiesPage /></RequireAuth>
+        },
+        {
+          path: '/properties/:id',
+          element: <RequireAuth><PropertyDetailPage /></RequireAuth>
+        },
+        {
+          path: '/properties/edit',
+          element: <RequireAuth><PropertyEditPage /></RequireAuth>
+        },
+        {
+          path: '/clients',
+          element: <RequireAuth><ClientsPage /></RequireAuth>
+        },
+        {
+          path: '/contracts',
+          element: <RequireAuth><ContractsPage /></RequireAuth>
+        },
+        {
+          path: '/settings',
+          element: <RequireAuth><SettingsPage /></RequireAuth>
+        },
+        {
+          path: '/activities',
+          element: <ActivitiesPage />
+        },
+      ],
+    },
+    {
+      path: "/admin",
+      element: <RequireAdmin><AdminLayout /></RequireAdmin>,
+      children: [
+        {
+          path: '/',
+          element: <Home />
+        },
+      ]
+    },
+    {
+      path: '/signin',
+      element: <SignIn />
+    },
+    {
+      path: '/signup',
+      element: <SignUp />
+    }
+  ]);
 }
 
 export default App;
