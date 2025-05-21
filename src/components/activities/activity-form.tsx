@@ -394,7 +394,7 @@ export function ActivityForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="none">Nenhum</SelectItem>
                       {properties.map(property => (
                         <SelectItem key={property.id} value={property.id}>
                           {property.title}
@@ -425,7 +425,7 @@ export function ActivityForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="none">Nenhum</SelectItem>
                       {contracts.map(contract => (
                         <SelectItem key={contract.id} value={contract.id}>
                           {contract.title}
