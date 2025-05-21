@@ -134,3 +134,36 @@ export async function generateActivationToken(userId: string): Promise<string> {
   
   return token;
 }
+
+// Get the client ID for the current authenticated user
+export async function getCurrentUserClientId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return null;
+  
+  const { data, error } = await supabase
+    .from("client_users")
+    .select("client_id")
+    .eq("user_id", user.id)
+    .single();
+  
+  if (error || !data) return null;
+  
+  return data.client_id;
+}
+
+// Check if the current user belongs to a specific client
+export async function userBelongsToClient(clientId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return false;
+  
+  const { data, error } = await supabase
+    .from("client_users")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("client_id", clientId)
+    .single();
+  
+  return !error && !!data;
+}

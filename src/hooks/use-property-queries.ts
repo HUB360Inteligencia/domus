@@ -3,15 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProperties, fetchPropertyById } from "@/api/properties";
 import { toast } from 'sonner';
 
-export const usePropertyQueries = (selectedPropertyId: string | null) => {
+export const usePropertyQueries = (selectedPropertyId: string | null, clientId: string | null | undefined) => {
   const propertiesQuery = useQuery({
-    queryKey: ['properties'],
+    queryKey: ['properties', clientId],
     queryFn: async () => {
       try {
-        const data = await fetchProperties();
+        // If we have a clientId, it will be included in the fetch, but the RLS policies
+        // will ensure we only get properties for the client the user belongs to
+        const data = await fetchProperties(clientId);
         console.log('Properties data fetched:', data);
         return data;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching properties:', error);
         // Dispatch a custom event for 401 errors
         if (error.message?.includes('401') || error.status === 401) {
@@ -25,10 +27,11 @@ export const usePropertyQueries = (selectedPropertyId: string | null) => {
     },
     retry: 1,
     staleTime: 60000, // 1 minute
+    enabled: true, // We want to fetch properties even if we don't have a clientId, RLS will filter it
   });
 
   const propertyQuery = useQuery({
-    queryKey: ['property', selectedPropertyId],
+    queryKey: ['property', selectedPropertyId, clientId],
     queryFn: async () => {
       try {
         if (!selectedPropertyId) {
@@ -36,10 +39,11 @@ export const usePropertyQueries = (selectedPropertyId: string | null) => {
           return null;
         }
         console.log(`Fetching property details for ID: ${selectedPropertyId}`);
+        // RLS will ensure we only get property details if the user belongs to the client
         const data = await fetchPropertyById(selectedPropertyId);
         console.log('Property detail fetch result:', data);
         return data;
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error fetching property ${selectedPropertyId}:`, error);
         toast.error(`Erro ao carregar detalhes do imóvel: ${error.message || 'Erro desconhecido'}`);
         return null;

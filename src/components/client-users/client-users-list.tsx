@@ -28,12 +28,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ClientUser } from "@/api/client-users";
-import { useClientUsers } from "@/hooks/use-client-users";
+import { useClientUsers, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUserForm } from "./client-user-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClientUsersListProps {
-  clientId: string;
+  clientId?: string;
   onAddUserClick?: () => void;
 }
 
@@ -44,7 +44,15 @@ export function ClientUsersList({
   const [selectedUser, setSelectedUser] = useState<ClientUser | null>(null);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   
-  const { data: clientUsers, isLoading } = useClientUsers(clientId);
+  // If clientId is not provided, fetch the current user's client ID
+  const { data: currentUserClientId, isLoading: isLoadingClientId } = useCurrentUserClientId();
+  
+  // Use the provided clientId or the current user's clientId
+  const effectiveClientId = clientId || currentUserClientId;
+  
+  const { data: clientUsers, isLoading: isLoadingUsers } = useClientUsers(effectiveClientId);
+  
+  const isLoading = isLoadingClientId || isLoadingUsers;
 
   const handleResetPassword = (user: ClientUser) => {
     setSelectedUser(user);
@@ -79,6 +87,22 @@ export function ClientUsersList({
               <Skeleton className="h-8 w-8" />
             </div>
           ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!effectiveClientId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Usuários</CardTitle>
+          <CardDescription>Gerencie os usuários deste cliente</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-muted-foreground">
+            <p>Nenhum cliente selecionado</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -148,7 +172,7 @@ export function ClientUsersList({
         <DialogContent className="sm:max-w-md">
           {selectedUser && (
             <ClientUserForm 
-              clientId={clientId}
+              clientId={effectiveClientId}
               existingUser={selectedUser}
               onSuccess={handleResetPasswordSuccess}
               onCancel={() => setIsResetPasswordOpen(false)}

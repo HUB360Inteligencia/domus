@@ -4,10 +4,12 @@ import { useAuth } from '@/lib/auth';
 import { Contract, ContractFormData } from '@/types/contract';
 import { useContractQueries } from './use-contract-queries';
 import { useContractMutations } from './use-contract-mutations';
+import { useCurrentUserClientId } from './use-client-users';
 
 export const useContracts = () => {
   const { user } = useAuth();
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const { data: clientId } = useCurrentUserClientId();
 
   // Use useCallback to stabilize function references
   const setSelectedContractIdCallback = useCallback((id: string | null) => {
@@ -33,7 +35,7 @@ export const useContracts = () => {
     refetchDocuments,
     refetchContractDocuments,
     refetchNotifications
-  } = useContractQueries(selectedContractId);
+  } = useContractQueries(selectedContractId, clientId);
   
   const {
     createContract,
@@ -83,6 +85,7 @@ export const useContracts = () => {
     documents,
     contractDocuments,
     notifications,
+    clientId,
     
     // Actions
     setSelectedContractId: setSelectedContractIdCallback,

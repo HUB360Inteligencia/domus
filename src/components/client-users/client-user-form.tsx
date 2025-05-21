@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
-import { useCreateClientUser, useResetUserPassword } from "@/hooks/use-client-users";
+import { useCreateClientUser, useResetUserPassword, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUser } from "@/api/client-users";
 
 // Schema for creating a new user
@@ -53,7 +53,7 @@ type CreateUserFormValues = z.infer<typeof createUserSchema>;
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 interface ClientUserFormProps {
-  clientId: string;
+  clientId?: string;
   existingUser?: ClientUser;
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -67,6 +67,9 @@ export function ClientUserForm({
 }: ClientUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!existingUser;
+  
+  const { data: currentUserClientId } = useCurrentUserClientId();
+  const effectiveClientId = clientId || currentUserClientId;
   
   const createUserMutation = useCreateClientUser();
   const resetPasswordMutation = useResetUserPassword();
@@ -95,10 +98,15 @@ export function ClientUserForm({
 
   // Handle creating a new user
   async function handleCreateUser(data: CreateUserFormValues) {
+    if (!effectiveClientId) {
+      toast.error("Nenhum cliente selecionado");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createUserMutation.mutateAsync({
-        client_id: clientId,
+        client_id: effectiveClientId,
         email: data.email,
         password: data.password,
         first_name: data.first_name,
@@ -127,6 +135,22 @@ export function ClientUserForm({
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (!effectiveClientId && !isEditMode) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Erro</CardTitle>
+          <CardDescription>
+            Nenhum cliente selecionado
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Button onClick={onCancel}>Voltar</Button>
+        </CardFooter>
+      </Card>
+    );
   }
 
   if (isEditMode) {

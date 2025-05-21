@@ -6,6 +6,8 @@ import {
   createClientUser, 
   resetUserPassword, 
   generateActivationToken,
+  getCurrentUserClientId,
+  userBelongsToClient,
   ClientUser,
   CreateClientUserData,
   ResetPasswordData
@@ -62,5 +64,24 @@ export function useGenerateActivationToken() {
       console.error("Erro ao gerar link de ativação:", error);
       toast.error("Erro ao gerar link de ativação");
     },
+  });
+}
+
+// Hook for getting the current user's client ID
+export function useCurrentUserClientId() {
+  return useQuery({
+    queryKey: ["current-user-client-id"],
+    queryFn: getCurrentUserClientId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// Hook for checking if the current user belongs to a specific client
+export function useUserBelongsToClient(clientId?: string) {
+  return useQuery({
+    queryKey: ["user-belongs-to-client", clientId],
+    queryFn: () => (clientId ? userBelongsToClient(clientId) : Promise.resolve(false)),
+    enabled: !!clientId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

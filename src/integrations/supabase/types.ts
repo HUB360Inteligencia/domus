@@ -145,6 +145,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          client_id: string | null
           created_at: string
           deposit_value: number | null
           document_url: string | null
@@ -168,6 +169,7 @@ export type Database = {
           value: number
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           deposit_value?: number | null
           document_url?: string | null
@@ -191,6 +193,7 @@ export type Database = {
           value: number
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           deposit_value?: number | null
           document_url?: string | null
@@ -215,6 +218,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contracts_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
@@ -226,6 +236,7 @@ export type Database = {
       documents: {
         Row: {
           category: string
+          client_id: string | null
           contract_id: string | null
           created_at: string
           file_path: string
@@ -239,6 +250,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          client_id?: string | null
           contract_id?: string | null
           created_at?: string
           file_path: string
@@ -252,6 +264,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          client_id?: string | null
           contract_id?: string | null
           created_at?: string
           file_path?: string
@@ -264,6 +277,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_contract_id_fkey"
             columns: ["contract_id"]
@@ -501,6 +521,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           city: string
+          client_id: string | null
           complement: string | null
           condo_fee: number | null
           created_at: string
@@ -538,6 +559,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city: string
+          client_id?: string | null
           complement?: string | null
           condo_fee?: number | null
           created_at?: string
@@ -575,6 +597,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string
+          client_id?: string | null
           complement?: string | null
           condo_fee?: number | null
           created_at?: string
@@ -603,7 +626,15 @@ export type Database = {
           value?: number
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -756,6 +787,10 @@ export type Database = {
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      user_belongs_to_client: {
+        Args: { user_id: string; client_id: string }
+        Returns: boolean
       }
       user_has_permission: {
         Args: { user_id: string; permission_name: string }
