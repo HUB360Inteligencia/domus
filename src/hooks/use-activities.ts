@@ -22,6 +22,8 @@ export const useActivities = (
     contractActivities,
     isLoading,
     isLoadingActivities,
+    isLoadingPropertyActivities,  // Make sure this is properly destructured
+    isLoadingContractActivities,
     refetchActivities,
     refetchSelectedActivity,
     refetchPropertyActivities,
@@ -155,6 +157,7 @@ export const useActivities = (
     // Loading states
     isLoading,
     isLoadingActivities,
+    isLoadingPropertyActivities,  // Make sure to include this in the return object
     isCreating,
     isUpdating,
     isUpdatingStatus,
