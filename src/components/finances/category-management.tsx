@@ -49,7 +49,7 @@ export function CategoryManagement() {
       setSelectedCategory(category);
       setFormData({
         name: category.name,
-        type: category.type as 'income' | 'expense',
+        type: category.type,
       });
     } else {
       setSelectedCategory(null);
@@ -139,7 +139,7 @@ export function CategoryManagement() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleOpenDialog(category)}
+                          onClick={() => handleOpenDialog(category as FinancialCategory)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -175,7 +175,7 @@ export function CategoryManagement() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleOpenDialog(category)}
+                          onClick={() => handleOpenDialog(category as FinancialCategory)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>

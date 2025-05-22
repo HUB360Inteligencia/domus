@@ -35,7 +35,10 @@ export const useFinancialCategories = () => {
         return [];
       }
 
-      return data;
+      return data.map(category => ({
+        ...category,
+        type: category.type as 'income' | 'expense'
+      }));
     }
   });
 
