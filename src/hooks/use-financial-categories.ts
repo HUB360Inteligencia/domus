@@ -35,10 +35,11 @@ export const useFinancialCategories = () => {
         return [];
       }
 
+      // Ensure proper typing of category type field
       return (data || []).map(category => ({
         ...category,
-        type: category.type as 'income' | 'expense'
-      }));
+        type: category.type === 'income' ? 'income' : 'expense' 
+      })) as FinancialCategory[];
     }
   });
 

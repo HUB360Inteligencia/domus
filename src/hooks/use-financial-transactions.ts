@@ -104,15 +104,19 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         return [];
       }
 
-      return data;
+      return data || [];
     }
   });
 
   // Transform raw transactions to ensure they match the FinancialTransaction type
   const transactions: FinancialTransaction[] = rawTransactions.map(tx => ({
     ...tx,
-    transaction_type: tx.transaction_type as 'income' | 'expense',
-    property_title: tx.properties?.title
+    // Ensure transaction_type is properly typed
+    transaction_type: tx.transaction_type === 'income' ? 'income' : 'expense',
+    // Ensure property_title is properly set if properties data exists
+    property_title: tx.properties?.title || undefined,
+    // Ensure numbers are properly typed
+    amount: typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount,
   }));
 
   // Create transaction

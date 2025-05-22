@@ -1,100 +1,130 @@
 
 import React from 'react';
+import { useReactTable, getCoreRowModel, flexRender, createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-
-interface FinancialTransaction {
-  id: string;
-  amount: number;
-  transaction_type: 'income' | 'expense';
-  category: string;
-  subcategory?: string | null;
-  description?: string | null;
-  transaction_date: string;
-  property_id?: string | null;
-  property_title?: string;
-}
+import { Edit, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FinancialTransaction } from '@/hooks/use-financial-transactions';
 
 interface TransactionTableProps {
   transactions: FinancialTransaction[];
-  isLoading?: boolean;
+  isLoading: boolean;
+  onEdit?: (transaction: FinancialTransaction) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function TransactionTable({ transactions, isLoading = false }: TransactionTableProps) {
+export function TransactionTable({ 
+  transactions, 
+  isLoading,
+  onEdit,
+  onDelete
+}: TransactionTableProps) {
+  const columnHelper = createColumnHelper<FinancialTransaction>();
+
+  const columns = [
+    columnHelper.accessor('transaction_date', {
+      header: 'Date',
+      cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy'),
+    }),
+    columnHelper.accessor('description', {
+      header: 'Description',
+      cell: info => info.getValue() || '-',
+    }),
+    columnHelper.accessor('category', {
+      header: 'Category',
+      cell: info => info.getValue(),
+    }),
+    columnHelper.accessor('transaction_type', {
+      header: 'Type',
+      cell: info => (
+        <span className={`font-medium ${info.getValue() === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+          {info.getValue() === 'income' ? 'Income' : 'Expense'}
+        </span>
+      ),
+    }),
+    columnHelper.accessor('amount', {
+      header: 'Amount',
+      cell: info => (
+        <span className={`font-medium ${info.row.original.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(info.getValue()))}
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      cell: info => (
+        <div className="flex items-center space-x-2">
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(info.row.original)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="ghost" size="sm" onClick={() => onDelete(info.row.original.id)}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          )}
+        </div>
+      ),
+    }),
+  ];
+
+  const table = useReactTable({
+    data: transactions,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   if (isLoading) {
-    return <div className="flex justify-center p-6">Loading transactions...</div>;
+    return (
+      <div className="p-4 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2">Loading transactions...</p>
+      </div>
+    );
   }
 
-  if (!transactions || transactions.length === 0) {
-    return <div className="text-center p-6 text-muted-foreground">No transactions found</div>;
+  if (transactions.length === 0) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        <p>No transactions found.</p>
+        <p className="text-sm mt-2">Add a new transaction to get started.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="border rounded-md overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Property</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((transaction) => (
-            <TableRow key={transaction.id}>
-              <TableCell>{format(new Date(transaction.transaction_date), 'dd/MM/yyyy')}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  {transaction.transaction_type === 'income' ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
-                      <ArrowUpCircle className="w-3 h-3" />
-                      Income
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
-                      <ArrowDownCircle className="w-3 h-3" />
-                      Expense
-                    </Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {transaction.category}
-                {transaction.subcategory && (
-                  <span className="text-xs text-muted-foreground ml-1">
-                    ({transaction.subcategory})
-                  </span>
-                )}
-              </TableCell>
-              <TableCell className="max-w-[200px] truncate">
-                {transaction.description || '-'}
-              </TableCell>
-              <TableCell>{transaction.property_title || '-'}</TableCell>
-              <TableCell className={`text-right font-medium ${
-                transaction.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {transaction.transaction_type === 'income' ? '+' : '-'} 
-                {new Intl.NumberFormat('pt-BR', { 
-                  style: 'currency', 
-                  currency: 'BRL' 
-                }).format(Math.abs(transaction.amount))}
-              </TableCell>
-            </TableRow>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-muted/50">
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th key={header.id} className="text-left p-4 font-medium text-muted-foreground text-sm">
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
+            </tr>
           ))}
-        </TableBody>
-      </Table>
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map(row => (
+            <tr 
+              key={row.id}
+              className="border-b hover:bg-muted/20 transition-colors"
+            >
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id} className="p-4">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

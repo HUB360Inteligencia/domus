@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CalendarIcon, Search, FilterIcon, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -99,12 +100,12 @@ export function TransactionFilters({
           <div>
             <label className="text-sm font-medium">Transaction Type</label>
             <Select 
-              value={filters.type?.length === 1 ? filters.type[0] : ""} 
+              value={filters.type?.length === 1 ? filters.type[0] : "all"} 
               onValueChange={(value) => {
-                if (value) {
-                  onFilterChange({ type: [value] });
-                } else {
+                if (value === "all") {
                   onFilterChange({ type: undefined });
+                } else {
+                  onFilterChange({ type: [value] });
                 }
               }}
             >
@@ -112,7 +113,7 @@ export function TransactionFilters({
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="income">Income</SelectItem>
                 <SelectItem value="expense">Expense</SelectItem>
               </SelectContent>
@@ -123,12 +124,12 @@ export function TransactionFilters({
           <div>
             <label className="text-sm font-medium">Category</label>
             <Select 
-              value={filters.category?.length === 1 ? filters.category[0] : ""} 
+              value={filters.category?.length === 1 ? filters.category[0] : "all"} 
               onValueChange={(value) => {
-                if (value) {
-                  onFilterChange({ category: [value] });
-                } else {
+                if (value === "all") {
                   onFilterChange({ category: undefined });
+                } else {
+                  onFilterChange({ category: [value] });
                 }
               }}
             >
@@ -136,7 +137,7 @@ export function TransactionFilters({
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                 ))}
@@ -149,14 +150,16 @@ export function TransactionFilters({
             <div>
               <label className="text-sm font-medium">Property</label>
               <Select 
-                value={filters.propertyId || ""} 
-                onValueChange={(value) => onFilterChange({ propertyId: value || undefined })}
+                value={filters.propertyId || "all"} 
+                onValueChange={(value) => onFilterChange({ 
+                  propertyId: value === "all" ? undefined : value 
+                })}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="All properties" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All properties</SelectItem>
+                  <SelectItem value="all">All properties</SelectItem>
                   {properties.map((prop) => (
                     <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
                   ))}
@@ -201,7 +204,7 @@ export function TransactionFilters({
             
             {filters.category?.length === 1 && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Category: {filters.category[0]}
+                Category: {categories.find(c => c.value === filters.category?.[0])?.label || filters.category[0]}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ category: undefined })}

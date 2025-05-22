@@ -142,6 +142,7 @@ export default function FinancesPage() {
             <TransactionTable 
               transactions={transactions}
               isLoading={isLoadingTransactions}
+              onEdit={handleOpenModal}
             />
           </div>
         </TabsContent>
