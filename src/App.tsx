@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { Toaster } from "sonner";
 
 // Public Pages
 import Index from "./pages/Index";
@@ -49,25 +48,15 @@ function App() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const supabase = useSupabaseClient();
   const session = useSession();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if the user is already authenticated
-      if (session) {
-        // Optionally, you can fetch additional user data here if needed
-        // and redirect to a specific page based on user role, etc.
-        navigate("/dashboard");
-      } else {
-        // If no session, navigate to the login page
-        // or any other public page
-        navigate("/login");
-      }
+      // Set auth as ready once we've checked the session
       setIsAuthReady(true);
     };
 
     checkAuth();
-  }, [session, navigate]);
+  }, [session]);
 
   return (
     <div className="App">
