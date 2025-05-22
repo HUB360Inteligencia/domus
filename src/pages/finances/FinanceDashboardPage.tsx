@@ -313,26 +313,22 @@ export default function FinanceDashboardPage() {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-xl">Top 5 Propriedades</CardTitle>
-              <div className="flex gap-2">
+              <Tabs value={propertyRankingType} onValueChange={(value: 'value' | 'percentage') => setPropertyRankingType(value)}>
                 <TabsList className="h-8">
                   <TabsTrigger 
                     className="text-xs px-3 h-7" 
-                    value="value" 
-                    onClick={() => setPropertyRankingType('value')}
-                    data-state={propertyRankingType === 'value' ? 'active' : ''}
+                    value="value"
                   >
                     Valor (R$)
                   </TabsTrigger>
                   <TabsTrigger 
                     className="text-xs px-3 h-7" 
-                    value="percentage" 
-                    onClick={() => setPropertyRankingType('percentage')}
-                    data-state={propertyRankingType === 'percentage' ? 'active' : ''}
+                    value="percentage"
                   >
                     Percentual (%)
                   </TabsTrigger>
                 </TabsList>
-              </div>
+              </Tabs>
             </div>
             <CardDescription>Propriedades com maior rentabilidade</CardDescription>
           </CardHeader>
@@ -381,26 +377,22 @@ export default function FinanceDashboardPage() {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-xl">Rentabilidade por Bairro</CardTitle>
-              <div className="flex gap-2">
+              <Tabs value={neighborhoodRankingType} onValueChange={(value: 'value' | 'percentage') => setNeighborhoodRankingType(value)}>
                 <TabsList className="h-8">
                   <TabsTrigger 
                     className="text-xs px-3 h-7" 
-                    value="value" 
-                    onClick={() => setNeighborhoodRankingType('value')}
-                    data-state={neighborhoodRankingType === 'value' ? 'active' : ''}
+                    value="value"
                   >
                     Valor (R$)
                   </TabsTrigger>
                   <TabsTrigger 
                     className="text-xs px-3 h-7" 
-                    value="percentage" 
-                    onClick={() => setNeighborhoodRankingType('percentage')}
-                    data-state={neighborhoodRankingType === 'percentage' ? 'active' : ''}
+                    value="percentage"
                   >
                     Percentual (%)
                   </TabsTrigger>
                 </TabsList>
-              </div>
+              </Tabs>
             </div>
             <CardDescription>Bairros com melhor desempenho</CardDescription>
           </CardHeader>
