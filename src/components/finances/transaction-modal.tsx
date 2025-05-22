@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { TransactionForm } from './transaction-form';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -28,9 +29,11 @@ export function TransactionModal({
   properties = [],
   categories = []
 }: TransactionModalProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={isMobile ? "sm:max-w-[100%] p-4" : "sm:max-w-[600px]"}>
         <DialogHeader>
           <DialogTitle>{initialData?.id ? 'Edit' : 'Add'} Transaction</DialogTitle>
         </DialogHeader>

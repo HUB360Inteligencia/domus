@@ -1,10 +1,9 @@
-
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
+import { CalendarIcon, CheckCircle, XCircle, Upload, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,8 +32,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
-// Schema for form validation
+// Extended schema for form validation with receipt
 const transactionSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   transaction_type: z.enum(['income', 'expense']),
@@ -47,6 +48,7 @@ const transactionSchema = z.object({
   recurring_frequency: z.string().optional().nullable(),
   recurring_end_date: z.string().optional().nullable(),
   property_id: z.string().optional().nullable(),
+  receipt_url: z.string().optional().nullable(),
 });
 
 interface TransactionFormProps {
@@ -80,13 +82,42 @@ export function TransactionForm({
       recurring_frequency: null,
       recurring_end_date: null,
       property_id: null,
+      receipt_url: null,
     },
   });
 
   const watchRecurring = form.watch('recurring');
   const watchTransactionType = form.watch('transaction_type');
+  const isMobile = useIsMobile();
+  
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      // In a real implementation, we would upload the file and get the URL
+      // For now, we're just storing the file in state
+      toast.info(`File ${file.name} selected`);
+    }
+  };
+
+  const openCamera = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   const handleSubmit = (data: TransactionFormData) => {
+    // In a real implementation, we would handle the file upload here
+    // and update the data.receipt_url with the uploaded file URL
+    if (selectedFile) {
+      // This is where we would upload the file to storage
+      console.log("File to upload:", selectedFile);
+    }
+    
     onSubmit(data);
   };
 
@@ -145,7 +176,7 @@ export function TransactionForm({
                     watchTransactionType === 'income' ? 'text-green-600' : 'text-red-600'
                   }`}
                   {...field} 
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
               </FormControl>
               <FormMessage />
@@ -231,124 +262,324 @@ export function TransactionForm({
           )}
         />
 
-        {/* Subcategory (optional) */}
-        <FormField
-          control={form.control}
-          name="subcategory"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Subcategory (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Subcategory" {...field} value={field.value || ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Description */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter a description..." 
-                  className="resize-none"
-                  {...field}
-                  value={field.value || ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Payment Method */}
-        <FormField
-          control={form.control}
-          name="payment_method"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Payment Method</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value || ''}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a payment method" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="credit_card">Credit Card</SelectItem>
-                  <SelectItem value="debit_card">Debit Card</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Property */}
-        {properties.length > 0 && (
-          <FormField
-            control={form.control}
-            name="property_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Property</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value || ''}
-                >
+        {/* Mobile-optimized fields */}
+        {isMobile ? (
+          <>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a property" />
-                    </SelectTrigger>
+                    <Input 
+                      placeholder="Enter a description..." 
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {properties.map((property) => (
-                      <SelectItem key={property.value} value={property.value}>
-                        {property.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Recurring */}
-        <FormField
-          control={form.control}
-          name="recurring"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Recurring Transaction</FormLabel>
-                <FormDescription>
-                  Is this a recurring transaction?
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            {/* Payment Method (simplified for mobile) */}
+            <FormField
+              control={form.control}
+              name="payment_method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value || undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="debit_card">Debit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Receipt Upload - Mobile optimized */}
+            <FormField
+              control={form.control}
+              name="receipt_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Receipt</FormLabel>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      capture="environment"
+                      className="hidden"
+                      id="receipt-upload"
+                    />
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={openCamera}
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Take Photo
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Receipt
+                      </Button>
+                    </div>
+                    {selectedFile && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Selected file: {selectedFile.name}
+                      </div>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Property (simplified for mobile) */}
+            {properties.length > 0 && (
+              <FormField
+                control={form.control}
+                name="property_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select property" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {properties.map((property) => (
+                          <SelectItem key={property.value} value={property.value}>
+                            {property.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            {/* Recurring toggle (simplified for mobile) */}
+            <FormField
+              control={form.control}
+              name="recurring"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Recurring</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </>
+        ) : (
+          // Desktop version - keep existing fields
+          <>
+            {/* Subcategory (optional) */}
+            <FormField
+              control={form.control}
+              name="subcategory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategory (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Subcategory" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter a description..." 
+                      className="resize-none"
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Payment Method */}
+            <FormField
+              control={form.control}
+              name="payment_method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="debit_card">Debit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Receipt Upload - Desktop version */}
+            <FormField
+              control={form.control}
+              name="receipt_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Receipt</FormLabel>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="receipt-upload"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Receipt
+                    </Button>
+                    {isMobile && (
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={openCamera}
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Take Photo
+                      </Button>
+                    )}
+                  </div>
+                  {selectedFile && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Selected file: {selectedFile.name}
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Property */}
+            {properties.length > 0 && (
+              <FormField
+                control={form.control}
+                name="property_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a property" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {properties.map((property) => (
+                          <SelectItem key={property.value} value={property.value}>
+                            {property.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Recurring */}
+            <FormField
+              control={form.control}
+              name="recurring"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Recurring Transaction</FormLabel>
+                    <FormDescription>
+                      Is this a recurring transaction?
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         {watchRecurring && (
           <div className="space-y-4">

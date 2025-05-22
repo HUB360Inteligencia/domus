@@ -11,18 +11,34 @@ import { CategoryManagement } from '@/components/finances/category-management';
 import { useFinancialTransactions, TransactionFormData } from '@/hooks/use-financial-transactions';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useProperties } from '@/hooks/use-properties';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function FinancesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<(TransactionFormData & { id: string }) | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   
   const { 
     transactions, 
     isLoadingTransactions, 
     createTransaction, 
     updateTransaction,
+    deleteTransaction,
     isCreating,
     isUpdating,
+    isDeleting,
     filters,
     handleFilterChange
   } = useFinancialTransactions();
@@ -63,6 +79,23 @@ export default function FinancesPage() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (transactionToDelete) {
+      try {
+        await deleteTransaction(transactionToDelete);
+        setDeleteConfirmOpen(false);
+        setTransactionToDelete(null);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+      }
+    }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setTransactionToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
   const resetFilters = () => {
     handleFilterChange({
       startDate: undefined,
@@ -73,6 +106,15 @@ export default function FinancesPage() {
       minAmount: undefined,
       maxAmount: undefined
     });
+  };
+
+  const handleViewReceipt = (transaction: any) => {
+    // Placeholder for receipt viewing functionality
+    // In a real app, this would open a modal or redirect to a receipt view
+    console.log("View receipt for transaction:", transaction);
+    if (transaction.receipt_url) {
+      window.open(transaction.receipt_url, '_blank');
+    }
   };
 
   // Calculate totals
@@ -143,6 +185,8 @@ export default function FinancesPage() {
               transactions={transactions}
               isLoading={isLoadingTransactions}
               onEdit={handleOpenModal}
+              onDelete={handleDeleteClick}
+              onViewReceipt={handleViewReceipt}
             />
           </div>
         </TabsContent>
@@ -162,6 +206,29 @@ export default function FinancesPage() {
         properties={propertyOptions}
         categories={categoryOptions}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              selected transaction.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,8 +2,14 @@
 import React from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { FinancialTransaction } from '@/hooks/use-financial-transactions';
 
 interface TransactionTableProps {
@@ -11,13 +17,15 @@ interface TransactionTableProps {
   isLoading: boolean;
   onEdit?: (transaction: FinancialTransaction) => void;
   onDelete?: (id: string) => void;
+  onViewReceipt?: (transaction: FinancialTransaction) => void;
 }
 
 export function TransactionTable({ 
   transactions, 
   isLoading,
   onEdit,
-  onDelete
+  onDelete,
+  onViewReceipt
 }: TransactionTableProps) {
   const columnHelper = createColumnHelper<FinancialTransaction>();
 
@@ -54,16 +62,48 @@ export function TransactionTable({
       id: 'actions',
       header: 'Actions',
       cell: info => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          {info.row.original.receipt_url && onViewReceipt && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={() => onViewReceipt(info.row.original)}>
+                    <Receipt className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View Receipt</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {onEdit && (
-            <Button variant="ghost" size="sm" onClick={() => onEdit(info.row.original)}>
-              <Edit className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(info.row.original)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit Transaction</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {onDelete && (
-            <Button variant="ghost" size="sm" onClick={() => onDelete(info.row.original.id)}>
-              <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(info.row.original.id)}>
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Delete Transaction</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       ),

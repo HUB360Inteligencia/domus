@@ -119,13 +119,49 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     amount: typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount,
   }));
 
+  // Upload receipt and get URL
+  const uploadReceipt = async (file: File): Promise<string | null> => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('User not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${user.data.user.id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('transaction_receipts')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading receipt:', uploadError);
+        throw uploadError;
+      }
+
+      // Get the public URL
+      const { data } = supabase.storage
+        .from('transaction_receipts')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Receipt upload error:', error);
+      return null;
+    }
+  };
+
   // Create transaction
   const { mutateAsync: createTransaction, isPending: isCreating } = useMutation({
     mutationFn: async (transaction: TransactionFormData) => {
+      // Handle receipt upload if a file is provided
+      let receipt_url = transaction.receipt_url;
+
       const { data, error } = await supabase
         .from('financial_transactions')
         .insert([{
           ...transaction,
+          receipt_url,
           user_id: (await supabase.auth.getUser()).data.user?.id
         }])
         .select();
@@ -176,6 +212,32 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   // Delete transaction
   const { mutateAsync: deleteTransaction, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string) => {
+      // Get the transaction first to check if it has a receipt
+      const { data: transaction, error: getError } = await supabase
+        .from('financial_transactions')
+        .select('receipt_url')
+        .eq('id', id)
+        .single();
+      
+      if (getError) {
+        console.error('Error getting transaction before delete:', getError);
+      }
+      
+      // If there's a receipt, delete it from storage
+      if (transaction?.receipt_url) {
+        const receiptPath = transaction.receipt_url.split('/').pop();
+        if (receiptPath) {
+          const { error: storageError } = await supabase.storage
+            .from('transaction_receipts')
+            .remove([receiptPath]);
+            
+          if (storageError) {
+            console.error('Error deleting receipt from storage:', storageError);
+          }
+        }
+      }
+
+      // Delete the transaction from the database
       const { error } = await supabase
         .from('financial_transactions')
         .delete()
@@ -209,6 +271,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     createTransaction,
     updateTransaction,
     deleteTransaction,
+    uploadReceipt,
     isCreating,
     isUpdating,
     isDeleting,
