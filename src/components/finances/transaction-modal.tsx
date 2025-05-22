@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TransactionForm } from './transaction-form';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -33,18 +34,22 @@ export function TransactionModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={isMobile ? "sm:max-w-[100%] p-4" : "sm:max-w-[600px]"}>
+      <DialogContent className={isMobile ? "sm:max-w-[100%] p-4" : "sm:max-w-[600px] max-h-[85vh]"}>
         <DialogHeader>
-          <DialogTitle>{initialData?.id ? 'Edit' : 'Add'} Transaction</DialogTitle>
+          <DialogTitle>{initialData?.id ? 'Editar' : 'Adicionar'} Transação</DialogTitle>
         </DialogHeader>
-        <TransactionForm
-          initialData={initialData}
-          onSubmit={onSubmit}
-          onCancel={onClose}
-          isSubmitting={isSubmitting}
-          properties={properties}
-          categories={categories}
-        />
+        <ScrollArea className="max-h-[calc(85vh-80px)] overflow-auto pr-4">
+          <div className="pb-2">
+            <TransactionForm
+              initialData={initialData}
+              onSubmit={onSubmit}
+              onCancel={onClose}
+              isSubmitting={isSubmitting}
+              properties={properties}
+              categories={categories}
+            />
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

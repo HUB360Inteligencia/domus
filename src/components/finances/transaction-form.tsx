@@ -50,7 +50,7 @@ export function TransactionForm({
         <AmountField form={form} transactionType={watchTransactionType} />
 
         {/* Date */}
-        <DateField form={form} name="transaction_date" label="Date" />
+        <DateField form={form} name="transaction_date" label="Data" />
 
         {/* Category */}
         <CategoryField form={form} categories={categories} />
@@ -72,11 +72,11 @@ export function TransactionForm({
         <div className="flex justify-end gap-2">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+              Cancelar
             </Button>
           )}
           <Button type="submit" disabled={isSubmitting}>
-            {initialData?.id ? 'Update' : 'Create'} Transaction
+            {initialData?.id ? 'Atualizar' : 'Criar'} Transação
           </Button>
         </div>
       </form>

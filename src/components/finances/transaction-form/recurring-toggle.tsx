@@ -4,15 +4,12 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from 'react-hook-form';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RecurringToggleProps {
   form: UseFormReturn<TransactionFormData>;
 }
 
 export function RecurringToggle({ form }: RecurringToggleProps) {
-  const isMobile = useIsMobile();
-
   return (
     <FormField
       control={form.control}
@@ -20,14 +17,10 @@ export function RecurringToggle({ form }: RecurringToggleProps) {
       render={({ field }) => (
         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
           <div className="space-y-0.5">
-            <FormLabel className="text-base">
-              {isMobile ? "Recurring" : "Recurring Transaction"}
-            </FormLabel>
-            {!isMobile && (
-              <FormDescription>
-                Is this a recurring transaction?
-              </FormDescription>
-            )}
+            <FormLabel>Transação Recorrente</FormLabel>
+            <FormDescription>
+              Esta é uma transação que se repete regularmente?
+            </FormDescription>
           </div>
           <FormControl>
             <Switch

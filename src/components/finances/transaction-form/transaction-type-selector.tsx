@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { CheckCircle } from 'lucide-react';
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { UseFormReturn } from 'react-hook-form';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
 
@@ -17,32 +17,22 @@ export function TransactionTypeSelector({ form }: TransactionTypeSelectorProps) 
       name="transaction_type"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Transaction Type</FormLabel>
-          <div className="flex gap-4">
-            <Card 
-              className={`flex-1 cursor-pointer ${
-                field.value === 'income' ? 'border-green-500 bg-green-50' : 'border-gray-200'
-              }`}
-              onClick={() => field.onChange('income')}
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              className="flex space-x-1"
             >
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="font-medium">Income</div>
-                {field.value === 'income' && <CheckCircle className="h-5 w-5 text-green-500" />}
-              </CardContent>
-            </Card>
-            
-            <Card 
-              className={`flex-1 cursor-pointer ${
-                field.value === 'expense' ? 'border-red-500 bg-red-50' : 'border-gray-200'
-              }`}
-              onClick={() => field.onChange('expense')}
-            >
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="font-medium">Expense</div>
-                {field.value === 'expense' && <CheckCircle className="h-5 w-5 text-red-500" />}
-              </CardContent>
-            </Card>
-          </div>
+              <div className="flex items-center space-x-2 rounded-l-md border border-r-0 px-3 py-2 bg-green-100 dark:bg-green-900/20">
+                <RadioGroupItem value="income" id="income" />
+                <Label htmlFor="income" className="font-medium">Receita</Label>
+              </div>
+              <div className="flex items-center space-x-2 rounded-r-md border px-3 py-2 bg-red-100 dark:bg-red-900/20">
+                <RadioGroupItem value="expense" id="expense" />
+                <Label htmlFor="expense" className="font-medium">Despesa</Label>
+              </div>
+            </RadioGroup>
+          </FormControl>
         </FormItem>
       )}
     />

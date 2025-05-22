@@ -1,20 +1,29 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { TransactionFormData } from '@/hooks/use-financial-transactions';
 import { useReceiptUpload } from '@/hooks/use-receipt-upload';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ReceiptUploadProps {
   form: UseFormReturn<TransactionFormData>;
 }
 
 export function ReceiptUpload({ form }: ReceiptUploadProps) {
-  const { selectedFile, fileInputRef, handleFileChange, openCamera } = useReceiptUpload();
-  const isMobile = useIsMobile();
+  const { fileInputRef, handleFileChange, openCamera } = useReceiptUpload();
+
+  // Quando um arquivo é selecionado, atualize o form
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileChange(e);
+    if (e.target.files && e.target.files[0]) {
+      // Aqui estamos apenas definindo o nome do arquivo para exibição
+      // O upload real seria tratado no momento da submissão do formulário
+      form.setValue('receipt_url', e.target.files[0].name);
+    }
+  };
 
   return (
     <FormField
@@ -22,55 +31,32 @@ export function ReceiptUpload({ form }: ReceiptUploadProps) {
       name="receipt_url"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Receipt</FormLabel>
-          <div className={isMobile ? "space-y-2" : "grid grid-cols-2 gap-4"}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileChange}
-              capture={isMobile ? "environment" : undefined}
-              className="hidden"
-              id="receipt-upload"
-            />
-            
-            {isMobile ? (
-              <div className="flex flex-col gap-2">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={openCamera}
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Take Photo
-                </Button>
-                <Button 
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Receipt
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Receipt
-              </Button>
-            )}
+          <FormLabel>Recibo/Comprovante (Opcional)</FormLabel>
+          <div className="flex gap-2">
+            <FormControl>
+              <Input
+                placeholder="Nenhum arquivo selecionado"
+                readOnly
+                value={field.value || ''}
+                className="flex-1"
+              />
+            </FormControl>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={openCamera}
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
           </div>
-          {selectedFile && (
-            <div className="text-sm text-muted-foreground mt-2">
-              Selected file: {selectedFile.name}
-            </div>
-          )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={onFileChange}
+            accept="image/*"
+            className="hidden"
+          />
           <FormMessage />
         </FormItem>
       )}

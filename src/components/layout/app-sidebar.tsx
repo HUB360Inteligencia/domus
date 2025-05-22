@@ -1,17 +1,20 @@
+
 import { 
   Building, 
   FileText, 
   LayoutDashboard, 
   Users, 
-  Upload,
   MessageSquare,
-  Receipt,
   Settings,
   CheckSquare,
   Home,
   FileBox,
   Wallet,
-  User
+  User,
+  LineChart,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Scroll
 } from "lucide-react";
 
 import {
@@ -25,6 +28,9 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,35 +44,53 @@ export function AppSidebar() {
       Icon: Home,
     },
     {
-      name: "Properties",
+      name: "Imóveis",
       to: "/properties",
       Icon: Building,
     },
     {
-      name: "Contracts",
+      name: "Contratos",
       to: "/contracts",
       Icon: FileText,
     },
     {
-      name: "Activities",
+      name: "Atividades",
       to: "/activities",
       Icon: CheckSquare,
     },
     {
-      name: "Documents",
+      name: "Documentos",
       to: "/documents",
       Icon: FileBox,
     },
     {
-      name: "Finances",
-      to: "/finances",
-      Icon: Wallet,
-    },
-    {
-      name: "Users",
+      name: "Usuários",
       to: "/users",
       Icon: User,
     },
+  ];
+
+  const financeSubMenu = [
+    {
+      name: "Painel",
+      to: "/finances/dashboard",
+      Icon: LineChart,
+    },
+    {
+      name: "Receitas",
+      to: "/finances/income",
+      Icon: ArrowUpCircle,
+    },
+    {
+      name: "Despesas",
+      to: "/finances/expenses",
+      Icon: ArrowDownCircle,
+    },
+    {
+      name: "Relatórios",
+      to: "/finances/reports",
+      Icon: Scroll,
+    }
   ];
 
   return (
@@ -93,6 +117,25 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton>
+              <Wallet className="h-5 w-5 mr-2" />
+              Finanças
+            </SidebarMenuButton>
+            <SidebarMenuSub>
+              {financeSubMenu.map((item) => (
+                <SidebarMenuSubItem key={item.name}>
+                  <SidebarMenuSubButton asChild>
+                    <Link to={item.to}>
+                      <item.Icon className="h-4 w-4 mr-2" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </SidebarMenuItem>
         </SidebarMenu>
         
         <SidebarGroup>
@@ -132,7 +175,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="Profile" />
+            <AvatarImage src="" alt="Perfil" />
             <AvatarFallback className="bg-petroleum text-white">AP</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">

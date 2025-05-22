@@ -17,34 +17,22 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
       name="category"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Category</FormLabel>
+          <FormLabel>Categoria</FormLabel>
           <Select 
             onValueChange={field.onChange} 
-            defaultValue={field.value}
+            defaultValue={field.value || undefined}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {categories.length > 0 ? (
-                categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))
-              ) : (
-                <>
-                  <SelectItem value="rent">Rent</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="utilities">Utilities</SelectItem>
-                  <SelectItem value="taxes">Taxes</SelectItem>
-                  <SelectItem value="insurance">Insurance</SelectItem>
-                  <SelectItem value="salary">Salary</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </>
-              )}
+              {categories.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <FormMessage />

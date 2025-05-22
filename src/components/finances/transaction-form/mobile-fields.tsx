@@ -20,13 +20,9 @@ export function MobileFields({ form, properties }: MobileFieldsProps) {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel>Descrição</FormLabel>
             <FormControl>
-              <Input 
-                placeholder="Enter a description..." 
-                {...field}
-                value={field.value || ''}
-              />
+              <Input placeholder="Digite uma descrição..." {...field} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -38,50 +34,50 @@ export function MobileFields({ form, properties }: MobileFieldsProps) {
         name="payment_method"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Payment Method</FormLabel>
+            <FormLabel>Método de Pagamento</FormLabel>
             <Select 
               onValueChange={field.onChange} 
               defaultValue={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Payment method" />
+                  <SelectValue placeholder="Selecione um método de pagamento" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="credit_card">Credit Card</SelectItem>
-                <SelectItem value="debit_card">Debit Card</SelectItem>
-                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                <SelectItem value="cash">Dinheiro</SelectItem>
+                <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                <SelectItem value="bank_transfer">Transferência Bancária</SelectItem>
                 <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="other">Outro</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       <ReceiptUpload form={form} />
-      
+
       {properties.length > 0 && (
         <FormField
           control={form.control}
           name="property_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Property</FormLabel>
+              <FormLabel>Imóvel</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select property" />
+                    <SelectValue placeholder="Selecione um imóvel" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {properties.map((property) => (
                     <SelectItem key={property.value} value={property.value}>
                       {property.label}

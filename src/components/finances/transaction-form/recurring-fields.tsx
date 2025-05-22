@@ -18,22 +18,22 @@ export function RecurringFields({ form }: RecurringFieldsProps) {
         name="recurring_frequency"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Frequency</FormLabel>
+            <FormLabel>Frequência</FormLabel>
             <Select 
               onValueChange={field.onChange}
               defaultValue={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select frequency" />
+                  <SelectValue placeholder="Selecione a frequência" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
+                <SelectItem value="weekly">Semanal</SelectItem>
+                <SelectItem value="biweekly">Quinzenal</SelectItem>
+                <SelectItem value="monthly">Mensal</SelectItem>
+                <SelectItem value="quarterly">Trimestral</SelectItem>
+                <SelectItem value="yearly">Anual</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -44,7 +44,7 @@ export function RecurringFields({ form }: RecurringFieldsProps) {
       <DateField 
         form={form} 
         name="recurring_end_date" 
-        label="End Date (Optional)" 
+        label="Data de Término (Opcional)" 
       />
     </>
   );

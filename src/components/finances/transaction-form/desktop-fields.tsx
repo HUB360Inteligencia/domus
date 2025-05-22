@@ -21,9 +21,9 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
         name="subcategory"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Subcategory (Optional)</FormLabel>
+            <FormLabel>Subcategoria (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Subcategory" {...field} value={field.value || ''} />
+              <Input placeholder="Subcategoria" {...field} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -35,10 +35,10 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel>Descrição</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Enter a description..." 
+                placeholder="Digite uma descrição..." 
                 className="resize-none"
                 {...field}
                 value={field.value || ''}
@@ -54,23 +54,23 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
         name="payment_method"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Payment Method</FormLabel>
+            <FormLabel>Método de Pagamento</FormLabel>
             <Select 
               onValueChange={field.onChange} 
               defaultValue={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a payment method" />
+                  <SelectValue placeholder="Selecione um método de pagamento" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="credit_card">Credit Card</SelectItem>
-                <SelectItem value="debit_card">Debit Card</SelectItem>
-                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                <SelectItem value="cash">Dinheiro</SelectItem>
+                <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                <SelectItem value="bank_transfer">Transferência Bancária</SelectItem>
                 <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="other">Outro</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -86,18 +86,18 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
           name="property_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Property</FormLabel>
+              <FormLabel>Imóvel</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a property" />
+                    <SelectValue placeholder="Selecione um imóvel" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {properties.map((property) => (
                     <SelectItem key={property.value} value={property.value}>
                       {property.label}

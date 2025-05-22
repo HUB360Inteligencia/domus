@@ -28,6 +28,12 @@ import UserDetailPage from "./pages/users/UserDetailPage";
 import UserInvitePage from "./pages/users/UserInvitePage";
 import FinancesPage from "./pages/FinancesPage";
 
+// Finance Pages
+import FinanceDashboardPage from "./pages/finances/FinanceDashboardPage";
+import ExpensesPage from "./pages/finances/ExpensesPage";
+import IncomePage from "./pages/finances/IncomePage";
+import ReportsPage from "./pages/finances/ReportsPage";
+
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ClientsPage from "./pages/admin/ClientsPage";
@@ -87,6 +93,12 @@ function App() {
           <Route path="/users/:id" element={<UserDetailPage />} />
           <Route path="/users/invite" element={<UserInvitePage />} />
           <Route path="/finances" element={<FinancesPage />} />
+          
+          {/* Novas rotas para as subseções de finanças */}
+          <Route path="/finances/dashboard" element={<FinanceDashboardPage />} />
+          <Route path="/finances/expenses" element={<ExpensesPage />} />
+          <Route path="/finances/income" element={<IncomePage />} />
+          <Route path="/finances/reports" element={<ReportsPage />} />
         </Route>
 
         <Route
