@@ -1,4 +1,3 @@
-
 import { 
   Building, 
   FileText, 
@@ -9,7 +8,10 @@ import {
   Receipt,
   Settings,
   CheckSquare,
-  Home
+  Home,
+  FileBox,
+  Wallet,
+  User
 } from "lucide-react";
 
 import {
@@ -29,6 +31,44 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 export function AppSidebar() {
+  const menuItems = [
+    {
+      name: "Dashboard",
+      to: "/dashboard",
+      Icon: Home,
+    },
+    {
+      name: "Properties",
+      to: "/properties",
+      Icon: Building,
+    },
+    {
+      name: "Contracts",
+      to: "/contracts",
+      Icon: FileText,
+    },
+    {
+      name: "Activities",
+      to: "/activities",
+      Icon: CheckSquare,
+    },
+    {
+      name: "Documents",
+      to: "/documents",
+      Icon: FileBox,
+    },
+    {
+      name: "Finances",
+      to: "/finances",
+      Icon: Wallet,
+    },
+    {
+      name: "Users",
+      to: "/users",
+      Icon: User,
+    },
+  ];
+
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center gap-2 p-4">
@@ -43,69 +83,16 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/">
-                <LayoutDashboard className="h-5 w-5 mr-2" />
-                Dashboard
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/properties">
-                <Building className="h-5 w-5 mr-2" />
-                Imóveis
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/contracts">
-                <FileText className="h-5 w-5 mr-2" />
-                Contratos
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/activities">
-                <CheckSquare className="h-5 w-5 mr-2" />
-                Atividades
-                <Badge className="ml-auto" variant="secondary">Novo</Badge>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/documents">
-                <Upload className="h-5 w-5 mr-2" />
-                Documentos
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/finances">
-                <Receipt className="h-5 w-5 mr-2" />
-                Finanças
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/users">
-                <Users className="h-5 w-5 mr-2" />
-                Usuários
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {menuItems.map((item) => (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild>
+                <Link to={item.to}>
+                  <item.Icon className="h-5 w-5 mr-2" />
+                  {item.name}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
         
         <SidebarGroup>
