@@ -784,6 +784,7 @@ export type Database = {
           square_meter_value: number | null
           state: string
           status: string
+          tags: string[] | null
           tenant_contact: string | null
           tenant_name: string | null
           title: string
@@ -822,6 +823,7 @@ export type Database = {
           square_meter_value?: number | null
           state: string
           status: string
+          tags?: string[] | null
           tenant_contact?: string | null
           tenant_name?: string | null
           title: string
@@ -860,6 +862,7 @@ export type Database = {
           square_meter_value?: number | null
           state?: string
           status?: string
+          tags?: string[] | null
           tenant_contact?: string | null
           tenant_name?: string | null
           title?: string
@@ -919,6 +922,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_valuations: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string
+          user_id: string
+          valuation_date: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id: string
+          user_id: string
+          valuation_date?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string
+          user_id?: string
+          valuation_date?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_valuations_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"

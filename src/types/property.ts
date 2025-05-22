@@ -44,6 +44,7 @@ export interface Property {
   agency_responsible?: string | null;
   agency_contact?: string | null;
   square_meter_value?: number | null;
+  tags?: string[] | null;
 }
 
 export interface PropertyFormData {
@@ -78,4 +79,25 @@ export interface PropertyFormData {
   agency_responsible?: string | null;
   agency_contact?: string | null;
   square_meter_value?: number | null;
+  tags?: string[] | null;
+}
+
+export interface PropertyValuation {
+  id: string;
+  property_id: string;
+  valuation_date: string;
+  value: number;
+  notes?: string;
+  created_at: string;
+  user_id: string;
+}
+
+export interface PropertyFinancialData {
+  marketValue: number;
+  totalInvestment: number;
+  monthlyNetReturn: number;
+  monthlyNetIncome: number;
+  accumulatedROI: number;
+  totalProfit: number;
+  vacancyRate: number;
 }

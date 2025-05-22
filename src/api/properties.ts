@@ -35,7 +35,8 @@ export const fetchProperties = async (): Promise<Property[]> => {
     return (data || []).map(item => ({
       ...item,
       status: item.status as PropertyStatus,
-      furnished: item.furnished as FurnishedStatus
+      furnished: item.furnished as FurnishedStatus,
+      tags: item.tags || []
     }));
   } catch (err) {
     console.error('Failed to fetch properties:', err);
@@ -74,7 +75,8 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     return data ? {
       ...data,
       status: data.status as PropertyStatus,
-      furnished: data.furnished as FurnishedStatus
+      furnished: data.furnished as FurnishedStatus,
+      tags: data.tags || []
     } : null;
   } catch (err) {
     console.error(`Failed to fetch property ${id}:`, err);
@@ -109,7 +111,8 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
   return {
     ...data,
     status: data.status as PropertyStatus,
-    furnished: data.furnished as FurnishedStatus
+    furnished: data.furnished as FurnishedStatus,
+    tags: data.tags || []
   };
 };
 
@@ -138,7 +141,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
   return {
     ...updatedData,
     status: updatedData.status as PropertyStatus,
-    furnished: updatedData.furnished as FurnishedStatus
+    furnished: updatedData.furnished as FurnishedStatus,
+    tags: updatedData.tags || []
   };
 };
 
@@ -173,7 +177,8 @@ export const updatePropertyCoordinates = async ({
   return {
     ...data,
     status: data.status as PropertyStatus,
-    furnished: data.furnished as FurnishedStatus
+    furnished: data.furnished as FurnishedStatus,
+    tags: data.tags || []
   };
 };
 
