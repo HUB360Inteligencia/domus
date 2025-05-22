@@ -54,7 +54,13 @@ export default function ActivityFormPage() {
   // Update initial data when selected activity changes
   useEffect(() => {
     if (selectedActivity) {
-      setInitialData(selectedActivity);
+      // Transform to match ActivityFormData type
+      const formData: Partial<ActivityFormData> = {
+        ...selectedActivity,
+        // Ensure files is the right type
+        files: selectedActivity.files as Record<string, any> | null,
+      };
+      setInitialData(formData);
     }
   }, [selectedActivity]);
 

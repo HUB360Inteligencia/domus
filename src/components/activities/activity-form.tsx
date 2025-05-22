@@ -37,9 +37,9 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { ActivityFormData } from '@/types/activity';
+import { ActivityFormData, ActivityStatus } from '@/types/activity';
 
-// Create a schema for form validation
+// Create a schema for form validation with proper types
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
   description: z.string().optional(),
@@ -76,10 +76,12 @@ export function ActivityForm({
   contractOptions = []
 }: ActivityFormProps) {
   const navigate = useNavigate();
-  const [selectedStatus, setSelectedStatus] = useState(initialData?.status || 'pending');
+  const [selectedStatus, setSelectedStatus] = useState<ActivityStatus>(
+    initialData?.status as ActivityStatus || 'pending'
+  );
   
   // Set up the form with default values
-  const form = useForm<ActivityFormData>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || '',
@@ -102,12 +104,12 @@ export function ActivityForm({
 
   // Handle status change to show/hide related fields
   const handleStatusChange = (newStatus: string) => {
-    setSelectedStatus(newStatus);
+    setSelectedStatus(newStatus as ActivityStatus);
     form.setValue('status', newStatus as any);
   };
 
   // Handle form submission
-  const handleFormSubmit = (data: ActivityFormData) => {
+  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
     // Convert date objects to ISO strings for backend
     const formattedData = {
       ...data,
@@ -116,7 +118,7 @@ export function ActivityForm({
       completed_at: data.completed_at ? data.completed_at.toISOString() : null,
     };
     
-    onSubmit(formattedData);
+    onSubmit(formattedData as ActivityFormData);
   };
 
   return (
@@ -308,8 +310,11 @@ export function ActivityForm({
                       mode="single"
                       selected={field.value || undefined}
                       onSelect={(date) => field.onChange(date)}
-                      disabled={(date) => date < new Date("1900-01-01")}
+                      disabled={(date) => 
+                        date < new Date("1900-01-01")
+                      }
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -346,8 +351,11 @@ export function ActivityForm({
                       mode="single"
                       selected={field.value || undefined}
                       onSelect={(date) => field.onChange(date)}
-                      disabled={(date) => date < new Date("1900-01-01")}
+                      disabled={(date) => 
+                        date < new Date("1900-01-01")
+                      }
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -385,8 +393,11 @@ export function ActivityForm({
                         mode="single"
                         selected={field.value || undefined}
                         onSelect={(date) => field.onChange(date)}
-                        disabled={(date) => date < new Date("1900-01-01")}
+                        disabled={(date) => 
+                          date < new Date("1900-01-01")
+                        }
                         initialFocus
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -525,7 +536,7 @@ export function ActivityForm({
             </Button>
           )}
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : initialData?.id ? 'Atualizar' : 'Salvar'}
+            {isSubmitting ? 'Salvando...' : initialData ? 'Atualizar' : 'Salvar'}
           </Button>
         </div>
       </form>
