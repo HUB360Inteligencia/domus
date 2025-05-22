@@ -88,10 +88,7 @@ export default function FinancesPage() {
 
   return (
     <div className="container py-6">
-      <PageHeader
-        heading="Financial Management"
-        subheading="Track and manage your income and expenses"
-      >
+      <PageHeader title="Financial Management" description="Track and manage your income and expenses">
         <Button onClick={() => handleOpenModal()}>
           <Plus className="mr-2 h-4 w-4" />
           Add Transaction

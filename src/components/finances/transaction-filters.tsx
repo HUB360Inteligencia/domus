@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CalendarIcon, Search, FilterIcon, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { TransactionFilters } from '@/hooks/use-financial-transactions';
+import type { TransactionFilters } from '@/hooks/use-financial-transactions';
 
 interface TransactionFiltersProps {
   filters: TransactionFilters;

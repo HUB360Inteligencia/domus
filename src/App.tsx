@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -7,9 +8,9 @@ import { Toaster } from "sonner";
 
 // Public Pages
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import AuthCallback from "./pages/AuthCallback";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import AuthCallback from "./pages/auth/AuthCallback";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -26,9 +27,9 @@ import ActivityDetailPage from "./pages/ActivityDetailPage";
 import ActivityFormPage from "./pages/ActivityFormPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentFormPage from "./pages/DocumentFormPage";
-import UsersPage from "./pages/UsersPage";
-import UserDetailPage from "./pages/UserDetailPage";
-import UserInvitePage from "./pages/UserInvitePage";
+import UsersPage from "./pages/users/UsersPage";
+import UserDetailPage from "./pages/users/UserDetailPage";
+import UserInvitePage from "./pages/users/UserInvitePage";
 import FinancesPage from "./pages/FinancesPage";
 
 // Admin Pages
@@ -38,8 +39,8 @@ import ClientDetailPage from "./pages/admin/ClientDetailPage";
 import ClientFormPage from "./pages/admin/ClientFormPage";
 
 // Layouts
-import AppLayout from "./components/layout/app-layout";
-import AdminLayout from "./components/layout/admin-layout";
+import { AppLayout } from "./components/layout/app-layout";
+import { AdminLayout } from "./components/layout/admin-layout";
 
 // Protected Route Component
 import { ProtectedRoute } from "./components/auth/protected-route";
@@ -107,7 +108,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredPermission="admin">
               <AdminLayout />
             </ProtectedRoute>
           }

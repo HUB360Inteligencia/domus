@@ -12,11 +12,12 @@ export interface FinancialTransaction {
   subcategory?: string | null;
   description?: string | null;
   transaction_date: string;
+  property_id?: string | null;
+  property_title?: string;
   payment_method?: string | null;
   recurring?: boolean;
   recurring_frequency?: string | null;
   recurring_end_date?: string | null;
-  property_id?: string | null;
   receipt_url?: string | null;
   user_id: string;
   created_at: string;
@@ -53,7 +54,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   const queryClient = useQueryClient();
 
   // Fetch all transactions
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+  const { data: rawTransactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['financial-transactions', filters],
     queryFn: async () => {
       let query = supabase
@@ -103,12 +104,16 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         return [];
       }
 
-      return data.map(tx => ({
-        ...tx,
-        property_title: tx.properties?.title
-      }));
+      return data;
     }
   });
+
+  // Transform raw transactions to ensure they match the FinancialTransaction type
+  const transactions: FinancialTransaction[] = rawTransactions.map(tx => ({
+    ...tx,
+    transaction_type: tx.transaction_type as 'income' | 'expense',
+    property_title: tx.properties?.title
+  }));
 
   // Create transaction
   const { mutateAsync: createTransaction, isPending: isCreating } = useMutation({
