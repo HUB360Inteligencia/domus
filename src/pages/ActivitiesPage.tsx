@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DndProvider } from "react-dnd";
@@ -21,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityBoard } from "@/components/activities/activity-board";
 import { ActivityFiltersBar } from "@/components/activities/activity-filters";
+import { ActivityCalendar } from "@/components/activities/activity-calendar";
 
 export default function ActivitiesPage() {
   const navigate = useNavigate();
@@ -32,6 +34,8 @@ export default function ActivitiesPage() {
   const { contracts } = useContracts();
   
   const { 
+    activities,
+    filteredActivities,
     groupedActivities,
     isLoading,
     handleStatusChange,
@@ -61,11 +65,20 @@ export default function ActivitiesPage() {
     value: contract.id
   }));
   
-  // Filter activities by search query - this would be integrated with the existing filter logic
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    // Implement search filtering
-  };
+  // Filter activities by search query
+  const searchedActivities = searchQuery.length > 0 
+    ? filteredActivities.filter(activity => 
+        activity.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (activity.description && activity.description.toLowerCase().includes(searchQuery.toLowerCase())))
+    : filteredActivities;
+  
+  // Group searched activities by status
+  const searchedGroupedActivities = [
+    { id: 'pending' as ActivityStatus, title: 'Pendentes', activities: searchedActivities.filter(a => a.status === 'pending') },
+    { id: 'in_progress' as ActivityStatus, title: 'Em Progresso', activities: searchedActivities.filter(a => a.status === 'in_progress') },
+    { id: 'completed' as ActivityStatus, title: 'Concluídas', activities: searchedActivities.filter(a => a.status === 'completed') },
+    { id: 'cancelled' as ActivityStatus, title: 'Canceladas', activities: searchedActivities.filter(a => a.status === 'cancelled') }
+  ];
 
   return (
     <div className="space-y-6">
@@ -86,7 +99,7 @@ export default function ActivitiesPage() {
             placeholder="Buscar atividades..."
             className="pl-8"
             value={searchQuery}
-            onChange={handleSearch}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
@@ -121,7 +134,7 @@ export default function ActivitiesPage() {
         <TabsContent value="board" className="mt-4">
           <DndProvider backend={HTML5Backend}>
             <ActivityBoard 
-              columns={groupedActivities} 
+              columns={searchedGroupedActivities} 
               isLoading={isLoading}
               onAdd={handleAddActivity}
               onStatusChange={handleStatusChange}
@@ -132,9 +145,16 @@ export default function ActivitiesPage() {
         </TabsContent>
         
         <TabsContent value="calendar" className="mt-4">
-          <div className="flex h-[500px] items-center justify-center border rounded-lg">
-            <p className="text-muted-foreground">Visualização de Calendário (em desenvolvimento)</p>
-          </div>
+          <ActivityCalendar
+            activities={searchedActivities}
+            isLoading={isLoading}
+            onSelect={handleSelectActivity}
+            onDateSelect={(date) => {
+              // Navigate to new activity form with the selected date pre-filled
+              const dateStr = date.toISOString().split('T')[0];
+              navigate(`/activities/new?date=${dateStr}`);
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>

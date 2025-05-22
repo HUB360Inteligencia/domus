@@ -88,7 +88,7 @@ export const useActivities = (
     return result;
   }, [activities, filters]);
 
-  // Group activities by status for board view
+  // Group activities by status for board view - return the array directly
   const groupedActivities = useCallback(() => {
     const filtered = filteredActivities();
     const pending = filtered.filter(a => a.status === 'pending');
