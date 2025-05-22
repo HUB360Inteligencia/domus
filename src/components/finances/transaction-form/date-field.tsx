@@ -23,7 +23,7 @@ export function DateField({ form, name, label }: DateFieldProps) {
             <Input 
               type="date" 
               {...field}
-              value={field.value || ''}
+              value={field.value?.toString() || ''}
               className="w-full"
             />
           </FormControl>
