@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, CalendarClock, CheckSquare } from "lucide-react";
+import { ChevronLeft, CheckSquare } from "lucide-react";
 
 import { useActivities } from "@/hooks/use-activities";
 import { useProperties } from "@/hooks/use-properties";
@@ -30,7 +30,6 @@ export default function ActivityFormPage() {
   const { contracts } = useContracts();
   
   const { 
-    activities, 
     createActivity, 
     updateActivity,
     setSelectedActivityId,
@@ -48,6 +47,9 @@ export default function ActivityFormPage() {
       setInitialData({
         due_date: dateParam,
       });
+    } else {
+      // Ensure we always have initialData defined, even if it's empty
+      setInitialData({});
     }
   }, [activityId, dateParam, setSelectedActivityId]);
 
@@ -135,7 +137,7 @@ export default function ActivityFormPage() {
 
       <Card className="p-6">
         <ActivityForm
-          initialData={initialData || undefined}
+          initialData={initialData || {}}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isCreating || isUpdating || loading}

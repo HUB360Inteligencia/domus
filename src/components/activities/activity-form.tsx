@@ -55,26 +55,29 @@ export function ActivityForm({
     initialData?.status as ActivityStatus || 'pending'
   );
   
+  // Garantir que os valores iniciais são do tipo correto
+  const defaultValues = {
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    activity_type: initialData?.activity_type || 'maintenance',
+    status: initialData?.status || 'pending',
+    priority: initialData?.priority || 'medium',
+    start_date: initialData?.start_date ? new Date(initialData.start_date) : null,
+    due_date: initialData?.due_date ? new Date(initialData.due_date) : null,
+    completed_at: initialData?.completed_at ? new Date(initialData.completed_at) : null,
+    responsible_name: initialData?.responsible_name || '',
+    responsible_contact: initialData?.responsible_contact || '',
+    responsible_notes: initialData?.responsible_notes || '',
+    estimated_cost: initialData?.estimated_cost || null,
+    actual_cost: initialData?.actual_cost || null,
+    property_id: initialData?.property_id || null,
+    contract_id: initialData?.contract_id || null,
+  };
+
   // Set up the form with default values
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: initialData?.title || '',
-      description: initialData?.description || '',
-      activity_type: initialData?.activity_type || 'maintenance',
-      status: initialData?.status || 'pending',
-      priority: initialData?.priority || 'medium',
-      start_date: initialData?.start_date ? new Date(initialData.start_date) : null,
-      due_date: initialData?.due_date ? new Date(initialData.due_date) : null,
-      completed_at: initialData?.completed_at ? new Date(initialData.completed_at) : null,
-      responsible_name: initialData?.responsible_name || '',
-      responsible_contact: initialData?.responsible_contact || '',
-      responsible_notes: initialData?.responsible_notes || '',
-      estimated_cost: initialData?.estimated_cost || null,
-      actual_cost: initialData?.actual_cost || null,
-      property_id: initialData?.property_id || null,
-      contract_id: initialData?.contract_id || null,
-    }
+    defaultValues
   });
 
   // Handle status change to show/hide related fields
