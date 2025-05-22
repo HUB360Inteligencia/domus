@@ -28,7 +28,7 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   // Verificar se o token está expirado, mas só redirecionar se realmente estiver
   useEffect(() => {
     if (session) {
-      const tokenExpiry = new Date(session.expires_at * 1000);
+      const tokenExpiry = new Date((session.expires_at || 0) * 1000);
       const isExpired = tokenExpiry < new Date();
       
       if (isExpired) {

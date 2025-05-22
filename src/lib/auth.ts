@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
@@ -29,11 +28,25 @@ export interface AuthContextType {
   hasPermission: (permission: string) => boolean;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Provide a default context value to prevent "undefined" errors
+const defaultContextValue: AuthContextType = {
+  user: null,
+  session: null,
+  isLoading: true,
+  signIn: () => Promise.reject(new Error('AuthProvider not initialized')),
+  signUp: () => Promise.reject(new Error('AuthProvider not initialized')),
+  signOut: () => Promise.reject(new Error('AuthProvider not initialized')),
+  signInWithGoogle: () => Promise.reject(new Error('AuthProvider not initialized')),
+  signInWithApple: () => Promise.reject(new Error('AuthProvider not initialized')),
+  updateProfile: () => Promise.reject(new Error('AuthProvider not initialized')),
+  hasPermission: () => false,
+};
+
+export const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

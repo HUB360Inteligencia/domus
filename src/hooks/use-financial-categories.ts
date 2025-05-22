@@ -35,7 +35,7 @@ export const useFinancialCategories = () => {
         return [];
       }
 
-      return data.map(category => ({
+      return (data || []).map(category => ({
         ...category,
         type: category.type as 'income' | 'expense'
       }));
@@ -122,11 +122,11 @@ export const useFinancialCategories = () => {
   });
 
   // Format categories for select inputs
-  const categoryOptions = categories.map((cat) => ({
+  const categoryOptions = Array.isArray(categories) ? categories.map((cat) => ({
     label: cat.name,
-    value: cat.name,
+    value: cat.id, // Use ID instead of name for value to ensure uniqueness
     type: cat.type,
-  }));
+  })) : [];
 
   const incomeCategories = categoryOptions.filter((cat) => cat.type === 'income');
   const expenseCategories = categoryOptions.filter((cat) => cat.type === 'expense');

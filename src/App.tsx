@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
-import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
 
 // Public Pages
 import Index from "./pages/Index";
@@ -43,20 +40,18 @@ import { AdminLayout } from "./components/layout/admin-layout";
 
 // Protected Route Component
 import { ProtectedRoute } from "./components/auth/protected-route";
+import { useAuth } from "./lib/auth";
 
 function App() {
-  const [isAuthReady, setIsAuthReady] = useState(false);
-  const supabase = useSupabaseClient();
-  const session = useSession();
+  const { isLoading } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Set auth as ready once we've checked the session
-      setIsAuthReady(true);
-    };
-
-    checkAuth();
-  }, [session]);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
