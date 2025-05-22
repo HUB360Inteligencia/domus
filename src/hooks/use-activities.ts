@@ -88,7 +88,7 @@ export const useActivities = (
     return result;
   }, [activities, filters]);
 
-  // Group activities by status for board view - return the array directly instead of a function
+  // Group activities by status for board view
   const groupedActivities = useCallback(() => {
     const filtered = filteredActivities();
     const pending = filtered.filter(a => a.status === 'pending');
@@ -97,10 +97,10 @@ export const useActivities = (
     const cancelled = filtered.filter(a => a.status === 'cancelled');
     
     return [
-      { id: 'pending', title: 'Pendentes', activities: pending },
-      { id: 'in_progress', title: 'Em Progresso', activities: inProgress },
-      { id: 'completed', title: 'Concluídas', activities: completed },
-      { id: 'cancelled', title: 'Canceladas', activities: cancelled }
+      { id: 'pending' as ActivityStatus, title: 'Pendentes', activities: pending },
+      { id: 'in_progress' as ActivityStatus, title: 'Em Progresso', activities: inProgress },
+      { id: 'completed' as ActivityStatus, title: 'Concluídas', activities: completed },
+      { id: 'cancelled' as ActivityStatus, title: 'Canceladas', activities: cancelled }
     ];
   }, [filteredActivities]);
 
