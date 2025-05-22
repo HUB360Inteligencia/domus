@@ -57,7 +57,7 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
             <FormLabel>Payment Method</FormLabel>
             <Select 
               onValueChange={field.onChange} 
-              defaultValue={field.value || ''}
+              defaultValue={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -89,7 +89,7 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
               <FormLabel>Property</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                defaultValue={field.value || ''}
+                defaultValue={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -97,7 +97,7 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {properties.map((property) => (
                     <SelectItem key={property.value} value={property.value}>
                       {property.label}
