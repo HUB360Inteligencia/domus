@@ -67,9 +67,22 @@ export async function fetchActivitiesByContract(contractId: string): Promise<Act
 
 // Create a new activity
 export async function createActivity(data: ActivityFormData): Promise<Activity> {
+  // Get the current user's ID
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    console.error('Error getting current user:', userError);
+    throw new Error(userError.message);
+  }
+  
+  // Add the user_id to the data
+  const activityData = {
+    ...data,
+    user_id: userData.user.id
+  };
+  
   const { data: newActivity, error } = await supabase
     .from('activities')
-    .insert([data])
+    .insert(activityData)
     .select()
     .single();
 

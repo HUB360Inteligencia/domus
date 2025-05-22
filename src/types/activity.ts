@@ -1,4 +1,3 @@
-
 import { Json } from '@/integrations/supabase/types';
 
 export type ActivityPriority = 'low' | 'medium' | 'high';
@@ -46,6 +45,7 @@ export interface ActivityFormData {
   files?: Record<string, any> | null;
   property_id?: string | null;
   contract_id?: string | null;
+  user_id?: string; // Added user_id
 }
 
 export interface BoardColumn {

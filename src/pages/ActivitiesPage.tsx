@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DndProvider } from "react-dnd";
@@ -122,7 +121,7 @@ export default function ActivitiesPage() {
         <TabsContent value="board" className="mt-4">
           <DndProvider backend={HTML5Backend}>
             <ActivityBoard 
-              columns={groupedActivities()} 
+              columns={groupedActivities} 
               isLoading={isLoading}
               onAdd={handleAddActivity}
               onStatusChange={handleStatusChange}
