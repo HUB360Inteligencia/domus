@@ -324,7 +324,19 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               {isLoading ? (
                 <Skeleton className="h-[500px] w-full" />
               ) : (
-                <PropertyMap property={property} />
+                <PropertyMap 
+                  address={property?.address || ''}
+                  city={property?.city || ''}
+                  state={property?.state || ''}
+                  propertyId={property?.id}
+                  property_number={property?.property_number}
+                  complement={property?.complement}
+                  neighborhood={property?.neighborhood}
+                  initialCoords={property?.latitude && property?.longitude 
+                    ? { lat: property.latitude, lng: property.longitude }
+                    : null
+                  }
+                />
               )}
             </CardContent>
           </Card>
@@ -360,3 +372,4 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
     </div>
   );
 };
+
