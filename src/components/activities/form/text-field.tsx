@@ -37,7 +37,7 @@ export const TextField = ({
               type={type} 
               placeholder={placeholder} 
               {...field} 
-              value={field.value ?? ''}
+              value={typeof field.value === 'string' || typeof field.value === 'number' ? field.value : field.value ? String(field.value) : ''}
               onChange={(e) => {
                 if (type === "number") {
                   const value = e.target.value ? parseFloat(e.target.value) : null;

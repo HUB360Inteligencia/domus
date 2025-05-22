@@ -37,7 +37,7 @@ export const TextareaField = ({
               placeholder={placeholder} 
               className={className} 
               {...field} 
-              value={field.value || ''}
+              value={typeof field.value === 'string' ? field.value : field.value ? String(field.value) : ''}
             />
           </FormControl>
           <FormMessage />
