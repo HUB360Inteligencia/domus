@@ -49,7 +49,8 @@ export const SelectField = ({
           <FormLabel>{label}</FormLabel>
           <Select 
             onValueChange={(value) => {
-              const finalValue = value === "" ? null : value;
+              // If the user selects "none", set the value to null
+              const finalValue = value === "none" ? null : value;
               field.onChange(finalValue);
               onChange?.(value);
             }} 
@@ -61,7 +62,7 @@ export const SelectField = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {allowEmpty && <SelectItem value="">Nenhum</SelectItem>}
+              {allowEmpty && <SelectItem value="none">Nenhum</SelectItem>}
               {options.map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
