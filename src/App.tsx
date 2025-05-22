@@ -25,9 +25,14 @@ const PropertyDetailPage = lazy(() => import("@/pages/PropertyDetailPage"));
 const PropertyFormPage = lazy(() => import("@/pages/PropertyFormPage"));
 const ContractsPage = lazy(() => import("@/pages/ContractsPage"));
 const ContractDetailPage = lazy(() => import("@/pages/ContractDetailPage"));
-const ContractFormPage = lazy(() => import("@/pages/ContractFormPage")); // Import the new ContractFormPage
+const ContractFormPage = lazy(() => import("@/pages/ContractFormPage")); 
 const DocumentsPage = lazy(() => import("@/pages/DocumentsPage"));
 const DocumentFormPage = lazy(() => import("@/pages/DocumentFormPage"));
+
+// Activities Pages
+const ActivitiesPage = lazy(() => import("@/pages/ActivitiesPage"));
+const ActivityFormPage = lazy(() => import("@/pages/ActivityFormPage"));
+const ActivityDetailPage = lazy(() => import("@/pages/ActivityDetailPage"));
 
 // Users Pages
 const UsersPage = lazy(() => import("@/pages/users/UsersPage"));
@@ -102,9 +107,23 @@ function App() {
               >
                 <Route index element={<ContractsPage />} />
                 <Route path="detail" element={<ContractDetailPage />} />
-                {/* Updated routes to use ContractFormPage instead of PropertyFormPage */}
                 <Route path="new" element={<ContractFormPage />} />
                 <Route path="edit" element={<ContractFormPage />} /> 
+              </Route>
+
+              {/* New Activities Routes */}
+              <Route
+                path="/activities"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<ActivitiesPage />} />
+                <Route path="new" element={<ActivityFormPage />} />
+                <Route path="edit" element={<ActivityFormPage />} />
+                <Route path="detail" element={<ActivityDetailPage />} />
               </Route>
 
               <Route

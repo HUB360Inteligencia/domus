@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Receipt,
   Settings,
+  CheckSquare,
   Home
 } from "lucide-react";
 
@@ -65,6 +66,16 @@ export function AppSidebar() {
               <Link to="/contracts">
                 <FileText className="h-5 w-5 mr-2" />
                 Contratos
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/activities">
+                <CheckSquare className="h-5 w-5 mr-2" />
+                Atividades
+                <Badge className="ml-auto" variant="secondary">Novo</Badge>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -9,6 +9,157 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          activity_type: string
+          actual_cost: number | null
+          completed_at: string | null
+          contract_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          estimated_cost: number | null
+          expense_id: string | null
+          files: Json | null
+          id: string
+          priority: string
+          property_id: string | null
+          responsible_contact: string | null
+          responsible_name: string | null
+          responsible_notes: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          actual_cost?: number | null
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          estimated_cost?: number | null
+          expense_id?: string | null
+          files?: Json | null
+          id?: string
+          priority?: string
+          property_id?: string | null
+          responsible_contact?: string | null
+          responsible_name?: string | null
+          responsible_notes?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          actual_cost?: number | null
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          estimated_cost?: number | null
+          expense_id?: string | null
+          files?: Json | null
+          id?: string
+          priority?: string
+          property_id?: string | null
+          responsible_contact?: string | null
+          responsible_name?: string | null
+          responsible_notes?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "property_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      activity_category_relations: {
+        Row: {
+          activity_id: string
+          category_id: string
+        }
+        Insert: {
+          activity_id: string
+          category_id: string
+        }
+        Update: {
+          activity_id?: string
+          category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_category_relations_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_category_relations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "activity_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clauses: {
         Row: {
           category: string
@@ -289,6 +440,98 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          payment_method: string | null
+          property_id: string | null
+          receipt_url: string | null
+          recurring: boolean | null
+          recurring_end_date: string | null
+          recurring_frequency: string | null
+          subcategory: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          property_id?: string | null
+          receipt_url?: string | null
+          recurring?: boolean | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          subcategory?: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          property_id?: string | null
+          receipt_url?: string | null
+          recurring?: boolean | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          subcategory?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -632,6 +875,53 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          expense_type: string
+          id: string
+          maintenance_details: string | null
+          paid_at: string
+          property_id: string
+          receipt_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          expense_type: string
+          id?: string
+          maintenance_details?: string | null
+          paid_at: string
+          property_id: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          maintenance_details?: string | null
+          paid_at?: string
+          property_id?: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
