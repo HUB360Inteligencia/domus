@@ -49,6 +49,43 @@ export function ActivityFiltersBar({
     { label: 'Outro', value: 'other' }
   ];
 
+  // Extract unique neighborhoods and cities from property options
+  const neighborhoodOptions = Array.from(
+    new Set(
+      propertyOptions
+        .map(property => {
+          // Extract property id and neighborhood from the property value
+          try {
+            // Assume each property option has label in format "Title - Neighborhood, City"
+            const match = property.label.match(/^(.*?)(?:\s-\s(.*?)(?:,\s(.*))?)?$/);
+            if (match && match[2]) return match[2];
+            return null;
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean)
+    )
+  ).map(neighborhood => ({ label: neighborhood as string, value: neighborhood as string }));
+
+  const cityOptions = Array.from(
+    new Set(
+      propertyOptions
+        .map(property => {
+          // Extract property id and city from the property value
+          try {
+            // Assume each property option has label in format "Title - Neighborhood, City"
+            const match = property.label.match(/^(.*?)(?:\s-\s(.*?)(?:,\s(.*))?)?$/);
+            if (match && match[3]) return match[3];
+            return null;
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean)
+    )
+  ).map(city => ({ label: city as string, value: city as string }));
+
   const handleStatusChange = (status: ActivityStatus) => {
     setFilters(prev => {
       const currentStatus = prev.status || [];
@@ -90,6 +127,18 @@ export function ActivityFiltersBar({
     setFilters(prev => ({ ...prev, contractId: contractId || undefined }));
   };
 
+  const handleNeighborhoodChange = (neighborhood: string) => {
+    setFilters(prev => ({ ...prev, neighborhood: neighborhood || undefined }));
+  };
+
+  const handleCityChange = (city: string) => {
+    setFilters(prev => ({ ...prev, city: city || undefined }));
+  };
+
+  const handleSupplierChange = (supplier: string) => {
+    setFilters(prev => ({ ...prev, responsibleName: supplier || undefined }));
+  };
+
   const handleDateRangeChange = (range: { from: Date | null; to: Date | null }) => {
     setFilters(prev => ({ ...prev, dueDateRange: range }));
   };
@@ -109,6 +158,9 @@ export function ActivityFiltersBar({
     (filters.type?.length || 0) +
     (filters.propertyId ? 1 : 0) +
     (filters.contractId ? 1 : 0) +
+    (filters.neighborhood ? 1 : 0) +
+    (filters.city ? 1 : 0) +
+    (filters.responsibleName ? 1 : 0) +
     (filters.dueDateRange?.from || filters.dueDateRange?.to ? 1 : 0)
   );
 
@@ -173,6 +225,67 @@ export function ActivityFiltersBar({
             value={filters.dueDateRange || { from: null, to: null }}
             onChange={handleDateRangeChange}
           />
+        </div>
+
+        {/* Neighborhood filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Bairro</label>
+          <Select 
+            value={filters.neighborhood || ''} 
+            onValueChange={handleNeighborhoodChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar bairro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os bairros</SelectItem>
+              {neighborhoodOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* City filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Cidade</label>
+          <Select 
+            value={filters.city || ''} 
+            onValueChange={handleCityChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar cidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todas as cidades</SelectItem>
+              {cityOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Supplier/Responsible filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Fornecedor/Responsável</label>
+          <Select 
+            value={filters.responsibleName || ''} 
+            onValueChange={handleSupplierChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os responsáveis</SelectItem>
+              {/* This would ideally come from a list of suppliers/responsibles */}
+              {/* For now we'll just have a placeholder */}
+              <SelectItem value="placeholder">Adicione responsáveis primeiro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       

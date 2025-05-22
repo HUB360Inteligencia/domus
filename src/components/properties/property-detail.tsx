@@ -1,6 +1,5 @@
-
-import { useState } from 'react';
-import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle, Calendar, Users, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building, ArrowLeft, Edit, Trash2, Home, MapPin, Square, Bed, Bath, Loader2, AlertTriangle, Calendar, Users, Building2, CheckSquare, Plus } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,9 @@ import { PropertyMap } from './property-map';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useActivities } from '@/hooks/use-activities';
+import { useNavigate } from 'react-router-dom';
+import { Activity } from '@/types/activity';
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -30,20 +32,36 @@ export function PropertyDetail({
 }: PropertyDetailProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const navigate = useNavigate();
+
+  // Use the activities hook to fetch activities for this property
+  const { propertyActivities, isLoadingPropertyActivities } = useActivities(
+    property?.id || null
+  );
+
+  // Separate activities into pending and history (completed/cancelled)
+  const pendingActivities = propertyActivities.filter(
+    activity => ['pending', 'in_progress'].includes(activity.status)
+  );
+  
+  const historicalActivities = propertyActivities.filter(
+    activity => ['completed', 'cancelled'].includes(activity.status)
+  );
 
   const handleDelete = () => {
     onDelete();
     setDeleteDialogOpen(false);
   };
 
-  const formatCurrency = (value: number | null | undefined) => {
-    if (value === null || value === undefined) return '-';
-    return value.toLocaleString('pt-BR', {
-      style: 'currency', 
-      currency: 'BRL',
-    });
+  const handleViewActivity = (activityId: string) => {
+    navigate(`/activities/detail?id=${activityId}`);
   };
 
+  const handleCreateActivity = () => {
+    navigate(`/activities/new?property_id=${property?.id}&date=${new Date().toISOString().split('T')[0]}`);
+  };
+
+  // Function to format dates
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
     try {
@@ -52,6 +70,15 @@ export function PropertyDetail({
     } catch (e) {
       return '-';
     }
+  };
+
+  // Function to format currency
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '-';
+    return value.toLocaleString('pt-BR', {
+      style: 'currency', 
+      currency: 'BRL',
+    });
   };
 
   const getStatusConfig = (status: string) => {
@@ -71,6 +98,34 @@ export function PropertyDetail({
     }
   };
 
+  const getActivityStatusConfig = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { label: 'Pendente', color: 'bg-yellow-500' };
+      case 'in_progress':
+        return { label: 'Em Progresso', color: 'bg-blue-500' };
+      case 'completed':
+        return { label: 'Concluída', color: 'bg-green-500' };
+      case 'cancelled':
+        return { label: 'Cancelada', color: 'bg-red-500' };
+      default:
+        return { label: status, color: 'bg-gray-500' };
+    }
+  };
+
+  const getActivityPriorityConfig = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return { label: 'Baixa', color: 'bg-blue-500' };
+      case 'medium':
+        return { label: 'Média', color: 'bg-yellow-500' };
+      case 'high':
+        return { label: 'Alta', color: 'bg-red-500' };
+      default:
+        return { label: priority, color: 'bg-gray-500' };
+    }
+  };
+
   const getPropertyTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       apartment: 'Apartamento',
@@ -80,6 +135,42 @@ export function PropertyDetail({
       rural: 'Rural',
     };
     return types[type] || type;
+  };
+
+  // Component to render an activity card
+  const ActivityItem = ({ activity }: { activity: Activity }) => {
+    const statusConfig = getActivityStatusConfig(activity.status);
+    const priorityConfig = getActivityPriorityConfig(activity.priority);
+    
+    return (
+      <div 
+        className="border rounded-md p-4 mb-3 hover:bg-accent/50 cursor-pointer transition-colors"
+        onClick={() => handleViewActivity(activity.id)}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <h4 className="font-medium">{activity.title}</h4>
+          <div className="flex space-x-2">
+            <Badge className={statusConfig.color + " text-white"}>{statusConfig.label}</Badge>
+            <Badge className={priorityConfig.color + " text-white"}>{priorityConfig.label}</Badge>
+          </div>
+        </div>
+        
+        {activity.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{activity.description}</p>
+        )}
+        
+        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+          <div className="flex items-center">
+            <Calendar className="h-3 w-3 mr-1" />
+            {activity.due_date ? formatDate(activity.due_date) : 'Sem prazo'}
+          </div>
+          
+          {activity.responsible_name && (
+            <div>Resp: {activity.responsible_name}</div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -142,11 +233,12 @@ export function PropertyDetail({
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
           <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
           <TabsTrigger value="rental">Dados do Locatário</TabsTrigger>
           <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
+          <TabsTrigger value="activities">Atividades</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -431,6 +523,79 @@ export function PropertyDetail({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="activities">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Atividades do Imóvel</h3>
+              <Button onClick={handleCreateActivity}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Atividade
+              </Button>
+            </div>
+            
+            {isLoadingPropertyActivities ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-petroleum mr-2" />
+                <p>Carregando atividades...</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Pending Activities */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center">
+                      <CheckSquare className="h-5 w-5 mr-2 text-yellow-500" />
+                      Atividades Pendentes
+                      {pendingActivities.length > 0 && (
+                        <Badge className="ml-2">{pendingActivities.length}</Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {pendingActivities.length > 0 ? (
+                      <div className="space-y-2">
+                        {pendingActivities.map((activity) => (
+                          <ActivityItem key={activity.id} activity={activity} />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-6">
+                        Não há atividades pendentes para este imóvel.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Historical Activities */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center">
+                      <CheckSquare className="h-5 w-5 mr-2 text-green-500" />
+                      Histórico de Atividades
+                      {historicalActivities.length > 0 && (
+                        <Badge className="ml-2">{historicalActivities.length}</Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {historicalActivities.length > 0 ? (
+                      <div className="space-y-2">
+                        {historicalActivities.map((activity) => (
+                          <ActivityItem key={activity.id} activity={activity} />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-6">
+                        Não há histórico de atividades para este imóvel.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
       

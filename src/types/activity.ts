@@ -1,3 +1,4 @@
+
 import { Json } from '@/integrations/supabase/types';
 
 export type ActivityPriority = 'low' | 'medium' | 'high';
@@ -87,6 +88,10 @@ export interface ActivityFilters {
   propertyId?: string;
   contractId?: string;
   dueDateRange?: { from: Date | null; to: Date | null };
+  // New filters
+  neighborhood?: string;
+  city?: string;
+  responsibleName?: string;
 }
 
 export interface ActivityCalendarProps {

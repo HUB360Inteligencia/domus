@@ -64,6 +64,23 @@ export const useActivities = (
     if (filters.contractId) {
       result = result.filter(a => a.contract_id === filters.contractId);
     }
+
+    // Filter by responsible name (supplier)
+    if (filters.responsibleName) {
+      result = result.filter(a => 
+        a.responsible_name && a.responsible_name.toLowerCase().includes(filters.responsibleName!.toLowerCase())
+      );
+    }
+
+    // We need to get property data for each activity to filter by neighborhood/city
+    // For now we'll leave a placeholder logic that assumes we have this data
+    // This would need to be implemented with a join or separate query in a real app
+    if (filters.neighborhood || filters.city) {
+      // Placeholder for neighborhood/city filtering
+      // In a real implementation, we'd need to join with properties table
+      // or preload property data with activities
+      console.log("Filtering by neighborhood/city would require more data");
+    }
     
     if (filters.dueDateRange && (filters.dueDateRange.from || filters.dueDateRange.to)) {
       result = result.filter(a => {
