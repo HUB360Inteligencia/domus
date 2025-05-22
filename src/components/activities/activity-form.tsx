@@ -1,62 +1,17 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { 
-  CalendarDays, 
-  Clock, 
-  AlertCircle, 
-  Tag, 
-  DollarSign, 
-  User
-} from 'lucide-react';
 
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-
+import { Form } from '@/components/ui/form';
 import { ActivityFormData, ActivityStatus } from '@/types/activity';
 
-// Create a schema for form validation with proper types
-const formSchema = z.object({
-  title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
-  description: z.string().optional(),
-  activity_type: z.enum(['maintenance', 'inspection', 'legal', 'financial', 'other']),
-  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-  priority: z.enum(['low', 'medium', 'high']),
-  start_date: z.date().optional().nullable(),
-  due_date: z.date().optional().nullable(),
-  completed_at: z.date().optional().nullable(),
-  responsible_name: z.string().optional(),
-  responsible_contact: z.string().optional(),
-  responsible_notes: z.string().optional(),
-  estimated_cost: z.number().optional().nullable(),
-  actual_cost: z.number().optional().nullable(),
-  property_id: z.string().optional().nullable(),
-  contract_id: z.string().optional().nullable(),
-});
+import { formSchema, FormValues } from './form/form-schema';
+import { TextField } from './form/text-field';
+import { TextareaField } from './form/textarea-field';
+import { SelectField } from './form/select-field';
+import { DateField } from './form/date-field';
+import { ActivityFormActions } from './form/activity-form-actions';
 
 interface ActivityFormProps {
   initialData?: Partial<ActivityFormData>;
@@ -67,6 +22,27 @@ interface ActivityFormProps {
   contractOptions?: { label: string; value: string }[];
 }
 
+const activityTypeOptions = [
+  { label: 'Manutenção', value: 'maintenance' },
+  { label: 'Inspeção', value: 'inspection' },
+  { label: 'Legal', value: 'legal' },
+  { label: 'Financeira', value: 'financial' },
+  { label: 'Outro', value: 'other' }
+];
+
+const statusOptions = [
+  { label: 'Pendente', value: 'pending' },
+  { label: 'Em Progresso', value: 'in_progress' },
+  { label: 'Concluída', value: 'completed' },
+  { label: 'Cancelada', value: 'cancelled' }
+];
+
+const priorityOptions = [
+  { label: 'Baixa', value: 'low' },
+  { label: 'Média', value: 'medium' },
+  { label: 'Alta', value: 'high' }
+];
+
 export function ActivityForm({
   initialData,
   onSubmit,
@@ -75,13 +51,12 @@ export function ActivityForm({
   propertyOptions = [],
   contractOptions = []
 }: ActivityFormProps) {
-  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState<ActivityStatus>(
     initialData?.status as ActivityStatus || 'pending'
   );
   
   // Set up the form with default values
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || '',
@@ -105,11 +80,10 @@ export function ActivityForm({
   // Handle status change to show/hide related fields
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus as ActivityStatus);
-    form.setValue('status', newStatus as any);
   };
 
   // Handle form submission
-  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
+  const handleFormSubmit = (data: FormValues) => {
     // Convert date objects to ISO strings for backend
     const formattedData = {
       ...data,
@@ -126,419 +100,148 @@ export function ActivityForm({
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Title */}
-          <FormField
+          <TextField
             control={form.control}
             name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Título</FormLabel>
-                <FormControl>
-                  <Input placeholder="Título da atividade" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Título"
+            placeholder="Título da atividade"
           />
           
           {/* Activity Type */}
-          <FormField
+          <SelectField
             control={form.control}
             name="activity_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="maintenance">Manutenção</SelectItem>
-                    <SelectItem value="inspection">Inspeção</SelectItem>
-                    <SelectItem value="legal">Legal</SelectItem>
-                    <SelectItem value="financial">Financeira</SelectItem>
-                    <SelectItem value="other">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Tipo"
+            placeholder="Selecione o tipo"
+            options={activityTypeOptions}
           />
           
           {/* Status */}
-          <FormField
+          <SelectField
             control={form.control}
             name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={(value) => {
-                  field.onChange(value);
-                  handleStatusChange(value);
-                }} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="in_progress">Em Progresso</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Status"
+            placeholder="Selecione o status"
+            options={statusOptions}
+            onChange={handleStatusChange}
           />
           
           {/* Priority */}
-          <FormField
+          <SelectField
             control={form.control}
             name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prioridade</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a prioridade" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Prioridade"
+            placeholder="Selecione a prioridade"
+            options={priorityOptions}
           />
           
           {/* Property */}
           {propertyOptions.length > 0 && (
-            <FormField
+            <SelectField
               control={form.control}
               name="property_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Imóvel</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value || null)} 
-                    defaultValue={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o imóvel" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
-                      {propertyOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Imóvel"
+              placeholder="Selecione o imóvel"
+              options={propertyOptions}
+              allowEmpty
             />
           )}
           
           {/* Contract */}
           {contractOptions.length > 0 && (
-            <FormField
+            <SelectField
               control={form.control}
               name="contract_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contrato</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value || null)} 
-                    defaultValue={field.value || undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o contrato" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
-                      {contractOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Contrato"
+              placeholder="Selecione o contrato"
+              options={contractOptions}
+              allowEmpty
             />
           )}
           
           {/* Start Date */}
-          <FormField
+          <DateField
             control={form.control}
             name="start_date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Data de início</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP", { locale: ptBR })
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
-                        <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={(date) => field.onChange(date)}
-                      disabled={(date) => 
-                        date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Data de início"
           />
           
           {/* Due Date */}
-          <FormField
+          <DateField
             control={form.control}
             name="due_date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Prazo</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP", { locale: ptBR })
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
-                        <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value || undefined}
-                      onSelect={(date) => field.onChange(date)}
-                      disabled={(date) => 
-                        date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Prazo"
           />
           
           {/* Show Completion Date only for completed status */}
           {selectedStatus === 'completed' && (
-            <FormField
+            <DateField
               control={form.control}
               name="completed_at"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de conclusão</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                          <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={(date) => field.onChange(date)}
-                        disabled={(date) => 
-                          date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Data de conclusão"
             />
           )}
           
           {/* Responsible Name */}
-          <FormField
+          <TextField
             control={form.control}
             name="responsible_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Responsável</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome do responsável" {...field} value={field.value || ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Nome do Responsável"
+            placeholder="Nome do responsável"
           />
           
           {/* Responsible Contact */}
-          <FormField
+          <TextField
             control={form.control}
             name="responsible_contact"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contato do Responsável</FormLabel>
-                <FormControl>
-                  <Input placeholder="Telefone ou email" {...field} value={field.value || ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Contato do Responsável"
+            placeholder="Telefone ou email"
           />
           
           {/* Estimated Cost */}
-          <FormField
+          <TextField
             control={form.control}
             name="estimated_cost"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Custo Estimado</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="0.00" 
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : null;
-                      field.onChange(value);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Custo Estimado"
+            placeholder="0.00"
+            type="number"
           />
           
           {/* Actual Cost - Only show for completed activities */}
           {selectedStatus === 'completed' && (
-            <FormField
+            <TextField
               control={form.control}
               name="actual_cost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Custo Real</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => {
-                        const value = e.target.value ? parseFloat(e.target.value) : null;
-                        field.onChange(value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Custo Real"
+              placeholder="0.00"
+              type="number"
             />
           )}
         </div>
         
         {/* Description - Full width */}
-        <FormField
+        <TextareaField
           control={form.control}
           name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Descrição detalhada da atividade" 
-                  className="min-h-32" 
-                  {...field} 
-                  value={field.value || ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Descrição"
+          placeholder="Descrição detalhada da atividade"
         />
         
         {/* Responsible Notes - Full width */}
-        <FormField
+        <TextareaField
           control={form.control}
           name="responsible_notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Observações sobre o trabalho do responsável" 
-                  className="min-h-24" 
-                  {...field} 
-                  value={field.value || ''}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Observações"
+          placeholder="Observações sobre o trabalho do responsável"
+          className="min-h-24"
         />
         
         {/* Form Actions */}
-        <div className="flex justify-end gap-2">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          )}
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : initialData ? 'Atualizar' : 'Salvar'}
-          </Button>
-        </div>
+        <ActivityFormActions
+          onCancel={onCancel}
+          isSubmitting={isSubmitting}
+          isEditing={!!initialData?.id}
+        />
       </form>
     </Form>
   );
