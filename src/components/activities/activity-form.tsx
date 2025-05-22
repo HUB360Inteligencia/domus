@@ -240,7 +240,7 @@ export function ActivityForm({
         <ActivityFormActions
           onCancel={onCancel}
           isSubmitting={isSubmitting}
-          isEditing={!!initialData?.id}
+          isEditing={!!initialData && 'id' in initialData}
         />
       </form>
     </Form>
