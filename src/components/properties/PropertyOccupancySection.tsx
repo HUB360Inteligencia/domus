@@ -276,7 +276,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleOpenEndOccupancy(period.id)} disabled={isUpdating}>
+                          <Button variant="outline" size="sm" onClick={() => handleOpenEndOccupancy(period.id)} disabled={isUpdating}>
                             <Calendar className="h-4 w-4 mr-2" />
                             Finalizar
                           </Button>
@@ -373,6 +373,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                     <FormLabel>Data de Início</FormLabel>
                     <FormControl>
                       <DatePicker
+                        date={field.value}
                         onSelect={field.onChange}
                         defaultMonth={field.value}
                         selected={field.value}
@@ -394,9 +395,10 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                     <FormLabel>Data de Fim (Opcional)</FormLabel>
                     <FormControl>
                       <DatePicker
+                        date={field.value || undefined}
                         onSelect={field.onChange}
-                        defaultMonth={field.value}
-                        selected={field.value}
+                        defaultMonth={field.value || undefined}
+                        selected={field.value || undefined}
                         mode="single"
                       />
                     </FormControl>
@@ -414,7 +416,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                   <FormItem>
                     <FormLabel>Nome do Inquilino (Opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do inquilino" {...field} />
+                      <Input placeholder="Nome do inquilino" {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -431,6 +433,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                         placeholder="Informações adicionais"
                         className="resize-none"
                         {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -444,7 +447,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                   <FormItem>
                     <FormLabel>ID do Contrato (Opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="ID do contrato" {...field} />
+                      <Input placeholder="ID do contrato" {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -515,6 +518,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                     <FormLabel>Data de Início</FormLabel>
                     <FormControl>
                       <DatePicker
+                        date={field.value}
                         onSelect={field.onChange}
                         defaultMonth={field.value}
                         selected={field.value}
@@ -536,9 +540,10 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                     <FormLabel>Data de Fim (Opcional)</FormLabel>
                     <FormControl>
                       <DatePicker
+                        date={field.value || undefined}
                         onSelect={field.onChange}
-                        defaultMonth={field.value}
-                        selected={field.value}
+                        defaultMonth={field.value || undefined}
+                        selected={field.value || undefined}
                         mode="single"
                       />
                     </FormControl>
@@ -556,7 +561,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                   <FormItem>
                     <FormLabel>Nome do Inquilino (Opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do inquilino" {...field} />
+                      <Input placeholder="Nome do inquilino" {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -573,6 +578,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                         placeholder="Informações adicionais"
                         className="resize-none"
                         {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -586,7 +592,7 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                   <FormItem>
                     <FormLabel>ID do Contrato (Opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="ID do contrato" {...field} />
+                      <Input placeholder="ID do contrato" {...field} value={field.value || ''}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -618,11 +624,9 @@ export const PropertyOccupancySection = ({ property, isLoading }: { property: Pr
                 Data de Fim
               </label>
               <DatePicker
-                id="endingDate"
-                mode="single"
-                selected={endingDate}
+                date={endingDate || undefined}
                 onSelect={setEndingDate}
-                className="w-full rounded-md border ring-offset-background focus:ring-ring focus:ring-2 focus:outline-none data-[state=open]:bg-popover data-[state=open]:text-popover-foreground"
+                mode="single"
               />
             </div>
           </div>

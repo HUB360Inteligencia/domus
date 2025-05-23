@@ -1,386 +1,286 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useState, useRef, useCallback } from 'react';
+import { 
+  Dialog,
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter
+} from '@/components/ui/dialog';
+import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { 
+  Card, 
+  CardContent
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload, X, ChevronsUpDown, GripVertical, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { 
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Upload, Star } from 'lucide-react';
 import { usePropertyImages } from '@/hooks/use-property-images';
-import { Property, PropertyImage } from '@/types/property';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AspectRatio } from "@/components/ui/aspect-ratio"
+import { PropertyImage } from '@/types/property-image';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { toast } from 'sonner';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-const PropertyImageGallery = ({ property, isLoading }: { property: Property | null | undefined; isLoading: boolean }) => {
-  const { images, isLoadingImages, uploadImage, uploadImages, setAsPrimary, deleteImage, reorderImages, isUploading, isDeleting } = usePropertyImages(property?.id || null);
+interface PropertyImageGalleryProps {
+  propertyId: string | null;
+}
+
+const formSchema = z.object({
+  description: z.string().optional(),
+});
+
+export const PropertyImageGallery = ({ propertyId }: PropertyImageGalleryProps) => {
+  const {
+    images,
+    isLoadingImages,
+    isUploading,
+    uploadImage,
+    setAsPrimary,
+    deleteImage,
+    updateDescription,
+    isGalleryOpen,
+    currentImageIndex,
+    openGallery,
+    closeGallery,
+    nextImage,
+    prevImage,
+  } = usePropertyImages(propertyId);
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<PropertyImage | null>(null);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [draggedImage, setDraggedImage] = useState<PropertyImage | null>(null);
-  const [description, setDescription] = useState('');
-  const [isAddingDescription, setIsAddingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleOpenLightbox = useCallback((image: PropertyImage) => {
-    setSelectedImage(image);
-    setIsLightboxOpen(true);
-  }, []);
-
-  const handleCloseLightbox = useCallback(() => {
-    setSelectedImage(null);
-    setIsLightboxOpen(false);
-  }, []);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      await uploadImages(Array.from(files));
-      // Clear the input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: '',
+    },
+  });
+  
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      uploadImage(file);
+      e.target.value = ''; // Reset input
     }
   };
-
-  const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      await uploadImages(Array.from(files));
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-
-  const handleSetPrimary = async (imageId: string) => {
-    await setAsPrimary(imageId);
-  };
-
-  const handleDeleteImage = async (imageId: string) => {
-    await deleteImage(imageId);
-  };
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDescription(e.target.value);
-  };
-
-  const handleStartAddDescription = (image: PropertyImage) => {
+  
+  const handleEditImage = (image: PropertyImage) => {
     setSelectedImage(image);
-    setDescription(image.description || '');
-    setIsAddingDescription(true);
+    form.setValue('description', image.description || '');
+    setIsEditDialogOpen(true);
   };
-
-  const handleCancelAddDescription = () => {
-    setSelectedImage(null);
-    setDescription('');
-    setIsAddingDescription(false);
-  };
-
-  const handleSaveDescription = async () => {
+  
+  const handleSaveDescription = async (values: z.infer<typeof formSchema>) => {
     if (selectedImage) {
-      // Optimistically update the image in the local state
-      const updatedImages = images.map(img =>
-        img.id === selectedImage.id ? { ...img, description: description } : img
-      );
-      // Update the images state
-      //setImages(updatedImages);
-
-      // Call the API to update the description
-      //await updateDescription(selectedImage.id, description);
-
-      // Close the form
-      handleCancelAddDescription();
+      await updateDescription(selectedImage.id, values.description || '');
+      setIsEditDialogOpen(false);
+      setSelectedImage(null);
     }
   };
-
-  const handleDragStart = (image: PropertyImage) => {
-    setDraggedImage(image);
-  };
-
-  const handleDragOverImage = (e: React.DragEvent<HTMLDivElement>, overImage: PropertyImage) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, targetImage: PropertyImage) => {
-    e.preventDefault();
-
-    if (!draggedImage) return;
-
-    // Find the index of the dragged and target images
-    const draggedIndex = images.findIndex(img => img.id === draggedImage.id);
-    const targetIndex = images.findIndex(img => img.id === targetImage.id);
-
-    if (draggedIndex < 0 || targetIndex < 0) return;
-
-    // Create a copy of the images array
-    const newImages = [...images];
-
-    // Remove the dragged image from its original position
-    newImages.splice(draggedIndex, 1);
-
-    // Insert the dragged image into the target position
-    newImages.splice(targetIndex, 0, draggedImage);
-
-    // Update display orders based on new positions
-    const updatedImages = newImages.map((img, index) => ({
-      ...img,
-      display_order: index
-    }));
-
-    // Call the reorderImages function
-    await reorderImages(updatedImages);
-
-    // Reset the dragged image
-    setDraggedImage(null);
-  };
-
-  const onDragEnd = (result: any) => {
-    if (!result.destination) {
-      return;
+  
+  const handleDelete = (image: PropertyImage) => {
+    if (window.confirm('Tem certeza que deseja excluir esta imagem?')) {
+      deleteImage(image.id);
     }
-
-    const items = Array.from(images);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    const reorderedImages = items.map((image, index) => ({
-      ...image,
-      display_order: index
-    }));
-
-    reorderImages(reorderedImages);
   };
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
+  
   return (
-    <div className="space-y-4">
-      {/* Upload Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Imagens</CardTitle>
-          <div className="flex items-center space-x-2">
-            <input
-              type="file"
-              id="upload"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileUpload}
-              ref={fileInputRef}
-            />
-            <Label htmlFor="upload" className="cursor-pointer">
-              <Button variant="outline" size="sm" disabled={isLoading || isUploading}>
-                <Upload className="h-4 w-4 mr-2" />
-                {isUploading ? (
-                  <>
-                    Enviando
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                  </>
-                ) : 'Enviar Imagens'}
-              </Button>
-            </Label>
-          </div>
-        </CardHeader>
-        <CardContent
-          className="relative p-4 border-dashed border-2 border-muted/50 rounded-md cursor-copy"
-          onDrop={handleFileDrop}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-muted-foreground">
-            <ImageIcon className="h-10 w-10 opacity-50" />
-            <p className="text-sm">Arraste e solte imagens aqui ou clique no botão "Enviar Imagens".</p>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-            {isLoadingImages ? (
-              <>
-                {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))}
-              </>
-            ) : (
-              <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="images" direction="horizontal">
-                  {(provided) => (
-                    <div className="flex space-x-4" {...provided.droppableProps} ref={provided.innerRef}>
-                      {images.map((image, index) => (
-                        <Draggable key={image.id} draggableId={image.id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="relative group"
-                            >
-                              <AspectRatio ratio={1 / 1} className="w-32">
-                                <img
-                                  src={image.image_url}
-                                  alt={property?.title}
-                                  className="w-full h-full object-cover rounded-md"
-                                  onClick={() => {
-                                    setCurrentImageIndex(index);
-                                    handleOpenLightbox(image);
-                                  }}
-                                />
-                              </AspectRatio>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
-                                    <ChevronsUpDown className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" forceMount>
-                                  <DropdownMenuLabel>Opções</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleSetPrimary(image.id)} disabled={image.is_primary}>
-                                    Definir como principal
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleStartAddDescription(image)}>
-                                    Editar descrição
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem className="text-destructive focus:bg-destructive/20">
-                                        Excluir
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Excluir Imagem</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Tem certeza que deseja excluir esta imagem? Esta ação não pode ser desfeita.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                          onClick={() => handleDeleteImage(image.id)}
-                                          disabled={isDeleting}
-                                        >
-                                          {isDeleting ? 'Excluindo...' : 'Excluir'}
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Imagens do Imóvel</h3>
+        <Button onClick={handleUploadClick} disabled={!propertyId}>
+          <Upload className="h-4 w-4 mr-2" />
+          Adicionar Imagem
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*"
+        />
+      </div>
+      
+      {isLoadingImages ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="aspect-square bg-muted animate-pulse rounded-md"></div>
+          ))}
+        </div>
+      ) : images.length === 0 ? (
+        <div className="text-center py-8 border border-dashed rounded-md">
+          <p className="text-muted-foreground">
+            Nenhuma imagem adicionada. Clique em "Adicionar Imagem" para começar.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {images.map((image, index) => (
+            <Card key={image.id} className="relative group overflow-hidden">
+              <CardContent className="p-0">
+                <img
+                  src={image.image_url}
+                  alt={image.description || `Imagem ${index + 1}`}
+                  className="w-full h-full object-cover aspect-square cursor-pointer"
+                  onClick={() => openGallery(index)}
+                />
+                {image.is_primary && (
+                  <Badge className="absolute top-2 left-2 bg-primary">
+                    <Star className="h-3 w-3 mr-1" />
+                    Principal
+                  </Badge>
+                )}
+                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  {!image.is_primary && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setAsPrimary(image.id)}
+                    >
+                      <Star className="h-4 w-4 mr-1" />
+                      Principal
+                    </Button>
                   )}
-                </Droppable>
-              </DragDropContext>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Edit Description Modal */}
-      {isAddingDescription && selectedImage && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Editar Descrição</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={handleDescriptionChange}
-                placeholder="Descrição da imagem"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="secondary" onClick={handleCancelAddDescription}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveDescription}>Salvar</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Lightbox Modal */}
-      {isLightboxOpen && selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-80">
-          <div className="relative max-w-4xl max-h-screen">
-            <img
-              src={selectedImage.image_url}
-              alt={property?.title}
-              className="max-w-4xl max-h-screen object-contain rounded-md"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 text-white"
-              onClick={handleCloseLightbox}
-            >
-              <X className="h-6 w-6" />
-            </Button>
-            <div className="absolute bottom-2 left-2 text-white text-sm">
-              {selectedImage.description}
-            </div>
-            <div className="absolute bottom-2 right-2 flex space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white"
-                onClick={handlePrevImage}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white"
-                onClick={handleNextImage}
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div>
-          </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleEditImage(image)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(image)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+      
+      {/* Full-screen gallery modal */}
+      <Dialog open={isGalleryOpen} onOpenChange={closeGallery}>
+        <DialogContent className="max-w-4xl w-full h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Galeria de Imagens</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-grow relative overflow-hidden">
+            {images.length > 0 && currentImageIndex < images.length && (
+              <img
+                src={images[currentImageIndex].image_url}
+                alt={images[currentImageIndex].description || `Imagem ${currentImageIndex + 1}`}
+                className="w-full h-full object-contain"
+              />
+            )}
+            
+            {images.length > 1 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2"
+                  onClick={prevImage}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                  onClick={nextImage}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </>
+            )}
+          </div>
+          
+          <DialogFooter className="flex justify-between items-center">
+            <div>
+              {images.length > 0 && currentImageIndex < images.length && (
+                <p className="text-sm text-muted-foreground">
+                  {images[currentImageIndex].description || 'Sem descrição'}
+                </p>
+              )}
+            </div>
+            <div className="text-sm">
+              {images.length > 0 ? `${currentImageIndex + 1} / ${images.length}` : '0 / 0'}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit image dialog */}
+      <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Editar Descrição da Imagem</SheetTitle>
+          </SheetHeader>
+          
+          {selectedImage && (
+            <div className="py-4">
+              <img
+                src={selectedImage.image_url}
+                alt="Imagem selecionada"
+                className="w-full h-64 object-contain mb-4"
+              />
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSaveDescription)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Adicione uma descrição para esta imagem"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <SheetFooter>
+                    <Button type="submit">Salvar Alterações</Button>
+                  </SheetFooter>
+                </form>
+              </Form>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
-
-export { PropertyImageGallery };

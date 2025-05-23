@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyImage, PropertyImageFormData } from '@/types/property-image';
 
@@ -179,7 +180,6 @@ export const updatePropertyImageOrder = async (
 ): Promise<void> => {
   try {
     // Instead of using RPC, update each image individually
-    // since "update_image_orders" function doesn't exist
     for (const image of images) {
       const { error } = await supabase
         .from('property_images')
