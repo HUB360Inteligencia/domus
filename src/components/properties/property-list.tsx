@@ -186,7 +186,6 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
               <PropertyMapView 
                 properties={filteredProperties}
                 onSelect={onSelect}
-                className="h-full"
               />
             </div>
           )}

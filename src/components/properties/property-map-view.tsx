@@ -4,7 +4,7 @@ import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapIcon, Loader2, Building, Home, ShoppingBag, Mountain, Barn } from 'lucide-react';
+import { AlertCircle, MapIcon, Loader2, Building, Home, ShoppingBag, Mountain } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface PropertyMapViewProps {
@@ -143,7 +143,7 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
     return () => {
       if (mapRef.current) mapRef.current.remove();
     };
-  }, [mapLoaded, token]);
+  }, [mapLoaded, token, properties]);
 
   // Update markers when properties change
   useEffect(() => {
