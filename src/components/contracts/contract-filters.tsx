@@ -93,14 +93,14 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
   const stepSize = valueRange > 10000 ? 500 : valueRange > 5000 ? 250 : valueRange > 1000 ? 100 : 50;
 
   // Update range values for slider
-  const [valueRange, setValueRange] = useState<[number, number]>([
+  const [rangeValues, setRangeValues] = useState<[number, number]>([
     filters.minValue !== null ? filters.minValue : minContractValue,
     filters.maxValue !== null ? filters.maxValue : maxContractValue,
   ]);
 
   // When contracts change, reset value range if needed
   useEffect(() => {
-    setValueRange([
+    setRangeValues([
       filters.minValue !== null ? filters.minValue : minContractValue,
       filters.maxValue !== null ? filters.maxValue : maxContractValue,
     ]);
@@ -137,10 +137,11 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
   };
 
   // Handle value range change from slider
-  const handleRangeChange = (newRange: [number, number]) => {
-    setValueRange(newRange);
-    handleFilterChange("minValue", newRange[0]);
-    handleFilterChange("maxValue", newRange[1]);
+  const handleRangeChange = (newRange: number[]) => {
+    const typedRange: [number, number] = [newRange[0], newRange[1]];
+    setRangeValues(typedRange);
+    handleFilterChange("minValue", typedRange[0]);
+    handleFilterChange("maxValue", typedRange[1]);
   };
 
   // Clear all filters
@@ -157,22 +158,23 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
       tags: [],
     };
     setFilters(resetFilters);
-    setValueRange([minContractValue, maxContractValue]);
+    setRangeValues([minContractValue, maxContractValue]);
     onFilterChange(resetFilters);
   };
 
   // Clear individual filter
   const clearFilter = (key: keyof FilterOptions) => {
     const newFilters = { ...filters };
-    if (Array.isArray(newFilters[key])) {
+    if (key === 'status' || key === 'tags') {
       newFilters[key] = [];
     } else if (key === "dateRange") {
       newFilters[key] = undefined;
     } else if (key === "minValue" || key === "maxValue") {
       newFilters[key] = null;
-      if (key === "minValue") setValueRange([minContractValue, valueRange[1]]);
-      if (key === "maxValue") setValueRange([valueRange[0], maxContractValue]);
+      if (key === "minValue") setRangeValues([minContractValue, rangeValues[1]]);
+      if (key === "maxValue") setRangeValues([rangeValues[0], maxContractValue]);
     } else {
+      // @ts-ignore - typescript doesn't understand this is a string field
       newFilters[key] = "";
     }
     setFilters(newFilters);
@@ -430,16 +432,16 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
                   <div className="space-y-6">
                     <div>
                       <div className="mb-4 flex justify-between">
-                        <span>{formatCurrency(valueRange[0])}</span>
-                        <span>{formatCurrency(valueRange[1])}</span>
+                        <span>{formatCurrency(rangeValues[0])}</span>
+                        <span>{formatCurrency(rangeValues[1])}</span>
                       </div>
                       <Slider
                         min={minContractValue}
                         max={maxContractValue}
                         step={stepSize}
-                        value={valueRange}
-                        onValueChange={(values) => setValueRange(values as [number, number])}
-                        onValueCommit={(values) => handleRangeChange(values as [number, number])}
+                        value={rangeValues}
+                        onValueChange={(values) => setRangeValues(values as [number, number])}
+                        onValueCommit={(values) => handleRangeChange(values)}
                       />
                     </div>
                   </div>
