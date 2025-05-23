@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Contract, ContractStatus, SignatureStatus } from "@/types/contract";
+import { Contract, ContractStatus, SignatureStatus, VariableRentValue } from "@/types/contract";
 
 export interface ContractStats {
   total: number;
@@ -286,7 +286,12 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
       has_variable_rent: item.has_variable_rent ?? false,
-      variable_rent_values: item.variable_rent_values ?? null,
+      // Parse the JSON variable_rent_values into the VariableRentValue[] type
+      variable_rent_values: item.variable_rent_values ? 
+        (Array.isArray(item.variable_rent_values) ? 
+          item.variable_rent_values as VariableRentValue[] : 
+          JSON.parse(item.variable_rent_values as string)) as VariableRentValue[] : 
+        null,
       payment_due_day: item.payment_due_day ?? item.payment_day,
       on_time_discount_percentage: item.on_time_discount_percentage ?? null,
       late_fee_percentage: item.late_fee_percentage ?? null,
