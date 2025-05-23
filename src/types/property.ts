@@ -1,4 +1,3 @@
-
 import { Json } from '@/integrations/supabase/types';
 
 export type PropertyStatus = 'available' | 'rented' | 'airbnb' | 'maintenance' | 'sold';
@@ -35,7 +34,7 @@ export interface Property {
   updated_at: string;
   latitude?: number | null;
   longitude?: number | null;
-  // Novos campos
+  // Existing fields
   purchase_date?: string | null;
   purchase_value?: number | null;
   tenant_name?: string | null;
@@ -45,6 +44,12 @@ export interface Property {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
+  // New fields added from SQL migration
+  total_investment?: number | null;
+  monthly_return_rate?: number | null;
+  annual_return_rate?: number | null;
+  vacancy_rate?: number | null;
+  last_valuation_date?: string | null;
 }
 
 export interface PropertyFormData {
@@ -70,7 +75,7 @@ export interface PropertyFormData {
   features?: Record<string, any>;
   latitude?: number | null;
   longitude?: number | null;
-  // Novos campos
+  // Existing fields
   purchase_date?: string | null;
   purchase_value?: number | null;
   tenant_name?: string | null;

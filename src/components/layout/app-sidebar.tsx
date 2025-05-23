@@ -1,189 +1,185 @@
 
-import { 
-  Building, 
-  FileText, 
-  LayoutDashboard, 
-  Users, 
-  MessageSquare,
-  Settings,
-  CheckSquare,
-  Home,
-  FileBox,
-  Wallet,
-  User,
-  LineChart,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Scroll
-} from "lucide-react";
-
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton
-} from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+  Home,
+  Building2,
+  FileContract,
+  FileText,
+  LayoutDashboard,
+  Users,
+  CalendarRange,
+  Menu,
+  X,
+  Settings,
+  LogOut,
+  TrendingUp,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/lib/auth';
+import { Sidebar as SidebarComponent } from '@/components/ui/sidebar';
 
 export function AppSidebar() {
-  const menuItems = [
-    {
-      name: "Dashboard",
-      to: "/dashboard",
-      Icon: Home,
+  const { signOut } = useAuth();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+
+  const isActive = (path: string) => {
+    return location.pathname.startsWith(path);
+  };
+
+  const links = [
+    { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+    { name: 'Imóveis', href: '/properties', icon: <Building2 className="h-5 w-5" /> },
+    { name: 'Contratos', href: '/contracts', icon: <FileContract className="h-5 w-5" /> },
+    { name: 'Documentos', href: '/documents', icon: <FileText className="h-5 w-5" /> },
+    { 
+      name: 'Financeiro', 
+      href: '/finances', 
+      icon: <TrendingUp className="h-5 w-5" />,
+      subitems: [
+        { name: 'Dashboard', href: '/finances/dashboard' },
+        { name: 'Despesas', href: '/finances/expenses' },
+        { name: 'Receitas', href: '/finances/income' },
+        { name: 'Relatórios', href: '/finances/reports' },
+      ] 
     },
-    {
-      name: "Imóveis",
-      to: "/properties",
-      Icon: Building,
-    },
-    {
-      name: "Contratos",
-      to: "/contracts",
-      Icon: FileText,
-    },
-    {
-      name: "Atividades",
-      to: "/activities",
-      Icon: CheckSquare,
-    },
-    {
-      name: "Documentos",
-      to: "/documents",
-      Icon: FileBox,
-    },
-    {
-      name: "Usuários",
-      to: "/users",
-      Icon: User,
-    },
+    { name: 'Atividades', href: '/activities', icon: <CalendarRange className="h-5 w-5" /> },
+    { name: 'Usuários', href: '/users', icon: <Users className="h-5 w-5" /> },
   ];
 
-  const financeSubMenu = [
-    {
-      name: "Painel",
-      to: "/finances/dashboard",
-      Icon: LineChart,
-    },
-    {
-      name: "Receitas",
-      to: "/finances/income",
-      Icon: ArrowUpCircle,
-    },
-    {
-      name: "Despesas",
-      to: "/finances/expenses",
-      Icon: ArrowDownCircle,
-    },
-    {
-      name: "Relatórios",
-      to: "/finances/reports",
-      Icon: Scroll,
-    }
-  ];
+  // Extract the base path from location.pathname
+  const basePath = '/' + location.pathname.split('/')[1];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex items-center gap-2 p-4">
-        <Building className="h-8 w-8 text-petroleum" />
-        <div className="flex flex-col">
-          <span className="font-bold">Gestão Patrimonial</span>
-          <span className="text-xs text-muted-foreground">
-            Versão 1.0
-          </span>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild>
-                <Link to={item.to}>
-                  <item.Icon className="h-5 w-5 mr-2" />
-                  {item.name}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Wallet className="h-5 w-5 mr-2" />
-              Finanças
-            </SidebarMenuButton>
-            <SidebarMenuSub>
-              {financeSubMenu.map((item) => (
-                <SidebarMenuSubItem key={item.name}>
-                  <SidebarMenuSubButton asChild>
-                    <Link to={item.to}>
-                      <item.Icon className="h-4 w-4 mr-2" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
+    <>
+      {/* Mobile navbar (top) */}
+      <div className="flex lg:hidden items-center justify-between border-b px-4 h-14">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 sm:max-w-xs p-0">
+            <div className="p-6">
+              <Link to="/" className="flex items-center gap-2 font-semibold text-lg" onClick={() => setOpen(false)}>
+                <Home className="h-5 w-5" />
+                <span>Imobapp</span>
+              </Link>
+            </div>
+            <nav className="flex flex-col gap-1 px-2">
+              {links.map((link) => (
+                <React.Fragment key={link.href}>
+                  <Link
+                    to={link.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                      isActive(link.href) ? "bg-accent text-accent-foreground" : "transparent"
+                    )}
+                  >
+                    {link.icon}
+                    <span>{link.name}</span>
+                  </Link>
+                  
+                  {/* Sub items */}
+                  {link.subitems && isActive(link.href) && (
+                    <div className="ml-6 mt-1 border-l pl-2 flex flex-col gap-1">
+                      {link.subitems.map((subitem) => (
+                        <Link
+                          key={subitem.href}
+                          to={subitem.href}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-all hover:bg-accent",
+                            location.pathname === subitem.href ? "bg-accent/50 font-medium" : "transparent"
+                          )}
+                        >
+                          <span>{subitem.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
-            </SidebarMenuSub>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        
-        <SidebarGroup>
-          <SidebarGroupLabel>Inteligência artificial</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/ai-assistant">
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    Assistente IA
-                    <Badge className="ml-auto" variant="secondary">Novo</Badge>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/settings">
-                    <Settings className="h-5 w-5 mr-2" />
-                    Configurações
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter className="p-4 border-t">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="Perfil" />
-            <AvatarFallback className="bg-petroleum text-white">AP</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <p className="text-sm font-medium">Admin Principal</p>
-            <p className="text-xs text-muted-foreground">admin@exemplo.com</p>
+            </nav>
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="flex items-center justify-between">
+                <ThemeToggle />
+                <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Logout</span>
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+        <Link to="/" className="flex items-center gap-2 font-semibold">
+          <span>Imobapp</span>
+        </Link>
+        <Button variant="ghost" size="icon">
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">Settings</span>
+        </Button>
+      </div>
+
+      {/* Desktop sidebar */}
+      <SidebarComponent className="hidden lg:flex border-r">
+        <div className="flex flex-col h-full px-4 py-6">
+          <Link to="/" className="flex items-center gap-2 font-semibold text-lg px-2">
+            <Home className="h-5 w-5" />
+            <span>Imobapp</span>
+          </Link>
+          <nav className="flex flex-col gap-1 mt-8 flex-1">
+            {links.map((link) => (
+              <React.Fragment key={link.href}>
+                <Link
+                  to={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                    isActive(link.href) ? "bg-accent text-accent-foreground" : "transparent"
+                  )}
+                >
+                  {link.icon}
+                  <span>{link.name}</span>
+                </Link>
+                
+                {/* Sub items */}
+                {link.subitems && isActive(link.href) && (
+                  <div className="ml-6 mt-1 border-l pl-2 flex flex-col gap-1">
+                    {link.subitems.map((subitem) => (
+                      <Link
+                        key={subitem.href}
+                        to={subitem.href}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-all hover:bg-accent",
+                          location.pathname === subitem.href ? "bg-accent/50 font-medium" : "transparent"
+                        )}
+                      >
+                        <span>{subitem.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </nav>
+          <div className="flex flex-col gap-1 border-t pt-4 mt-auto">
+            <div className="flex items-center justify-between px-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                <LogOut className="h-5 w-5" />
+                <span className="sr-only">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </SidebarComponent>
+    </>
   );
 }
