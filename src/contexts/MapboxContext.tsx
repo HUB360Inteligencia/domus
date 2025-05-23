@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useSystemSettings, MapboxTokenType } from '@/hooks/use-system-settings';
+import { useSystemSettings, MapboxTokenType, MapboxStyleType } from '@/hooks/use-system-settings';
 
 interface MapboxContextType {
   token: string | null;
@@ -8,6 +8,7 @@ interface MapboxContextType {
   setToken: (token: string) => void;
   error: string | null;
   getTokenForContext: (tokenType: MapboxTokenType) => string | null;
+  getStyleForContext: (styleType: MapboxStyleType) => string | null;
   isTokenLoading: boolean;
 }
 
@@ -17,6 +18,7 @@ const defaultMapboxContext: MapboxContextType = {
   setToken: () => {},
   error: null,
   getTokenForContext: () => null,
+  getStyleForContext: () => null,
   isTokenLoading: true,
 };
 
@@ -35,7 +37,7 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { getMapboxToken, isLoading: isSettingsLoading, error: settingsError } = useSystemSettings();
+  const { getMapboxToken, getMapboxStyle, isLoading: isSettingsLoading, error: settingsError } = useSystemSettings();
 
   // Load legacy token from localStorage on mount
   useEffect(() => {
@@ -84,6 +86,27 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
     return null;
   };
 
+  const getStyleForContext = (styleType: MapboxStyleType): string | null => {
+    const style = getMapboxStyle(styleType);
+    if (style) {
+      return style;
+    }
+
+    // Default fallback styles based on context
+    switch (styleType) {
+      case 'mapbox_style_property_list':
+        return 'mapbox://styles/mapbox/streets-v12';
+      case 'mapbox_style_property_detail':
+        return 'mapbox://styles/mapbox/satellite-streets-v12';
+      case 'mapbox_style_property_3d':
+        return 'mapbox://styles/mapbox/streets-v12';
+      case 'mapbox_style_analytics':
+        return 'mapbox://styles/mapbox/light-v11';
+      default:
+        return 'mapbox://styles/mapbox/streets-v12';
+    }
+  };
+
   // For backward compatibility, return property_list token as default
   const defaultToken = getTokenForContext('mapbox_token_property_list') || legacyToken;
 
@@ -94,6 +117,7 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
       setToken, 
       error,
       getTokenForContext,
+      getStyleForContext,
       isTokenLoading: isSettingsLoading
     }}>
       {children}

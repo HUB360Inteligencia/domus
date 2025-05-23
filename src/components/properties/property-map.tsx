@@ -1,7 +1,9 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Map as MapIcon, AlertCircle, Locate, MapPin } from 'lucide-react';
 import { geocodeAddress, updatePropertyCoordinates } from '@/api/properties';
 import { useMapbox } from '@/contexts/MapboxContext';
+import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { Button } from '@/components/ui/button';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { toast } from 'sonner';
@@ -11,14 +13,14 @@ interface PropertyMapProps {
   city: string;
   state: string;
   propertyId?: string;
-  property_number?: string; // Changed from propertyNumber to property_number to match DB schema
+  property_number?: string;
   complement?: string;
   neighborhood?: string;
   initialCoords?: { lat: number; lng: number } | null;
   editable?: boolean;
   onCoordsChange?: (coords: { lat: number; lng: number }) => void;
   className?: string;
-  mapType?: 'detail' | '3d'; // New prop to choose map type
+  mapType?: 'detail' | '3d';
 }
 
 export function PropertyMap({ 
@@ -32,51 +34,28 @@ export function PropertyMap({
   editable = false,
   onCoordsChange,
   className = '',
-  mapType = 'detail' // Default to detail view
+  mapType = 'detail'
 }: PropertyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(initialCoords || null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
-  const { getTokenForContext, isTokenLoading } = useMapbox();
+  const { getTokenForContext, getStyleForContext, isTokenLoading } = useMapbox();
+  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
   
-  // Get appropriate token based on map type
+  // Get appropriate token and style based on map type
   const tokenType = mapType === '3d' ? 'mapbox_token_property_3d' : 'mapbox_token_property_detail';
+  const styleType = mapType === '3d' ? 'mapbox_style_property_3d' : 'mapbox_style_property_detail';
   const token = getTokenForContext(tokenType);
+  const mapStyle = getStyleForContext(styleType);
   
   // Create a full address string that includes property number and complement
   const fullAddress = `${address}${property_number ? `, ${property_number}` : ''}${complement ? `, ${complement}` : ''}, ${city}, ${state}`;
-
-  // Load Mapbox script dynamically
-  useEffect(() => {
-    if (!token) return;
-    
-    const loadMapboxScript = () => {
-      if (window.mapboxgl) {
-        setMapLoaded(true);
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-      script.onload = () => setMapLoaded(true);
-      script.onerror = () => setError('Erro ao carregar biblioteca do Mapbox');
-      document.head.appendChild(script);
-
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    };
-
-    loadMapboxScript();
-  }, [token]);
 
   // Get coordinates for the address if they aren't provided
   useEffect(() => {
@@ -108,15 +87,11 @@ export function PropertyMap({
 
   // Initialize map when both script is loaded and coordinates are available
   useEffect(() => {
-    if (!mapLoaded || !coordinates || !token || !mapContainer.current || !window.mapboxgl) return;
+    if (!mapboxLoaded || !coordinates || !token || !mapContainer.current || !window.mapboxgl) return;
 
     try {
       // Initialize the map
       window.mapboxgl.accessToken = token;
-      
-      const mapStyle = mapType === '3d' 
-        ? 'mapbox://styles/mapbox/streets-v12' 
-        : 'mapbox://styles/mapbox/satellite-streets-v12';
       
       const initialPitch = mapType === '3d' ? 45 : 0;
       
@@ -188,7 +163,7 @@ export function PropertyMap({
       console.error('Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-  }, [mapLoaded, coordinates, token, fullAddress, editable, propertyId, onCoordsChange, mapType]);
+  }, [mapboxLoaded, coordinates, token, mapStyle, fullAddress, editable, propertyId, onCoordsChange, mapType]);
 
   const handleRefreshLocation = async () => {
     if (!token) return;
@@ -232,12 +207,23 @@ export function PropertyMap({
     }
   };
 
-  if (isTokenLoading) {
+  if (isTokenLoading || mapboxLoading) {
     return (
       <div className={`flex items-center justify-center h-64 bg-muted rounded-lg ${className}`}>
         <div className="text-center p-4">
           <MapIcon className="mx-auto h-10 w-10 text-muted-foreground animate-pulse mb-2" />
           <p className="text-muted-foreground">Carregando configurações do mapa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (mapboxError) {
+    return (
+      <div className={`flex items-center justify-center h-64 bg-muted rounded-lg ${className}`}>
+        <div className="text-center p-4">
+          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
+          <p className="text-muted-foreground">{mapboxError}</p>
         </div>
       </div>
     );
@@ -298,7 +284,7 @@ export function PropertyMap({
     );
   }
 
-  if (!coordinates || !mapLoaded) {
+  if (!coordinates || !mapboxLoaded) {
     return (
       <div className={`flex items-center justify-center h-64 bg-muted rounded-lg ${className}`}>
         <div className="text-center p-4">

@@ -19,6 +19,12 @@ export type MapboxTokenType =
   | 'mapbox_token_property_3d'
   | 'mapbox_token_analytics';
 
+export type MapboxStyleType = 
+  | 'mapbox_style_property_list'
+  | 'mapbox_style_property_detail' 
+  | 'mapbox_style_property_3d'
+  | 'mapbox_style_analytics';
+
 export const useSystemSettings = () => {
   const [settings, setSettings] = useState<SystemSetting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +89,11 @@ export const useSystemSettings = () => {
     return setting?.value || null;
   };
 
+  const getMapboxStyle = (styleType: MapboxStyleType): string | null => {
+    const setting = getSetting(styleType);
+    return setting?.value || null;
+  };
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -94,6 +105,7 @@ export const useSystemSettings = () => {
     updateSetting,
     getSetting,
     getMapboxToken,
+    getMapboxStyle,
     refetch: fetchSettings
   };
 };
