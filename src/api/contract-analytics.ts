@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Contract, ContractStatus, SignatureStatus } from "@/types/contract";
 
@@ -222,73 +223,72 @@ export async function fetchUpcomingEvents(): Promise<UpcomingEvent[]> {
 
 // Fetch real contracts for display
 export async function fetchRecentContracts(): Promise<Contract[]> {
-  const { data, error } = await supabase
-    .from('contracts')
-    .select(`
-      id,
-      title,
-      property_id,
-      property:properties(
+  try {
+    const { data, error } = await supabase
+      .from('contracts')
+      .select(`
+        id,
         title,
-        address,
-        city,
-        state,
-        neighborhood,
-        type,
-        tags
-      ),
-      tenant_name,
-      tenant_document,
-      tenant_contact,
-      start_date,
-      end_date,
-      value,
-      payment_day,
-      deposit_value,
-      status,
-      terms,
-      document_url,
-      has_renewal_option,
-      renewal_terms,
-      special_conditions,
-      created_at,
-      updated_at,
-      user_id,
-      signature_status,
-      has_variable_rent,
-      variable_rent_values,
-      payment_due_day,
-      on_time_discount_percentage,
-      late_fee_percentage,
-      is_discount_not_fee,
-      late_interest_percentage,
-      late_daily_interest,
-      fine_percentage,
-      payment_terms
-    `)
-    .order('created_at', { ascending: false })
-    .limit(10);
+        property_id,
+        property:properties(
+          title,
+          address,
+          city,
+          state,
+          neighborhood,
+          type,
+          tags
+        ),
+        tenant_name,
+        tenant_document,
+        tenant_contact,
+        start_date,
+        end_date,
+        value,
+        payment_day,
+        deposit_value,
+        status,
+        terms,
+        document_url,
+        has_renewal_option,
+        renewal_terms,
+        special_conditions,
+        created_at,
+        updated_at,
+        user_id,
+        signature_status
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-  if (error) {
-    console.error('Error fetching contracts:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching contracts:', error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // Transform the data to ensure contract types are correctly cast
+    return data.map(item => ({
+      ...item,
+      status: item.status as ContractStatus,
+      signature_status: item.signature_status as SignatureStatus,
+      // Add default values for new fields that might not yet exist in the database
+      has_variable_rent: false,
+      variable_rent_values: null,
+      payment_due_day: item.payment_day,
+      on_time_discount_percentage: null,
+      late_fee_percentage: null,
+      is_discount_not_fee: true,
+      late_interest_percentage: null,
+      late_daily_interest: null,
+      fine_percentage: null,
+      payment_terms: null
+    }));
+  } catch (err) {
+    console.error('Error in fetchRecentContracts:', err);
+    return [];
   }
-
-  // Transform the data to ensure contract types are correctly cast
-  return (data || []).map(item => ({
-    ...item,
-    status: item.status as ContractStatus,
-    signature_status: item.signature_status as SignatureStatus,
-    // Add default values for new fields if they are missing
-    has_variable_rent: item.has_variable_rent ?? false,
-    variable_rent_values: item.variable_rent_values ?? null,
-    payment_due_day: item.payment_due_day ?? item.payment_day,
-    on_time_discount_percentage: item.on_time_discount_percentage ?? null,
-    late_fee_percentage: item.late_fee_percentage ?? null,
-    is_discount_not_fee: item.is_discount_not_fee ?? true,
-    late_interest_percentage: item.late_interest_percentage ?? null,
-    late_daily_interest: item.late_daily_interest ?? null,
-    fine_percentage: item.fine_percentage ?? null,
-    payment_terms: item.payment_terms ?? null
-  }));
 }
