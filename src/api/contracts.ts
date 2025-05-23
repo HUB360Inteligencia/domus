@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Contract, ContractFormData, ContractStatus, SignatureStatus } from '@/types/contract';
 
@@ -108,6 +109,14 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
   
   console.log('Creating new contract with data:', contractData);
   
+  // If the contract is active, update the property with tenant information
+  if (contractData.status === 'active' && contractData.property_id) {
+    await updatePropertyTenantInfo(contractData.property_id, {
+      tenant_name: contractData.tenant_name,
+      tenant_contact: contractData.tenant_contact || null,
+    });
+  }
+  
   const { data, error } = await supabase
     .from('contracts')
     .insert([
@@ -142,6 +151,14 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
   
   console.log(`Updating contract ${id} with data:`, data);
   
+  // If the contract is active, update the property with tenant information
+  if (data.status === 'active' && data.property_id) {
+    await updatePropertyTenantInfo(data.property_id, {
+      tenant_name: data.tenant_name,
+      tenant_contact: data.tenant_contact || null,
+    });
+  }
+  
   const { data: updatedData, error } = await supabase
     .from('contracts')
     .update(data)
@@ -161,6 +178,34 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     status: updatedData.status as ContractStatus,
     signature_status: updatedData.signature_status as SignatureStatus
   };
+};
+
+/**
+ * Updates property with tenant information when a contract becomes active
+ */
+const updatePropertyTenantInfo = async (propertyId: string, tenantInfo: { tenant_name: string; tenant_contact: string | null }) => {
+  try {
+    console.log(`Updating property ${propertyId} with tenant info:`, tenantInfo);
+    
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        tenant_name: tenantInfo.tenant_name,
+        tenant_contact: tenantInfo.tenant_contact,
+        status: 'rented' // Update property status to rented
+      })
+      .eq('id', propertyId);
+
+    if (error) {
+      console.error('Error updating property tenant info:', error);
+      // We don't throw here to avoid blocking the contract creation/update
+    } else {
+      console.log('Property tenant info updated successfully');
+    }
+  } catch (err) {
+    console.error('Failed to update property tenant info:', err);
+    // We don't throw here to avoid blocking the contract creation/update
+  }
 };
 
 /**
@@ -265,6 +310,26 @@ export const updateContractStatus = async (
 ): Promise<Contract> => {
   console.log(`Updating status of contract ${id} to ${status}`);
   
+  // Get current contract to check if we need to update property
+  const { data: contract, error: fetchError } = await supabase
+    .from('contracts')
+    .select('property_id, tenant_name, tenant_contact')
+    .eq('id', id)
+    .single();
+  
+  if (fetchError) {
+    console.error('Error fetching contract for status update:', fetchError);
+    throw new Error(fetchError.message);
+  }
+  
+  // If status is active and we have property info, update the property
+  if (status === 'active' && contract?.property_id) {
+    await updatePropertyTenantInfo(contract.property_id, {
+      tenant_name: contract.tenant_name,
+      tenant_contact: contract.tenant_contact,
+    });
+  }
+  
   const { data, error } = await supabase
     .from('contracts')
     .update({ status })
@@ -314,4 +379,31 @@ export const updateSignatureStatus = async (
     status: data.status as ContractStatus,
     signature_status: data.signature_status as SignatureStatus
   };
+};
+
+/**
+ * Calculate occupancy rate for financial dashboard
+ */
+export const calculateOccupancyRate = async (): Promise<number> => {
+  try {
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id, status')
+      .not('status', 'eq', 'sold');
+      
+    if (propertiesError) {
+      console.error('Error fetching properties for occupancy rate:', propertiesError);
+      return 0;
+    }
+    
+    if (!properties || properties.length === 0) {
+      return 0;
+    }
+    
+    const rentedCount = properties.filter(p => p.status === 'rented').length;
+    return (rentedCount / properties.length) * 100;
+  } catch (err) {
+    console.error('Error calculating occupancy rate:', err);
+    return 0;
+  }
 };

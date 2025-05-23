@@ -1,6 +1,12 @@
-
 export type ContractStatus = 'active' | 'pending' | 'expired' | 'canceled' | 'draft';
 export type SignatureStatus = 'unsigned' | 'pending' | 'completed' | 'rejected';
+
+export interface VariableRentValue {
+  month: number;
+  year: number;
+  value: number;
+  applyUntilEnd?: boolean;
+}
 
 export interface Contract {
   id: string;
@@ -33,6 +39,18 @@ export interface Contract {
   updated_at: string;
   user_id: string;
   signature_status: SignatureStatus;
+  
+  // Novos campos
+  has_variable_rent: boolean | null;
+  variable_rent_values: VariableRentValue[] | null;
+  payment_due_day: number | null;
+  on_time_discount_percentage: number | null;
+  late_fee_percentage: number | null;
+  is_discount_not_fee: boolean | null;
+  late_interest_percentage: number | null;
+  late_daily_interest: number | null;
+  fine_percentage: number | null;
+  payment_terms: string | null;
 }
 
 export interface ContractFormData {
@@ -51,6 +69,18 @@ export interface ContractFormData {
   has_renewal_option?: boolean;
   renewal_terms?: string | null;
   special_conditions?: string | null;
+  
+  // Novos campos
+  has_variable_rent?: boolean;
+  variable_rent_values?: VariableRentValue[];
+  payment_due_day?: number;
+  on_time_discount_percentage?: number;
+  late_fee_percentage?: number;
+  is_discount_not_fee?: boolean;
+  late_interest_percentage?: number;
+  late_daily_interest?: number;
+  fine_percentage?: number;
+  payment_terms?: string;
 }
 
 export interface Document {

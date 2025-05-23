@@ -4,38 +4,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useProperties } from '@/hooks/use-properties';
-import { ContractFormData, ContractStatus, SignatureStatus } from '@/types/contract';
+import { ContractFormData, ContractStatus, SignatureStatus, VariableRentValue } from '@/types/contract';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, FileText } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2, FileText, Plus, CalendarIcon } from 'lucide-react';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { formatCurrency, parseCurrencyToNumber, formatDate, parseDate, isValidDateFormat } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { VariableRentInput } from './variable-rent-input';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Form validation schema
 const contractFormSchema = z.object({
@@ -44,16 +27,25 @@ const contractFormSchema = z.object({
   tenant_name: z.string().min(3, 'Nome do inquilino deve ter pelo menos 3 caracteres'),
   tenant_document: z.string().optional().nullable(),
   tenant_contact: z.string().optional().nullable(),
-  start_date: z.date({ required_error: 'Data de início é obrigatória' }),
-  end_date: z.date({ required_error: 'Data de término é obrigatória' }),
-  value: z.coerce.number().positive('Valor deve ser positivo'),
-  payment_day: z.coerce.number().min(1, 'Dia deve estar entre 1 e 31').max(31, 'Dia deve estar entre 1 e 31'),
-  deposit_value: z.coerce.number().optional().nullable(),
+  start_date: z.string().min(1, 'Data de início é obrigatória'),
+  end_date: z.string().min(1, 'Data de término é obrigatória'),
+  value: z.number().positive('Valor deve ser positivo'),
+  payment_day: z.number().min(1, 'Dia deve estar entre 1 e 31').max(31, 'Dia deve estar entre 1 e 31'),
+  payment_due_day: z.number().min(1, 'Dia deve estar entre 1 e 31').max(31, 'Dia deve estar entre 1 e 31'),
+  deposit_value: z.number().optional().nullable(),
   status: z.string(),
   terms: z.string().optional().nullable(),
   has_renewal_option: z.boolean().default(false).optional(),
   renewal_terms: z.string().optional().nullable(),
   special_conditions: z.string().optional().nullable(),
+  has_variable_rent: z.boolean().default(false).optional(),
+  on_time_discount_percentage: z.number().min(0).max(100).optional().nullable(),
+  late_fee_percentage: z.number().min(0).max(100).optional().nullable(),
+  is_discount_not_fee: z.boolean().default(true).optional(),
+  late_interest_percentage: z.number().min(0).max(100).optional().nullable(),
+  late_daily_interest: z.number().min(0).max(100).optional().nullable(),
+  fine_percentage: z.number().min(0).max(100).optional().nullable(),
+  payment_terms: z.string().optional().nullable(),
 });
 
 type ContractFormProps = {
@@ -67,6 +59,11 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const { properties, isLoading: isLoadingProperties } = useProperties();
   
+  // State for variable rent values
+  const [variableRentValues, setVariableRentValues] = useState<VariableRentValue[]>(
+    initialData?.variable_rent_values || []
+  );
+  
   // Initialize the form with default values or initial data
   const form = useForm<z.infer<typeof contractFormSchema>>({
     resolver: zodResolver(contractFormSchema),
@@ -76,18 +73,44 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
       tenant_name: initialData?.tenant_name || '',
       tenant_document: initialData?.tenant_document || '',
       tenant_contact: initialData?.tenant_contact || '',
-      start_date: initialData?.start_date ? new Date(initialData.start_date) : new Date(),
-      end_date: initialData?.end_date ? new Date(initialData.end_date) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      start_date: initialData?.start_date ? formatDate(initialData.start_date) : format(new Date(), 'dd/MM/yyyy'),
+      end_date: initialData?.end_date ? formatDate(initialData.end_date) : format(new Date(new Date().setFullYear(new Date().getFullYear() + 1)), 'dd/MM/yyyy'),
       value: initialData?.value || 0,
       payment_day: initialData?.payment_day || 5,
+      payment_due_day: initialData?.payment_due_day || 10,
       deposit_value: initialData?.deposit_value || null,
       status: initialData?.status || 'draft',
       terms: initialData?.terms || '',
       has_renewal_option: initialData?.has_renewal_option || false,
       renewal_terms: initialData?.renewal_terms || '',
       special_conditions: initialData?.special_conditions || '',
+      has_variable_rent: initialData?.has_variable_rent || false,
+      on_time_discount_percentage: initialData?.on_time_discount_percentage || 0,
+      late_fee_percentage: initialData?.late_fee_percentage || 0,
+      is_discount_not_fee: initialData?.is_discount_not_fee !== undefined ? initialData.is_discount_not_fee : true,
+      late_interest_percentage: initialData?.late_interest_percentage || 0,
+      late_daily_interest: initialData?.late_daily_interest || 0,
+      fine_percentage: initialData?.fine_percentage || 0,
+      payment_terms: initialData?.payment_terms || '',
     },
   });
+
+  // Update property fields when property selection changes
+  const selectedPropertyId = form.watch('property_id');
+  useEffect(() => {
+    if (selectedPropertyId) {
+      const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+      if (selectedProperty) {
+        // Auto-fill tenant information if available
+        if (selectedProperty.tenant_name) {
+          form.setValue('tenant_name', selectedProperty.tenant_name);
+        }
+        if (selectedProperty.tenant_contact) {
+          form.setValue('tenant_contact', selectedProperty.tenant_contact);
+        }
+      }
+    }
+  }, [selectedPropertyId, properties, form]);
 
   // Handle form submission
   async function handleFormSubmit(data: z.infer<typeof contractFormSchema>) {
@@ -98,17 +121,27 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
       tenant_name: data.tenant_name,
       tenant_document: data.tenant_document,
       tenant_contact: data.tenant_contact,
-      // Format dates to ISO string for backend
-      start_date: data.start_date.toISOString().split('T')[0],
-      end_date: data.end_date.toISOString().split('T')[0],
+      // Parse dates from dd/mm/yyyy to ISO format
+      start_date: parseDate(data.start_date),
+      end_date: parseDate(data.end_date),
       value: data.value,
       payment_day: data.payment_day,
+      payment_due_day: data.payment_due_day,
       deposit_value: data.deposit_value,
       status: data.status as ContractStatus,
       terms: data.terms,
       has_renewal_option: data.has_renewal_option,
       renewal_terms: data.renewal_terms,
       special_conditions: data.special_conditions,
+      has_variable_rent: data.has_variable_rent,
+      variable_rent_values: data.has_variable_rent ? variableRentValues : [],
+      on_time_discount_percentage: data.on_time_discount_percentage,
+      late_fee_percentage: data.late_fee_percentage,
+      is_discount_not_fee: data.is_discount_not_fee,
+      late_interest_percentage: data.late_interest_percentage,
+      late_daily_interest: data.late_daily_interest,
+      fine_percentage: data.fine_percentage,
+      payment_terms: data.payment_terms,
     };
 
     await onSubmit(formattedData, documentFile || undefined);
@@ -118,6 +151,43 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setDocumentFile(e.target.files[0]);
+    }
+  };
+
+  // Format currency on blur
+  const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+    const value = parseCurrencyToNumber(e.target.value);
+    field.onChange(value);
+    e.target.value = formatCurrency(value);
+  };
+
+  // Format percentage on blur
+  const handlePercentageBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+    const value = parseFloat(e.target.value.replace('%', '').replace(',', '.'));
+    field.onChange(isNaN(value) ? 0 : value);
+    e.target.value = `${isNaN(value) ? 0 : value.toFixed(2).replace('.', ',')}%`;
+  };
+
+  // Validate date format on blur
+  const handleDateBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+    const value = e.target.value;
+    if (!isValidDateFormat(value)) {
+      // If invalid, revert to the current value or empty
+      e.target.value = field.value || '';
+      return;
+    }
+    field.onChange(value);
+  };
+
+  // Update property data when contract is active
+  const updatePropertyData = (propertyId: string | null | undefined, tenant: string, tenantContact: string | null | undefined) => {
+    if (propertyId && form.watch('status') === 'active') {
+      // Logic to update property data will be implemented in the API
+      console.log('Updating property with tenant data:', {
+        propertyId,
+        tenant,
+        tenantContact
+      });
     }
   };
 
@@ -151,7 +221,9 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
                     <FormControl>
                       <Select
                         value={field.value || ''}
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
                         disabled={isLoadingProperties}
                       >
                         <SelectTrigger>
@@ -244,34 +316,17 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="dd/mm/aaaa" 
+                          {...field} 
+                          onBlur={(e) => handleDateBlur(e, field)}
                         />
-                      </PopoverContent>
-                    </Popover>
+                        <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />
+                      </div>
+                    </FormControl>
+                    <FormDescription>Formato: dd/mm/aaaa</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -283,34 +338,17 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Término</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="dd/mm/aaaa" 
+                          {...field} 
+                          onBlur={(e) => handleDateBlur(e, field)}
                         />
-                      </PopoverContent>
-                    </Popover>
+                        <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />
+                      </div>
+                    </FormControl>
+                    <FormDescription>Formato: dd/mm/aaaa</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -318,18 +356,132 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
 
               <FormField
                 control={form.control}
-                name="value"
+                name="has_variable_rent"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Valor variado de aluguel</FormLabel>
+                      <FormDescription>
+                        O contrato tem valores diferentes ao longo dos meses
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {!form.watch('has_variable_rent') && (
+                <FormField
+                  control={form.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor do Aluguel (R$)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''} 
+                          onChange={(e) => {
+                            // Allow typing, will format on blur
+                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                            e.target.value = rawValue;
+                          }}
+                          onBlur={(e) => handleCurrencyBlur(e, field)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {form.watch('has_variable_rent') && (
+                <div className="col-span-2">
+                  <VariableRentInput 
+                    values={variableRentValues}
+                    onChange={(values) => setVariableRentValues(values)}
+                  />
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="deposit_value"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor do Aluguel (R$)</FormLabel>
+                    <FormLabel>Valor do Depósito (R$)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input 
+                        placeholder="Opcional" 
+                        value={field.value !== null ? formatCurrency(field.value) : ''} 
+                        onChange={(e) => {
+                          // Allow typing, will format on blur
+                          const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                          e.target.value = rawValue;
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value) {
+                            handleCurrencyBlur(e, field);
+                          } else {
+                            field.onChange(null);
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status do Contrato</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // If status is set to active, update property with tenant info
+                        if (value === 'active') {
+                          updatePropertyData(
+                            form.getValues('property_id'),
+                            form.getValues('tenant_name'),
+                            form.getValues('tenant_contact')
+                          );
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Rascunho</SelectItem>
+                        <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="expired">Expirado</SelectItem>
+                        <SelectItem value="canceled">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Terms */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-medium mb-4">Condições de Pagamento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="payment_day"
@@ -347,20 +499,114 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
 
               <FormField
                 control={form.control}
-                name="deposit_value"
+                name="payment_due_day"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor do Depósito (R$)</FormLabel>
+                    <FormLabel>Dia de Vencimento</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Opcional" 
-                        {...field} 
-                        value={field.value ?? ''} 
-                        onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                      <Input type="number" min="1" max="31" {...field} />
+                    </FormControl>
+                    <FormDescription>Dia do mês para vencimento</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="is_discount_not_fee"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        {field.value ? "Desconto para pagamento em dia" : "Juros para atraso"}
+                      </FormLabel>
+                      <FormDescription>
+                        Alternar entre desconto e juros
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('is_discount_not_fee') ? (
+                <FormField
+                  control={form.control}
+                  name="on_time_discount_percentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Desconto para Pagamento em Dia (%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="0%" 
+                          value={`${field.value || 0}%`}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d,]/g, '');
+                            field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                          }}
+                          onBlur={(e) => handlePercentageBlur(e, field)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="late_fee_percentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Juros para Pagamento em Atraso (%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="0%" 
+                          value={`${field.value || 0}%`}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d,]/g, '');
+                            field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                          }}
+                          onBlur={(e) => handlePercentageBlur(e, field)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Late Payment Terms */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-medium mb-4">Condições para Atraso</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="late_interest_percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Juros de Mora (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="0%" 
+                        value={`${field.value || 0}%`}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^\d,]/g, '');
+                          field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                        }}
+                        onBlur={(e) => handlePercentageBlur(e, field)}
+                      />
+                    </FormControl>
+                    <FormDescription>Juros mensais por atraso</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -368,25 +614,64 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
 
               <FormField
                 control={form.control}
-                name="status"
+                name="late_daily_interest"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status do Contrato</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Rascunho</SelectItem>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="active">Ativo</SelectItem>
-                        <SelectItem value="expired">Expirado</SelectItem>
-                        <SelectItem value="canceled">Cancelado</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Juros Diários (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="0%" 
+                        value={`${field.value || 0}%`}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^\d,]/g, '');
+                          field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                        }}
+                        onBlur={(e) => handlePercentageBlur(e, field)}
+                      />
+                    </FormControl>
+                    <FormDescription>Juros diários por atraso</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fine_percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Multa (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="0%" 
+                        value={`${field.value || 0}%`}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^\d,]/g, '');
+                          field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                        }}
+                        onBlur={(e) => handlePercentageBlur(e, field)}
+                      />
+                    </FormControl>
+                    <FormDescription>Multa por atraso</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="payment_terms"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Termos de Pagamento Adicionais</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Condições específicas de pagamento"
+                        className="min-h-[100px]"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

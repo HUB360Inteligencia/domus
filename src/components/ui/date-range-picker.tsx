@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/popover";
 
 export interface DateRangePickerProps {
-  value: DateRange;
-  onChange: (value: DateRange) => void;
+  value: DateRange | undefined;
+  onChange: (value: DateRange | undefined) => void;
   className?: string;
 }
 
@@ -34,7 +34,7 @@ export function DateRangePicker({
             variant={"outline"}
             className={cn(
               "justify-start text-left font-normal",
-              !value && "text-muted-foreground"
+              !value?.from && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
