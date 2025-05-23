@@ -1,71 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue } from '@/types/contract';
-
-/**
- * Helper function to safely parse variable rent values
- */
-function parseVariableRentValues(rawValues: any): VariableRentValue[] | null {
-  if (!rawValues) return null;
-  
-  try {
-    // If it's already an array with the right structure, just cast it
-    if (Array.isArray(rawValues) && 
-        rawValues.length > 0 && 
-        'month' in rawValues[0] && 
-        'year' in rawValues[0] && 
-        'value' in rawValues[0]) {
-      return rawValues as VariableRentValue[];
-    }
-    
-    // If it's a string, try to parse it
-    if (typeof rawValues === 'string') {
-      const parsed = JSON.parse(rawValues);
-      return Array.isArray(parsed) ? parsed as VariableRentValue[] : null;
-    }
-    
-    // If it's JSON from supabase that needs to be manually converted
-    if (rawValues && typeof rawValues === 'object') {
-      // Check if it's actually an array object from Supabase
-      const parsedArray = Array.isArray(rawValues) 
-        ? rawValues 
-        : Object.values(rawValues);
-        
-      if (parsedArray.length > 0) {
-        // Validate that the objects have the expected structure
-        return parsedArray.map(item => {
-          // Ensure each item has the required fields
-          if (
-            item && 
-            typeof item === 'object' && 
-            'month' in item && 
-            'year' in item && 
-            'value' in item
-          ) {
-            return {
-              month: Number(item.month),
-              year: Number(item.year),
-              value: Number(item.value),
-              applyUntilEnd: Boolean(item.applyUntilEnd ?? false)
-            };
-          }
-          console.warn('Invalid variable rent value item:', item);
-          // Provide a fallback for invalid items
-          return {
-            month: 1,
-            year: new Date().getFullYear(),
-            value: 0,
-            applyUntilEnd: false
-          };
-        });
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error parsing variable rent values:', error, rawValues);
-    return null;
-  }
-}
+import { Contract, ContractFormData, ContractStatus, SignatureStatus } from '@/types/contract';
 
 /**
  * Fetches all contracts for the current user
@@ -114,8 +48,7 @@ export const fetchContracts = async (): Promise<Contract[]> => {
       signature_status: item.signature_status as SignatureStatus,
       // Add default values for fields that might not exist in the database yet
       has_variable_rent: item.has_variable_rent ?? false,
-      // Parse the JSON variable_rent_values into the VariableRentValue[] type
-      variable_rent_values: parseVariableRentValues(item.variable_rent_values),
+      variable_rent_values: item.variable_rent_values ?? null,
       payment_due_day: item.payment_due_day ?? item.payment_day,
       on_time_discount_percentage: item.on_time_discount_percentage ?? null,
       late_fee_percentage: item.late_fee_percentage ?? null,
@@ -180,8 +113,7 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       signature_status: data.signature_status as SignatureStatus,
       // Add default values for new fields
       has_variable_rent: data.has_variable_rent ?? false,
-      // Parse the JSON variable_rent_values into the VariableRentValue[] type
-      variable_rent_values: parseVariableRentValues(data.variable_rent_values),
+      variable_rent_values: data.variable_rent_values ?? null,
       payment_due_day: data.payment_due_day ?? data.payment_day,
       on_time_discount_percentage: data.on_time_discount_percentage ?? null,
       late_fee_percentage: data.late_fee_percentage ?? null,
@@ -213,20 +145,15 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
       tenant_contact: contractData.tenant_contact || null,
     });
   }
-
-  // Convert the VariableRentValue[] to a format that Supabase can store
-  const dataToInsert = {
-    ...contractData,
-    user_id: user.data.user?.id,
-    // Ensure variable_rent_values is properly serialized for Supabase JSONB storage
-    variable_rent_values: contractData.variable_rent_values ? 
-      JSON.stringify(contractData.variable_rent_values) : 
-      null
-  };
   
   const { data, error } = await supabase
     .from('contracts')
-    .insert([dataToInsert])
+    .insert([
+      {
+        ...contractData,
+        user_id: user.data.user?.id,
+      }
+    ])
     .select()
     .single();
 
@@ -244,8 +171,7 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
     signature_status: data.signature_status as SignatureStatus,
     // Add default values for new fields that might not exist in the database yet
     has_variable_rent: data.has_variable_rent ?? false,
-    // Parse the JSON variable_rent_values into the VariableRentValue[] type
-    variable_rent_values: parseVariableRentValues(data.variable_rent_values),
+    variable_rent_values: data.variable_rent_values ?? null,
     payment_due_day: data.payment_due_day ?? data.payment_day,
     on_time_discount_percentage: data.on_time_discount_percentage ?? null,
     late_fee_percentage: data.late_fee_percentage ?? null,
@@ -273,17 +199,9 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     });
   }
   
-  // Prepare data for update, ensuring variable_rent_values is properly serialized
-  const dataToUpdate = {
-    ...data,
-    variable_rent_values: data.variable_rent_values ? 
-      JSON.stringify(data.variable_rent_values) : 
-      null
-  };
-  
   const { data: updatedData, error } = await supabase
     .from('contracts')
-    .update(dataToUpdate)
+    .update(data)
     .eq('id', id)
     .select()
     .single();
@@ -301,8 +219,7 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     signature_status: updatedData.signature_status as SignatureStatus,
     // Add default values for new fields
     has_variable_rent: updatedData.has_variable_rent ?? false,
-    // Parse the JSON variable_rent_values into the VariableRentValue[] type
-    variable_rent_values: parseVariableRentValues(updatedData.variable_rent_values),
+    variable_rent_values: updatedData.variable_rent_values ?? null,
     payment_due_day: updatedData.payment_due_day ?? updatedData.payment_day,
     on_time_discount_percentage: updatedData.on_time_discount_percentage ?? null,
     late_fee_percentage: updatedData.late_fee_percentage ?? null,
@@ -484,8 +401,7 @@ export const updateContractStatus = async (
     signature_status: data.signature_status as SignatureStatus,
     // Add default values for new fields
     has_variable_rent: data.has_variable_rent ?? false,
-    // Parse the JSON variable_rent_values into the VariableRentValue[] type
-    variable_rent_values: parseVariableRentValues(data.variable_rent_values),
+    variable_rent_values: data.variable_rent_values ?? null,
     payment_due_day: data.payment_due_day ?? data.payment_day,
     on_time_discount_percentage: data.on_time_discount_percentage ?? null,
     late_fee_percentage: data.late_fee_percentage ?? null,
@@ -526,8 +442,7 @@ export const updateSignatureStatus = async (
     signature_status: data.signature_status as SignatureStatus,
     // Add default values for new fields
     has_variable_rent: data.has_variable_rent ?? false,
-    // Parse the JSON variable_rent_values into the VariableRentValue[] type
-    variable_rent_values: parseVariableRentValues(data.variable_rent_values),
+    variable_rent_values: data.variable_rent_values ?? null,
     payment_due_day: data.payment_due_day ?? data.payment_day,
     on_time_discount_percentage: data.on_time_discount_percentage ?? null,
     late_fee_percentage: data.late_fee_percentage ?? null,

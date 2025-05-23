@@ -1,153 +1,123 @@
+import React, { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 
-import { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import AuthCallback from "./pages/auth/AuthCallback";
+// Public Pages
+import Index from "./pages/Index";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import AuthCallback from "./pages/auth/AuthCallback";
+import Unauthorized from "./pages/Unauthorized";
+import NotFound from "./pages/NotFound";
+
+// App Pages
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import PropertyFormPage from "./pages/PropertyFormPage";
-import PropertyRoiReportPage from "./pages/PropertyRoiReportPage";
 import ContractsPage from "./pages/ContractsPage";
 import ContractDetailPage from "./pages/ContractDetailPage";
 import ContractFormPage from "./pages/ContractFormPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import ActivityDetailPage from "./pages/ActivityDetailPage";
+import ActivityFormPage from "./pages/ActivityFormPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentFormPage from "./pages/DocumentFormPage";
+import UsersPage from "./pages/users/UsersPage";
+import UserDetailPage from "./pages/users/UserDetailPage";
+import UserInvitePage from "./pages/users/UserInvitePage";
 import FinancesPage from "./pages/FinancesPage";
+
+// Finance Pages
 import FinanceDashboardPage from "./pages/finances/FinanceDashboardPage";
 import ExpensesPage from "./pages/finances/ExpensesPage";
 import IncomePage from "./pages/finances/IncomePage";
 import ReportsPage from "./pages/finances/ReportsPage";
-import ActivitiesPage from "./pages/ActivitiesPage";
-import ActivityDetailPage from "./pages/ActivityDetailPage";
-import ActivityFormPage from "./pages/ActivityFormPage";
-import UsersPage from "./pages/users/UsersPage";
-import UserDetailPage from "./pages/users/UserDetailPage";
-import UserInvitePage from "./pages/users/UserInvitePage";
+
+// Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ClientsPage from "./pages/admin/ClientsPage";
 import ClientDetailPage from "./pages/admin/ClientDetailPage";
 import ClientFormPage from "./pages/admin/ClientFormPage";
-import NotFound from "./pages/NotFound";
-import Unauthorized from "./pages/Unauthorized";
-import Index from "./pages/Index";
+
+// Layouts
 import { AppLayout } from "./components/layout/app-layout";
 import { AdminLayout } from "./components/layout/admin-layout";
+
+// Protected Route Component
 import { ProtectedRoute } from "./components/auth/protected-route";
-import { ThemeProvider } from "./components/theme-provider";
-import { Toaster } from "./components/ui/sonner";
+import { useAuth } from "./lib/auth";
 
 function App() {
-  // Check if running in a browser environment before accessing localStorage
-  useEffect(() => {
-    if (typeof localStorage !== 'undefined') {
-      // Retrieve the last URL from localStorage
-      const lastUrl = localStorage.getItem('lastUrl');
+  const { isLoading } = useAuth();
 
-      // If there's a last URL, remove it from localStorage
-      if (lastUrl) {
-        localStorage.removeItem('lastUrl');
-      }
-    }
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="theme-preference">
+    <div className="App">
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        
-        {/* Protected Routes inside App Layout */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
               <AppLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/properties" element={<Properties />} />
+          <Route path="/properties/:id" element={<PropertyDetailPage />} />
+          <Route path="/properties/new" element={<PropertyFormPage />} />
+          <Route path="/properties/:id/edit" element={<PropertyFormPage />} />
+          <Route path="/contracts" element={<ContractsPage />} />
+          <Route path="/contracts/:id" element={<ContractDetailPage />} />
+          <Route path="/contracts/new" element={<ContractFormPage />} />
+          <Route path="/contracts/:id/edit" element={<ContractFormPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path="/activities/:id" element={<ActivityDetailPage />} />
+          <Route path="/activities/new" element={<ActivityFormPage />} />
+          <Route path="/activities/:id/edit" element={<ActivityFormPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/documents/new" element={<DocumentFormPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/users/:id" element={<UserDetailPage />} />
+          <Route path="/users/invite" element={<UserInvitePage />} />
+          <Route path="/finances" element={<FinancesPage />} />
           
-          <Route path="properties">
-            <Route index element={<Navigate to="/properties" replace />} />
-          </Route>
-          
-          <Route path="contracts">
-            <Route index element={<ContractsPage />} />
-            <Route path="detail" element={<ContractDetailPage />} />
-            <Route path="new" element={<ContractFormPage />} />
-            <Route path="edit" element={<ContractFormPage />} />
-          </Route>
-          
-          <Route path="documents">
-            <Route index element={<DocumentsPage />} />
-            <Route path="new" element={<DocumentFormPage />} />
-          </Route>
-          
-          <Route path="finances">
-            <Route index element={<FinancesPage />} />
-            <Route path="dashboard" element={<FinanceDashboardPage />} />
-            <Route path="expenses" element={<ExpensesPage />} />
-            <Route path="income" element={<IncomePage />} />
-            <Route path="reports" element={<ReportsPage />} />
-          </Route>
-          
-          <Route path="activities">
-            <Route index element={<ActivitiesPage />} />
-            <Route path="detail" element={<ActivityDetailPage />} />
-            <Route path="new" element={<ActivityFormPage />} />
-            <Route path="edit" element={<ActivityFormPage />} />
-          </Route>
-          
-          <Route path="users">
-            <Route index element={<UsersPage />} />
-            <Route path="detail" element={<UserDetailPage />} />
-            <Route path="invite" element={<UserInvitePage />} />
-          </Route>
+          {/* Novas rotas para as subseções de finanças */}
+          <Route path="/finances/dashboard" element={<FinanceDashboardPage />} />
+          <Route path="/finances/expenses" element={<ExpensesPage />} />
+          <Route path="/finances/income" element={<IncomePage />} />
+          <Route path="/finances/reports" element={<ReportsPage />} />
         </Route>
-        
-        {/* Protected Routes outside App Layout */}
-        <Route
-          path="/properties"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Properties />} />
-          <Route path="detail" element={<PropertyDetailPage />} />
-          <Route path="new" element={<PropertyFormPage />} />
-          <Route path="edit" element={<PropertyFormPage />} />
-          <Route path="roi-report" element={<PropertyRoiReportPage />} />
-        </Route>
-        
-        {/* Admin Routes */}
+
         <Route
           path="/admin"
           element={
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredPermission="admin">
               <AdminLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<AdminDashboard />} />
-          <Route path="clients">
-            <Route index element={<ClientsPage />} />
-            <Route path="detail" element={<ClientDetailPage />} />
-            <Route path="new" element={<ClientFormPage />} />
-            <Route path="edit" element={<ClientFormPage />} />
-          </Route>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/:id" element={<ClientDetailPage />} />
+          <Route path="clients/new" element={<ClientFormPage />} />
         </Route>
-        
+
+        <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster />
-    </ThemeProvider>
+    </div>
   );
 }
 

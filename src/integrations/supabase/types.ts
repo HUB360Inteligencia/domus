@@ -790,7 +790,6 @@ export type Database = {
           agency_contact: string | null
           agency_name: string | null
           agency_responsible: string | null
-          annual_return_rate: number | null
           area: number | null
           bathrooms: number | null
           bedrooms: number | null
@@ -806,10 +805,8 @@ export type Database = {
           garage_spots: number | null
           id: string
           image_url: string | null
-          last_valuation_date: string | null
           latitude: number | null
           longitude: number | null
-          monthly_return_rate: number | null
           neighborhood: string | null
           property_number: string | null
           purchase_date: string | null
@@ -821,11 +818,9 @@ export type Database = {
           tenant_contact: string | null
           tenant_name: string | null
           title: string
-          total_investment: number | null
           type: string
           updated_at: string
           user_id: string
-          vacancy_rate: number | null
           value: number
           zip_code: string | null
         }
@@ -834,7 +829,6 @@ export type Database = {
           agency_contact?: string | null
           agency_name?: string | null
           agency_responsible?: string | null
-          annual_return_rate?: number | null
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -850,10 +844,8 @@ export type Database = {
           garage_spots?: number | null
           id?: string
           image_url?: string | null
-          last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null
-          monthly_return_rate?: number | null
           neighborhood?: string | null
           property_number?: string | null
           purchase_date?: string | null
@@ -865,11 +857,9 @@ export type Database = {
           tenant_contact?: string | null
           tenant_name?: string | null
           title: string
-          total_investment?: number | null
           type: string
           updated_at?: string
           user_id: string
-          vacancy_rate?: number | null
           value: number
           zip_code?: string | null
         }
@@ -878,7 +868,6 @@ export type Database = {
           agency_contact?: string | null
           agency_name?: string | null
           agency_responsible?: string | null
-          annual_return_rate?: number | null
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
@@ -894,10 +883,8 @@ export type Database = {
           garage_spots?: number | null
           id?: string
           image_url?: string | null
-          last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null
-          monthly_return_rate?: number | null
           neighborhood?: string | null
           property_number?: string | null
           purchase_date?: string | null
@@ -909,11 +896,9 @@ export type Database = {
           tenant_contact?: string | null
           tenant_name?: string | null
           title?: string
-          total_investment?: number | null
           type?: string
           updated_at?: string
           user_id?: string
-          vacancy_rate?: number | null
           value?: number
           zip_code?: string | null
         }
@@ -967,154 +952,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_expenses_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_images: {
-        Row: {
-          created_at: string
-          description: string | null
-          display_order: number | null
-          id: string
-          image_url: string
-          is_primary: boolean | null
-          property_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url: string
-          is_primary?: boolean | null
-          property_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url?: string
-          is_primary?: boolean | null
-          property_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_images_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_investments: {
-        Row: {
-          amount: number
-          created_at: string
-          description: string | null
-          id: string
-          investment_date: string
-          investment_type: string
-          property_id: string
-          receipt_url: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          investment_date: string
-          investment_type: string
-          property_id: string
-          receipt_url?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          investment_date?: string
-          investment_type?: string
-          property_id?: string
-          receipt_url?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_investments_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_occupancy_periods: {
-        Row: {
-          contract_id: string | null
-          created_at: string
-          end_date: string | null
-          id: string
-          notes: string | null
-          occupancy_type: string
-          property_id: string
-          start_date: string
-          tenant_name: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          contract_id?: string | null
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          notes?: string | null
-          occupancy_type: string
-          property_id: string
-          start_date: string
-          tenant_name?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          contract_id?: string | null
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          notes?: string | null
-          occupancy_type?: string
-          property_id?: string
-          start_date?: string
-          tenant_name?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_occupancy_periods_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_occupancy_periods_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
