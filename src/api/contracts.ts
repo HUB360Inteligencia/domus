@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+import { Contract, ContractFormData, ContractStatus, SignatureStatus } from '@/types/contract';
 
 /**
  * Fetches all contracts for the current user

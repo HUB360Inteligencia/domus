@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface DateRangePickerProps {
+export interface DateRangePickerProps {
   value: DateRange;
   onChange: (value: DateRange) => void;
   className?: string;

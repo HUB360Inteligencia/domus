@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Filter, X } from "lucide-react";
 import {
@@ -293,9 +292,8 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
             <div className="space-y-2">
               <Label>Período</Label>
               <DateRangePicker
-                value={filters.dateRange}
+                value={filters.dateRange || {from: undefined, to: undefined}}
                 onChange={(range) => handleFilterChange("dateRange", range)}
-                placeholder="Selecionar período"
               />
             </div>
             
