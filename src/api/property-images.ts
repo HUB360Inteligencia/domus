@@ -1,9 +1,18 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyImage, PropertyImageFormData } from '@/types/property-image';
+import { handleAuthError } from '@/utils/auth-utils';
 
 export const fetchPropertyImages = async (propertyId: string): Promise<PropertyImage[]> => {
   try {
+    // Check authentication first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('No active session found:', sessionError);
+      throw new Error('Usuário não autenticado');
+    }
+
     const { data, error } = await supabase
       .from('property_images')
       .select('*')
@@ -12,7 +21,8 @@ export const fetchPropertyImages = async (propertyId: string): Promise<PropertyI
 
     if (error) {
       console.error('Error fetching property images:', error);
-      throw error;
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
     }
 
     return data || [];
@@ -28,21 +38,24 @@ export const uploadPropertyImage = async (
   imageData: Omit<PropertyImageFormData, 'property_id'> = {}
 ): Promise<PropertyImage> => {
   try {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) throw new Error('User not authenticated');
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Usuário não autenticado');
+    }
 
     const fileExt = imageFile.name.split('.').pop();
     const fileName = `${propertyId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    // Upload file to storage
+    // Upload file to the property_images bucket
     const { error: uploadError } = await supabase.storage
       .from('property_images')
       .upload(filePath, imageFile);
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError);
-      throw uploadError;
+      throw new Error(uploadError.message);
     }
 
     // Get the public URL
@@ -84,7 +97,7 @@ export const uploadPropertyImage = async (
       .from('property_images')
       .insert([{
         property_id: propertyId,
-        user_id: user.data.user.id,
+        user_id: user.id,
         image_url: publicUrlData.publicUrl,
         description: imageData.description || null,
         is_primary: isPrimary,
@@ -95,7 +108,8 @@ export const uploadPropertyImage = async (
 
     if (error) {
       console.error('Error creating property image record:', error);
-      throw error;
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
     }
 
     // If this is marked as primary, update other images to not be primary

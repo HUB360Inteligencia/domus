@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
+import { handleAuthError } from "@/utils/auth-utils";
 
 /**
  * Fetches all properties for the current user
@@ -8,14 +8,12 @@ import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/t
 export const fetchProperties = async (): Promise<Property[]> => {
   try {
     console.log('Fetching properties from Supabase...');
-    const session = await supabase.auth.getSession();
-    console.log('Session state:', { 
-      exists: !!session.data.session,
-      expired: session.data.session ? new Date(session.data.session.expires_at * 1000) < new Date() : false
-    });
-
-    if (!session.data.session) {
-      console.error('No active session found');
+    
+    // Check authentication first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('No active session found:', sessionError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -26,7 +24,8 @@ export const fetchProperties = async (): Promise<Property[]> => {
 
     if (error) {
       console.error('Error fetching properties:', error);
-      throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
     }
 
     console.log('Properties fetched successfully:', data?.length || 0);
@@ -52,9 +51,12 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
   
   try {
     console.log(`Fetching property details for ID: ${id}`);
-    const session = await supabase.auth.getSession();
-    if (!session.data.session) {
-      console.error('No active session found');
+    
+    // Check authentication first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('No active session found:', sessionError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -62,11 +64,12 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       .from('properties')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
 
     if (error) {
       console.error(`Error fetching property ${id}:`, error);
-      throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
     }
 
     console.log('Property detail fetch result:', data ? 'Success' : 'Not found');
@@ -88,32 +91,41 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
  * Creates a new property
  */
 export const createProperty = async (propertyData: PropertyFormData): Promise<Property> => {
-  const user = supabase.auth.getUser();
-  if (!(await user).data.user) throw new Error('User not authenticated');
-  
-  const { data, error } = await supabase
-    .from('properties')
-    .insert([
-      {
-        ...propertyData,
-        user_id: (await user).data.user?.id,
-      }
-    ])
-    .select()
-    .single();
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .insert([
+        {
+          ...propertyData,
+          user_id: user.id,
+        }
+      ])
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error creating property:', error);
-    throw new Error(error.message);
+    if (error) {
+      console.error('Error creating property:', error);
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
+    }
+
+    // Transform the data to ensure property types are correctly cast
+    return {
+      ...data,
+      status: data.status as PropertyStatus,
+      furnished: data.furnished as FurnishedStatus,
+      tags: data.tags || []
+    };
+  } catch (err) {
+    console.error('Failed to create property:', err);
+    throw err;
   }
-
-  // Transform the data to ensure property types are correctly cast
-  return {
-    ...data,
-    status: data.status as PropertyStatus,
-    furnished: data.furnished as FurnishedStatus,
-    tags: data.tags || []
-  };
 };
 
 /**
@@ -122,28 +134,34 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
 export const updateProperty = async (propertyData: PropertyFormData & { id: string }): Promise<Property> => {
   const { id, ...data } = propertyData;
   
-  console.log(`Updating property ${id} with data:`, data);
-  
-  const { data: updatedData, error } = await supabase
-    .from('properties')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single();
+  try {
+    console.log(`Updating property ${id} with data:`, data);
+    
+    const { data: updatedData, error } = await supabase
+      .from('properties')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error updating property:', error);
-    throw new Error(error.message);
+    if (error) {
+      console.error('Error updating property:', error);
+      const authError = handleAuthError(error);
+      throw new Error(authError.message);
+    }
+
+    console.log('Property updated successfully:', updatedData);
+
+    return {
+      ...updatedData,
+      status: updatedData.status as PropertyStatus,
+      furnished: updatedData.furnished as FurnishedStatus,
+      tags: updatedData.tags || []
+    };
+  } catch (err) {
+    console.error('Failed to update property:', err);
+    throw err;
   }
-
-  console.log('Property updated successfully:', updatedData);
-
-  return {
-    ...updatedData,
-    status: updatedData.status as PropertyStatus,
-    furnished: updatedData.furnished as FurnishedStatus,
-    tags: updatedData.tags || []
-  };
 };
 
 /**
@@ -198,46 +216,51 @@ export const deleteProperty = async (id: string): Promise<void> => {
 };
 
 /**
- * Uploads an image for a property
+ * Uploads an image for a property using the new property_images bucket
  */
 export const uploadPropertyImage = async ({ id, imageFile }: { id: string; imageFile: File }): Promise<string> => {
-  // Create a unique file name
-  const fileExt = imageFile.name.split('.').pop();
-  const fileName = `${id}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-  const filePath = `${fileName}`;
+  try {
+    // Create a unique file name
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${id}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `${fileName}`;
 
-  console.log(`Uploading image for property ${id} to property_images bucket`);
+    console.log(`Uploading image for property ${id} to property_images bucket`);
 
-  const { error: uploadError } = await supabase
-    .storage
-    .from('property_images')
-    .upload(filePath, imageFile);
+    const { error: uploadError } = await supabase
+      .storage
+      .from('property_images')
+      .upload(filePath, imageFile);
 
-  if (uploadError) {
-    console.error('Error uploading image:', uploadError);
-    throw new Error(uploadError.message);
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw new Error(uploadError.message);
+    }
+
+    // Get the public URL
+    const { data } = supabase
+      .storage
+      .from('property_images')
+      .getPublicUrl(filePath);
+
+    console.log('Image uploaded successfully, URL:', data.publicUrl);
+
+    // Update the property with the image URL
+    const { error: updateError } = await supabase
+      .from('properties')
+      .update({ image_url: data.publicUrl })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating property with image URL:', updateError);
+      throw new Error(updateError.message);
+    }
+
+    return data.publicUrl;
+  } catch (err) {
+    console.error('Failed to upload property image:', err);
+    throw err;
   }
-
-  // Get the public URL
-  const { data } = supabase
-    .storage
-    .from('property_images')
-    .getPublicUrl(filePath);
-
-  console.log('Image uploaded successfully, URL:', data.publicUrl);
-
-  // Update the property with the image URL
-  const { error: updateError } = await supabase
-    .from('properties')
-    .update({ image_url: data.publicUrl })
-    .eq('id', id);
-
-  if (updateError) {
-    console.error('Error updating property with image URL:', updateError);
-    throw new Error(updateError.message);
-  }
-
-  return data.publicUrl;
 };
 
 /**
