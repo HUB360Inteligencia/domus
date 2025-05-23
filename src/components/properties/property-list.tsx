@@ -274,21 +274,3 @@ function PropertyListItem({ property, onClick }: PropertyListItemProps) {
     </div>
   );
 }
-
-interface PropertyMapViewProps {
-  properties: Property[];
-  onSelect: (id: string) => void;
-}
-
-// Placeholder for the map view component - we'll implement this soon
-function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-center">
-        <MapIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-        <p>Mapa carregando...</p>
-        <p className="text-sm text-muted-foreground">Visualização em mapa será implementada em breve.</p>
-      </div>
-    </div>
-  );
-}

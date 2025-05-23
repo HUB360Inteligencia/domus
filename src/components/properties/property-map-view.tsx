@@ -10,10 +10,9 @@ import { formatCurrency } from '@/lib/utils';
 interface PropertyMapViewProps {
   properties: Property[];
   onSelect: (id: string) => void;
-  className?: string;
 }
 
-export function PropertyMapView({ properties, onSelect, className = '' }: PropertyMapViewProps) {
+export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -112,8 +111,8 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
       mapRef.current = new window.mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: propertiesWithCoords.length === 1 ? center : [-46.633308, -23.550520],
-        zoom: propertiesWithCoords.length === 1 ? zoom : 10,
+        center,
+        zoom,
         attributionControl: true
       });
 
@@ -252,7 +251,7 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
 
   if (isTokenLoading || isLoading) {
     return (
-      <div className={`flex items-center justify-center h-full bg-muted rounded-lg ${className}`}>
+      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4">
           <Loader2 className="mx-auto h-10 w-10 text-primary animate-spin mb-2" />
           <p className="text-muted-foreground">Carregando mapa...</p>
@@ -263,7 +262,7 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
 
   if (!token) {
     return (
-      <div className={`flex items-center justify-center h-full bg-muted rounded-lg ${className}`}>
+      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4 max-w-md">
           <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
           <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
@@ -284,7 +283,7 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center h-full bg-muted rounded-lg ${className}`}>
+      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4">
           <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
           <p className="text-muted-foreground mb-4">{error}</p>
@@ -317,7 +316,7 @@ export function PropertyMapView({ properties, onSelect, className = '' }: Proper
   const propertiesWithoutCoords = properties.length - propertiesWithCoords.length;
 
   return (
-    <div className={`relative ${className}`}>
+    <div className="relative h-full">
       <div ref={mapContainer} className="w-full h-full rounded-lg shadow-sm" />
       
       {/* Info overlay */}
