@@ -8,22 +8,25 @@ import { cleanupAuthState } from "@/utils/auth-cleanup";
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredPermission?: string;
+  requiredRole?: string;
 }
 
-export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredPermission, requiredRole }: ProtectedRouteProps) {
   const { user, session, isLoading, hasPermission } = useAuth();
   const location = useLocation();
 
   // Add logging for debugging permission checks
   useEffect(() => {
-    if (requiredPermission && user) {
-      console.log(`ProtectedRoute checking permission: ${requiredPermission} for user:`, {
+    if ((requiredPermission || requiredRole) && user) {
+      console.log(`ProtectedRoute checking access for user:`, {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        requiredPermission,
+        requiredRole
       });
     }
-  }, [requiredPermission, user]);
+  }, [requiredPermission, requiredRole, user]);
 
   // Verificar se o token está expirado, mas só redirecionar se realmente estiver
   useEffect(() => {
@@ -62,6 +65,17 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
     
     if (!hasAccess) {
       console.log(`Access denied for ${requiredPermission}, redirecting to unauthorized`);
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
+
+  // Check for required role if specified
+  if (requiredRole) {
+    const hasRole = user.role === requiredRole;
+    console.log(`Role check result for ${requiredRole}:`, hasRole);
+    
+    if (!hasRole) {
+      console.log(`Access denied for role ${requiredRole}, redirecting to unauthorized`);
       return <Navigate to="/unauthorized" replace />;
     }
   }

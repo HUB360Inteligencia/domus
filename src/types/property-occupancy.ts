@@ -1,6 +1,13 @@
 
-export type OccupancyType = 'rented' | 'airbnb' | 'owner_occupied' | 'vacant';
+// Define the occupancy types as an enum
+export enum OccupancyType {
+  RENTED = 'rented',
+  AIRBNB = 'airbnb',
+  OWNER_OCCUPIED = 'owner_occupied', 
+  VACANT = 'vacant'
+}
 
+// Create interface for property occupancy data
 export interface PropertyOccupancy {
   id: string;
   property_id: string;
@@ -15,6 +22,7 @@ export interface PropertyOccupancy {
   updated_at: string;
 }
 
+// Create interface for property occupancy form data
 export interface PropertyOccupancyFormData {
   property_id: string;
   start_date: string;

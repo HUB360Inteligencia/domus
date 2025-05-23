@@ -20,7 +20,7 @@ export const fetchPropertyOccupancy = async (propertyId: string): Promise<Proper
     }
 
     // Cast the data to ensure it matches the PropertyOccupancy[] type
-    return data as PropertyOccupancy[] || [];
+    return (data as unknown as PropertyOccupancy[]) || [];
   } catch (err) {
     console.error('Failed to fetch property occupancy periods:', err);
     throw err;
@@ -53,11 +53,11 @@ export const createPropertyOccupancy = async (
       throw error;
     }
 
-    // After creating a new occupancy period, update the property's vacancy rate
+    // After adding an occupancy period, update the property's vacancy rate
     await updatePropertyVacancyRate(occupancyData.property_id);
 
     // Cast the data to ensure it matches the PropertyOccupancy type
-    return data as PropertyOccupancy;
+    return data as unknown as PropertyOccupancy;
   } catch (err) {
     console.error('Failed to create property occupancy period:', err);
     throw err;
@@ -88,7 +88,7 @@ export const updatePropertyOccupancy = async (
     await updatePropertyVacancyRate(data.property_id);
 
     // Cast the data to ensure it matches the PropertyOccupancy type
-    return data as PropertyOccupancy;
+    return data as unknown as PropertyOccupancy;
   } catch (err) {
     console.error('Failed to update property occupancy period:', err);
     throw err;

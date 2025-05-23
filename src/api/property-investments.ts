@@ -19,7 +19,7 @@ export const fetchPropertyInvestments = async (propertyId: string): Promise<Prop
     }
 
     // Cast the data to ensure it matches the PropertyInvestment[] type
-    return data as PropertyInvestment[] || [];
+    return (data as unknown as PropertyInvestment[]) || [];
   } catch (err) {
     console.error('Failed to fetch property investments:', err);
     throw err;
@@ -54,7 +54,7 @@ export const createPropertyInvestment = async (investmentData: PropertyInvestmen
     await updatePropertyTotalInvestment(investmentData.property_id);
 
     // Cast the data to ensure it matches the PropertyInvestment type
-    return data as PropertyInvestment;
+    return data as unknown as PropertyInvestment;
   } catch (err) {
     console.error('Failed to create property investment:', err);
     throw err;
@@ -82,7 +82,7 @@ export const updatePropertyInvestment = async (id: string, investmentData: Parti
     await updatePropertyTotalInvestment(data.property_id);
 
     // Cast the data to ensure it matches the PropertyInvestment type
-    return data as PropertyInvestment;
+    return data as unknown as PropertyInvestment;
   } catch (err) {
     console.error('Failed to update property investment:', err);
     throw err;
