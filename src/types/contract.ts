@@ -40,7 +40,7 @@ export interface Contract {
   user_id: string;
   signature_status: SignatureStatus;
   
-  // Novos campos
+  // Modified to ensure type correctness with Supabase Json
   has_variable_rent: boolean | null;
   variable_rent_values: VariableRentValue[] | null;
   payment_due_day: number | null;

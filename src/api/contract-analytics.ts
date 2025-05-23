@@ -1,6 +1,20 @@
+import { supabase } from '@/integrations/supabase/client';
+import { Contract, ContractStatus, SignatureStatus } from '@/types/contract';
+import { Json } from '@/integrations/supabase/types';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Contract, ContractStatus, SignatureStatus } from "@/types/contract";
+// Helper function to convert Json to proper type
+const convertJsonToVariableRentValues = (jsonValue: Json | null) => {
+  if (!jsonValue) return null;
+  try {
+    if (typeof jsonValue === 'string') {
+      return JSON.parse(jsonValue);
+    }
+    return jsonValue;
+  } catch (e) {
+    console.error('Error parsing variable_rent_values:', e);
+    return null;
+  }
+};
 
 export interface ContractStats {
   total: number;
@@ -174,119 +188,115 @@ export async function generateFinancialChartData(): Promise<any[]> {
   return chartData;
 }
 
-// Fetch upcoming events based on contracts, properties, and maintenance schedule
-export async function fetchUpcomingEvents(): Promise<UpcomingEvent[]> {
-  const now = new Date();
-  const thirtyDaysLater = new Date();
-  thirtyDaysLater.setDate(now.getDate() + 30);
-  
-  // Format dates for Supabase query
-  const today = now.toISOString().split('T')[0];
-  const thirtyDaysFromNow = thirtyDaysLater.toISOString().split('T')[0];
-  
-  // Fetch contracts about to expire
-  const { data: expiringContracts, error: contractError } = await supabase
-    .from('contracts')
-    .select(`
-      id,
-      title,
-      end_date,
-      property_id,
-      property:property_id (
-        title
-      )
-    `)
-    .eq('status', 'active')
-    .gte('end_date', today)
-    .lte('end_date', thirtyDaysFromNow)
-    .order('end_date', { ascending: true });
+// Fetch upcoming events related to contracts (expirations, renewals, payments)
+export const fetchUpcomingEvents = async () => {
+  try {
+    // Fetch contracts that are expiring soon
+    const today = new Date();
+    const thirtyDaysLater = new Date(today);
+    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+
+    const { data: expiringContracts, error: expiringError } = await supabase
+      .from('contracts')
+      .select(`
+        id, title, end_date, status, property:properties(title)
+      `)
+      .eq('status', 'active')
+      .lte('end_date', thirtyDaysLater.toISOString().split('T')[0])
+      .gte('end_date', today.toISOString().split('T')[0])
+      .order('end_date', { ascending: true });
+
+    if (expiringError) {
+      console.error('Error fetching expiring contracts:', expiringError);
+      throw expiringError;
+    }
+
+    // Fetch upcoming payments
+    const { data: upcomingPayments, error: paymentsError } = await supabase
+      .from('contracts')
+      .select(`
+        id, title, payment_day, value, property:properties(title)
+      `)
+      .eq('status', 'active');
+
+    if (paymentsError) {
+      console.error('Error fetching upcoming payments:', paymentsError);
+      throw paymentsError;
+    }
+
+    // Process upcoming payments
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     
-  if (contractError) {
-    console.error('Error fetching expiring contracts:', contractError);
-    throw contractError;
+    const paymentEvents = upcomingPayments.map(contract => {
+      // Calculate this month's payment date
+      const paymentDate = new Date(currentYear, currentMonth, contract.payment_day);
+      // If payment date has passed, use next month
+      const useNextMonth = paymentDate < today;
+      const eventDate = useNextMonth 
+        ? new Date(nextMonthYear, nextMonth, contract.payment_day)
+        : paymentDate;
+      
+      return {
+        id: contract.id,
+        title: contract.title,
+        property_title: contract.property?.title || 'Unknown Property',
+        type: 'payment',
+        date: eventDate.toISOString().split('T')[0],
+        amount: contract.value
+      };
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Format expiration events
+    const expirationEvents = expiringContracts.map(contract => ({
+      id: contract.id,
+      title: contract.title,
+      property_title: contract.property?.title || 'Unknown Property',
+      type: 'expiration',
+      date: contract.end_date,
+      daysRemaining: Math.ceil((new Date(contract.end_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    }));
+
+    return {
+      expirations: expirationEvents,
+      payments: paymentEvents
+    };
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    throw error;
   }
-  
-  // Convert contracts to upcoming events
-  const contractEvents: UpcomingEvent[] = expiringContracts?.map(contract => ({
-    id: `contract-${contract.id}`,
-    title: `Vencimento de Contrato`,
-    property: contract.property?.title || 'Imóvel sem título',
-    date: contract.end_date,
-    type: 'contract',
-    priority: 'high'
-  })) || [];
-  
-  // In a real app, we would fetch other types of events like payments due, maintenance schedules, etc.
-  // For now, we'll return just the contract events
-  return contractEvents.slice(0, 5); // Return the 5 soonest events
-}
+};
 
 // Fetch real contracts for display
-export async function fetchRecentContracts(): Promise<Contract[]> {
+export const fetchRecentContracts = async (): Promise<Contract[]> => {
   try {
     const { data, error } = await supabase
       .from('contracts')
       .select(`
-        id,
-        title,
-        property_id,
+        *,
         property:properties(
-          title,
-          address,
-          city,
-          state,
-          neighborhood,
-          type,
-          tags
-        ),
-        tenant_name,
-        tenant_document,
-        tenant_contact,
-        start_date,
-        end_date,
-        value,
-        payment_day,
-        payment_due_day,
-        deposit_value,
-        status,
-        terms,
-        document_url,
-        has_renewal_option,
-        renewal_terms,
-        special_conditions,
-        created_at,
-        updated_at,
-        user_id,
-        signature_status,
-        has_variable_rent,
-        variable_rent_values,
-        on_time_discount_percentage,
-        late_fee_percentage,
-        is_discount_not_fee,
-        late_interest_percentage,
-        late_daily_interest,
-        fine_percentage,
-        payment_terms
+          title, 
+          address, 
+          city, 
+          state
+        )
       `)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(5);
 
     if (error) {
-      console.error('Error fetching contracts:', error);
+      console.error('Error fetching recent contracts:', error);
       throw error;
     }
 
-    if (!data) {
-      return [];
-    }
-
-    // Transform the data to ensure contract types are correctly cast
     return data.map(item => ({
       ...item,
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
       has_variable_rent: item.has_variable_rent ?? false,
-      variable_rent_values: item.variable_rent_values ?? null,
+      variable_rent_values: convertJsonToVariableRentValues(item.variable_rent_values),
       payment_due_day: item.payment_due_day ?? item.payment_day,
       on_time_discount_percentage: item.on_time_discount_percentage ?? null,
       late_fee_percentage: item.late_fee_percentage ?? null,
@@ -296,8 +306,8 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
       fine_percentage: item.fine_percentage ?? null,
       payment_terms: item.payment_terms ?? null
     }));
-  } catch (err) {
-    console.error('Error in fetchRecentContracts:', err);
-    return [];
+  } catch (error) {
+    console.error('Error fetching recent contracts:', error);
+    throw error;
   }
-}
+};

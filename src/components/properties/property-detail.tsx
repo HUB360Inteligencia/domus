@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ChevronLeft, Edit, Trash2, MapPin, Home, Info, User, Building, Banknote, SquareStack, Ticket } from 'lucide-react';
+import { ChevronLeft, Edit, Trash2, MapPin, Home, Info, User, Building, Banknote, SquareStack, Ticket, Image } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -157,7 +158,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             <span className="inline sm:hidden">Geral</span>
           </TabsTrigger>
           <TabsTrigger value="photos" className="flex items-center gap-2">
-            <ImageIcon className="h-4 w-4" />
+            <Image className="h-4 w-4" />
             <span className="hidden sm:inline">Fotos</span>
             <span className="inline sm:hidden">Fotos</span>
           </TabsTrigger>

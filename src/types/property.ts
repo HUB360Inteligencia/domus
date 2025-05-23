@@ -1,4 +1,3 @@
-
 import { Json } from '@/integrations/supabase/types';
 
 export type PropertyStatus = 'available' | 'rented' | 'airbnb' | 'maintenance' | 'sold';
@@ -45,6 +44,12 @@ export interface Property {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
+  // Add this for ROIChart and PropertyInvestmentSection
+  last_valuation_date?: string | null;
+  total_investment?: number | null;
+  monthly_return_rate?: number | null;
+  annual_return_rate?: number | null;
+  vacancy_rate?: number | null;
 }
 
 export interface PropertyFormData {
