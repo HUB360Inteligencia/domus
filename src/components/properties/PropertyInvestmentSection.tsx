@@ -95,7 +95,7 @@ export const PropertyInvestmentSection = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <Form {...form.formState}>
+          <Form {...form}>
             <form>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
