@@ -286,12 +286,8 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
       has_variable_rent: item.has_variable_rent ?? false,
-      // Parse the JSON variable_rent_values into the VariableRentValue[] type
-      variable_rent_values: item.variable_rent_values ? 
-        (Array.isArray(item.variable_rent_values) ? 
-          item.variable_rent_values as VariableRentValue[] : 
-          JSON.parse(item.variable_rent_values as string)) as VariableRentValue[] : 
-        null,
+      // Safely parse the variable_rent_values
+      variable_rent_values: parseVariableRentValues(item.variable_rent_values),
       payment_due_day: item.payment_due_day ?? item.payment_day,
       on_time_discount_percentage: item.on_time_discount_percentage ?? null,
       late_fee_percentage: item.late_fee_percentage ?? null,
@@ -304,5 +300,69 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
   } catch (err) {
     console.error('Error in fetchRecentContracts:', err);
     return [];
+  }
+}
+
+// Helper function to safely parse variable rent values
+function parseVariableRentValues(rawValues: any): VariableRentValue[] | null {
+  if (!rawValues) return null;
+  
+  try {
+    // If it's already an array with the right structure, just cast it
+    if (Array.isArray(rawValues) && 
+        rawValues.length > 0 && 
+        'month' in rawValues[0] && 
+        'year' in rawValues[0] && 
+        'value' in rawValues[0]) {
+      return rawValues as VariableRentValue[];
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof rawValues === 'string') {
+      const parsed = JSON.parse(rawValues);
+      return Array.isArray(parsed) ? parsed as VariableRentValue[] : null;
+    }
+    
+    // If it's JSON from supabase that needs to be manually converted
+    if (rawValues && typeof rawValues === 'object') {
+      // Check if it's actually an array object from Supabase
+      const parsedArray = Array.isArray(rawValues) 
+        ? rawValues 
+        : Object.values(rawValues);
+        
+      if (parsedArray.length > 0) {
+        // Validate that the objects have the expected structure
+        return parsedArray.map(item => {
+          // Ensure each item has the required fields
+          if (
+            item && 
+            typeof item === 'object' && 
+            'month' in item && 
+            'year' in item && 
+            'value' in item
+          ) {
+            return {
+              month: Number(item.month),
+              year: Number(item.year),
+              value: Number(item.value),
+              applyUntilEnd: Boolean(item.applyUntilEnd ?? false)
+            };
+          }
+          console.warn('Invalid variable rent value item:', item);
+          // Provide a fallback for invalid items
+          return {
+            month: 1,
+            year: new Date().getFullYear(),
+            value: 0,
+            applyUntilEnd: false
+          };
+        });
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error parsing variable rent values:', error, rawValues);
+    return null;
   }
 }
