@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -362,7 +361,7 @@ export const PropertyImageGallery: React.FC<PropertyImageGalleryProps> = ({ prop
             {/* Full screen image viewer */}
             <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen} className="max-w-4xl">
               <DialogContent className="max-w-4xl p-0 bg-black border-0">
-                <Carousel className="w-full" defaultIndex={selectedImage}>
+                <Carousel className="w-full" selectedIndex={selectedImage}>
                   <CarouselContent>
                     {images.map((image, index) => (
                       <CarouselItem key={image.id}>

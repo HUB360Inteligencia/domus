@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { PropertyOccupancy, PropertyOccupancyFormData } from '@/types/property-occupancy';
+import { PropertyOccupancy, PropertyOccupancyFormData, OccupancyType } from '@/types/property-occupancy';
 import { differenceInCalendarDays } from 'date-fns';
 
 /**
@@ -19,7 +19,8 @@ export const fetchPropertyOccupancy = async (propertyId: string): Promise<Proper
       throw error;
     }
 
-    return data || [];
+    // Cast the data to ensure it matches the PropertyOccupancy[] type
+    return data as PropertyOccupancy[] || [];
   } catch (err) {
     console.error('Failed to fetch property occupancy periods:', err);
     throw err;
@@ -55,7 +56,8 @@ export const createPropertyOccupancy = async (
     // After creating a new occupancy period, update the property's vacancy rate
     await updatePropertyVacancyRate(occupancyData.property_id);
 
-    return data;
+    // Cast the data to ensure it matches the PropertyOccupancy type
+    return data as PropertyOccupancy;
   } catch (err) {
     console.error('Failed to create property occupancy period:', err);
     throw err;
@@ -85,7 +87,8 @@ export const updatePropertyOccupancy = async (
     // After updating an occupancy period, update the property's vacancy rate
     await updatePropertyVacancyRate(data.property_id);
 
-    return data;
+    // Cast the data to ensure it matches the PropertyOccupancy type
+    return data as PropertyOccupancy;
   } catch (err) {
     console.error('Failed to update property occupancy period:', err);
     throw err;

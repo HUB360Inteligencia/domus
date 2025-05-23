@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
   Building2,
-  FileContract,
   FileText,
   LayoutDashboard,
   Users,
@@ -14,6 +13,7 @@ import {
   Settings,
   LogOut,
   TrendingUp,
+  File,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ export function AppSidebar() {
   const links = [
     { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
     { name: 'Imóveis', href: '/properties', icon: <Building2 className="h-5 w-5" /> },
-    { name: 'Contratos', href: '/contracts', icon: <FileContract className="h-5 w-5" /> },
+    { name: 'Contratos', href: '/contracts', icon: <File className="h-5 w-5" /> },
     { name: 'Documentos', href: '/documents', icon: <FileText className="h-5 w-5" /> },
     { 
       name: 'Financeiro', 

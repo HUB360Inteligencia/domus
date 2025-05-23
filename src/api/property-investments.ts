@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { PropertyInvestment, PropertyInvestmentFormData } from '@/types/property-investment';
+import { PropertyInvestment, PropertyInvestmentFormData, InvestmentType } from '@/types/property-investment';
 
 /**
  * Fetches investments for a specific property
@@ -18,7 +18,8 @@ export const fetchPropertyInvestments = async (propertyId: string): Promise<Prop
       throw error;
     }
 
-    return data || [];
+    // Cast the data to ensure it matches the PropertyInvestment[] type
+    return data as PropertyInvestment[] || [];
   } catch (err) {
     console.error('Failed to fetch property investments:', err);
     throw err;
@@ -52,7 +53,8 @@ export const createPropertyInvestment = async (investmentData: PropertyInvestmen
     // After adding an investment, update the property's total investment
     await updatePropertyTotalInvestment(investmentData.property_id);
 
-    return data;
+    // Cast the data to ensure it matches the PropertyInvestment type
+    return data as PropertyInvestment;
   } catch (err) {
     console.error('Failed to create property investment:', err);
     throw err;
@@ -79,7 +81,8 @@ export const updatePropertyInvestment = async (id: string, investmentData: Parti
     // After updating an investment, update the property's total investment
     await updatePropertyTotalInvestment(data.property_id);
 
-    return data;
+    // Cast the data to ensure it matches the PropertyInvestment type
+    return data as PropertyInvestment;
   } catch (err) {
     console.error('Failed to update property investment:', err);
     throw err;

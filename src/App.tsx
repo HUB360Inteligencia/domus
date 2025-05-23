@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthCallback from "./pages/auth/AuthCallback";
@@ -31,9 +32,9 @@ import ClientFormPage from "./pages/admin/ClientFormPage";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import Index from "./pages/Index";
-import AppLayout from "./components/layout/app-layout";
-import AdminLayout from "./components/layout/admin-layout";
-import ProtectedRoute from "./components/auth/protected-route";
+import { AppLayout } from "./components/layout/app-layout";
+import { AdminLayout } from "./components/layout/admin-layout";
+import { ProtectedRoute } from "./components/auth/protected-route";
 import { AuthProvider } from "./components/auth/auth-provider";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui/sonner";
