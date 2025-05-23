@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AuthCallback from "./pages/auth/AuthCallback";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -35,7 +35,6 @@ import Index from "./pages/Index";
 import { AppLayout } from "./components/layout/app-layout";
 import { AdminLayout } from "./components/layout/admin-layout";
 import { ProtectedRoute } from "./components/auth/protected-route";
-import { AuthProvider } from "./components/auth/auth-provider";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui/sonner";
 
@@ -55,103 +54,99 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="theme-preference">
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Protected Routes inside App Layout */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              
-              <Route path="properties">
-                <Route index element={<Navigate to="/properties" replace />} />
-              </Route>
-              
-              <Route path="contracts">
-                <Route index element={<ContractsPage />} />
-                <Route path="detail" element={<ContractDetailPage />} />
-                <Route path="new" element={<ContractFormPage />} />
-                <Route path="edit" element={<ContractFormPage />} />
-              </Route>
-              
-              <Route path="documents">
-                <Route index element={<DocumentsPage />} />
-                <Route path="new" element={<DocumentFormPage />} />
-              </Route>
-              
-              <Route path="finances">
-                <Route index element={<FinancesPage />} />
-                <Route path="dashboard" element={<FinanceDashboardPage />} />
-                <Route path="expenses" element={<ExpensesPage />} />
-                <Route path="income" element={<IncomePage />} />
-                <Route path="reports" element={<ReportsPage />} />
-              </Route>
-              
-              <Route path="activities">
-                <Route index element={<ActivitiesPage />} />
-                <Route path="detail" element={<ActivityDetailPage />} />
-                <Route path="new" element={<ActivityFormPage />} />
-                <Route path="edit" element={<ActivityFormPage />} />
-              </Route>
-              
-              <Route path="users">
-                <Route index element={<UsersPage />} />
-                <Route path="detail" element={<UserDetailPage />} />
-                <Route path="invite" element={<UserInvitePage />} />
-              </Route>
-            </Route>
-            
-            {/* Protected Routes outside App Layout */}
-            <Route
-              path="/properties"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Properties />} />
-              <Route path="detail" element={<PropertyDetailPage />} />
-              <Route path="new" element={<PropertyFormPage />} />
-              <Route path="edit" element={<PropertyFormPage />} />
-              <Route path="roi-report" element={<PropertyRoiReportPage />} />
-            </Route>
-            
-            {/* Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="clients">
-                <Route index element={<ClientsPage />} />
-                <Route path="detail" element={<ClientDetailPage />} />
-                <Route path="new" element={<ClientFormPage />} />
-                <Route path="edit" element={<ClientFormPage />} />
-              </Route>
-            </Route>
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </BrowserRouter>
-      </AuthProvider>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        
+        {/* Protected Routes inside App Layout */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          
+          <Route path="properties">
+            <Route index element={<Navigate to="/properties" replace />} />
+          </Route>
+          
+          <Route path="contracts">
+            <Route index element={<ContractsPage />} />
+            <Route path="detail" element={<ContractDetailPage />} />
+            <Route path="new" element={<ContractFormPage />} />
+            <Route path="edit" element={<ContractFormPage />} />
+          </Route>
+          
+          <Route path="documents">
+            <Route index element={<DocumentsPage />} />
+            <Route path="new" element={<DocumentFormPage />} />
+          </Route>
+          
+          <Route path="finances">
+            <Route index element={<FinancesPage />} />
+            <Route path="dashboard" element={<FinanceDashboardPage />} />
+            <Route path="expenses" element={<ExpensesPage />} />
+            <Route path="income" element={<IncomePage />} />
+            <Route path="reports" element={<ReportsPage />} />
+          </Route>
+          
+          <Route path="activities">
+            <Route index element={<ActivitiesPage />} />
+            <Route path="detail" element={<ActivityDetailPage />} />
+            <Route path="new" element={<ActivityFormPage />} />
+            <Route path="edit" element={<ActivityFormPage />} />
+          </Route>
+          
+          <Route path="users">
+            <Route index element={<UsersPage />} />
+            <Route path="detail" element={<UserDetailPage />} />
+            <Route path="invite" element={<UserInvitePage />} />
+          </Route>
+        </Route>
+        
+        {/* Protected Routes outside App Layout */}
+        <Route
+          path="/properties"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Properties />} />
+          <Route path="detail" element={<PropertyDetailPage />} />
+          <Route path="new" element={<PropertyFormPage />} />
+          <Route path="edit" element={<PropertyFormPage />} />
+          <Route path="roi-report" element={<PropertyRoiReportPage />} />
+        </Route>
+        
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="clients">
+            <Route index element={<ClientsPage />} />
+            <Route path="detail" element={<ClientDetailPage />} />
+            <Route path="new" element={<ClientFormPage />} />
+            <Route path="edit" element={<ClientFormPage />} />
+          </Route>
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
     </ThemeProvider>
   );
 }

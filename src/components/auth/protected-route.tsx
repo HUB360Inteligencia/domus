@@ -27,6 +27,16 @@ export function ProtectedRoute({ children, requiredPermission, requiredRole }: P
       });
     }
   }, [requiredPermission, requiredRole, user]);
+  
+  // Debug auth state
+  useEffect(() => {
+    console.log("Protected route auth state:", {
+      isLoading,
+      hasUser: !!user,
+      hasSession: !!session,
+      pathname: location.pathname
+    });
+  }, [isLoading, user, session, location.pathname]);
 
   // Verificar se o token está expirado, mas só redirecionar se realmente estiver
   useEffect(() => {
