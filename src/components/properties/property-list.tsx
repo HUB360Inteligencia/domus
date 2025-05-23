@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMapView } from './property-map-view';
+import { MapDebugPanel } from './map-debug-panel';
 
 interface PropertyListProps {
   properties: Property[];
@@ -207,6 +208,9 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
           )}
         </div>
       )}
+
+      {/* Debug panel - only show in map view */}
+      {viewMode === 'map' && <MapDebugPanel />}
     </div>
   );
 }

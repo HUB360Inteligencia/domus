@@ -26,6 +26,7 @@ const notifyCallbacks = () => {
     isLoading: mapboxLoadState.isLoading,
     error: mapboxLoadState.error
   };
+  console.log('Mapbox state change:', state);
   mapboxLoadState.callbacks.forEach(callback => callback(state));
 };
 
@@ -37,16 +38,20 @@ export const useMapboxLoader = (): UseMapboxLoaderReturn => {
   });
 
   useEffect(() => {
+    console.log('useMapboxLoader: registering callback');
+    
     // Add callback to global state
     mapboxLoadState.callbacks.add(setState);
 
     // Start loading if not already started and not loaded
     if (!mapboxLoadState.isLoaded && !mapboxLoadState.isLoading) {
+      console.log('useMapboxLoader: starting mapbox load');
       loadMapbox();
     }
 
     // Cleanup
     return () => {
+      console.log('useMapboxLoader: removing callback');
       mapboxLoadState.callbacks.delete(setState);
     };
   }, []);
@@ -57,11 +62,25 @@ export const useMapboxLoader = (): UseMapboxLoaderReturn => {
 const loadMapbox = () => {
   // Check if already loaded
   if (window.mapboxgl) {
+    console.log('Mapbox already loaded from window');
     mapboxLoadState.isLoaded = true;
     notifyCallbacks();
     return;
   }
 
+  // Check if script already exists
+  const existingScript = document.querySelector('script[src*="mapbox-gl.js"]');
+  if (existingScript) {
+    console.log('Mapbox script already exists, waiting for load');
+    existingScript.addEventListener('load', () => {
+      mapboxLoadState.isLoaded = true;
+      mapboxLoadState.isLoading = false;
+      notifyCallbacks();
+    });
+    return;
+  }
+
+  console.log('Loading Mapbox script...');
   mapboxLoadState.isLoading = true;
   mapboxLoadState.error = null;
   notifyCallbacks();
@@ -70,11 +89,13 @@ const loadMapbox = () => {
   const script = document.createElement('script');
   script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
   script.onload = () => {
+    console.log('Mapbox script loaded successfully');
     mapboxLoadState.isLoaded = true;
     mapboxLoadState.isLoading = false;
     notifyCallbacks();
   };
-  script.onerror = () => {
+  script.onerror = (error) => {
+    console.error('Error loading Mapbox script:', error);
     mapboxLoadState.error = 'Erro ao carregar biblioteca do Mapbox';
     mapboxLoadState.isLoading = false;
     notifyCallbacks();
@@ -82,8 +103,12 @@ const loadMapbox = () => {
   document.head.appendChild(script);
 
   // Load CSS
-  const link = document.createElement('link');
-  link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-  link.rel = 'stylesheet';
-  document.head.appendChild(link);
+  const existingLink = document.querySelector('link[href*="mapbox-gl.css"]');
+  if (!existingLink) {
+    const link = document.createElement('link');
+    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    console.log('Mapbox CSS loaded');
+  }
 };

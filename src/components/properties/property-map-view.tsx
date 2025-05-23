@@ -1,9 +1,11 @@
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
+import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapIcon, Loader2, Building, Home, ShoppingBag, Mountain } from 'lucide-react';
+import { AlertCircle, MapIcon, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface PropertyMapViewProps {
@@ -15,28 +17,29 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  const { getTokenForContext, isTokenLoading } = useMapbox();
+  const { getTokenForContext, getStyleForContext, isTokenLoading } = useMapbox();
+  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
 
-  // Get specific token for property list context
+  // Get specific token and style for property list context
   const token = getTokenForContext('mapbox_token_property_list');
+  const mapStyle = getStyleForContext('mapbox_style_property_list');
+
+  console.log('PropertyMapView render:', { 
+    token: !!token, 
+    mapboxLoaded, 
+    mapboxLoading, 
+    mapboxError,
+    propertiesCount: properties.length 
+  });
 
   // Memoize properties to prevent unnecessary re-renders
-  const memoizedProperties = useMemo(() => properties, [
-    properties.length,
-    // Use a stable representation of properties to prevent re-renders
-    JSON.stringify(properties.map(p => ({
-      id: p.id,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      status: p.status,
-      value: p.value
-    })))
-  ]);
+  const memoizedProperties = useMemo(() => {
+    console.log('Memoizing properties:', properties.length);
+    return properties.filter(p => p.latitude && p.longitude);
+  }, [properties.length]);
 
   // Property type icons mapping
   const getPropertyIcon = (type: string) => {
@@ -53,72 +56,39 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   // Property status colors
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return '#10b981'; // green
-      case 'rented': return '#3b82f6'; // blue
-      case 'airbnb': return '#ef4444'; // red
-      case 'maintenance': return '#f59e0b'; // amber
-      case 'sold': return '#8b5cf6'; // purple
-      default: return '#6b7280'; // gray
+      case 'available': return '#10b981';
+      case 'rented': return '#3b82f6';
+      case 'airbnb': return '#ef4444';
+      case 'maintenance': return '#f59e0b';
+      case 'sold': return '#8b5cf6';
+      default: return '#6b7280';
     }
   };
 
-  // Load Mapbox script dynamically
-  useEffect(() => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-    
-    // Skip if already loaded
-    if (window.mapboxgl) {
-      setMapLoaded(true);
-      setIsLoading(false);
-      return;
-    }
-
-    const loadMapboxScript = () => {
-      const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-      script.onload = () => {
-        setMapLoaded(true);
-        setIsLoading(false);
-      };
-      script.onerror = () => {
-        setError('Erro ao carregar biblioteca do Mapbox');
-        setIsLoading(false);
-      };
-      document.head.appendChild(script);
-
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    };
-
-    loadMapboxScript();
-  }, [token]);
-
   // Initialize map
   useEffect(() => {
-    if (!mapLoaded || !token || !mapContainer.current || !window.mapboxgl) return;
+    if (!mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl) {
+      console.log('Map initialization skipped:', { mapboxLoaded, token: !!token, container: !!mapContainer.current, mapboxgl: !!window.mapboxgl });
+      return;
+    }
 
-    if (mapRef.current) return; // Skip if map already initialized
+    if (mapRef.current) {
+      console.log('Map already initialized');
+      return;
+    }
 
     try {
+      console.log('Initializing map with token and style:', { token: token.substring(0, 20) + '...', mapStyle });
+      
       window.mapboxgl.accessToken = token;
       
       // Calculate bounds for all properties with coordinates
-      const propertiesWithCoords = memoizedProperties.filter(p => p.latitude && p.longitude);
+      const propertiesWithCoords = memoizedProperties;
       
       let center = [-46.633308, -23.550520]; // Default to São Paulo
       let zoom = 10;
       
       if (propertiesWithCoords.length > 0) {
-        const bounds = new window.mapboxgl.LngLatBounds();
-        propertiesWithCoords.forEach(property => {
-          bounds.extend([property.longitude!, property.latitude!]);
-        });
-        
         // If only one property, center on it
         if (propertiesWithCoords.length === 1) {
           center = [propertiesWithCoords[0].longitude!, propertiesWithCoords[0].latitude!];
@@ -128,7 +98,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
 
       mapRef.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12', // Optimized for property listing
+        style: mapStyle,
         center,
         zoom,
         attributionControl: true
@@ -150,6 +120,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
         });
       }
 
+      console.log('Map initialized successfully');
       setError(null);
     } catch (err) {
       console.error('Error initializing map:', err);
@@ -158,23 +129,29 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
 
     // Cleanup on unmount
     return () => {
-      if (mapRef.current) mapRef.current.remove();
-      mapRef.current = null;
+      if (mapRef.current) {
+        console.log('Cleaning up map');
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
-  }, [mapLoaded, token, memoizedProperties]);
+  }, [mapboxLoaded, token, mapStyle, memoizedProperties]);
 
   // Update markers when properties change
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
+    if (!mapRef.current || !mapboxLoaded) return;
+
+    console.log('Updating markers for', memoizedProperties.length, 'properties');
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current.forEach(marker => {
+      if (marker.cleanupListeners) marker.cleanupListeners();
+      marker.remove();
+    });
     markersRef.current = [];
 
     // Add markers for properties with coordinates
     memoizedProperties.forEach(property => {
-      if (!property.latitude || !property.longitude) return;
-
       // Create custom marker element
       const markerElement = document.createElement('div');
       markerElement.className = 'custom-marker';
@@ -210,7 +187,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
 
       // Create marker
       const marker = new window.mapboxgl.Marker(markerElement)
-        .setLngLat([property.longitude, property.latitude])
+        .setLngLat([property.longitude!, property.latitude!])
         .addTo(mapRef.current);
 
       // Create popup content
@@ -272,7 +249,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       });
       markersRef.current = [];
     };
-  }, [mapLoaded, mapRef.current, memoizedProperties, onSelect]);
+  }, [mapboxLoaded, mapRef.current, memoizedProperties, onSelect]);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -285,12 +262,29 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     }
   };
 
-  if (isTokenLoading || isLoading) {
+  if (isTokenLoading || mapboxLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4">
           <Loader2 className="mx-auto h-10 w-10 text-primary animate-spin mb-2" />
           <p className="text-muted-foreground">Carregando mapa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (mapboxError) {
+    return (
+      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
+        <div className="text-center p-4">
+          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
+          <p className="text-muted-foreground mb-4">{mapboxError}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+          >
+            Tentar novamente
+          </Button>
         </div>
       </div>
     );
@@ -312,9 +306,6 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
             isOpen={tokenDialogOpen} 
             onClose={() => setTokenDialogOpen(false)} 
           />
-          <div className="mt-4 text-xs text-muted-foreground">
-            <p>Administradores podem configurar tokens específicos nas configurações.</p>
-          </div>
         </div>
       </div>
     );
@@ -351,8 +342,8 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     );
   }
 
-  const propertiesWithCoords = memoizedProperties.filter(p => p.latitude && p.longitude);
-  const propertiesWithoutCoords = memoizedProperties.length - propertiesWithCoords.length;
+  const propertiesWithCoords = memoizedProperties;
+  const propertiesWithoutCoords = properties.length - propertiesWithCoords.length;
 
   return (
     <div className="relative h-full">
