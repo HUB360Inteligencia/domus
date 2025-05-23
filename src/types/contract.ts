@@ -11,6 +11,9 @@ export interface Contract {
     address?: string;
     city?: string;
     state?: string;
+    neighborhood?: string;
+    type?: string;
+    tags?: string[];
   };
   tenant_name: string;
   tenant_document: string | null;

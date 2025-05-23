@@ -16,9 +16,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, MoreHorizontal, Download, Eye, Pencil, Trash2 } from "lucide-react";
+import { FileText, MoreHorizontal, Download, Eye, Pencil, Trash2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Contract } from "@/types/contract";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 // Configuration for status badges
 const statusConfig = {
@@ -38,6 +49,10 @@ const statusConfig = {
     label: "Cancelado",
     variant: "bg-gray-500/10 text-gray-500",
   },
+  draft: {
+    label: "Rascunho",
+    variant: "bg-blue-500/10 text-blue-500",
+  }
 };
 
 interface ContractListProps {
@@ -73,14 +88,26 @@ export function ContractList({
   const contractsWithDisplayName = useMemo(() => {
     return contracts.map(contract => {
       let propertyName = "";
+      let propertyLocation = "";
       
       if (contract.property) {
         propertyName = contract.property.title || "";
+        
+        // Build property location string
+        const locationParts = [];
+        if (contract.property.neighborhood) {
+          locationParts.push(contract.property.neighborhood);
+        }
+        if (contract.property.city) {
+          locationParts.push(contract.property.city);
+        }
+        propertyLocation = locationParts.join(", ");
       }
       
       return {
         ...contract,
-        propertyName
+        propertyName,
+        propertyLocation
       };
     });
   }, [contracts]);
@@ -104,7 +131,7 @@ export function ContractList({
         <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-medium">Nenhum contrato encontrado</h3>
         <p className="text-muted-foreground">
-          Você ainda não criou nenhum contrato. Crie seu primeiro contrato agora.
+          Você ainda não criou nenhum contrato ou os filtros aplicados não retornaram resultados.
         </p>
       </div>
     );
@@ -133,7 +160,17 @@ export function ContractList({
                   <span className="font-medium">{contract.title}</span>
                 </div>
               </TableCell>
-              <TableCell>{contract.propertyName || "-"}</TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span>{contract.propertyName || "-"}</span>
+                  {contract.propertyLocation && (
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <MapPin className="mr-1 h-3 w-3" />
+                      <span>{contract.propertyLocation}</span>
+                    </div>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{contract.tenant_name || "-"}</TableCell>
               <TableCell>
                 <div className="text-sm">
@@ -177,13 +214,34 @@ export function ContractList({
                       </DropdownMenuItem>
                     )}
                     {onDelete && (
-                      <DropdownMenuItem 
-                        onClick={() => onDelete(contract.id)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Excluir</span>
-                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem 
+                            className="text-red-600 focus:text-red-600"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Excluir</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir contrato</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => onDelete(contract.id)} 
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>

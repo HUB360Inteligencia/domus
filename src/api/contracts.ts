@@ -1,7 +1,4 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Contract, ContractFormData, ContractStatus, SignatureStatus } from "@/types/contract";
-
 /**
  * Fetches all contracts for the current user
  */
@@ -17,7 +14,18 @@ export const fetchContracts = async (): Promise<Contract[]> => {
 
     const { data, error } = await supabase
       .from('contracts')
-      .select('*, property:properties(title, address, city, state)')
+      .select(`
+        *,
+        property:properties(
+          title, 
+          address, 
+          city, 
+          state, 
+          neighborhood, 
+          type,
+          tags
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -55,7 +63,18 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
 
     const { data, error } = await supabase
       .from('contracts')
-      .select('*, property:properties(title, address, city, state)')
+      .select(`
+        *,
+        property:properties(
+          title, 
+          address, 
+          city, 
+          state, 
+          neighborhood, 
+          type,
+          tags
+        )
+      `)
       .eq('id', id)
       .single();
 

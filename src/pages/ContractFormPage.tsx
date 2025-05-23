@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractFormData } from '@/types/contract';
 import { Loader2 } from 'lucide-react';
@@ -10,6 +10,8 @@ import { ContractForm } from '@/components/contracts/contract-form';
 export default function ContractFormPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams();
+  
   const [contractId, setContractId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   
@@ -31,13 +33,20 @@ export default function ContractFormPage() {
   }, [setSelectedContractId]);
 
   useEffect(() => {
-    // Check if we're in edit mode by looking for an ID in the URL
-    const params = new URLSearchParams(location.search);
-    const id = params.get('id');
-    if (id) {
-      console.log('Edit mode detected for contract ID:', id);
-      setContractId(id);
-      loadContractData(id);
+    // Check if we're in edit mode by looking for an ID in the URL params or query params
+    // First check route params (/:id/edit)
+    const id = params.id;
+    
+    // If not in params, check query string (?id=...)
+    const queryParams = new URLSearchParams(location.search);
+    const queryId = queryParams.get('id');
+    
+    const contractIdToUse = id || queryId;
+    
+    if (contractIdToUse) {
+      console.log('Edit mode detected for contract ID:', contractIdToUse);
+      setContractId(contractIdToUse);
+      loadContractData(contractIdToUse);
       setIsEditMode(true);
     } else {
       console.log('Create mode detected');
@@ -46,7 +55,7 @@ export default function ContractFormPage() {
       // Reset selected contract when in create mode
       setSelectedContractId(null);
     }
-  }, [location.search, loadContractData, setSelectedContractId]);
+  }, [location.search, loadContractData, params.id, setSelectedContractId]);
 
   // Debug log to track selectedContract changes
   useEffect(() => {
