@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 
@@ -38,6 +39,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import ClientsPage from "./pages/admin/ClientsPage";
 import ClientDetailPage from "./pages/admin/ClientDetailPage";
 import ClientFormPage from "./pages/admin/ClientFormPage";
+import SettingsPage from "./pages/admin/SettingsPage";
 
 // Layouts
 import { AppLayout } from "./components/layout/app-layout";
@@ -93,7 +95,7 @@ function App() {
           <Route path="/users/invite" element={<UserInvitePage />} />
           <Route path="/finances" element={<FinancesPage />} />
           
-          {/* Novas rotas para as subseções de finanças */}
+          {/* Rotas para as subseções de finanças */}
           <Route path="/finances/dashboard" element={<FinanceDashboardPage />} />
           <Route path="/finances/expenses" element={<ExpensesPage />} />
           <Route path="/finances/income" element={<IncomePage />} />
@@ -112,6 +114,7 @@ function App() {
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/:id" element={<ClientDetailPage />} />
           <Route path="clients/new" element={<ClientFormPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />

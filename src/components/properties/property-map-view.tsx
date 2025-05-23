@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
@@ -22,6 +22,19 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const [isLoading, setIsLoading] = useState(true);
   
   const { token, isLoading: isTokenLoading } = useMapbox();
+
+  // Memoize properties to prevent unnecessary re-renders
+  const memoizedProperties = useMemo(() => properties, [
+    properties.length,
+    // Use a stable representation of properties to prevent re-renders
+    JSON.stringify(properties.map(p => ({
+      id: p.id,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      status: p.status,
+      value: p.value
+    })))
+  ]);
 
   // Property type icons mapping
   const getPropertyIcon = (type: string) => {
@@ -54,13 +67,14 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       return;
     }
     
-    const loadMapboxScript = () => {
-      if (window.mapboxgl) {
-        setMapLoaded(true);
-        setIsLoading(false);
-        return;
-      }
+    // Skip if already loaded
+    if (window.mapboxgl) {
+      setMapLoaded(true);
+      setIsLoading(false);
+      return;
+    }
 
+    const loadMapboxScript = () => {
       const script = document.createElement('script');
       script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
       script.onload = () => {
@@ -86,11 +100,13 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   useEffect(() => {
     if (!mapLoaded || !token || !mapContainer.current || !window.mapboxgl) return;
 
+    if (mapRef.current) return; // Skip if map already initialized
+
     try {
       window.mapboxgl.accessToken = token;
       
       // Calculate bounds for all properties with coordinates
-      const propertiesWithCoords = properties.filter(p => p.latitude && p.longitude);
+      const propertiesWithCoords = memoizedProperties.filter(p => p.latitude && p.longitude);
       
       let center = [-46.633308, -23.550520]; // Default to São Paulo
       let zoom = 10;
@@ -141,8 +157,9 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     // Cleanup on unmount
     return () => {
       if (mapRef.current) mapRef.current.remove();
+      mapRef.current = null;
     };
-  }, [mapLoaded, token, properties]);
+  }, [mapLoaded, token, memoizedProperties]);
 
   // Update markers when properties change
   useEffect(() => {
@@ -153,7 +170,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     markersRef.current = [];
 
     // Add markers for properties with coordinates
-    properties.forEach(property => {
+    memoizedProperties.forEach(property => {
       if (!property.latitude || !property.longitude) return;
 
       // Create custom marker element
@@ -176,15 +193,18 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       markerElement.innerHTML = getPropertyIcon(property.type);
       
       // Hover effect
-      markerElement.addEventListener('mouseenter', () => {
+      const mouseEnterListener = () => {
         markerElement.style.transform = 'scale(1.2)';
         markerElement.style.zIndex = '1000';
-      });
+      };
       
-      markerElement.addEventListener('mouseleave', () => {
+      const mouseLeaveListener = () => {
         markerElement.style.transform = 'scale(1)';
         markerElement.style.zIndex = 'auto';
-      });
+      };
+      
+      markerElement.addEventListener('mouseenter', mouseEnterListener);
+      markerElement.addEventListener('mouseleave', mouseLeaveListener);
 
       // Create marker
       const marker = new window.mapboxgl.Marker(markerElement)
@@ -231,12 +251,26 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       marker.setPopup(popup);
 
       markersRef.current.push(marker);
+      
+      // Store cleanup functions for the marker
+      marker.cleanupListeners = () => {
+        markerElement.removeEventListener('mouseenter', mouseEnterListener);
+        markerElement.removeEventListener('mouseleave', mouseLeaveListener);
+      };
     });
 
     // Make selectProperty available globally for popup buttons
     (window as any).selectProperty = onSelect;
 
-  }, [properties, mapLoaded, onSelect]);
+    // Clean up event listeners
+    return () => {
+      markersRef.current.forEach(marker => {
+        if (marker.cleanupListeners) marker.cleanupListeners();
+        marker.remove();
+      });
+      markersRef.current = [];
+    };
+  }, [mapLoaded, mapRef.current, memoizedProperties, onSelect]);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -267,15 +301,18 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
           <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
           <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa das propriedades, é necessário configurar um token de acesso do Mapbox.
+            Para exibir o mapa das propriedades, é necessário configurar um token de acesso do Mapbox na área administrativa.
           </p>
-          <Button onClick={() => setTokenDialogOpen(true)}>
-            Configurar Token Mapbox
+          <Button onClick={() => setTokenDialogOpen(true)} variant="outline">
+            Configurar Token Temporário
           </Button>
           <MapboxTokenDialog 
             isOpen={tokenDialogOpen} 
             onClose={() => setTokenDialogOpen(false)} 
           />
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p>Administradores devem configurar o token na página de configurações.</p>
+          </div>
         </div>
       </div>
     );
@@ -312,8 +349,8 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     );
   }
 
-  const propertiesWithCoords = properties.filter(p => p.latitude && p.longitude);
-  const propertiesWithoutCoords = properties.length - propertiesWithCoords.length;
+  const propertiesWithCoords = memoizedProperties.filter(p => p.latitude && p.longitude);
+  const propertiesWithoutCoords = memoizedProperties.length - propertiesWithCoords.length;
 
   return (
     <div className="relative h-full">

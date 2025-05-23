@@ -161,7 +161,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/settings">
+                  <Link to="/admin/settings">
                     <Settings className="h-5 w-5 mr-2" />
                     Configurações
                   </Link>
