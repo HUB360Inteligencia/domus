@@ -32,7 +32,7 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <PageHeader 
-        heading="Configurações do Sistema" 
+        title="Configurações do Sistema" 
         description="Gerencie as configurações globais do sistema."
       />
       
