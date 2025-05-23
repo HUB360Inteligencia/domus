@@ -18,6 +18,7 @@ interface PropertyMapProps {
   editable?: boolean;
   onCoordsChange?: (coords: { lat: number; lng: number }) => void;
   className?: string;
+  mapType?: 'detail' | '3d'; // New prop to choose map type
 }
 
 export function PropertyMap({ 
@@ -30,7 +31,8 @@ export function PropertyMap({
   initialCoords,
   editable = false,
   onCoordsChange,
-  className = '' 
+  className = '',
+  mapType = 'detail' // Default to detail view
 }: PropertyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -42,7 +44,12 @@ export function PropertyMap({
   const [isLocating, setIsLocating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
-  const { token, isLoading: isTokenLoading } = useMapbox();
+  const { getTokenForContext, isTokenLoading } = useMapbox();
+  
+  // Get appropriate token based on map type
+  const tokenType = mapType === '3d' ? 'mapbox_token_property_3d' : 'mapbox_token_property_detail';
+  const token = getTokenForContext(tokenType);
+  
   // Create a full address string that includes property number and complement
   const fullAddress = `${address}${property_number ? `, ${property_number}` : ''}${complement ? `, ${complement}` : ''}, ${city}, ${state}`;
 
@@ -107,11 +114,18 @@ export function PropertyMap({
       // Initialize the map
       window.mapboxgl.accessToken = token;
       
+      const mapStyle = mapType === '3d' 
+        ? 'mapbox://styles/mapbox/streets-v12' 
+        : 'mapbox://styles/mapbox/satellite-streets-v12';
+      
+      const initialPitch = mapType === '3d' ? 45 : 0;
+      
       mapRef.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: mapStyle,
         center: [coordinates.lng, coordinates.lat],
         zoom: 15,
+        pitch: initialPitch,
         attributionControl: true
       });
 
@@ -174,7 +188,7 @@ export function PropertyMap({
       console.error('Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-  }, [mapLoaded, coordinates, token, fullAddress, editable, propertyId, onCoordsChange]);
+  }, [mapLoaded, coordinates, token, fullAddress, editable, propertyId, onCoordsChange, mapType]);
 
   const handleRefreshLocation = async () => {
     if (!token) return;
@@ -230,13 +244,14 @@ export function PropertyMap({
   }
 
   if (!token) {
+    const mapTypeLabel = mapType === '3d' ? 'Visualização 3D' : 'Detalhes do Imóvel';
     return (
       <div className={`flex items-center justify-center h-64 bg-muted rounded-lg ${className}`}>
         <div className="text-center p-4 max-w-md">
           <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
           <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa da localização do imóvel, é necessário configurar um token de acesso do Mapbox.
+            Para exibir o mapa "{mapTypeLabel}", configure o token correspondente nas configurações do sistema.
           </p>
           <Button onClick={() => setTokenDialogOpen(true)}>
             Configurar Token Mapbox

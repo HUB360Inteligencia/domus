@@ -3,13 +3,14 @@ import { useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapboxConfig } from "@/components/admin/mapbox-config";
+import { MultiMapboxConfig } from "@/components/admin/multi-mapbox-config";
 import { useAuth } from "@/lib/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("mapbox");
+  const [activeTab, setActiveTab] = useState("mapbox-multi");
   const { user } = useAuth();
   
   // Verificar se o usuário é admin
@@ -38,8 +39,11 @@ export default function SettingsPage() {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full md:w-auto">
-          <TabsTrigger value="mapbox" className="flex items-center gap-2">
-            Mapbox
+          <TabsTrigger value="mapbox-multi" className="flex items-center gap-2">
+            Mapbox Multi-Token
+          </TabsTrigger>
+          <TabsTrigger value="mapbox-legacy" className="flex items-center gap-2">
+            Mapbox (Legacy)
           </TabsTrigger>
           <TabsTrigger value="general" className="flex items-center gap-2">
             Geral
@@ -50,12 +54,25 @@ export default function SettingsPage() {
         </TabsList>
         
         <div className="mt-6">
-          <TabsContent value="mapbox" className="mt-0">
+          <TabsContent value="mapbox-multi" className="mt-0">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium">Configuração do Mapbox</h3>
+                <h3 className="text-lg font-medium">Configuração Multi-Token Mapbox</h3>
                 <p className="text-sm text-muted-foreground">
-                  Configure o token de acesso da API Mapbox para exibir mapas no sistema.
+                  Configure tokens específicos para diferentes contextos de mapas no sistema.
+                </p>
+              </div>
+              <Separator />
+              <MultiMapboxConfig />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mapbox-legacy" className="mt-0">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium">Configuração Mapbox (Legacy)</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configuração do token único para compatibilidade com versões anteriores.
                 </p>
               </div>
               <Separator />

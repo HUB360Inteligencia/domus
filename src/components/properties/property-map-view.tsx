@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
@@ -21,7 +20,10 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  const { token, isLoading: isTokenLoading } = useMapbox();
+  const { getTokenForContext, isTokenLoading } = useMapbox();
+
+  // Get specific token for property list context
+  const token = getTokenForContext('mapbox_token_property_list');
 
   // Memoize properties to prevent unnecessary re-renders
   const memoizedProperties = useMemo(() => properties, [
@@ -126,7 +128,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
 
       mapRef.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/mapbox/streets-v12', // Optimized for property listing
         center,
         zoom,
         attributionControl: true
@@ -301,7 +303,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
           <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
           <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa das propriedades, é necessário configurar um token de acesso do Mapbox na área administrativa.
+            Para exibir o mapa das propriedades, configure o token "Listagem de Imóveis" nas configurações do sistema.
           </p>
           <Button onClick={() => setTokenDialogOpen(true)} variant="outline">
             Configurar Token Temporário
@@ -311,7 +313,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
             onClose={() => setTokenDialogOpen(false)} 
           />
           <div className="mt-4 text-xs text-muted-foreground">
-            <p>Administradores devem configurar o token na página de configurações.</p>
+            <p>Administradores podem configurar tokens específicos nas configurações.</p>
           </div>
         </div>
       </div>
