@@ -246,6 +246,7 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
         end_date,
         value,
         payment_day,
+        payment_due_day,
         deposit_value,
         status,
         terms,
@@ -256,7 +257,16 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
         created_at,
         updated_at,
         user_id,
-        signature_status
+        signature_status,
+        has_variable_rent,
+        variable_rent_values,
+        on_time_discount_percentage,
+        late_fee_percentage,
+        is_discount_not_fee,
+        late_interest_percentage,
+        late_daily_interest,
+        fine_percentage,
+        payment_terms
       `)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -275,17 +285,16 @@ export async function fetchRecentContracts(): Promise<Contract[]> {
       ...item,
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
-      // Add default values for new fields that might not yet exist in the database
-      has_variable_rent: false,
-      variable_rent_values: null,
-      payment_due_day: item.payment_day,
-      on_time_discount_percentage: null,
-      late_fee_percentage: null,
-      is_discount_not_fee: true,
-      late_interest_percentage: null,
-      late_daily_interest: null,
-      fine_percentage: null,
-      payment_terms: null
+      has_variable_rent: item.has_variable_rent ?? false,
+      variable_rent_values: item.variable_rent_values ?? null,
+      payment_due_day: item.payment_due_day ?? item.payment_day,
+      on_time_discount_percentage: item.on_time_discount_percentage ?? null,
+      late_fee_percentage: item.late_fee_percentage ?? null,
+      is_discount_not_fee: item.is_discount_not_fee ?? true,
+      late_interest_percentage: item.late_interest_percentage ?? null,
+      late_daily_interest: item.late_daily_interest ?? null,
+      fine_percentage: item.fine_percentage ?? null,
+      payment_terms: item.payment_terms ?? null
     }));
   } catch (err) {
     console.error('Error in fetchRecentContracts:', err);

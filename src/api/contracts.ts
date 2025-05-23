@@ -46,17 +46,17 @@ export const fetchContracts = async (): Promise<Contract[]> => {
       ...item,
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
-      // Add default values for new fields that might not exist in the database yet
-      has_variable_rent: false,
-      variable_rent_values: null,
-      payment_due_day: item.payment_day,
-      on_time_discount_percentage: null,
-      late_fee_percentage: null,
-      is_discount_not_fee: true,
-      late_interest_percentage: null,
-      late_daily_interest: null,
-      fine_percentage: null,
-      payment_terms: null
+      // Add default values for fields that might not exist in the database yet
+      has_variable_rent: item.has_variable_rent ?? false,
+      variable_rent_values: item.variable_rent_values ?? null,
+      payment_due_day: item.payment_due_day ?? item.payment_day,
+      on_time_discount_percentage: item.on_time_discount_percentage ?? null,
+      late_fee_percentage: item.late_fee_percentage ?? null,
+      is_discount_not_fee: item.is_discount_not_fee ?? true,
+      late_interest_percentage: item.late_interest_percentage ?? null,
+      late_daily_interest: item.late_daily_interest ?? null,
+      fine_percentage: item.fine_percentage ?? null,
+      payment_terms: item.payment_terms ?? null
     }));
   } catch (err) {
     console.error('Failed to fetch contracts:', err);
@@ -111,17 +111,17 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       ...data,
       status: data.status as ContractStatus,
       signature_status: data.signature_status as SignatureStatus,
-      // Add default values for new fields that might not exist in the database yet
-      has_variable_rent: false,
-      variable_rent_values: null,
-      payment_due_day: data.payment_day,
-      on_time_discount_percentage: null,
-      late_fee_percentage: null,
-      is_discount_not_fee: true,
-      late_interest_percentage: null,
-      late_daily_interest: null,
-      fine_percentage: null,
-      payment_terms: null
+      // Add default values for new fields
+      has_variable_rent: data.has_variable_rent ?? false,
+      variable_rent_values: data.variable_rent_values ?? null,
+      payment_due_day: data.payment_due_day ?? data.payment_day,
+      on_time_discount_percentage: data.on_time_discount_percentage ?? null,
+      late_fee_percentage: data.late_fee_percentage ?? null,
+      is_discount_not_fee: data.is_discount_not_fee ?? true,
+      late_interest_percentage: data.late_interest_percentage ?? null,
+      late_daily_interest: data.late_daily_interest ?? null,
+      fine_percentage: data.fine_percentage ?? null,
+      payment_terms: data.payment_terms ?? null
     };
   } catch (err) {
     console.error(`Failed to fetch contract ${id}:`, err);
@@ -217,7 +217,7 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     ...updatedData,
     status: updatedData.status as ContractStatus,
     signature_status: updatedData.signature_status as SignatureStatus,
-    // Add default values for new fields that might not exist in the database yet
+    // Add default values for new fields
     has_variable_rent: updatedData.has_variable_rent ?? false,
     variable_rent_values: updatedData.variable_rent_values ?? null,
     payment_due_day: updatedData.payment_due_day ?? updatedData.payment_day,
@@ -399,7 +399,7 @@ export const updateContractStatus = async (
     ...data,
     status: data.status as ContractStatus,
     signature_status: data.signature_status as SignatureStatus,
-    // Add default values for new fields that might not exist in the database yet
+    // Add default values for new fields
     has_variable_rent: data.has_variable_rent ?? false,
     variable_rent_values: data.variable_rent_values ?? null,
     payment_due_day: data.payment_due_day ?? data.payment_day,
@@ -440,7 +440,7 @@ export const updateSignatureStatus = async (
     ...data,
     status: data.status as ContractStatus,
     signature_status: data.signature_status as SignatureStatus,
-    // Add default values for new fields that might not exist in the database yet
+    // Add default values for new fields
     has_variable_rent: data.has_variable_rent ?? false,
     variable_rent_values: data.variable_rent_values ?? null,
     payment_due_day: data.payment_due_day ?? data.payment_day,

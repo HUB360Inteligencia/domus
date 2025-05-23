@@ -301,9 +301,18 @@ export type Database = {
           deposit_value: number | null
           document_url: string | null
           end_date: string
+          fine_percentage: number | null
           has_renewal_option: boolean | null
+          has_variable_rent: boolean | null
           id: string
+          is_discount_not_fee: boolean | null
+          late_daily_interest: number | null
+          late_fee_percentage: number | null
+          late_interest_percentage: number | null
+          on_time_discount_percentage: number | null
           payment_day: number
+          payment_due_day: number | null
+          payment_terms: string | null
           property_id: string | null
           renewal_terms: string | null
           signature_status: string | null
@@ -318,6 +327,7 @@ export type Database = {
           updated_at: string
           user_id: string
           value: number
+          variable_rent_values: Json | null
         }
         Insert: {
           client_id?: string | null
@@ -325,9 +335,18 @@ export type Database = {
           deposit_value?: number | null
           document_url?: string | null
           end_date: string
+          fine_percentage?: number | null
           has_renewal_option?: boolean | null
+          has_variable_rent?: boolean | null
           id?: string
+          is_discount_not_fee?: boolean | null
+          late_daily_interest?: number | null
+          late_fee_percentage?: number | null
+          late_interest_percentage?: number | null
+          on_time_discount_percentage?: number | null
           payment_day: number
+          payment_due_day?: number | null
+          payment_terms?: string | null
           property_id?: string | null
           renewal_terms?: string | null
           signature_status?: string | null
@@ -342,6 +361,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           value: number
+          variable_rent_values?: Json | null
         }
         Update: {
           client_id?: string | null
@@ -349,9 +369,18 @@ export type Database = {
           deposit_value?: number | null
           document_url?: string | null
           end_date?: string
+          fine_percentage?: number | null
           has_renewal_option?: boolean | null
+          has_variable_rent?: boolean | null
           id?: string
+          is_discount_not_fee?: boolean | null
+          late_daily_interest?: number | null
+          late_fee_percentage?: number | null
+          late_interest_percentage?: number | null
+          on_time_discount_percentage?: number | null
           payment_day?: number
+          payment_due_day?: number | null
+          payment_terms?: string | null
           property_id?: string | null
           renewal_terms?: string | null
           signature_status?: string | null
@@ -366,6 +395,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           value?: number
+          variable_rent_values?: Json | null
         }
         Relationships: [
           {
