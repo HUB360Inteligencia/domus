@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
   vacancyRate 
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [occupancyType, setOccupancyType] = useState<OccupancyType>('rented');
+  const [occupancyType, setOccupancyType] = useState<OccupancyType>(OccupancyType.RENTED);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState('');
   const [tenantName, setTenantName] = useState('');
@@ -43,7 +42,7 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
   } = usePropertyOccupancy(propertyId);
 
   const resetForm = () => {
-    setOccupancyType('rented');
+    setOccupancyType(OccupancyType.RENTED);
     setStartDate(format(new Date(), 'yyyy-MM-dd'));
     setEndDate('');
     setTenantName('');
@@ -151,10 +150,10 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
                         <SelectValue placeholder="Selecione o tipo de ocupação" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="rented">Alugado</SelectItem>
-                        <SelectItem value="airbnb">Airbnb</SelectItem>
-                        <SelectItem value="owner_occupied">Ocupado pelo Proprietário</SelectItem>
-                        <SelectItem value="vacant">Vago</SelectItem>
+                        <SelectItem value={OccupancyType.RENTED}>Alugado</SelectItem>
+                        <SelectItem value={OccupancyType.AIRBNB}>Airbnb</SelectItem>
+                        <SelectItem value={OccupancyType.OWNER_OCCUPIED}>Ocupado pelo Proprietário</SelectItem>
+                        <SelectItem value={OccupancyType.VACANT}>Vago</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

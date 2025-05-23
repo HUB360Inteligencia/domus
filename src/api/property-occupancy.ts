@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyOccupancy, PropertyOccupancyFormData, OccupancyType } from '@/types/property-occupancy';
 import { differenceInCalendarDays } from 'date-fns';
@@ -20,7 +19,11 @@ export const fetchPropertyOccupancy = async (propertyId: string): Promise<Proper
     }
 
     // Cast the data to ensure it matches the PropertyOccupancy[] type
-    return (data as unknown as PropertyOccupancy[]) || [];
+    // Convert string occupancy_type to OccupancyType enum
+    return (data?.map(item => ({
+      ...item,
+      occupancy_type: item.occupancy_type as OccupancyType
+    })) as PropertyOccupancy[]) || [];
   } catch (err) {
     console.error('Failed to fetch property occupancy periods:', err);
     throw err;

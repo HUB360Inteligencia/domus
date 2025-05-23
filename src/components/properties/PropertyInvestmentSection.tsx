@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ interface PropertyInvestmentSectionProps {
 
 export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps> = ({ propertyId }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [investmentType, setInvestmentType] = useState<InvestmentType>('purchase');
+  const [investmentType, setInvestmentType] = useState<InvestmentType>(InvestmentType.PURCHASE);
   const [amount, setAmount] = useState('');
   const [investmentDate, setInvestmentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [description, setDescription] = useState('');
@@ -44,7 +43,7 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
   };
 
   const resetForm = () => {
-    setInvestmentType('purchase');
+    setInvestmentType(InvestmentType.PURCHASE);
     setAmount('');
     setInvestmentDate(format(new Date(), 'yyyy-MM-dd'));
     setDescription('');
@@ -130,12 +129,12 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
                       <SelectValue placeholder="Selecione o tipo de investimento" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="purchase">Compra</SelectItem>
-                      <SelectItem value="renovation">Reforma</SelectItem>
-                      <SelectItem value="furniture">Mobília</SelectItem>
-                      <SelectItem value="taxes">Impostos</SelectItem>
-                      <SelectItem value="maintenance">Manutenção</SelectItem>
-                      <SelectItem value="other">Outro</SelectItem>
+                      <SelectItem value={InvestmentType.PURCHASE}>Compra</SelectItem>
+                      <SelectItem value={InvestmentType.RENOVATION}>Reforma</SelectItem>
+                      <SelectItem value={InvestmentType.FURNITURE}>Mobília</SelectItem>
+                      <SelectItem value={InvestmentType.TAXES}>Impostos</SelectItem>
+                      <SelectItem value={InvestmentType.MAINTENANCE}>Manutenção</SelectItem>
+                      <SelectItem value={InvestmentType.OTHER}>Outro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

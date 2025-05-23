@@ -19,7 +19,11 @@ export const fetchPropertyInvestments = async (propertyId: string): Promise<Prop
     }
 
     // Cast the data to ensure it matches the PropertyInvestment[] type
-    return (data as unknown as PropertyInvestment[]) || [];
+    // Convert string investment_type to InvestmentType enum
+    return (data?.map(item => ({
+      ...item,
+      investment_type: item.investment_type as InvestmentType
+    })) as PropertyInvestment[]) || [];
   } catch (err) {
     console.error('Failed to fetch property investments:', err);
     throw err;
