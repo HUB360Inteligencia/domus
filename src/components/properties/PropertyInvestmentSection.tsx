@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -94,145 +95,149 @@ export const PropertyInvestmentSection = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="marketValue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor de Mercado</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="R$ 0,00"
-                      {...field}
-                      value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                        e.target.value = rawValue;
-                      }}
-                      onBlur={(e) => {
-                        handleCurrencyBlur(e, field);
-                        onMarketValueChange(field.value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="totalInvestment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Investimento Total</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="R$ 0,00"
-                      {...field}
-                      value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                        e.target.value = rawValue;
-                      }}
-                      onBlur={(e) => {
-                        handleCurrencyBlur(e, field);
-                        onTotalInvestmentChange(field.value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="monthlyNetReturn"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Retorno Mensal Líquido</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="R$ 0,00"
-                      {...field}
-                      value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                        e.target.value = rawValue;
-                      }}
-                      onBlur={(e) => {
-                        handleCurrencyBlur(e, field);
-                        onMonthlyNetReturnChange(field.value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="monthlyNetIncome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Renda Mensal Líquida</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="R$ 0,00"
-                      {...field}
-                      value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                        e.target.value = rawValue;
-                      }}
-                      onBlur={(e) => {
-                        handleCurrencyBlur(e, field);
-                        onMonthlyNetIncomeChange(field.value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="vacancyRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Taxa de Vacância</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="0%"
-                      {...field}
-                      value={`${field.value || 0}%`}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^\d,]/g, '');
-                        field.onChange(parseFloat(value.replace(',', '.')) || 0);
-                      }}
-                      onBlur={(e) => {
-                        handlePercentageBlur(e, field);
-                        onVacancyRateChange(field.value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div>
-              <Label>ROI Acumulado</Label>
-              <Input value={`${accumulatedROI?.toFixed(2) || 0}%`} disabled />
-            </div>
-          </div>
-          <div>
-            <Label>Lucro Total</Label>
-            <Input value={formatCurrency(totalProfit || 0)} disabled />
-          </div>
+          <Form {...form.formState}>
+            <form>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="marketValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor de Mercado</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="R$ 0,00"
+                          {...field}
+                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                            e.target.value = rawValue;
+                          }}
+                          onBlur={(e) => {
+                            handleCurrencyBlur(e, field);
+                            onMarketValueChange(field.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="totalInvestment"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Investimento Total</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="R$ 0,00"
+                          {...field}
+                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                            e.target.value = rawValue;
+                          }}
+                          onBlur={(e) => {
+                            handleCurrencyBlur(e, field);
+                            onTotalInvestmentChange(field.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="monthlyNetReturn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Retorno Mensal Líquido</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="R$ 0,00"
+                          {...field}
+                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                            e.target.value = rawValue;
+                          }}
+                          onBlur={(e) => {
+                            handleCurrencyBlur(e, field);
+                            onMonthlyNetReturnChange(field.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="monthlyNetIncome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Renda Mensal Líquida</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="R$ 0,00"
+                          {...field}
+                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                            e.target.value = rawValue;
+                          }}
+                          onBlur={(e) => {
+                            handleCurrencyBlur(e, field);
+                            onMonthlyNetIncomeChange(field.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="vacancyRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taxa de Vacância</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="0%"
+                          {...field}
+                          value={`${field.value || 0}%`}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d,]/g, '');
+                            field.onChange(parseFloat(value.replace(',', '.')) || 0);
+                          }}
+                          onBlur={(e) => {
+                            handlePercentageBlur(e, field);
+                            onVacancyRateChange(field.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div>
+                  <Label>ROI Acumulado</Label>
+                  <Input value={`${accumulatedROI?.toFixed(2) || 0}%`} disabled />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label>Lucro Total</Label>
+                <Input value={formatCurrency(totalProfit || 0)} disabled />
+              </div>
+            </form>
+          </Form>
         </CardContent>
         <CardFooter>
           <Button
