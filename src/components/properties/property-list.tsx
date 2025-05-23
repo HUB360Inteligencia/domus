@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Building, Search, Plus, Loader2, Filter, AlertCircle, LayoutGrid, LayoutList, Map as MapIcon } from 'lucide-react';
 import { Property } from '@/types/property';
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { PropertyMapView } from './property-map-view';
 
 interface PropertyListProps {
   properties: Property[];
@@ -182,10 +182,11 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
           )}
           
           {viewMode === 'map' && (
-            <div className="h-[600px] mt-6 bg-muted rounded-xl">
+            <div className="h-[600px] mt-6">
               <PropertyMapView 
                 properties={filteredProperties}
                 onSelect={onSelect}
+                className="h-full"
               />
             </div>
           )}
