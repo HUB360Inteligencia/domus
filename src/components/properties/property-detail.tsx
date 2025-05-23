@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChevronLeft, Edit, Trash2, MapPin, Home, Info, User, Building, Banknote, SquareStack, Ticket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { PropertyMap } from './property-map';
 import { PropertyFinancialSection } from './PropertyFinancialSection';
 import { PropertyContractSection } from './PropertyContractSection';
+import { PropertyImageGallery } from './PropertyImageGallery';
+import { PropertyInvestmentSection } from './PropertyInvestmentSection';
+import { PropertyOccupancySection } from './PropertyOccupancySection';
 
 interface PropertyDetailProps {
   property: Property | null | undefined;
@@ -148,11 +150,16 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Info className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
             <span className="inline sm:hidden">Geral</span>
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">Fotos</span>
+            <span className="inline sm:hidden">Fotos</span>
           </TabsTrigger>
           <TabsTrigger value="location" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
@@ -164,15 +171,20 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             <span className="hidden sm:inline">Financeiro</span>
             <span className="inline sm:hidden">Finan.</span>
           </TabsTrigger>
+          <TabsTrigger value="investments" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            <span className="hidden sm:inline">Investimentos</span>
+            <span className="inline sm:hidden">Invest.</span>
+          </TabsTrigger>
+          <TabsTrigger value="occupancy" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Ocupação</span>
+            <span className="inline sm:hidden">Ocup.</span>
+          </TabsTrigger>
           <TabsTrigger value="contract" className="flex items-center gap-2">
             <Ticket className="h-4 w-4" />
             <span className="hidden sm:inline">Contrato</span>
             <span className="inline sm:hidden">Contrato</span>
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <SquareStack className="h-4 w-4" />
-            <span className="hidden sm:inline">Documentos</span>
-            <span className="inline sm:hidden">Docs</span>
           </TabsTrigger>
         </TabsList>
 
@@ -317,6 +329,11 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           </Card>
         </TabsContent>
 
+        {/* Photos Tab */}
+        <TabsContent value="photos">
+          <PropertyImageGallery property={property} isLoading={isLoading} />
+        </TabsContent>
+
         {/* Location Tab */}
         <TabsContent value="location">
           <Card>
@@ -347,29 +364,21 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           <PropertyFinancialSection property={property} isLoading={isLoading} />
         </TabsContent>
 
+        {/* Investments Tab */}
+        <TabsContent value="investments">
+          <PropertyInvestmentSection property={property} isLoading={isLoading} />
+        </TabsContent>
+
+        {/* Occupancy Tab */}
+        <TabsContent value="occupancy">
+          <PropertyOccupancySection property={property} isLoading={isLoading} />
+        </TabsContent>
+
         {/* Contract Tab */}
         <TabsContent value="contract">
           <PropertyContractSection property={property} isLoading={isLoading} />
-        </TabsContent>
-
-        {/* Documents Tab */}
-        <TabsContent value="documents">
-          <Card>
-            <CardHeader>
-              <CardTitle>Documentos do Imóvel</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center py-10">
-              <div className="text-center text-muted-foreground">
-                <p>Funcionalidade de documentos em desenvolvimento.</p>
-                <p className="text-sm mt-2">
-                  Em breve você poderá armazenar escrituras, laudos e outros documentos importantes.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 };
-
