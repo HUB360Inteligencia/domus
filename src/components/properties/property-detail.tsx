@@ -329,6 +329,14 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           </Card>
         </TabsContent>
 
+        {/* Investments Tab */}
+        <TabsContent value="investments">
+          <PropertyInvestmentSection 
+            property={property}
+            isLoading={isLoading} 
+          />
+        </TabsContent>
+
         {/* Photos Tab */}
         <TabsContent value="photos">
           <PropertyImageGallery 
@@ -365,11 +373,6 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         {/* Financial Tab */}
         <TabsContent value="financial">
           <PropertyFinancialSection property={property} isLoading={isLoading} />
-        </TabsContent>
-
-        {/* Investments Tab */}
-        <TabsContent value="investments">
-          <PropertyInvestmentSection property={property} isLoading={isLoading} />
         </TabsContent>
 
         {/* Occupancy Tab */}

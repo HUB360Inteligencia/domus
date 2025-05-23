@@ -25,21 +25,11 @@ import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { formatCurrency } from '@/lib/format';
+import { Property } from '@/types/property';
 
 interface PropertyInvestmentSectionProps {
-  marketValue: number | null;
-  totalInvestment: number | null;
-  monthlyNetReturn: number | null;
-  monthlyNetIncome: number | null;
-  accumulatedROI: number | null;
-  totalProfit: number | null;
-  vacancyRate: number | null;
-  onMarketValueChange: (value: number | null) => void;
-  onTotalInvestmentChange: (value: number | null) => void;
-  onMonthlyNetReturnChange: (value: number | null) => void;
-  onMonthlyNetIncomeChange: (value: number | null) => void;
-  onVacancyRateChange: (value: number | null) => void;
-  onAddInvestment: () => void;
+  property: Property | null | undefined;
+  isLoading?: boolean;
 }
 
 const formSchema = z.object({
@@ -51,20 +41,18 @@ const formSchema = z.object({
 })
 
 export const PropertyInvestmentSection = ({
-  marketValue,
-  totalInvestment,
-  monthlyNetReturn,
-  monthlyNetIncome,
-  accumulatedROI,
-  totalProfit,
-  vacancyRate,
-  onMarketValueChange,
-  onTotalInvestmentChange,
-  onMonthlyNetReturnChange,
-  onMonthlyNetIncomeChange,
-  onVacancyRateChange,
-  onAddInvestment,
+  property,
+  isLoading,
 }: PropertyInvestmentSectionProps) => {
+  // Derive values from property, or use null as fallback
+  const marketValue = property?.value || null;
+  const totalInvestment = property?.total_investment || null;
+  const monthlyNetReturn = property?.monthly_return_rate || null;
+  const monthlyNetIncome = property?.monthly_return_rate ? property.value * (property.monthly_return_rate / 100) : null;
+  const vacancyRate = property?.vacancy_rate || null;
+  const accumulatedROI = totalInvestment ? ((marketValue || 0) - totalInvestment) / totalInvestment * 100 : null;
+  const totalProfit = totalInvestment ? (marketValue || 0) - totalInvestment : null;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -87,6 +75,14 @@ export const PropertyInvestmentSection = ({
     field.onChange(isNaN(value) ? 0 : value);
     e.target.value = `${isNaN(value) ? 0 : value.toFixed(2).replace('.', ',')}%`;
   };
+
+  // These would normally update the property data
+  const onMarketValueChange = (value: number | null) => {};
+  const onTotalInvestmentChange = (value: number | null) => {};
+  const onMonthlyNetReturnChange = (value: number | null) => {};
+  const onMonthlyNetIncomeChange = (value: number | null) => {};
+  const onVacancyRateChange = (value: number | null) => {};
+  const onAddInvestment = () => {};
 
   return (
     <div className="space-y-4">
@@ -241,7 +237,7 @@ export const PropertyInvestmentSection = ({
         <CardFooter>
           <Button
             onClick={() => onAddInvestment()}
-            size="sm" // Changed from "xs" to "sm"
+            size="sm"
             variant="outline"
           >
             <Plus className="h-4 w-4 mr-2" />

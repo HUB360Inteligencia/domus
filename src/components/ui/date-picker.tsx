@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DateRange } from "react-day-picker";
 
 export interface DatePickerProps {
   date: Date | undefined;
@@ -28,6 +29,26 @@ export function DatePicker({
   selected,
   mode = "single",
 }: DatePickerProps) {
+  // Handler for range selection
+  const handleRangeSelect = (range: DateRange | undefined) => {
+    // For range mode, we'll use the from date
+    if (range?.from) {
+      onSelect(range.from);
+    } else {
+      onSelect(undefined);
+    }
+  };
+
+  // Handler for multiple selection
+  const handleMultipleSelect = (dates: Date[] | undefined) => {
+    // For multiple mode, we'll use the first date
+    if (dates && dates.length > 0) {
+      onSelect(dates[0]);
+    } else {
+      onSelect(undefined);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -58,8 +79,8 @@ export function DatePicker({
         {mode === "range" && (
           <Calendar
             mode="range"
-            selected={selected || date}
-            onSelect={onSelect}
+            selected={{ from: selected || date, to: selected || date }}
+            onSelect={handleRangeSelect}
             defaultMonth={defaultMonth || date}
             initialFocus
             disabled={disabled}
@@ -69,8 +90,8 @@ export function DatePicker({
         {mode === "multiple" && (
           <Calendar
             mode="multiple"
-            selected={selected || date}
-            onSelect={onSelect}
+            selected={selected || date ? [selected || date] : []}
+            onSelect={handleMultipleSelect}
             defaultMonth={defaultMonth || date}
             initialFocus
             disabled={disabled}
