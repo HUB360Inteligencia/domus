@@ -41,13 +41,14 @@ import { toast } from 'sonner';
 
 interface PropertyImageGalleryProps {
   propertyId: string | null;
+  isLoading?: boolean;
 }
 
 const formSchema = z.object({
   description: z.string().optional(),
 });
 
-export const PropertyImageGallery = ({ propertyId }: PropertyImageGalleryProps) => {
+export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGalleryProps) => {
   const {
     images,
     isLoadingImages,
@@ -111,7 +112,7 @@ export const PropertyImageGallery = ({ propertyId }: PropertyImageGalleryProps) 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Imagens do Imóvel</h3>
-        <Button onClick={handleUploadClick} disabled={!propertyId}>
+        <Button onClick={handleUploadClick} disabled={!propertyId || isLoading}>
           <Upload className="h-4 w-4 mr-2" />
           Adicionar Imagem
         </Button>
@@ -124,7 +125,7 @@ export const PropertyImageGallery = ({ propertyId }: PropertyImageGalleryProps) 
         />
       </div>
       
-      {isLoadingImages ? (
+      {isLoadingImages || isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="aspect-square bg-muted animate-pulse rounded-md"></div>

@@ -331,7 +331,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 
         {/* Photos Tab */}
         <TabsContent value="photos">
-          <PropertyImageGallery property={property} isLoading={isLoading} />
+          <PropertyImageGallery 
+            propertyId={property?.id || null}
+            isLoading={isLoading} 
+          />
         </TabsContent>
 
         {/* Location Tab */}

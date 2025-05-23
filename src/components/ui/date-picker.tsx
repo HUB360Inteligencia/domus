@@ -44,15 +44,39 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode={mode}
-          selected={selected || date}
-          onSelect={onSelect}
-          defaultMonth={defaultMonth || date}
-          initialFocus
-          disabled={disabled}
-          className="p-3 pointer-events-auto"
-        />
+        {mode === "single" && (
+          <Calendar
+            mode="single"
+            selected={selected || date}
+            onSelect={onSelect}
+            defaultMonth={defaultMonth || date}
+            initialFocus
+            disabled={disabled}
+            className="p-3 pointer-events-auto"
+          />
+        )}
+        {mode === "range" && (
+          <Calendar
+            mode="range"
+            selected={selected || date}
+            onSelect={onSelect}
+            defaultMonth={defaultMonth || date}
+            initialFocus
+            disabled={disabled}
+            className="p-3 pointer-events-auto"
+          />
+        )}
+        {mode === "multiple" && (
+          <Calendar
+            mode="multiple"
+            selected={selected || date}
+            onSelect={onSelect}
+            defaultMonth={defaultMonth || date}
+            initialFocus
+            disabled={disabled}
+            className="p-3 pointer-events-auto"
+          />
+        )}
       </PopoverContent>
     </Popover>
   );

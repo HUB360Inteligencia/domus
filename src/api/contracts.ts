@@ -17,6 +17,12 @@ const convertJsonToVariableRentValues = (jsonValue: Json | null): VariableRentVa
   }
 };
 
+// Helper function to convert VariableRentValue[] to Json for Supabase
+const convertVariableRentValuesToJson = (values: VariableRentValue[] | null | undefined): Json => {
+  if (!values) return null;
+  return values as unknown as Json;
+};
+
 /**
  * Fetches all contracts for the current user
  */
@@ -165,6 +171,7 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
   // Convert variable_rent_values to JSON for Supabase
   const supabaseData = {
     ...contractData,
+    variable_rent_values: convertVariableRentValuesToJson(contractData.variable_rent_values),
     user_id: user.data.user?.id,
   };
   
@@ -216,9 +223,15 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     });
   }
   
+  // Convert variable_rent_values to JSON for Supabase
+  const supabaseData = {
+    ...data,
+    variable_rent_values: data.variable_rent_values ? convertVariableRentValuesToJson(data.variable_rent_values) : undefined,
+  };
+  
   const { data: updatedData, error } = await supabase
     .from('contracts')
-    .update(data)
+    .update(supabaseData)
     .eq('id', id)
     .select()
     .single();
