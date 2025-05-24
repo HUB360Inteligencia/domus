@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -133,17 +134,6 @@ export function PropertyForm({
     },
   });
 
-  // Calcular valor do m² automaticamente quando área ou valor são alterados
-  const area = form.watch('area');
-  const value = form.watch('value');
-  
-  useEffect(() => {
-    if (area && value && area > 0) {
-      const squareMeterValue = value / area;
-      form.setValue('square_meter_value', squareMeterValue);
-    }
-  }, [area, value, form]);
-
   // Effect to update form values when initialData changes
   useEffect(() => {
     if (initialData) {
@@ -176,7 +166,6 @@ export function PropertyForm({
         // Dados de compra
         purchase_date: initialData.purchase_date ? convertFromISO(initialData.purchase_date) : '',
         purchase_value: initialData.purchase_value || null,
-        square_meter_value: initialData.square_meter_value || null,
         // Dados da imobiliária
         agency_name: initialData.agency_name || null,
         agency_responsible: initialData.agency_responsible || null,
