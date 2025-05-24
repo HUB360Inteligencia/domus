@@ -1,3 +1,4 @@
+
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -136,37 +137,31 @@ const MobileSidebar = ({
           <Building className="h-6 w-6 text-petroleum" />
           <span className="font-bold text-sm">Gestão Patrimonial</span>
         </div>
-        <div className="flex justify-end z-20">
+        <div className="flex justify-end z-20 relative">
           <Menu
             className="text-sidebar-foreground cursor-pointer h-6 w-6"
             onClick={() => setOpen(!open)}
           />
-        </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn(
-                "fixed h-full w-full inset-0 bg-sidebar text-sidebar-foreground p-6 z-[100] flex flex-col",
-                className
-              )}
-            >
-              <div
-                className="absolute right-6 top-6 z-50 text-sidebar-foreground cursor-pointer"
-                onClick={() => setOpen(!open)}
+          
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className={cn(
+                  "absolute top-full right-0 mt-2 w-64 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50",
+                  className
+                )}
               >
-                <X className="h-6 w-6" />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <div className="p-2">
+                  {children}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </>
   );
@@ -215,6 +210,7 @@ const SidebarLink = ({
 export function AppSidebar() {
   const location = useLocation();
   const [financeSubmenuOpen, setFinanceSubmenuOpen] = useState(false);
+  const { open, animate } = useSidebar();
   
   const menuItems: Links[] = [
     {
@@ -281,7 +277,11 @@ export function AppSidebar() {
             <Building className="h-8 w-8 text-petroleum flex-shrink-0" />
             <motion.div 
               className="flex flex-col"
-              animate={{ opacity: 1 }}
+              animate={{
+                display: animate ? (open ? "flex" : "none") : "flex",
+                opacity: animate ? (open ? 1 : 0) : 1,
+              }}
+              transition={{ duration: 0.2 }}
             >
               <span className="font-bold text-sm">Gestão Patrimonial</span>
               <span className="text-xs text-muted-foreground">
@@ -301,7 +301,11 @@ export function AppSidebar() {
             ))}
             
             {/* Finance Menu with Submenu */}
-            <div className="space-y-1">
+            <div 
+              className="space-y-1"
+              onMouseEnter={() => setFinanceSubmenuOpen(true)}
+              onMouseLeave={() => setFinanceSubmenuOpen(false)}
+            >
               <button
                 onClick={() => setFinanceSubmenuOpen(!financeSubmenuOpen)}
                 className="flex items-center justify-start gap-3 w-full py-2 px-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -309,14 +313,18 @@ export function AppSidebar() {
                 <Wallet className="h-5 w-5 flex-shrink-0" />
                 <motion.span
                   className="text-sm whitespace-nowrap"
-                  animate={{ opacity: 1 }}
+                  animate={{
+                    display: animate ? (open ? "inline-block" : "none") : "inline-block",
+                    opacity: animate ? (open ? 1 : 0) : 1,
+                  }}
+                  transition={{ duration: 0.2 }}
                 >
                   Finanças
                 </motion.span>
               </button>
               
               <AnimatePresence>
-                {financeSubmenuOpen && (
+                {financeSubmenuOpen && open && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
@@ -341,7 +349,11 @@ export function AppSidebar() {
             <div className="pt-4">
               <motion.div 
                 className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
-                animate={{ opacity: 1 }}
+                animate={{
+                  display: animate ? (open ? "block" : "none") : "block",
+                  opacity: animate ? (open ? 1 : 0) : 1,
+                }}
+                transition={{ duration: 0.2 }}
               >
                 Inteligência artificial
               </motion.div>
@@ -359,7 +371,11 @@ export function AppSidebar() {
             <div className="pt-4">
               <motion.div 
                 className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
-                animate={{ opacity: 1 }}
+                animate={{
+                  display: animate ? (open ? "block" : "none") : "block",
+                  opacity: animate ? (open ? 1 : 0) : 1,
+                }}
+                transition={{ duration: 0.2 }}
               >
                 Sistema
               </motion.div>
@@ -377,7 +393,10 @@ export function AppSidebar() {
           {/* Footer */}
           <motion.div 
             className="border-t border-sidebar-border pt-4 mt-4"
-            animate={{ opacity: 1 }}
+            animate={{
+              opacity: animate ? (open ? 1 : 0) : 1,
+            }}
+            transition={{ duration: 0.2 }}
           >
             <div className="flex items-center gap-3 p-2">
               <Avatar className="h-10 w-10 flex-shrink-0">
@@ -386,7 +405,11 @@ export function AppSidebar() {
               </Avatar>
               <motion.div 
                 className="flex flex-col min-w-0"
-                animate={{ opacity: 1 }}
+                animate={{
+                  display: animate ? (open ? "flex" : "none") : "flex",
+                  opacity: animate ? (open ? 1 : 0) : 1,
+                }}
+                transition={{ duration: 0.2 }}
               >
                 <p className="text-sm font-medium truncate">Admin Principal</p>
                 <p className="text-xs text-muted-foreground truncate">admin@exemplo.com</p>
