@@ -11,6 +11,7 @@ interface MapboxContextType {
   getStyleForContext: (styleType: MapboxStyleType) => string | null;
   isTokenLoading: boolean;
   isReady: boolean;
+  retryInitialization: () => void;
 }
 
 const defaultMapboxContext: MapboxContextType = {
@@ -22,6 +23,7 @@ const defaultMapboxContext: MapboxContextType = {
   getStyleForContext: () => null,
   isTokenLoading: true,
   isReady: false,
+  retryInitialization: () => {},
 };
 
 const LOCAL_STORAGE_KEY = 'mapbox_token';
@@ -38,6 +40,7 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
   const [legacyToken, setLegacyTokenState] = useState<string | null>(null);
   const [isLegacyLoading, setIsLegacyLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initializationKey, setInitializationKey] = useState(0);
   
   const { 
     getMapboxToken, 
@@ -52,7 +55,8 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
     isSettingsInitialized,
     settingsError, 
     legacyToken: !!legacyToken,
-    isLegacyLoading 
+    isLegacyLoading,
+    initializationKey
   });
 
   // Load legacy token from localStorage on mount
@@ -71,7 +75,7 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
     } finally {
       setIsLegacyLoading(false);
     }
-  }, []);
+  }, [initializationKey]);
 
   // Set error from settings
   useEffect(() => {
@@ -94,6 +98,12 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
       console.error('MapboxProvider: Error saving legacy token:', e);
       setError('Failed to save token');
     }
+  };
+
+  const retryInitialization = () => {
+    console.log('MapboxProvider: Retrying initialization');
+    setError(null);
+    setInitializationKey(prev => prev + 1);
   };
 
   const getTokenForContext = (tokenType: MapboxTokenType): string | null => {
@@ -159,7 +169,7 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
 
   // Calculate loading and ready states
   const isTokenLoading = isSettingsLoading || isLegacyLoading || !isSettingsInitialized;
-  const isReady = isSettingsInitialized && !isLegacyLoading;
+  const isReady = isSettingsInitialized && !isLegacyLoading && !error;
   
   // For backward compatibility, return property_list token as default
   const defaultToken = isReady ? getTokenForContext('mapbox_token_property_list') : null;
@@ -183,7 +193,8 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
       getTokenForContext,
       getStyleForContext,
       isTokenLoading,
-      isReady
+      isReady,
+      retryInitialization
     }}>
       {children}
     </MapboxContext.Provider>
