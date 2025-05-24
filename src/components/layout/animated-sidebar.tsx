@@ -122,48 +122,37 @@ const DesktopSidebar = ({
   );
 };
 
-const MobileSidebar = ({
-  className,
-  children,
-}: {
-  className?: string;
-  children?: React.ReactNode;
-}) => {
+const MobileSidebar = () => {
   const { open, setOpen } = useSidebar();
   return (
-    <>
-      <div className="h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <Building className="h-6 w-6 text-petroleum" />
-          <span className="font-bold text-sm">Gestão Patrimonial</span>
-        </div>
-        <div className="flex justify-end z-20 relative">
-          <Menu
-            className="text-sidebar-foreground cursor-pointer h-6 w-6"
-            onClick={() => setOpen(!open)}
-          />
-          
-          <AnimatePresence>
-            {open && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className={cn(
-                  "absolute top-full right-0 mt-2 w-64 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50",
-                  className
-                )}
-              >
-                <div className="p-2">
-                  {children}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+    <div className="h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border">
+      <div className="flex items-center gap-2">
+        <Building className="h-6 w-6 text-petroleum" />
+        <span className="font-bold text-sm">Gestão Patrimonial</span>
       </div>
-    </>
+      <div className="flex justify-end z-20 relative">
+        <Menu
+          className="text-sidebar-foreground cursor-pointer h-6 w-6"
+          onClick={() => setOpen(!open)}
+        />
+        
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full right-0 mt-2 w-64 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50"
+            >
+              <div className="p-2">
+                <SidebarMenuContent />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 
@@ -207,7 +196,7 @@ const SidebarLink = ({
   );
 };
 
-export function AppSidebar() {
+const SidebarMenuContent = () => {
   const location = useLocation();
   const [financeSubmenuOpen, setFinanceSubmenuOpen] = useState(false);
   const { open, animate } = useSidebar();
@@ -269,155 +258,179 @@ export function AppSidebar() {
   ];
 
   return (
+    <div className="flex flex-col h-full space-y-1">
+      {menuItems.map((item) => (
+        <SidebarLink 
+          key={item.label} 
+          link={item} 
+          isActive={location.pathname === item.href}
+        />
+      ))}
+      
+      {/* Finance Menu with Submenu */}
+      <div 
+        className="space-y-1"
+        onMouseEnter={() => setFinanceSubmenuOpen(true)}
+        onMouseLeave={() => setFinanceSubmenuOpen(false)}
+      >
+        <button
+          onClick={() => setFinanceSubmenuOpen(!financeSubmenuOpen)}
+          className="flex items-center justify-start gap-3 w-full py-2 px-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <Wallet className="h-5 w-5 flex-shrink-0" />
+          <motion.span
+            className="text-sm whitespace-nowrap"
+            animate={{
+              display: animate ? (open ? "inline-block" : "none") : "inline-block",
+              opacity: animate ? (open ? 1 : 0) : 1,
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            Finanças
+          </motion.span>
+        </button>
+        
+        <AnimatePresence>
+          {financeSubmenuOpen && open && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="ml-6 space-y-1 overflow-hidden"
+            >
+              {financeSubMenu.map((item) => (
+                <SidebarLink 
+                  key={item.label} 
+                  link={item} 
+                  isActive={location.pathname === item.href}
+                  className="py-1"
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      
+      {/* AI Section */}
+      <div className="pt-4">
+        <motion.div 
+          className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
+          animate={{
+            display: animate ? (open ? "block" : "none") : "block",
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          Inteligência artificial
+        </motion.div>
+        <SidebarLink 
+          link={{
+            label: "Assistente IA",
+            href: "/ai-assistant",
+            icon: <MessageSquare className="h-5 w-5" />
+          }}
+          isActive={location.pathname === "/ai-assistant"}
+        />
+      </div>
+      
+      {/* System Section */}
+      <div className="pt-4">
+        <motion.div 
+          className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
+          animate={{
+            display: animate ? (open ? "block" : "none") : "block",
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          Sistema
+        </motion.div>
+        <SidebarLink 
+          link={{
+            label: "Configurações",
+            href: "/admin/settings",
+            icon: <Settings className="h-5 w-5" />
+          }}
+          isActive={location.pathname === "/admin/settings"}
+        />
+      </div>
+    </div>
+  );
+};
+
+export function AppSidebar() {
+  return (
     <AnimatedSidebar>
       <SidebarBody>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center gap-2 p-2 mb-4">
             <Building className="h-8 w-8 text-petroleum flex-shrink-0" />
-            <motion.div 
-              className="flex flex-col"
-              animate={{
-                display: animate ? (open ? "flex" : "none") : "flex",
-                opacity: animate ? (open ? 1 : 0) : 1,
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              <span className="font-bold text-sm">Gestão Patrimonial</span>
-              <span className="text-xs text-muted-foreground">
-                Versão 1.0
-              </span>
-            </motion.div>
+            <SidebarHeaderContent />
           </div>
           
           {/* Menu Items */}
-          <div className="flex-1 space-y-1">
-            {menuItems.map((item) => (
-              <SidebarLink 
-                key={item.label} 
-                link={item} 
-                isActive={location.pathname === item.href}
-              />
-            ))}
-            
-            {/* Finance Menu with Submenu */}
-            <div 
-              className="space-y-1"
-              onMouseEnter={() => setFinanceSubmenuOpen(true)}
-              onMouseLeave={() => setFinanceSubmenuOpen(false)}
-            >
-              <button
-                onClick={() => setFinanceSubmenuOpen(!financeSubmenuOpen)}
-                className="flex items-center justify-start gap-3 w-full py-2 px-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <Wallet className="h-5 w-5 flex-shrink-0" />
-                <motion.span
-                  className="text-sm whitespace-nowrap"
-                  animate={{
-                    display: animate ? (open ? "inline-block" : "none") : "inline-block",
-                    opacity: animate ? (open ? 1 : 0) : 1,
-                  }}
-                  transition={{ duration: 0.2 }}
-                >
-                  Finanças
-                </motion.span>
-              </button>
-              
-              <AnimatePresence>
-                {financeSubmenuOpen && open && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-6 space-y-1 overflow-hidden"
-                  >
-                    {financeSubMenu.map((item) => (
-                      <SidebarLink 
-                        key={item.label} 
-                        link={item} 
-                        isActive={location.pathname === item.href}
-                        className="py-1"
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            {/* AI Section */}
-            <div className="pt-4">
-              <motion.div 
-                className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
-                animate={{
-                  display: animate ? (open ? "block" : "none") : "block",
-                  opacity: animate ? (open ? 1 : 0) : 1,
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                Inteligência artificial
-              </motion.div>
-              <SidebarLink 
-                link={{
-                  label: "Assistente IA",
-                  href: "/ai-assistant",
-                  icon: <MessageSquare className="h-5 w-5" />
-                }}
-                isActive={location.pathname === "/ai-assistant"}
-              />
-            </div>
-            
-            {/* System Section */}
-            <div className="pt-4">
-              <motion.div 
-                className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-2"
-                animate={{
-                  display: animate ? (open ? "block" : "none") : "block",
-                  opacity: animate ? (open ? 1 : 0) : 1,
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                Sistema
-              </motion.div>
-              <SidebarLink 
-                link={{
-                  label: "Configurações",
-                  href: "/admin/settings",
-                  icon: <Settings className="h-5 w-5" />
-                }}
-                isActive={location.pathname === "/admin/settings"}
-              />
-            </div>
+          <div className="flex-1">
+            <SidebarMenuContent />
           </div>
           
           {/* Footer */}
-          <motion.div 
-            className="border-t border-sidebar-border pt-4 mt-4"
-            animate={{
-              opacity: animate ? (open ? 1 : 0) : 1,
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="flex items-center gap-3 p-2">
-              <Avatar className="h-10 w-10 flex-shrink-0">
-                <AvatarImage src="" alt="Perfil" />
-                <AvatarFallback className="bg-petroleum text-white">AP</AvatarFallback>
-              </Avatar>
-              <motion.div 
-                className="flex flex-col min-w-0"
-                animate={{
-                  display: animate ? (open ? "flex" : "none") : "flex",
-                  opacity: animate ? (open ? 1 : 0) : 1,
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                <p className="text-sm font-medium truncate">Admin Principal</p>
-                <p className="text-xs text-muted-foreground truncate">admin@exemplo.com</p>
-              </motion.div>
-            </div>
-          </motion.div>
+          <SidebarFooterContent />
         </div>
       </SidebarBody>
     </AnimatedSidebar>
   );
 }
+
+const SidebarHeaderContent = () => {
+  const { open, animate } = useSidebar();
+  
+  return (
+    <motion.div 
+      className="flex flex-col"
+      animate={{
+        display: animate ? (open ? "flex" : "none") : "flex",
+        opacity: animate ? (open ? 1 : 0) : 1,
+      }}
+      transition={{ duration: 0.2 }}
+    >
+      <span className="font-bold text-sm">Gestão Patrimonial</span>
+      <span className="text-xs text-muted-foreground">
+        Versão 1.0
+      </span>
+    </motion.div>
+  );
+};
+
+const SidebarFooterContent = () => {
+  const { open, animate } = useSidebar();
+  
+  return (
+    <motion.div 
+      className="border-t border-sidebar-border pt-4 mt-4"
+      animate={{
+        opacity: animate ? (open ? 1 : 0) : 1,
+      }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="flex items-center gap-3 p-2">
+        <Avatar className="h-10 w-10 flex-shrink-0">
+          <AvatarImage src="" alt="Perfil" />
+          <AvatarFallback className="bg-petroleum text-white">AP</AvatarFallback>
+        </Avatar>
+        <motion.div 
+          className="flex flex-col min-w-0"
+          animate={{
+            display: animate ? (open ? "flex" : "none") : "flex",
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          <p className="text-sm font-medium truncate">Admin Principal</p>
+          <p className="text-xs text-muted-foreground truncate">admin@exemplo.com</p>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
