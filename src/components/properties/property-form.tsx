@@ -50,7 +50,7 @@ const formSchema = z.object({
   agency_name: z.string().optional().nullable(),
   agency_responsible: z.string().optional().nullable(),
   agency_contact: z.string().optional().nullable(),
-  // Sociedade
+  // Sociedade - campos locais apenas
   has_partners: z.boolean().optional().nullable(),
   owner_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
 });
@@ -77,9 +77,9 @@ export function PropertyForm({
   const [showMap, setShowMap] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [investments, setInvestments] = useState<Investment[]>([]);
-  const [partners, setPartners] = useState<Partner[]>(initialData?.partners || []);
-  const [ownerPercentage, setOwnerPercentage] = useState<number>(initialData?.owner_percentage || 0);
-  const [documents, setDocuments] = useState<PropertyDocument[]>(initialData?.documents || []);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [ownerPercentage, setOwnerPercentage] = useState<number>(0);
+  const [documents, setDocuments] = useState<PropertyDocument[]>([]);
 
   // Estados para valores monetários formatados
   const [valueDisplay, setValueDisplay] = useState<string>('');
@@ -132,9 +132,9 @@ export function PropertyForm({
       agency_name: initialData?.agency_name || null,
       agency_responsible: initialData?.agency_responsible || null,
       agency_contact: initialData?.agency_contact || null,
-      // Sociedade
-      has_partners: initialData?.has_partners || false,
-      owner_percentage: initialData?.owner_percentage || null,
+      // Sociedade - valores padrão
+      has_partners: false,
+      owner_percentage: null,
     },
   });
 
@@ -279,11 +279,6 @@ export function PropertyForm({
       purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null,
       // Calcular valor do m² automaticamente
       square_meter_value: data.area && data.value ? data.value / data.area : null,
-      // Adicionar dados de sociedade
-      partners: data.has_partners ? partners : null,
-      owner_percentage: data.has_partners ? ownerPercentage : null,
-      // Adicionar documentos
-      documents: documents
     };
 
     // If we have map coordinates, make sure they're included in the submission
