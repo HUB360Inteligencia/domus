@@ -99,7 +99,7 @@ export const useFinancialDashboard = () => {
     const prevMonth = metrics.previousMonthReturn || 0;
     const occupancy = metrics.occupancyRate || 0;
     
-    const trend = prevMonth > monthlyAvg ? 'up' : prevMonth < monthlyAvg ? 'down' : 'neutral';
+    const trend: 'up' | 'down' | 'neutral' = prevMonth > monthlyAvg ? 'up' : prevMonth < monthlyAvg ? 'down' : 'neutral';
 
     return {
       monthlyAverage: formatCurrency(monthlyAvg),
@@ -127,18 +127,18 @@ export const useFinancialDashboard = () => {
     
     return Object.entries(metrics.roiByPropertyType).map(([type, roi]) => ({
       type,
-      roi: roi || 0
+      roi: Number(roi) || 0
     }));
   }, [metrics]);
 
   const topPropertiesData = useMemo(() => {
     return propertyRankings.slice(0, 5).map(property => ({
-      id: property.id,
-      name: property.name,
+      id: property.id || property.propertyId,
+      name: property.name || property.propertyTitle,
       type: property.type || 'Residencial',
       location: property.location || 'Não informado',
-      return: property.monthlyReturn || 0,
-      percentage: property.returnPercentage || 0
+      return: property.monthlyReturn || property.netIncome || 0,
+      percentage: property.returnPercentage || property.roi || 0
     }));
   }, [propertyRankings]);
 
@@ -156,7 +156,7 @@ export const useFinancialDashboard = () => {
         };
       }
       acc[neighborhood].properties += 1;
-      acc[neighborhood].totalReturn += property.monthlyReturn || 0;
+      acc[neighborhood].totalReturn += property.monthlyReturn || property.netIncome || 0;
       return acc;
     }, {} as Record<string, any>);
 

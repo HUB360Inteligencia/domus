@@ -10,6 +10,13 @@ export interface FinancialMetrics {
   occupiedProperties: number;
   occupancyRate: number;
   averageRent: number;
+  // Additional properties for the dashboard
+  totalAcquisitionValue?: number;
+  totalMarketValue?: number;
+  totalBookValue?: number;
+  averageMonthlyReturn?: number;
+  previousMonthReturn?: number;
+  roiByPropertyType?: Record<string, number>;
 }
 
 export interface MonthlyFinancialData {
@@ -17,6 +24,10 @@ export interface MonthlyFinancialData {
   revenue: number;
   expenses: number;
   netIncome: number;
+  // Additional properties for the dashboard
+  marketValue?: number;
+  bookValue?: number;
+  acquisitionValue?: number;
 }
 
 export interface PropertyFinancialRanking {
@@ -26,6 +37,14 @@ export interface PropertyFinancialRanking {
   expenses: number;
   netIncome: number;
   roi: number;
+  // Additional properties for the dashboard
+  id?: string;
+  name?: string;
+  type?: string;
+  location?: string;
+  neighborhood?: string;
+  monthlyReturn?: number;
+  returnPercentage?: number;
 }
 
 export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
@@ -56,7 +75,7 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
     // Fetch property data
     const { data: propertiesData, error: propertiesError } = await supabase
       .from('properties')
-      .select('id, status, value')
+      .select('id, status, value, purchase_value, total_investment, type')
       .eq('user_id', session.data.session.user.id);
 
     if (propertiesError) throw propertiesError;
@@ -69,6 +88,35 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
     const occupiedProperties = propertiesData?.filter(p => p.status === 'rented' || p.status === 'airbnb').length || 0;
     const occupancyRate = totalProperties > 0 ? (occupiedProperties / totalProperties) * 100 : 0;
     const averageRent = propertiesData?.reduce((sum, p) => sum + (p.value || 0), 0) / Math.max(totalProperties, 1) || 0;
+
+    // Calculate additional dashboard metrics
+    const totalAcquisitionValue = propertiesData?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
+    const totalMarketValue = propertiesData?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
+    const totalBookValue = totalMarketValue; // For now, use market value as book value
+    const averageMonthlyReturn = totalRevenue / Math.max(totalProperties, 1) || 0;
+    const previousMonthReturn = averageMonthlyReturn * 0.95; // Mock data for now
+
+    // Calculate ROI by property type
+    const roiByPropertyType: Record<string, number> = {};
+    if (propertiesData) {
+      const typeGroups = propertiesData.reduce((acc, property) => {
+        const type = property.type || 'Outros';
+        if (!acc[type]) {
+          acc[type] = { count: 0, totalROI: 0 };
+        }
+        acc[type].count += 1;
+        // Calculate a basic ROI based on revenue vs acquisition cost
+        const acquisition = property.purchase_value || property.total_investment || property.value || 1;
+        const monthlyReturn = totalRevenue / totalProperties;
+        const roi = (monthlyReturn * 12 / acquisition) * 100;
+        acc[type].totalROI += roi;
+        return acc;
+      }, {} as Record<string, { count: number; totalROI: number }>);
+
+      Object.entries(typeGroups).forEach(([type, data]) => {
+        roiByPropertyType[type] = data.totalROI / data.count;
+      });
+    }
 
     // Calculate monthly growth (simplified - comparing last 2 months)
     const currentDate = new Date();
@@ -103,7 +151,13 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
       totalProperties,
       occupiedProperties,
       occupancyRate,
-      averageRent
+      averageRent,
+      totalAcquisitionValue,
+      totalMarketValue,
+      totalBookValue,
+      averageMonthlyReturn,
+      previousMonthReturn,
+      roiByPropertyType
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);
@@ -130,6 +184,15 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
 
     if (error) throw error;
 
+    // Get property values for market data
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('value, purchase_value, total_investment')
+      .eq('user_id', session.data.session.user.id);
+
+    const totalMarketValue = properties?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
+    const totalAcquisitionValue = properties?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
+
     // Group by month
     const monthlyData: { [key: string]: { revenue: number; expenses: number } } = {};
 
@@ -152,7 +215,10 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
       month,
       revenue: data.revenue,
       expenses: data.expenses,
-      netIncome: data.revenue - data.expenses
+      netIncome: data.revenue - data.expenses,
+      marketValue: totalMarketValue,
+      bookValue: totalMarketValue,
+      acquisitionValue: totalAcquisitionValue
     }));
   } catch (error) {
     console.error('Error fetching monthly financial data:', error);
@@ -170,7 +236,7 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
     // Fetch properties with their financial data
     const { data: properties, error: propertiesError } = await supabase
       .from('properties')
-      .select('id, title, total_investment')
+      .select('id, title, total_investment, type, address, neighborhood')
       .eq('user_id', session.data.session.user.id);
 
     if (propertiesError) throw propertiesError;
@@ -206,7 +272,15 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
         revenue,
         expenses,
         netIncome,
-        roi
+        roi,
+        // Additional properties for dashboard
+        id: property.id,
+        name: property.title,
+        type: property.type || 'Residencial',
+        location: property.address || 'Não informado',
+        neighborhood: property.neighborhood || 'Não informado',
+        monthlyReturn: netIncome,
+        returnPercentage: roi
       });
     }
 
