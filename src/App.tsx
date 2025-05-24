@@ -29,6 +29,7 @@ import ExpensesPage from '@/pages/finances/ExpensesPage';
 import ReportsPage from '@/pages/finances/ReportsPage';
 import DevelopmentsPage from '@/pages/DevelopmentsPage';
 import DevelopmentFormPage from '@/pages/DevelopmentFormPage';
+import DevelopmentDetailPage from '@/pages/DevelopmentDetailPage';
 import NotFound from '@/pages/NotFound';
 
 // Auth
@@ -85,6 +86,7 @@ function App() {
                 {/* Developments */}
                 <Route path="/developments" element={<AppLayout><DevelopmentsPage /></AppLayout>} />
                 <Route path="/developments/new" element={<AppLayout><DevelopmentFormPage /></AppLayout>} />
+                <Route path="/developments/:id" element={<AppLayout><DevelopmentDetailPage /></AppLayout>} />
                 <Route path="/developments/:id/edit" element={<AppLayout><DevelopmentFormPage /></AppLayout>} />
 
                 {/* Contracts */}

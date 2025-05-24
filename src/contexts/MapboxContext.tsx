@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSystemSettings, MapboxTokenType, MapboxStyleType } from '@/hooks/use-system-settings';
 
 interface MapboxContextType {
@@ -34,7 +34,7 @@ interface MapboxProviderProps {
   children: ReactNode;
 }
 
-export const MapboxProvider = ({ children }: MapboxProviderProps) => {
+export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
   const [legacyToken, setLegacyTokenState] = useState<string | null>(null);
   const [isLegacyLoading, setIsLegacyLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

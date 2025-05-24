@@ -10,7 +10,7 @@ export const developmentsApi = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Development[];
   },
 
   async getDevelopment(id: string): Promise<Development | null> {
@@ -21,7 +21,7 @@ export const developmentsApi = {
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data as Development | null;
   },
 
   async createDevelopment(formData: DevelopmentFormData): Promise<Development> {
@@ -38,7 +38,7 @@ export const developmentsApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Development;
   },
 
   async updateDevelopment(id: string, formData: Partial<DevelopmentFormData>): Promise<Development> {
@@ -50,7 +50,7 @@ export const developmentsApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Development;
   },
 
   async deleteDevelopment(id: string): Promise<void> {
