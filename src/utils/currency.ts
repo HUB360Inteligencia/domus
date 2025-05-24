@@ -18,6 +18,9 @@ export const parseCurrency = (value: string): number => {
   // Remove tudo exceto números, vírgula e ponto
   const cleanValue = value.replace(/[^\d,.]/g, '');
   
+  // Se não há nenhum número, retorna 0
+  if (!cleanValue) return 0;
+  
   // Se tem vírgula e ponto, assume que vírgula é decimal
   if (cleanValue.includes(',') && cleanValue.includes('.')) {
     const lastComma = cleanValue.lastIndexOf(',');

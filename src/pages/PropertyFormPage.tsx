@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
@@ -25,32 +25,32 @@ export default function PropertyFormPage() {
     isUploading
   } = useProperties();
 
+  // Memoizar a função para evitar re-criações desnecessárias
   const loadPropertyData = useCallback((id: string) => {
-    console.log('Loading property data for ID:', id);
     setSelectedPropertyId(id);
   }, [setSelectedPropertyId]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const id = params.get('id');
-    if (id) {
-      console.log('Edit mode detected for property ID:', id);
-      setPropertyId(id);
-      loadPropertyData(id);
-      setIsEditMode(true);
-    } else {
-      console.log('Create mode detected');
-      setIsEditMode(false);
-      setPropertyId(null);
-      setSelectedPropertyId(null);
-    }
-  }, [location.search, loadPropertyData, setSelectedPropertyId]);
+  // Memoizar os parâmetros da URL para evitar re-execuções desnecessárias
+  const urlParams = useMemo(() => {
+    return new URLSearchParams(location.search);
+  }, [location.search]);
 
   useEffect(() => {
-    if (isEditMode) {
-      console.log('Selected property updated:', selectedProperty);
+    const id = urlParams.get('id');
+    if (id) {
+      if (propertyId !== id) {
+        setPropertyId(id);
+        loadPropertyData(id);
+        setIsEditMode(true);
+      }
+    } else {
+      if (isEditMode || propertyId) {
+        setIsEditMode(false);
+        setPropertyId(null);
+        setSelectedPropertyId(null);
+      }
     }
-  }, [selectedProperty, isEditMode]);
+  }, [urlParams, loadPropertyData, setSelectedPropertyId, propertyId, isEditMode]);
 
   const handleSubmit = async (data: PropertyFormData, imageFile?: File) => {
     try {
@@ -90,22 +90,18 @@ export default function PropertyFormPage() {
       };
 
       if (isEditMode && propertyId) {
-        console.log('Updating property with data:', { id: propertyId, ...filteredData });
         await updateProperty({ id: propertyId, ...filteredData });
         
         if (imageFile) {
-          console.log('Uploading new image for property');
           await uploadPropertyImage({ id: propertyId, imageFile });
         }
         
         toast.success('Imóvel atualizado com sucesso!');
         navigate('/properties');
       } else {
-        console.log('Creating new property with data:', filteredData);
         const newProperty = await createProperty(filteredData);
         
         if (imageFile && newProperty && newProperty.id) {
-          console.log('Uploading image for new property');
           await uploadPropertyImage({ id: newProperty.id, imageFile });
         }
         
@@ -118,9 +114,9 @@ export default function PropertyFormPage() {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate('/properties');
-  };
+  }, [navigate]);
 
   if (isEditMode && isLoading) {
     return (

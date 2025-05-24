@@ -88,10 +88,13 @@ export const usePropertyInvestments = (propertyId: string | null) => {
         }
         
         // Parse the amount value using our currency utility
-        const amountValue = parseCurrency(data.amount.toString());
+        // Garantir que o amount seja tratado corretamente, permitindo zero
+        const amountValue = typeof data.amount === 'string' 
+          ? parseCurrency(data.amount) 
+          : data.amount;
           
-        if (isNaN(amountValue) || amountValue <= 0) {
-          throw new Error('Valor do investimento deve ser maior que zero');
+        if (isNaN(amountValue) || amountValue < 0) {
+          throw new Error('Valor do investimento deve ser um número válido');
         }
         
         const investmentData: PropertyInvestmentFormData = {

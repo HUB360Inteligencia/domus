@@ -1,16 +1,40 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { formatCurrency } from '@/utils/currency';
+import { usePropertyInvestments } from '@/hooks/use-property-investments';
+import { Property } from '@/types/property';
+import { InvestmentType } from '@/types/property-investment';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -18,234 +42,292 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { formatCurrency } from '@/lib/format';
-import { Property } from '@/types/property';
+} from "@/components/ui/form";
 
 interface PropertyInvestmentSectionProps {
   property: Property | null | undefined;
   isLoading?: boolean;
 }
 
-const formSchema = z.object({
-  marketValue: z.number().optional(),
-  totalInvestment: z.number().optional(),
-  monthlyNetReturn: z.number().optional(),
-  monthlyNetIncome: z.number().optional(),
-  vacancyRate: z.number().optional(),
-})
+const investmentFormSchema = z.object({
+  investment_type: z.string().min(1, "Tipo de investimento é obrigatório"),
+  amount: z.coerce.number().min(0, "Valor deve ser zero ou positivo"),
+  investment_date: z.string().min(1, "Data é obrigatória"),
+  description: z.string().optional(),
+});
+
+type InvestmentFormValues = z.infer<typeof investmentFormSchema>;
+
+const investmentTypeLabels: Record<InvestmentType, string> = {
+  purchase: 'Compra',
+  improvement: 'Melhoria',
+  renovation: 'Reforma',
+  maintenance: 'Manutenção',
+  other: 'Outros'
+};
 
 export const PropertyInvestmentSection = ({
   property,
   isLoading,
 }: PropertyInvestmentSectionProps) => {
-  // Derive values from property, or use null as fallback
-  const marketValue = property?.value || null;
-  const totalInvestment = property?.total_investment || null;
-  const monthlyNetReturn = property?.monthly_return_rate || null;
-  const monthlyNetIncome = property?.monthly_return_rate ? property.value * (property.monthly_return_rate / 100) : null;
-  const vacancyRate = property?.vacancy_rate || null;
-  const accumulatedROI = totalInvestment ? ((marketValue || 0) - totalInvestment) / totalInvestment * 100 : null;
-  const totalProfit = totalInvestment ? (marketValue || 0) - totalInvestment : null;
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  
+  const {
+    investments,
+    totalInvestment,
+    isLoadingInvestments,
+    isCreating,
+    registerInvestment,
+    deleteInvestment,
+  } = usePropertyInvestments(property?.id || null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<InvestmentFormValues>({
+    resolver: zodResolver(investmentFormSchema),
     defaultValues: {
-      marketValue: marketValue || 0,
-      totalInvestment: totalInvestment || 0,
-      monthlyNetReturn: monthlyNetReturn || 0,
-      monthlyNetIncome: monthlyNetIncome || 0,
-      vacancyRate: vacancyRate || 0,
+      investment_type: '',
+      amount: 0,
+      investment_date: new Date().toISOString().split('T')[0],
+      description: '',
     },
-  })
+  });
 
-  const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
-    const value = parseFloat(e.target.value.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.') || '0');
-    field.onChange(isNaN(value) ? 0 : value);
-    e.target.value = formatCurrency(value);
+  const handleSubmit = async (data: InvestmentFormValues) => {
+    const success = await registerInvestment(
+      {
+        investment_type: data.investment_type as InvestmentType,
+        amount: data.amount,
+        investment_date: data.investment_date,
+        description: data.description,
+      },
+      receiptFile || undefined
+    );
+
+    if (success) {
+      setIsDialogOpen(false);
+      form.reset();
+      setReceiptFile(null);
+    }
   };
 
-  const handlePercentageBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
-    const value = parseFloat(e.target.value.replace('%', '').replace(',', '.'));
-    field.onChange(isNaN(value) ? 0 : value);
-    e.target.value = `${isNaN(value) ? 0 : value.toFixed(2).replace('.', ',')}%`;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setReceiptFile(e.target.files[0]);
+    }
   };
 
-  // These would normally update the property data
-  const onMarketValueChange = (value: number | null) => {};
-  const onTotalInvestmentChange = (value: number | null) => {};
-  const onMonthlyNetReturnChange = (value: number | null) => {};
-  const onMonthlyNetIncomeChange = (value: number | null) => {};
-  const onVacancyRateChange = (value: number | null) => {};
-  const onAddInvestment = () => {};
+  // Calcular valores totais
+  const purchaseValue = property?.purchase_value || 0;
+  const additionalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalPropertyInvestment = purchaseValue + additionalInvestments;
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Dados Financeiros</CardTitle>
-          <CardDescription>
-            Informações sobre o investimento no imóvel
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Investimentos no Imóvel</CardTitle>
+              <CardDescription>
+                Histórico de investimentos realizados
+              </CardDescription>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Investimento
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Novo Investimento</DialogTitle>
+                  <DialogDescription>
+                    Registre um novo investimento realizado no imóvel
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="investment_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Investimento</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(investmentTypeLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0,00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="investment_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data do Investimento</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição (opcional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Detalhes sobre o investimento..."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div>
+                      <Label htmlFor="receipt">Comprovante (opcional)</Label>
+                      <Input
+                        id="receipt"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button type="submit" disabled={isCreating}>
+                        {isCreating ? 'Registrando...' : 'Registrar Investimento'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <Form {...form}>
-            <form>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="marketValue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor de Mercado</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="R$ 0,00"
-                          {...field}
-                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                            e.target.value = rawValue;
-                          }}
-                          onBlur={(e) => {
-                            handleCurrencyBlur(e, field);
-                            onMarketValueChange(field.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="totalInvestment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Investimento Total</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="R$ 0,00"
-                          {...field}
-                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                            e.target.value = rawValue;
-                          }}
-                          onBlur={(e) => {
-                            handleCurrencyBlur(e, field);
-                            onTotalInvestmentChange(field.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <CardContent>
+          {/* Resumo dos Investimentos */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-sm text-blue-600 font-medium">Valor de Compra</div>
+              <div className="text-lg font-bold text-blue-900">
+                {formatCurrency(purchaseValue)}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="monthlyNetReturn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Retorno Mensal Líquido</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="R$ 0,00"
-                          {...field}
-                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                            e.target.value = rawValue;
-                          }}
-                          onBlur={(e) => {
-                            handleCurrencyBlur(e, field);
-                            onMonthlyNetReturnChange(field.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="monthlyNetIncome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Renda Mensal Líquida</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="R$ 0,00"
-                          {...field}
-                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                            e.target.value = rawValue;
-                          }}
-                          onBlur={(e) => {
-                            handleCurrencyBlur(e, field);
-                            onMonthlyNetIncomeChange(field.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-sm text-green-600 font-medium">Investimentos Adicionais</div>
+              <div className="text-lg font-bold text-green-900">
+                {formatCurrency(additionalInvestments)}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="vacancyRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Taxa de Vacância</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="0%"
-                          {...field}
-                          value={`${field.value || 0}%`}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^\d,]/g, '');
-                            field.onChange(parseFloat(value.replace(',', '.')) || 0);
-                          }}
-                          onBlur={(e) => {
-                            handlePercentageBlur(e, field);
-                            onVacancyRateChange(field.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div>
-                  <Label>ROI Acumulado</Label>
-                  <Input value={`${accumulatedROI?.toFixed(2) || 0}%`} disabled />
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-sm text-purple-600 font-medium">Total Investido</div>
+              <div className="text-lg font-bold text-purple-900">
+                {formatCurrency(totalPropertyInvestment)}
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de Investimentos */}
+          {isLoadingInvestments ? (
+            <div className="text-center py-4">Carregando investimentos...</div>
+          ) : investments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="text-lg mb-2">Nenhum investimento registrado</div>
+              <div className="text-sm">Clique em "Adicionar Investimento" para começar</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-muted-foreground mb-3">
+                Histórico de Investimentos ({investments.length})
+              </div>
+              {investments.map((investment) => (
+                <div
+                  key={investment.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">
+                        {investmentTypeLabels[investment.investment_type]}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(investment.investment_date).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                    <div className="text-lg font-bold text-green-600">
+                      {formatCurrency(investment.amount)}
+                    </div>
+                    {investment.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {investment.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {investment.receipt_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(investment.receipt_url!, '_blank')}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteInvestment(investment.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4">
-                <Label>Lucro Total</Label>
-                <Input value={formatCurrency(totalProfit || 0)} disabled />
-              </div>
-            </form>
-          </Form>
+              ))}
+            </div>
+          )}
         </CardContent>
-        <CardFooter>
-          <Button
-            onClick={() => onAddInvestment()}
-            size="sm"
-            variant="outline"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Investimento
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
