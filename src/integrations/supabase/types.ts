@@ -414,6 +414,470 @@ export type Database = {
           },
         ]
       }
+      development_checklist_items: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          completed_date: string | null
+          created_at: string
+          description: string | null
+          development_id: string
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          development_id: string
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          development_id?: string
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_checklist_items_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_costs: {
+        Row: {
+          actual_amount: number | null
+          category: string
+          created_at: string
+          description: string
+          development_id: string
+          id: string
+          payment_date: string | null
+          phase_id: string | null
+          planned_amount: number
+          receipt_url: string | null
+          subcategory: string | null
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number | null
+          category: string
+          created_at?: string
+          description: string
+          development_id: string
+          id?: string
+          payment_date?: string | null
+          phase_id?: string | null
+          planned_amount: number
+          receipt_url?: string | null
+          subcategory?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number | null
+          category?: string
+          created_at?: string
+          description?: string
+          development_id?: string
+          id?: string
+          payment_date?: string | null
+          phase_id?: string | null
+          planned_amount?: number
+          receipt_url?: string | null
+          subcategory?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_costs_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_costs_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "development_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_documents: {
+        Row: {
+          created_at: string
+          development_id: string
+          document_type: string
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          updated_at: string
+          upload_date: string
+        }
+        Insert: {
+          created_at?: string
+          development_id: string
+          document_type: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          upload_date?: string
+        }
+        Update: {
+          created_at?: string
+          development_id?: string
+          document_type?: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          upload_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_documents_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_milestones: {
+        Row: {
+          actual_date: string | null
+          created_at: string
+          description: string | null
+          development_id: string
+          id: string
+          is_critical: boolean | null
+          phase_id: string | null
+          planned_date: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_date?: string | null
+          created_at?: string
+          description?: string | null
+          development_id: string
+          id?: string
+          is_critical?: boolean | null
+          phase_id?: string | null
+          planned_date: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_date?: string | null
+          created_at?: string
+          description?: string | null
+          development_id?: string
+          id?: string
+          is_critical?: boolean | null
+          phase_id?: string | null
+          planned_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_milestones_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_milestones_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "development_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_phases: {
+        Row: {
+          actual_end_date: string | null
+          actual_start_date: string | null
+          created_at: string
+          development_id: string
+          id: string
+          notes: string | null
+          phase_name: string
+          planned_end_date: string | null
+          planned_start_date: string | null
+          progress_percentage: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          created_at?: string
+          development_id: string
+          id?: string
+          notes?: string | null
+          phase_name: string
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          progress_percentage?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          created_at?: string
+          development_id?: string
+          id?: string
+          notes?: string | null
+          phase_name?: string
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          progress_percentage?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_phases_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_revenues: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          development_id: string
+          id: string
+          received_date: string | null
+          revenue_type: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          development_id: string
+          id?: string
+          received_date?: string | null
+          revenue_type: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          development_id?: string
+          id?: string
+          received_date?: string | null
+          revenue_type?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_revenues_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_revenues_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "development_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      development_units: {
+        Row: {
+          actual_price: number | null
+          area: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          buyer_contact: string | null
+          buyer_name: string | null
+          created_at: string
+          development_id: string
+          floor_number: number | null
+          garage_spots: number | null
+          id: string
+          planned_price: number | null
+          sale_date: string | null
+          status: string
+          unit_number: string
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          actual_price?: number | null
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          buyer_contact?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          development_id: string
+          floor_number?: number | null
+          garage_spots?: number | null
+          id?: string
+          planned_price?: number | null
+          sale_date?: string | null
+          status?: string
+          unit_number: string
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          actual_price?: number | null
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          buyer_contact?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          development_id?: string
+          floor_number?: number | null
+          garage_spots?: number | null
+          id?: string
+          planned_price?: number | null
+          sale_date?: string | null
+          status?: string
+          unit_number?: string
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_units_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      developments: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          current_phase: string
+          description: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          planned_built_area: number | null
+          planned_end_date: string | null
+          planned_start_date: string | null
+          state: string
+          total_land_area: number | null
+          total_units: number | null
+          type: string
+          updated_at: string
+          user_id: string
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          current_phase?: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          planned_built_area?: number | null
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          state: string
+          total_land_area?: number | null
+          total_units?: number | null
+          type: string
+          updated_at?: string
+          user_id: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          current_phase?: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          planned_built_area?: number | null
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          state?: string
+          total_land_area?: number | null
+          total_units?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           category: string

@@ -14,7 +14,8 @@ import {
   LineChart,
   ArrowUpCircle,
   ArrowDownCircle,
-  Scroll
+  Scroll,
+  Construction
 } from "lucide-react";
 
 import {
@@ -47,6 +48,11 @@ export function AppSidebar() {
       name: "Imóveis",
       to: "/properties",
       Icon: Building,
+    },
+    {
+      name: "Incorporações",
+      to: "/developments",
+      Icon: Construction,
     },
     {
       name: "Contratos",
