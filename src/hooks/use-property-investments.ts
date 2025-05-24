@@ -87,9 +87,14 @@ export const usePropertyInvestments = (propertyId: string | null) => {
         }
         
         // Garantir que o amount seja um número válido
-        const amountValue = typeof data.amount === 'string' ? 
-          parseFloat(data.amount.toString().replace(/[^\d,.]/g, '').replace(',', '.')) : 
-          data.amount;
+        let amountValue: number;
+        
+        if (typeof data.amount === 'string') {
+          const cleanAmount = data.amount.replace(/[^\d,.]/g, '').replace(',', '.');
+          amountValue = parseFloat(cleanAmount);
+        } else {
+          amountValue = data.amount;
+        }
           
         if (isNaN(amountValue) || amountValue <= 0) {
           throw new Error('Valor do investimento deve ser maior que zero');
