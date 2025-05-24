@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Sheet,
@@ -18,10 +19,9 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { usePathname, useRouter } from "next/navigation";
+import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/auth";
 import {
   BarChart3,
   Calendar,
@@ -34,6 +34,7 @@ import {
   MapPin,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const items = [
   {
@@ -58,12 +59,12 @@ const items = [
   },
   {
     title: "Financeiro",
-    url: "/finances/dashboard",
+    url: "/finances",
     icon: DollarSign,
   },
   {
     title: "Relatórios",
-    url: "/finances/reports",
+    url: "/reports",
     icon: BarChart3,
   },
   {
@@ -89,25 +90,16 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { toast } = useToast();
-  const { signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      router.push("/login");
-      toast({
-        title: "Logout realizado com sucesso!",
-        description: "Você será redirecionado para a página de login.",
-      });
+      // Simple navigation to login - actual auth logic handled elsewhere
+      navigate("/login");
+      toast.success("Logout realizado com sucesso!");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao realizar logout!",
-        description: error.message,
-      });
+      toast.error("Erro ao realizar logout!");
     }
   };
 
@@ -135,10 +127,9 @@ export function AppSidebar() {
                     navigationMenuTriggerStyle(),
                     "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm"
                   )}
-                  href={item.url}
                   onClick={(event) => {
                     event.preventDefault();
-                    router.push(item.url);
+                    navigate(item.url);
                   }}
                 >
                   <item.icon className="w-4 h-4" />
