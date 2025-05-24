@@ -9,13 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FurnishedStatus, Property, PropertyFormData } from '@/types/property';
+import { Switch } from '@/components/ui/switch';
+import { FurnishedStatus, Property, PropertyFormData, Partner, PropertyDocument } from '@/types/property';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { toast } from 'sonner';
 import { PropertyMap } from './property-map';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvestmentsList, Investment } from './InvestmentsList';
+import { PartnersList } from './PartnersList';
+import { PropertyDocuments } from './PropertyDocuments';
 import { applyDateMask, applyCurrencyMask, isValidDateFormat, parseCurrencyToNumber, convertToISO, convertFromISO } from '@/utils/masks';
 
 const formSchema = z.object({
@@ -43,11 +46,13 @@ const formSchema = z.object({
   // Dados de compra
   purchase_date: z.string().optional().nullable(),
   purchase_value: z.coerce.number().positive().optional().nullable(),
-  square_meter_value: z.coerce.number().positive().optional().nullable(),
   // Dados da imobiliária
   agency_name: z.string().optional().nullable(),
   agency_responsible: z.string().optional().nullable(),
   agency_contact: z.string().optional().nullable(),
+  // Sociedade
+  has_partners: z.boolean().optional().nullable(),
+  owner_percentage: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
 interface PropertyFormProps {
@@ -72,6 +77,9 @@ export function PropertyForm({
   const [showMap, setShowMap] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [partners, setPartners] = useState<Partner[]>(initialData?.partners || []);
+  const [ownerPercentage, setOwnerPercentage] = useState<number>(initialData?.owner_percentage || 0);
+  const [documents, setDocuments] = useState<PropertyDocument[]>(initialData?.documents || []);
 
   // Check if we have initial coordinates
   useEffect(() => {
@@ -115,11 +123,13 @@ export function PropertyForm({
       // Dados de compra
       purchase_date: initialData?.purchase_date ? convertFromISO(initialData.purchase_date) : '',
       purchase_value: initialData?.purchase_value || null,
-      square_meter_value: initialData?.square_meter_value || null,
       // Dados da imobiliária
       agency_name: initialData?.agency_name || null,
       agency_responsible: initialData?.agency_responsible || null,
       agency_contact: initialData?.agency_contact || null,
+      // Sociedade
+      has_partners: initialData?.has_partners || false,
+      owner_percentage: initialData?.owner_percentage || null,
     },
   });
 
@@ -205,7 +215,14 @@ export function PropertyForm({
     // Convert purchase_date to ISO format if provided
     const formattedData = {
       ...data,
-      purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null
+      purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null,
+      // Calcular valor do m² automaticamente
+      square_meter_value: data.area && data.value ? data.value / data.area : null,
+      // Adicionar dados de sociedade
+      partners: data.has_partners ? partners : null,
+      owner_percentage: data.has_partners ? ownerPercentage : null,
+      // Adicionar documentos
+      documents: documents
     };
 
     // If we have map coordinates, make sure they're included in the submission
@@ -263,10 +280,11 @@ export function PropertyForm({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 mb-4">
+        <TabsList className="grid grid-cols-4 mb-4">
           <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
           <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
           <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
+          <TabsTrigger value="documents">Documentos</TabsTrigger>
         </TabsList>
         
         <Form {...form}>
@@ -508,8 +526,8 @@ export function PropertyForm({
                       />
                     </div>
                     
-                    {/* Property value and condo fee */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Property value and condo fee with currency formatting */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="value"
@@ -517,7 +535,14 @@ export function PropertyForm({
                           <FormItem>
                             <FormLabel>Valor</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="Valor do imóvel" {...field} />
+                              <Input 
+                                placeholder="R$ 0,00"
+                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
+                                onChange={(e) => {
+                                  const maskedValue = applyCurrencyMask(e.target.value);
+                                  field.onChange(parseCurrencyToNumber(maskedValue));
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -531,21 +556,14 @@ export function PropertyForm({
                           <FormItem>
                             <FormLabel>Valor do Condomínio</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="Valor do condomínio" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="square_meter_value"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Valor do m²</FormLabel>
-                            <FormControl>
-                              <Input type="number" placeholder="Valor do m²" {...field} readOnly />
+                              <Input 
+                                placeholder="R$ 0,00"
+                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
+                                onChange={(e) => {
+                                  const maskedValue = applyCurrencyMask(e.target.value);
+                                  field.onChange(parseCurrencyToNumber(maskedValue));
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -711,6 +729,44 @@ export function PropertyForm({
                         onChange={setInvestments}
                       />
                     </div>
+
+                    {/* Seção de Sociedade */}
+                    <div className="pt-4">
+                      <FormField
+                        control={form.control}
+                        name="has_partners"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Imóvel com Sociedade</FormLabel>
+                              <p className="text-sm text-muted-foreground">
+                                Este imóvel possui sócios/parceiros
+                              </p>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      {form.watch('has_partners') && (
+                        <div className="pt-4">
+                          <PartnersList
+                            partners={partners}
+                            ownerPercentage={ownerPercentage}
+                            onChange={(newPartners, newOwnerPercentage) => {
+                              setPartners(newPartners);
+                              setOwnerPercentage(newOwnerPercentage);
+                              form.setValue('owner_percentage', newOwnerPercentage);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -767,6 +823,20 @@ export function PropertyForm({
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              <TabsContent value="documents" className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Documentos do Imóvel</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PropertyDocuments
+                      documents={documents}
+                      onChange={setDocuments}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
               {activeTab === "details" && (
                 <Card>
@@ -798,23 +868,19 @@ export function PropertyForm({
               )}
             </div>
             
-            <div className="flex justify-between mt-4">
+            <div className="flex justify-end space-x-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onCancel}
+                disabled={isLoading}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>Salvar</>
-                )}
+              
+              <Button type="submit" disabled={isLoading || isUploading}>
+                {(isLoading || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {initialData ? 'Atualizar Imóvel' : 'Criar Imóvel'}
               </Button>
             </div>
           </form>

@@ -69,7 +69,7 @@ export const convertFromISO = (isoDate: string): string => {
 };
 
 /**
- * Applies Brazilian currency mask (R$ 0.000,00)
+ * Applies Brazilian currency mask (R$ 0.000,00) - IMPROVED VERSION
  * @param value - The input value
  * @returns Formatted currency string
  */
@@ -77,7 +77,7 @@ export const applyCurrencyMask = (value: string): string => {
   // Remove all non-digit characters
   const digits = value.replace(/\D/g, '');
   
-  if (!digits) return '';
+  if (!digits || digits === '0') return '';
   
   // Convert to number and divide by 100 to handle cents
   const number = parseInt(digits) / 100;
@@ -85,7 +85,8 @@ export const applyCurrencyMask = (value: string): string => {
   // Format as Brazilian currency
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL'
+    currency: 'BRL',
+    minimumFractionDigits: 2
   }).format(number);
 };
 
@@ -104,4 +105,19 @@ export const parseCurrencyToNumber = (currencyString: string): number => {
     .replace(',', '.');
     
   return parseFloat(cleanValue) || 0;
+};
+
+/**
+ * Formats a number as currency without the R$ symbol
+ * @param value - Number to format
+ * @returns Formatted currency string
+ */
+export const formatCurrencyValue = (value: number): string => {
+  if (!value) return '';
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2
+  }).format(value);
 };

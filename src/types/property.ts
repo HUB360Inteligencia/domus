@@ -7,6 +7,20 @@ export type PropertyType = 'apartment' | 'house' | 'commercial' | 'land' | 'rura
 
 export type FurnishedStatus = 'not_furnished' | 'partially_furnished' | 'fully_furnished';
 
+export interface Partner {
+  id: string;
+  name: string;
+  percentage: number;
+}
+
+export interface PropertyDocument {
+  id: string;
+  type: string;
+  name: string;
+  date: string;
+  file?: File;
+}
+
 export interface Property {
   id: string;
   title: string;
@@ -51,6 +65,12 @@ export interface Property {
   monthly_return_rate?: number | null;
   annual_return_rate?: number | null;
   vacancy_rate?: number | null;
+  // Novos campos para sociedade
+  has_partners?: boolean | null;
+  partners?: Partner[] | null;
+  owner_percentage?: number | null;
+  // Campo para documentos
+  documents?: PropertyDocument[] | null;
 }
 
 export interface PropertyFormData {
@@ -86,6 +106,12 @@ export interface PropertyFormData {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
+  // Novos campos para sociedade
+  has_partners?: boolean | null;
+  partners?: Partner[] | null;
+  owner_percentage?: number | null;
+  // Campo para documentos
+  documents?: PropertyDocument[] | null;
 }
 
 export interface PropertyValuation {
