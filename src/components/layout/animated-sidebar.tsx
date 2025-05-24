@@ -1,4 +1,3 @@
-
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -92,7 +91,7 @@ const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <MobileSidebar />
     </>
   );
 };
@@ -125,17 +124,14 @@ const DesktopSidebar = ({
 const MobileSidebar = ({
   className,
   children,
-  ...props
-}: React.ComponentProps<"div">) => {
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) => {
   const { open, setOpen } = useSidebar();
   return (
     <>
-      <div
-        className={cn(
-          "h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border"
-        )}
-        {...props}
-      >
+      <div className="h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border">
         <div className="flex items-center gap-2">
           <Building className="h-6 w-6 text-petroleum" />
           <span className="font-bold text-sm">Gestão Patrimonial</span>
