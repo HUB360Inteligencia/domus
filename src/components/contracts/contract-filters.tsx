@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Filter, X } from "lucide-react";
 import {
@@ -454,8 +453,8 @@ export function ContractFilters({ onFilterChange, contracts }: ContractFiltersPr
                   <div className="space-y-2">
                     <Label>Período</Label>
                     <DateRangePicker
-                      value={filters.dateRange}
-                      onChange={(range) => handleFilterChange("dateRange", range)}
+                      date={filters.dateRange}
+                      onDateChange={(range) => handleFilterChange("dateRange", range)}
                     />
                   </div>
                 </AccordionContent>

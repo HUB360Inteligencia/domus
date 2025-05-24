@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Select, 
@@ -11,6 +10,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { ActivityFilters, ActivityStatus, ActivityPriority, ActivityType } from '@/types/activity';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
 
 interface ActivityFiltersProps {
   onFilterChange: (filters: ActivityFilters) => void;
@@ -139,7 +139,7 @@ export function ActivityFiltersBar({
     setFilters(prev => ({ ...prev, responsibleName: supplier || undefined }));
   };
 
-  const handleDateRangeChange = (range: { from: Date | null; to: Date | null }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setFilters(prev => ({ ...prev, dueDateRange: range }));
   };
   
@@ -222,8 +222,8 @@ export function ActivityFiltersBar({
         <div className="space-y-2">
           <label className="text-sm font-medium">Prazo</label>
           <DateRangePicker
-            value={filters.dueDateRange || { from: null, to: null }}
-            onChange={handleDateRangeChange}
+            date={filters.dueDateRange}
+            onDateChange={handleDateRangeChange}
           />
         </div>
 
