@@ -1,5 +1,6 @@
 
 import { Json } from '@/integrations/supabase/types';
+import { DateRange } from 'react-day-picker';
 
 export type ActivityPriority = 'low' | 'medium' | 'high';
 export type ActivityStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -87,7 +88,7 @@ export interface ActivityFilters {
   type?: ActivityType[];
   propertyId?: string;
   contractId?: string;
-  dueDateRange?: { from: Date | null; to: Date | null };
+  dueDateRange?: DateRange;
   // New filters
   neighborhood?: string;
   city?: string;
