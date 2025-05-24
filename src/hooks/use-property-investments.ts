@@ -10,7 +10,7 @@ import {
   calculateTotalInvestment
 } from '@/api/property-investments';
 import { PropertyInvestmentFormData, PropertyInvestment, InvestmentType } from '@/types/property-investment';
-import { parseCurrency } from '@/utils/currency';
+import { parseCurrencyInput } from '@/utils/currency';
 
 export const usePropertyInvestments = (propertyId: string | null) => {
   const [totalInvestment, setTotalInvestment] = useState<number>(0);
@@ -44,6 +44,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property-investments', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       toast.success('Investimento registrado com sucesso!');
     },
     onError: (error: Error) => {
@@ -57,6 +58,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property-investments', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       toast.success('Investimento excluído com sucesso!');
     },
     onError: (error: Error) => {
@@ -87,14 +89,16 @@ export const usePropertyInvestments = (propertyId: string | null) => {
           receiptUrl = await uploadReceiptMutation.mutateAsync(receiptFile);
         }
         
-        // Parse the amount value using our currency utility
-        // Garantir que o amount seja tratado corretamente, permitindo zero
+        // Enhanced parsing that properly handles zero values
         const amountValue = typeof data.amount === 'string' 
-          ? parseCurrency(data.amount) 
+          ? parseCurrencyInput(data.amount) 
           : data.amount;
           
+        console.log('Parsed amount value:', amountValue);
+          
+        // Allow zero values for investments
         if (isNaN(amountValue) || amountValue < 0) {
-          throw new Error('Valor do investimento deve ser um número válido');
+          throw new Error('Valor do investimento deve ser um número válido (zero ou positivo)');
         }
         
         const investmentData: PropertyInvestmentFormData = {

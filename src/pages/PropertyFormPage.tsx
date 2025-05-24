@@ -25,36 +25,40 @@ export default function PropertyFormPage() {
     isUploading
   } = useProperties();
 
-  // Memoizar a função para evitar re-criações desnecessárias
-  const loadPropertyData = useCallback((id: string) => {
-    setSelectedPropertyId(id);
-  }, [setSelectedPropertyId]);
-
-  // Memoizar os parâmetros da URL para evitar re-execuções desnecessárias
+  // Optimize URL params parsing
   const urlParams = useMemo(() => {
     return new URLSearchParams(location.search);
   }, [location.search]);
 
+  // Optimize property data loading function
+  const loadPropertyData = useCallback((id: string) => {
+    console.log('Loading property data for ID:', id);
+    setSelectedPropertyId(id);
+  }, [setSelectedPropertyId]);
+
+  // Optimize the main effect that handles URL changes
   useEffect(() => {
     const id = urlParams.get('id');
-    if (id) {
-      if (propertyId !== id) {
-        setPropertyId(id);
-        loadPropertyData(id);
-        setIsEditMode(true);
-      }
-    } else {
-      if (isEditMode || propertyId) {
-        setIsEditMode(false);
-        setPropertyId(null);
-        setSelectedPropertyId(null);
-      }
+    
+    if (id && id !== propertyId) {
+      console.log('URL changed, loading property:', id);
+      setPropertyId(id);
+      loadPropertyData(id);
+      setIsEditMode(true);
+    } else if (!id && (isEditMode || propertyId)) {
+      console.log('No ID in URL, switching to create mode');
+      setIsEditMode(false);
+      setPropertyId(null);
+      setSelectedPropertyId(null);
     }
   }, [urlParams, loadPropertyData, setSelectedPropertyId, propertyId, isEditMode]);
 
-  const handleSubmit = async (data: PropertyFormData, imageFile?: File) => {
+  // Optimize form submission handler
+  const handleSubmit = useCallback(async (data: PropertyFormData, imageFile?: File) => {
     try {
-      // Filtrar apenas os campos que existem no banco de dados
+      console.log('Submitting property form:', { isEditMode, propertyId, data });
+      
+      // Filter only fields that exist in the database
       const filteredData: PropertyFormData = {
         title: data.title,
         description: data.description,
@@ -90,18 +94,22 @@ export default function PropertyFormPage() {
       };
 
       if (isEditMode && propertyId) {
+        console.log('Updating existing property');
         await updateProperty({ id: propertyId, ...filteredData });
         
         if (imageFile) {
+          console.log('Uploading new image');
           await uploadPropertyImage({ id: propertyId, imageFile });
         }
         
         toast.success('Imóvel atualizado com sucesso!');
         navigate('/properties');
       } else {
+        console.log('Creating new property');
         const newProperty = await createProperty(filteredData);
         
         if (imageFile && newProperty && newProperty.id) {
+          console.log('Uploading image for new property');
           await uploadPropertyImage({ id: newProperty.id, imageFile });
         }
         
@@ -112,13 +120,15 @@ export default function PropertyFormPage() {
       console.error('Error saving property:', error);
       toast.error('Erro ao salvar imóvel: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     }
-  };
+  }, [isEditMode, propertyId, updateProperty, uploadPropertyImage, createProperty, navigate]);
 
+  // Optimize cancel handler
   const handleCancel = useCallback(() => {
     navigate('/properties');
   }, [navigate]);
 
-  if (isEditMode && isLoading) {
+  // Show loading state only when necessary
+  if (isEditMode && isLoading && !selectedProperty) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="h-12 w-12 animate-spin text-petroleum mb-4" />
