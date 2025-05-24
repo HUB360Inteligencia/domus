@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { AppLayout } from '@/components/layout/app-layout';
 import LoginPage from '@/pages/auth/Login';
 import RegisterPage from '@/pages/auth/Register';
+import Dashboard from '@/pages/Dashboard';
 import PropertiesPage from '@/pages/Properties';
 import PropertyDetailPage from '@/pages/PropertyDetailPage';
 import FinancesDashboardPage from '@/pages/finances/FinanceDashboardPage';
@@ -54,7 +55,18 @@ function App() {
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <Navigate to="/properties" replace />
+                  <Navigate to="/dashboard" replace />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
                 </AppLayout>
               </ProtectedRoute>
             } 

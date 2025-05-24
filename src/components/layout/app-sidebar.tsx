@@ -39,7 +39,7 @@ import { toast } from "sonner";
 const items = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -60,6 +60,11 @@ const items = [
   {
     title: "Financeiro",
     url: "/finances",
+    icon: DollarSign,
+  },
+  {
+    title: "Transações",
+    url: "/transactions",
     icon: DollarSign,
   },
   {
@@ -125,7 +130,8 @@ export function AppSidebar() {
                 <NavigationMenuLink
                   className={cn(
                     navigationMenuTriggerStyle(),
-                    "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm"
+                    "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm",
+                    location.pathname === item.url && "bg-secondary"
                   )}
                   onClick={(event) => {
                     event.preventDefault();
