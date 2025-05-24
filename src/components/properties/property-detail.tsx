@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { PropertyMap } from './property-map';
+import { PropertyDetailMap } from './property-detail-map';
 import { PropertyFinancialSection } from './PropertyFinancialSection';
 import { PropertyContractSection } from './PropertyContractSection';
 import { PropertyImageGallery } from './PropertyImageGallery';
@@ -345,26 +345,24 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           />
         </TabsContent>
 
-        {/* Location Tab */}
+        {/* Enhanced Location Tab with Advanced Map */}
         <TabsContent value="location">
           <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Localização Avançada
+              </CardTitle>
+            </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
                 <Skeleton className="h-[500px] w-full" />
+              ) : property ? (
+                <PropertyDetailMap property={property} />
               ) : (
-                <PropertyMap 
-                  address={property?.address || ''}
-                  city={property?.city || ''}
-                  state={property?.state || ''}
-                  propertyId={property?.id}
-                  property_number={property?.property_number}
-                  complement={property?.complement}
-                  neighborhood={property?.neighborhood}
-                  initialCoords={property?.latitude && property?.longitude 
-                    ? { lat: property.latitude, lng: property.longitude }
-                    : null
-                  }
-                />
+                <div className="flex items-center justify-center h-[500px] bg-muted">
+                  <p className="text-muted-foreground">Propriedade não encontrada</p>
+                </div>
               )}
             </CardContent>
           </Card>
