@@ -32,7 +32,7 @@ export interface Property {
   city: string;
   state: string;
   zip_code?: string;
-  type: PropertyType | string; // Allow both PropertyType and string for flexibility
+  type: PropertyType | string;
   status: PropertyStatus;
   value: number;
   area?: number;
@@ -42,14 +42,13 @@ export interface Property {
   condo_fee?: number;
   floor_number?: number;
   furnished?: FurnishedStatus;
-  features?: Json | Record<string, any>; // Accept both Json type from Supabase and Record type
+  features?: Json | Record<string, any>;
   image_url?: string;
   user_id: string;
   created_at: string;
   updated_at: string;
   latitude?: number | null;
   longitude?: number | null;
-  // Novos campos
   purchase_date?: string | null;
   purchase_value?: number | null;
   tenant_name?: string | null;
@@ -59,18 +58,12 @@ export interface Property {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
-  // Add these for ROIChart and PropertyInvestmentSection
   last_valuation_date?: string | null;
   total_investment?: number | null;
   monthly_return_rate?: number | null;
   annual_return_rate?: number | null;
   vacancy_rate?: number | null;
-  // Novos campos para sociedade
-  has_partners?: boolean | null;
-  partners?: Partner[] | null;
-  owner_percentage?: number | null;
-  // Campo para documentos
-  documents?: PropertyDocument[] | null;
+  // Removi os campos que não existem no banco: has_partners, partners, owner_percentage, documents
 }
 
 export interface PropertyFormData {
@@ -96,7 +89,6 @@ export interface PropertyFormData {
   features?: Record<string, any>;
   latitude?: number | null;
   longitude?: number | null;
-  // Novos campos
   purchase_date?: string | null;
   purchase_value?: number | null;
   tenant_name?: string | null;
@@ -106,12 +98,7 @@ export interface PropertyFormData {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
-  // Novos campos para sociedade
-  has_partners?: boolean | null;
-  partners?: Partner[] | null;
-  owner_percentage?: number | null;
-  // Campo para documentos
-  documents?: PropertyDocument[] | null;
+  // Removi os campos que não existem no banco: has_partners, partners, owner_percentage, documents
 }
 
 export interface PropertyValuation {

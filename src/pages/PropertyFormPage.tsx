@@ -25,14 +25,12 @@ export default function PropertyFormPage() {
     isUploading
   } = useProperties();
 
-  // Use useCallback to stabilize this function reference
   const loadPropertyData = useCallback((id: string) => {
     console.log('Loading property data for ID:', id);
     setSelectedPropertyId(id);
   }, [setSelectedPropertyId]);
 
   useEffect(() => {
-    // Check if we're in edit mode by looking for an ID in the URL
     const params = new URLSearchParams(location.search);
     const id = params.get('id');
     if (id) {
@@ -44,12 +42,10 @@ export default function PropertyFormPage() {
       console.log('Create mode detected');
       setIsEditMode(false);
       setPropertyId(null);
-      // Reset selected property when in create mode
       setSelectedPropertyId(null);
     }
   }, [location.search, loadPropertyData, setSelectedPropertyId]);
 
-  // Debug log to track selectedProperty changes
   useEffect(() => {
     if (isEditMode) {
       console.log('Selected property updated:', selectedProperty);
@@ -58,12 +54,45 @@ export default function PropertyFormPage() {
 
   const handleSubmit = async (data: PropertyFormData, imageFile?: File) => {
     try {
+      // Filtrar apenas os campos que existem no banco de dados
+      const filteredData: PropertyFormData = {
+        title: data.title,
+        description: data.description,
+        address: data.address,
+        property_number: data.property_number,
+        complement: data.complement,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        zip_code: data.zip_code,
+        type: data.type,
+        status: data.status,
+        value: data.value,
+        area: data.area,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        garage_spots: data.garage_spots,
+        condo_fee: data.condo_fee,
+        floor_number: data.floor_number,
+        furnished: data.furnished,
+        features: data.features,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        purchase_date: data.purchase_date,
+        purchase_value: data.purchase_value,
+        tenant_name: data.tenant_name,
+        tenant_contact: data.tenant_contact,
+        agency_name: data.agency_name,
+        agency_responsible: data.agency_responsible,
+        agency_contact: data.agency_contact,
+        square_meter_value: data.square_meter_value,
+        tags: data.tags,
+      };
+
       if (isEditMode && propertyId) {
-        // Update existing property
-        console.log('Updating property with data:', { id: propertyId, ...data });
-        await updateProperty({ id: propertyId, ...data });
+        console.log('Updating property with data:', { id: propertyId, ...filteredData });
+        await updateProperty({ id: propertyId, ...filteredData });
         
-        // If there's a new image, upload it
         if (imageFile) {
           console.log('Uploading new image for property');
           await uploadPropertyImage({ id: propertyId, imageFile });
@@ -72,11 +101,9 @@ export default function PropertyFormPage() {
         toast.success('Imóvel atualizado com sucesso!');
         navigate('/properties');
       } else {
-        // Create new property with proper return handling
-        console.log('Creating new property with data:', data);
-        const newProperty = await createProperty(data);
+        console.log('Creating new property with data:', filteredData);
+        const newProperty = await createProperty(filteredData);
         
-        // If there's an image and the property was created successfully
         if (imageFile && newProperty && newProperty.id) {
           console.log('Uploading image for new property');
           await uploadPropertyImage({ id: newProperty.id, imageFile });
@@ -111,7 +138,7 @@ export default function PropertyFormPage() {
       </h1>
       
       <PropertyForm
-        key={selectedProperty?.id || 'new'} // Add key to force re-render when changing property
+        key={selectedProperty?.id || 'new'}
         initialData={isEditMode ? selectedProperty : undefined}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
