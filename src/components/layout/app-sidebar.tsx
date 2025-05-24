@@ -1,195 +1,164 @@
-
-import { 
-  Building, 
-  FileText, 
-  LayoutDashboard, 
-  Users, 
-  MessageSquare,
-  Settings,
-  CheckSquare,
+import React from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  BarChart3,
+  Calendar,
+  DollarSign,
+  FileText,
   Home,
-  FileBox,
-  Wallet,
-  User,
-  LineChart,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Scroll,
-  Construction
+  Settings,
+  Users,
+  Building,
+  MapPin,
+  TrendingUp,
 } from "lucide-react";
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton
-} from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+const items = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: Home,
+  },
+  {
+    title: "Imóveis",
+    url: "/properties",
+    icon: Building,
+  },
+  {
+    title: "Mapa de Imóveis",
+    url: "/properties/map",
+    icon: MapPin,
+  },
+  {
+    title: "Contratos",
+    url: "/contracts",
+    icon: FileText,
+  },
+  {
+    title: "Financeiro",
+    url: "/finances/dashboard",
+    icon: DollarSign,
+  },
+  {
+    title: "Relatórios",
+    url: "/finances/reports",
+    icon: BarChart3,
+  },
+  {
+    title: "Agendamentos",
+    url: "/schedules",
+    icon: Calendar,
+  },
+  {
+    title: "Usuários",
+    url: "/users",
+    icon: Users,
+  },
+  {
+    title: "Configurações",
+    url: "/settings",
+    icon: Settings,
+  },
+  {
+    title: "Relatórios Avançados",
+    url: "/advanced-reports",
+    icon: TrendingUp,
+  },
+];
 
 export function AppSidebar() {
-  const menuItems = [
-    {
-      name: "Dashboard",
-      to: "/dashboard",
-      Icon: Home,
-    },
-    {
-      name: "Imóveis",
-      to: "/properties",
-      Icon: Building,
-    },
-    {
-      name: "Incorporações",
-      to: "/developments",
-      Icon: Construction,
-    },
-    {
-      name: "Contratos",
-      to: "/contracts",
-      Icon: FileText,
-    },
-    {
-      name: "Atividades",
-      to: "/activities",
-      Icon: CheckSquare,
-    },
-    {
-      name: "Documentos",
-      to: "/documents",
-      Icon: FileBox,
-    },
-    {
-      name: "Usuários",
-      to: "/users",
-      Icon: User,
-    },
-  ];
+  const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { signOut } = useAuth();
 
-  const financeSubMenu = [
-    {
-      name: "Painel",
-      to: "/finances/dashboard",
-      Icon: LineChart,
-    },
-    {
-      name: "Receitas",
-      to: "/finances/income",
-      Icon: ArrowUpCircle,
-    },
-    {
-      name: "Despesas",
-      to: "/finances/expenses",
-      Icon: ArrowDownCircle,
-    },
-    {
-      name: "Relatórios",
-      to: "/finances/reports",
-      Icon: Scroll,
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push("/login");
+      toast({
+        title: "Logout realizado com sucesso!",
+        description: "Você será redirecionado para a página de login.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao realizar logout!",
+        description: error.message,
+      });
     }
-  ];
+  };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex items-center gap-2 p-4">
-        <Building className="h-8 w-8 text-petroleum" />
-        <div className="flex flex-col">
-          <span className="font-bold">Gestão Patrimonial</span>
-          <span className="text-xs text-muted-foreground">
-            Versão 1.0
-          </span>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm" className="p-0">
+          Menu
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:w-[280px] pr-0" side="left">
+        <SheetHeader className="pl-5 pb-4 pt-6">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>
+            Navegue pelas funcionalidades do sistema.
+          </SheetDescription>
+        </SheetHeader>
+        <Separator />
+        <NavigationMenu>
+          <NavigationMenuList className="flex flex-col gap-0.5 pl-2">
+            {items.map((item) => (
+              <NavigationMenuItem key={item.url}>
+                <NavigationMenuLink
+                  className={cn(
+                    navigationMenuTriggerStyle(),
+                    "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm"
+                  )}
+                  href={item.url}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    router.push(item.url);
+                  }}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.title}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
+        <Separator />
+        <div className="p-4">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={handleSignOut}
+          >
+            Sair
+          </Button>
         </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild>
-                <Link to={item.to}>
-                  <item.Icon className="h-5 w-5 mr-2" />
-                  {item.name}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Wallet className="h-5 w-5 mr-2" />
-              Finanças
-            </SidebarMenuButton>
-            <SidebarMenuSub>
-              {financeSubMenu.map((item) => (
-                <SidebarMenuSubItem key={item.name}>
-                  <SidebarMenuSubButton asChild>
-                    <Link to={item.to}>
-                      <item.Icon className="h-4 w-4 mr-2" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        
-        <SidebarGroup>
-          <SidebarGroupLabel>Inteligência artificial</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/ai-assistant">
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    Assistente IA
-                    <Badge className="ml-auto" variant="secondary">Novo</Badge>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/admin/settings">
-                    <Settings className="h-5 w-5 mr-2" />
-                    Configurações
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter className="p-4 border-t">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="Perfil" />
-            <AvatarFallback className="bg-petroleum text-white">AP</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <p className="text-sm font-medium">Admin Principal</p>
-            <p className="text-xs text-muted-foreground">admin@exemplo.com</p>
-          </div>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+      </SheetContent>
+    </Sheet>
   );
 }
