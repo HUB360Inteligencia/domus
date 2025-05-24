@@ -124,8 +124,8 @@ const MobileSidebar = () => {
   const { open, setOpen } = useSidebar();
   return (
     <>
-      {/* Mobile Header Bar */}
-      <div className="h-14 px-4 py-2 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border relative z-50">
+      {/* Mobile Header Bar - Fixed position, doesn't take layout space */}
+      <div className="fixed top-0 left-0 right-0 h-14 px-4 py-2 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border z-50">
         <div className="flex items-center gap-2">
           <Building className="h-5 w-5 text-petroleum" />
           <span className="font-bold text-sm">Gestão Patrimonial</span>
@@ -142,6 +142,9 @@ const MobileSidebar = () => {
         </button>
       </div>
 
+      {/* Mobile spacer to prevent content from hiding behind fixed header */}
+      <div className="h-14 md:hidden" />
+
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {open && (
@@ -156,13 +159,13 @@ const MobileSidebar = () => {
               onClick={() => setOpen(false)}
             />
             
-            {/* Menu Panel */}
+            {/* Menu Panel - Fixed and centered */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-80 bg-sidebar border-r border-sidebar-border z-50 md:hidden overflow-y-auto"
+              className="fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-80 max-w-[80vw] bg-sidebar border-r border-sidebar-border z-50 md:hidden overflow-y-auto"
             >
               <div className="p-4">
                 <SidebarMenuContent />

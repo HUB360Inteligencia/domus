@@ -8,15 +8,8 @@ export function AppLayout() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="patrimonio-theme">
       <div className="flex min-h-screen w-full bg-background">
-        {/* Desktop sidebar - hidden on mobile */}
-        <div className="hidden md:block">
-          <AppSidebar />
-        </div>
-        
-        {/* Mobile sidebar - shown only on mobile */}
-        <div className="md:hidden">
-          <AppSidebar />
-        </div>
+        {/* Single responsive sidebar */}
+        <AppSidebar />
         
         <div className="flex flex-col flex-1 min-w-0">
           <AppHeader />
