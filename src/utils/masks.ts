@@ -69,7 +69,7 @@ export const convertFromISO = (isoDate: string): string => {
 };
 
 /**
- * Applies Brazilian currency mask (R$ 0.000,00) - IMPROVED VERSION
+ * Applies Brazilian currency mask (R$ 0.000,00) - FIXED VERSION
  * @param value - The input value
  * @returns Formatted currency string
  */
@@ -77,7 +77,8 @@ export const applyCurrencyMask = (value: string): string => {
   // Remove all non-digit characters
   const digits = value.replace(/\D/g, '');
   
-  if (!digits || digits === '0') return '';
+  // If empty, return empty string
+  if (!digits) return '';
   
   // Convert to number and divide by 100 to handle cents
   const number = parseInt(digits) / 100;
