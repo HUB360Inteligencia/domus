@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
@@ -19,6 +19,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const markersRef = useRef<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
   
   const { getTokenForContext, getStyleForContext, isTokenLoading } = useMapbox();
   const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
@@ -27,19 +28,25 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const token = getTokenForContext('mapbox_token_property_list');
   const mapStyle = getStyleForContext('mapbox_style_property_list');
 
-  console.log('PropertyMapView render:', { 
+  console.log('PropertyMapView: Render state:', { 
     token: !!token, 
     mapboxLoaded, 
     mapboxLoading, 
     mapboxError,
-    propertiesCount: properties.length 
+    propertiesCount: properties.length,
+    isMapInitialized,
+    isTokenLoading
   });
 
-  // Memoize properties to prevent unnecessary re-renders
-  const memoizedProperties = useMemo(() => {
-    console.log('Memoizing properties:', properties.length);
-    return properties.filter(p => p.latitude && p.longitude);
-  }, [properties.length]);
+  // Memoize properties with coordinates only
+  const propertiesWithCoords = useMemo(() => {
+    const filtered = properties.filter(p => p.latitude && p.longitude);
+    console.log('PropertyMapView: Properties with coords:', {
+      total: properties.length,
+      withCoords: filtered.length
+    });
+    return filtered;
+  }, [properties]);
 
   // Property type icons mapping
   const getPropertyIcon = (type: string) => {
@@ -65,31 +72,43 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     }
   };
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl) {
-      console.log('Map initialization skipped:', { mapboxLoaded, token: !!token, container: !!mapContainer.current, mapboxgl: !!window.mapboxgl });
-      return;
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'available': return 'Disponível';
+      case 'rented': return 'Alugado';
+      case 'airbnb': return 'Airbnb';
+      case 'maintenance': return 'Manutenção';
+      case 'sold': return 'Vendido';
+      default: return status;
     }
+  };
 
-    if (mapRef.current) {
-      console.log('Map already initialized');
+  // Initialize map when all conditions are met
+  useEffect(() => {
+    console.log('PropertyMapView: Map initialization effect triggered');
+    
+    if (!mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl || mapRef.current || isMapInitialized) {
+      console.log('PropertyMapView: Map initialization skipped:', { 
+        mapboxLoaded, 
+        token: !!token, 
+        container: !!mapContainer.current, 
+        mapboxgl: !!window.mapboxgl,
+        existingMap: !!mapRef.current,
+        isMapInitialized
+      });
       return;
     }
 
     try {
-      console.log('Initializing map with token and style:', { token: token.substring(0, 20) + '...', mapStyle });
+      console.log('PropertyMapView: Initializing map...');
       
       window.mapboxgl.accessToken = token;
       
-      // Calculate bounds for all properties with coordinates
-      const propertiesWithCoords = memoizedProperties;
-      
+      // Calculate center and zoom
       let center = [-46.633308, -23.550520]; // Default to São Paulo
       let zoom = 10;
       
       if (propertiesWithCoords.length > 0) {
-        // If only one property, center on it
         if (propertiesWithCoords.length === 1) {
           center = [propertiesWithCoords[0].longitude!, propertiesWithCoords[0].latitude!];
           zoom = 15;
@@ -120,28 +139,23 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
         });
       }
 
-      console.log('Map initialized successfully');
+      setIsMapInitialized(true);
+      console.log('PropertyMapView: Map initialized successfully');
       setError(null);
     } catch (err) {
-      console.error('Error initializing map:', err);
+      console.error('PropertyMapView: Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-
-    // Cleanup on unmount
-    return () => {
-      if (mapRef.current) {
-        console.log('Cleaning up map');
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [mapboxLoaded, token, mapStyle, memoizedProperties]);
+  }, [mapboxLoaded, token, mapStyle, propertiesWithCoords.length, isMapInitialized]);
 
   // Update markers when properties change
   useEffect(() => {
-    if (!mapRef.current || !mapboxLoaded) return;
+    if (!mapRef.current || !isMapInitialized) {
+      console.log('PropertyMapView: Skipping marker update - map not ready');
+      return;
+    }
 
-    console.log('Updating markers for', memoizedProperties.length, 'properties');
+    console.log('PropertyMapView: Updating markers for', propertiesWithCoords.length, 'properties');
 
     // Clear existing markers
     markersRef.current.forEach(marker => {
@@ -151,7 +165,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     markersRef.current = [];
 
     // Add markers for properties with coordinates
-    memoizedProperties.forEach(property => {
+    propertiesWithCoords.forEach(property => {
       // Create custom marker element
       const markerElement = document.createElement('div');
       markerElement.className = 'custom-marker';
@@ -245,22 +259,21 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     return () => {
       markersRef.current.forEach(marker => {
         if (marker.cleanupListeners) marker.cleanupListeners();
-        marker.remove();
       });
-      markersRef.current = [];
     };
-  }, [mapboxLoaded, mapRef.current, memoizedProperties, onSelect]);
+  }, [propertiesWithCoords, onSelect, isMapInitialized]);
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'available': return 'Disponível';
-      case 'rented': return 'Alugado';
-      case 'airbnb': return 'Airbnb';
-      case 'maintenance': return 'Manutenção';
-      case 'sold': return 'Vendido';
-      default: return status;
-    }
-  };
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('PropertyMapView: Component unmounting, cleaning up');
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      setIsMapInitialized(false);
+    };
+  }, []);
 
   if (isTokenLoading || mapboxLoading) {
     return (
@@ -342,7 +355,6 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     );
   }
 
-  const propertiesWithCoords = memoizedProperties;
   const propertiesWithoutCoords = properties.length - propertiesWithCoords.length;
 
   return (

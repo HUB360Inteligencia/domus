@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
-import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, RefreshCw, Bug } from 'lucide-react';
 
 interface MapDebugPanelProps {
   isVisible?: boolean;
@@ -23,7 +23,9 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
           size="sm" 
           variant="outline"
           onClick={() => setShowDetails(true)}
+          className="bg-white shadow-lg"
         >
+          <Bug className="h-4 w-4 mr-1" />
           Debug Mapbox
         </Button>
       </div>
@@ -56,12 +58,23 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
     return 'bg-red-100 text-red-800';
   };
 
+  // Debug info for troubleshooting
+  const debugInfo = {
+    windowMapboxgl: !!window.mapboxgl,
+    documentScripts: Array.from(document.querySelectorAll('script[src*="mapbox"]')).length,
+    documentLinks: Array.from(document.querySelectorAll('link[href*="mapbox"]')).length,
+    timestamp: new Date().toLocaleTimeString()
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-md">
-      <Card>
+      <Card className="shadow-lg border-2">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-sm">Debug Mapbox</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Bug className="h-4 w-4" />
+              Debug Mapbox
+            </CardTitle>
             <Button 
               size="sm" 
               variant="ghost"
@@ -71,10 +84,10 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 text-xs">
           {/* Mapbox Loader Status */}
           <div>
-            <h4 className="text-xs font-medium mb-1">Mapbox Loader</h4>
+            <h4 className="font-medium mb-1">Mapbox Loader</h4>
             <div className="flex items-center gap-2">
               {getStatusIcon(isLoaded, isLoading)}
               <Badge className={getStatusColor(isLoaded, isLoading)}>
@@ -82,13 +95,13 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
               </Badge>
             </div>
             {loaderError && (
-              <p className="text-xs text-red-600 mt-1">{loaderError}</p>
+              <p className="text-red-600 mt-1">{loaderError}</p>
             )}
           </div>
 
           {/* Context Status */}
           <div>
-            <h4 className="text-xs font-medium mb-1">Context</h4>
+            <h4 className="font-medium mb-1">Context</h4>
             <div className="flex items-center gap-2">
               {getStatusIcon(!contextError, isTokenLoading)}
               <Badge className={getStatusColor(!contextError, isTokenLoading)}>
@@ -96,22 +109,22 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
               </Badge>
             </div>
             {contextError && (
-              <p className="text-xs text-red-600 mt-1">{contextError}</p>
+              <p className="text-red-600 mt-1">{contextError}</p>
             )}
           </div>
 
           {/* Tokens */}
           <div>
-            <h4 className="text-xs font-medium mb-1">Tokens</h4>
+            <h4 className="font-medium mb-1">Tokens</h4>
             <div className="space-y-1">
               {tokenTypes.map(tokenType => {
                 const token = getTokenForContext(tokenType);
                 return (
-                  <div key={tokenType} className="flex items-center gap-2 text-xs">
+                  <div key={tokenType} className="flex items-center gap-2">
                     {getStatusIcon(!!token, false)}
-                    <span className="flex-1">{tokenType.replace('mapbox_token_', '')}</span>
-                    <Badge variant={token ? 'default' : 'secondary'} className="text-xs">
-                      {token ? 'Configurado' : 'Não configurado'}
+                    <span className="flex-1 truncate">{tokenType.replace('mapbox_token_', '')}</span>
+                    <Badge variant={token ? 'default' : 'secondary'}>
+                      {token ? `${token.substring(0, 8)}...` : 'Não configurado'}
                     </Badge>
                   </div>
                 );
@@ -121,16 +134,16 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
 
           {/* Styles */}
           <div>
-            <h4 className="text-xs font-medium mb-1">Estilos</h4>
+            <h4 className="font-medium mb-1">Estilos</h4>
             <div className="space-y-1">
               {styleTypes.map(styleType => {
                 const style = getStyleForContext(styleType);
                 return (
-                  <div key={styleType} className="flex items-center gap-2 text-xs">
+                  <div key={styleType} className="flex items-center gap-2">
                     {getStatusIcon(!!style, false)}
-                    <span className="flex-1">{styleType.replace('mapbox_style_', '')}</span>
-                    <Badge variant={style ? 'default' : 'secondary'} className="text-xs">
-                      {style ? 'Configurado' : 'Padrão'}
+                    <span className="flex-1 truncate">{styleType.replace('mapbox_style_', '')}</span>
+                    <Badge variant={style ? 'default' : 'secondary'}>
+                      {style ? 'OK' : 'Padrão'}
                     </Badge>
                   </div>
                 );
@@ -138,19 +151,32 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
             </div>
           </div>
 
-          {/* Mapbox Global */}
+          {/* Debug Info */}
           <div>
-            <h4 className="text-xs font-medium mb-1">Mapbox Global</h4>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(!!window.mapboxgl, false)}
-              <Badge className={getStatusColor(!!window.mapboxgl, false)}>
-                {window.mapboxgl ? 'Disponível' : 'Não disponível'}
-              </Badge>
+            <h4 className="font-medium mb-1">Debug Info</h4>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span>window.mapboxgl:</span>
+                <Badge variant={debugInfo.windowMapboxgl ? 'default' : 'destructive'}>
+                  {debugInfo.windowMapboxgl ? 'OK' : 'Não'}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span>Scripts:</span>
+                <Badge variant="outline">{debugInfo.documentScripts}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span>CSS:</span>
+                <Badge variant="outline">{debugInfo.documentLinks}</Badge>
+              </div>
+              <div className="text-muted-foreground">
+                Atualizado: {debugInfo.timestamp}
+              </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t space-y-2">
             <Button 
               size="sm" 
               variant="outline" 
@@ -159,6 +185,23 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
             >
               <RefreshCw className="h-3 w-3 mr-1" />
               Recarregar Página
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => {
+                console.log('=== MAPBOX DEBUG DUMP ===');
+                console.log('Loader state:', { isLoaded, isLoading, error: loaderError });
+                console.log('Context error:', contextError);
+                console.log('Token loading:', isTokenLoading);
+                console.log('Tokens:', tokenTypes.map(t => ({ type: t, token: getTokenForContext(t) })));
+                console.log('Styles:', styleTypes.map(t => ({ type: t, style: getStyleForContext(t) })));
+                console.log('Debug info:', debugInfo);
+                console.log('=== END DEBUG DUMP ===');
+              }}
+              className="w-full"
+            >
+              Log Debug Info
             </Button>
           </div>
         </CardContent>

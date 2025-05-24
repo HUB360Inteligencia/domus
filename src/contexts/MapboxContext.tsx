@@ -39,22 +39,26 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
   
   const { getMapboxToken, getMapboxStyle, isLoading: isSettingsLoading, error: settingsError } = useSystemSettings();
 
-  console.log('MapboxProvider render:', { 
+  console.log('MapboxProvider: Render state:', { 
     isSettingsLoading, 
     settingsError, 
-    legacyToken: !!legacyToken 
+    legacyToken: !!legacyToken,
+    isLoading 
   });
 
   // Load legacy token from localStorage on mount
   useEffect(() => {
+    console.log('MapboxProvider: Loading legacy token from localStorage');
     try {
       const savedToken = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedToken) {
-        console.log('Loaded legacy token from localStorage');
+        console.log('MapboxProvider: Legacy token found in localStorage');
         setLegacyTokenState(savedToken);
+      } else {
+        console.log('MapboxProvider: No legacy token in localStorage');
       }
     } catch (e) {
-      console.error('Error loading legacy Mapbox token:', e);
+      console.error('MapboxProvider: Error loading legacy token:', e);
     } finally {
       setIsLoading(false);
     }
@@ -63,49 +67,52 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
   // Set error from settings
   useEffect(() => {
     if (settingsError) {
-      console.error('Settings error:', settingsError);
+      console.error('MapboxProvider: Settings error:', settingsError);
       setError(settingsError);
+    } else {
+      setError(null);
     }
   }, [settingsError]);
 
   const setToken = (newToken: string) => {
+    console.log('MapboxProvider: Setting new legacy token');
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, newToken);
       setLegacyTokenState(newToken);
       setError(null);
-      console.log('Legacy token updated');
+      console.log('MapboxProvider: Legacy token updated successfully');
     } catch (e) {
-      console.error('Error saving legacy Mapbox token:', e);
+      console.error('MapboxProvider: Error saving legacy token:', e);
       setError('Failed to save token');
     }
   };
 
   const getTokenForContext = (tokenType: MapboxTokenType): string | null => {
-    console.log(`Getting token for context: ${tokenType}`);
+    console.log(`MapboxProvider: Getting token for context: ${tokenType}`);
     
     // First try to get the token from system settings
     const systemToken = getMapboxToken(tokenType);
     if (systemToken) {
-      console.log(`Found system token for ${tokenType}`);
+      console.log(`MapboxProvider: Found system token for ${tokenType}`);
       return systemToken;
     }
 
     // Fallback to legacy token for backward compatibility
     if (legacyToken) {
-      console.log(`Using legacy token for ${tokenType}`);
+      console.log(`MapboxProvider: Using legacy token for ${tokenType}`);
       return legacyToken;
     }
 
-    console.log(`No token found for ${tokenType}`);
+    console.log(`MapboxProvider: No token found for ${tokenType}`);
     return null;
   };
 
   const getStyleForContext = (styleType: MapboxStyleType): string | null => {
-    console.log(`Getting style for context: ${styleType}`);
+    console.log(`MapboxProvider: Getting style for context: ${styleType}`);
     
     const style = getMapboxStyle(styleType);
     if (style) {
-      console.log(`Found custom style for ${styleType}:`, style);
+      console.log(`MapboxProvider: Found custom style for ${styleType}:`, style);
       return style;
     }
 
@@ -125,17 +132,18 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
       }
     })();
     
-    console.log(`Using fallback style for ${styleType}:`, fallbackStyle);
+    console.log(`MapboxProvider: Using fallback style for ${styleType}:`, fallbackStyle);
     return fallbackStyle;
   };
 
   // For backward compatibility, return property_list token as default
   const defaultToken = getTokenForContext('mapbox_token_property_list') || legacyToken;
 
-  console.log('MapboxProvider state:', {
+  console.log('MapboxProvider: Final state:', {
     defaultToken: !!defaultToken,
     isLoading: isLoading || isSettingsLoading,
-    error
+    error,
+    tokenLength: defaultToken?.length || 0
   });
 
   return (

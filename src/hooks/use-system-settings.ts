@@ -33,17 +33,28 @@ export const useSystemSettings = () => {
 
   const fetchSettings = async () => {
     try {
+      console.log('useSystemSettings: Fetching settings from Supabase...');
       setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('system_settings')
         .select('*')
         .order('key');
 
-      if (error) throw error;
+      if (error) {
+        console.error('useSystemSettings: Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('useSystemSettings: Settings fetched:', {
+        count: data?.length || 0,
+        keys: data?.map(s => s.key) || []
+      });
+      
       setSettings(data || []);
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching system settings:', err);
+      console.error('useSystemSettings: Error fetching settings:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -52,6 +63,8 @@ export const useSystemSettings = () => {
 
   const updateSetting = async (key: string, value: string | null) => {
     try {
+      console.log('useSystemSettings: Updating setting:', { key, hasValue: !!value });
+      
       const { error } = await supabase
         .from('system_settings')
         .update({ 
@@ -72,31 +85,71 @@ export const useSystemSettings = () => {
         )
       );
       
+      console.log('useSystemSettings: Setting updated successfully:', key);
       return true;
     } catch (err: any) {
-      console.error('Error updating setting:', err);
+      console.error('useSystemSettings: Error updating setting:', err);
       setError(err.message);
       return false;
     }
   };
 
   const getSetting = (key: string): SystemSetting | null => {
-    return settings.find(setting => setting.key === key) || null;
+    const setting = settings.find(setting => setting.key === key) || null;
+    console.log('useSystemSettings: Getting setting:', { 
+      key, 
+      found: !!setting, 
+      value: setting?.value,
+      hasValue: !!setting?.value 
+    });
+    return setting;
   };
 
   const getMapboxToken = (tokenType: MapboxTokenType): string | null => {
+    console.log(`useSystemSettings: Getting Mapbox token for ${tokenType}`);
+    
     const setting = getSetting(tokenType);
-    return setting?.value || null;
+    const token = setting?.value || null;
+    
+    console.log(`useSystemSettings: Token for ${tokenType}:`, {
+      found: !!setting,
+      hasValue: !!token,
+      tokenLength: token?.length || 0,
+      tokenStart: token ? token.substring(0, 10) + '...' : 'null'
+    });
+    
+    return token;
   };
 
   const getMapboxStyle = (styleType: MapboxStyleType): string | null => {
+    console.log(`useSystemSettings: Getting Mapbox style for ${styleType}`);
+    
     const setting = getSetting(styleType);
-    return setting?.value || null;
+    const style = setting?.value || null;
+    
+    console.log(`useSystemSettings: Style for ${styleType}:`, {
+      found: !!setting,
+      hasValue: !!style,
+      style
+    });
+    
+    return style;
   };
 
   useEffect(() => {
+    console.log('useSystemSettings: Component mounted, fetching settings');
     fetchSettings();
   }, []);
+
+  // Log current state whenever it changes
+  useEffect(() => {
+    console.log('useSystemSettings: State changed:', {
+      settingsCount: settings.length,
+      isLoading,
+      error,
+      settingsKeys: settings.map(s => s.key)
+    });
+  }, [settings, isLoading, error]);
 
   return {
     settings,
