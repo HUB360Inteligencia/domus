@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building, Search, Plus, Loader2, Filter, AlertCircle, LayoutGrid, LayoutList, Map as MapIcon } from 'lucide-react';
+import { Building, Search, Plus, Loader2, Filter, AlertCircle, LayoutGrid, LayoutList, Map as MapIcon, BarChart3 } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyCard } from '@/components/property-card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'card' | 'list' | 'map'>('card');
+  const [viewMode, setViewMode] = useState<'card' | 'list' | 'map' | 'advanced' | 'map-debug' | 'map-debug-advanced'>('card');
   
   // Clear error after 5 seconds
   useEffect(() => {
@@ -135,7 +135,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
       </div>
 
       <div className="flex justify-center mb-2">
-        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'card' | 'list' | 'map')}>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'card' | 'list' | 'map' | 'advanced')}>
           <ToggleGroupItem value="card" aria-label="View as cards">
             <LayoutGrid className="h-4 w-4" />
           </ToggleGroupItem>
@@ -144,6 +144,9 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
           </ToggleGroupItem>
           <ToggleGroupItem value="map" aria-label="View as map">
             <MapIcon className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="advanced" aria-label="View advanced analytics">
+            <BarChart3 className="h-4 w-4" />
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
@@ -190,6 +193,15 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
               />
             </div>
           )}
+          
+          {viewMode === 'advanced' && (
+            <div className="h-[600px] mt-6">
+              <AdvancedMapView 
+                properties={filteredProperties}
+                onSelect={onSelect}
+              />
+            </div>
+          )}
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg">
@@ -209,8 +221,8 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
         </div>
       )}
 
-      {/* Debug panel - only show in map view */}
-      {viewMode === 'map' && <MapDebugPanel />}
+      {/* Debug panel - only show in map views */}
+      {(viewMode === 'map' || viewMode === 'advanced') && <MapDebugPanel />}
     </div>
   );
 }
