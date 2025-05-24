@@ -15,11 +15,8 @@ import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { toast } from 'sonner';
 import { PropertyMap } from './property-map';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { InvestmentsList, Investment } from './InvestmentsList';
+import { applyDateMask, applyCurrencyMask, isValidDateFormat, parseCurrencyToNumber, convertToISO, convertFromISO } from '@/utils/masks';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
@@ -43,15 +40,14 @@ const formSchema = z.object({
   furnished: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  // Novos campos
+  // Dados de compra
   purchase_date: z.string().optional().nullable(),
   purchase_value: z.coerce.number().positive().optional().nullable(),
-  tenant_name: z.string().optional().nullable(),
-  tenant_contact: z.string().optional().nullable(),
+  square_meter_value: z.coerce.number().positive().optional().nullable(),
+  // Dados da imobiliária
   agency_name: z.string().optional().nullable(),
   agency_responsible: z.string().optional().nullable(),
   agency_contact: z.string().optional().nullable(),
-  square_meter_value: z.coerce.number().positive().optional().nullable(),
 });
 
 interface PropertyFormProps {
@@ -75,6 +71,7 @@ export function PropertyForm({
   const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [investments, setInvestments] = useState<Investment[]>([]);
 
   // Check if we have initial coordinates
   useEffect(() => {
@@ -115,22 +112,20 @@ export function PropertyForm({
       longitude: initialData?.longitude !== undefined && initialData.longitude !== null 
         ? Number(initialData.longitude) 
         : undefined,
-      // Novos campos
-      purchase_date: initialData?.purchase_date || null,
+      // Dados de compra
+      purchase_date: initialData?.purchase_date ? convertFromISO(initialData.purchase_date) : '',
       purchase_value: initialData?.purchase_value || null,
-      tenant_name: initialData?.tenant_name || null,
-      tenant_contact: initialData?.tenant_contact || null,
+      square_meter_value: initialData?.square_meter_value || null,
+      // Dados da imobiliária
       agency_name: initialData?.agency_name || null,
       agency_responsible: initialData?.agency_responsible || null,
       agency_contact: initialData?.agency_contact || null,
-      square_meter_value: initialData?.square_meter_value || null,
     },
   });
 
   // Calcular valor do m² automaticamente quando área ou valor são alterados
   const area = form.watch('area');
   const value = form.watch('value');
-  const status = form.watch('status');
   
   useEffect(() => {
     if (area && value && area > 0) {
@@ -168,15 +163,14 @@ export function PropertyForm({
         longitude: initialData.longitude !== undefined && initialData.longitude !== null 
           ? Number(initialData.longitude) 
           : undefined,
-        // Novos campos
-        purchase_date: initialData.purchase_date || null,
+        // Dados de compra
+        purchase_date: initialData.purchase_date ? convertFromISO(initialData.purchase_date) : '',
         purchase_value: initialData.purchase_value || null,
-        tenant_name: initialData.tenant_name || null,
-        tenant_contact: initialData.tenant_contact || null,
+        square_meter_value: initialData.square_meter_value || null,
+        // Dados da imobiliária
         agency_name: initialData.agency_name || null,
         agency_responsible: initialData.agency_responsible || null,
         agency_contact: initialData.agency_contact || null,
-        square_meter_value: initialData.square_meter_value || null,
       });
       
       if (initialData.image_url) {
@@ -208,12 +202,18 @@ export function PropertyForm({
   };
 
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
+    // Convert purchase_date to ISO format if provided
+    const formattedData = {
+      ...data,
+      purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null
+    };
+
     // If we have map coordinates, make sure they're included in the submission
     if (mapCoordinates) {
-      data.latitude = mapCoordinates.lat;
-      data.longitude = mapCoordinates.lng;
+      formattedData.latitude = mapCoordinates.lat;
+      formattedData.longitude = mapCoordinates.lng;
     }
-    onSubmit(data as PropertyFormData, imageFile || undefined);
+    onSubmit(formattedData as PropertyFormData, imageFile || undefined);
   };
 
   const handleCEPLookup = async () => {
@@ -263,10 +263,9 @@ export function PropertyForm({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="details">Detalhes do Imóvel</TabsTrigger>
           <TabsTrigger value="purchase">Dados de Compra</TabsTrigger>
-          <TabsTrigger value="rental">Dados do Locatário</TabsTrigger>
           <TabsTrigger value="agency">Dados da Imobiliária</TabsTrigger>
         </TabsList>
         
@@ -343,7 +342,7 @@ export function PropertyForm({
                       )}
                     />
                     
-                    {/* Address fields - now including number, complement, and neighborhood */}
+                    {/* Address fields */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
@@ -665,37 +664,19 @@ export function PropertyForm({
                         control={form.control}
                         name="purchase_date"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                             <FormLabel>Data de Compra</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
-                                    ) : (
-                                      <span>Selecione uma data</span>
-                                    )}
-                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                                  initialFocus
-                                  locale={ptBR}
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                              <Input
+                                placeholder="dd/mm/aaaa"
+                                value={field.value || ''}
+                                onChange={(e) => {
+                                  const maskedValue = applyDateMask(e.target.value);
+                                  field.onChange(maskedValue);
+                                }}
+                                maxLength={10}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -708,66 +689,26 @@ export function PropertyForm({
                           <FormItem>
                             <FormLabel>Valor de Compra</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="Valor de compra do imóvel" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="rental" className="md:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dados do Locatário</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-sm text-muted-foreground mb-4">
-                      {status === 'rented' ? 
-                        "Preencha os dados do locatário atual." : 
-                        "Os dados do locatário são aplicáveis apenas quando o imóvel está alugado."}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="tenant_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome do Locatário</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Nome completo do locatário" 
-                                {...field} 
-                                value={field.value || ''}
-                                disabled={status !== 'rented'} 
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
+                                onChange={(e) => {
+                                  const maskedValue = applyCurrencyMask(e.target.value);
+                                  field.onChange(parseCurrencyToNumber(maskedValue));
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
-                      <FormField
-                        control={form.control}
-                        name="tenant_contact"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Contato do Locatário</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Telefone ou email" 
-                                {...field} 
-                                value={field.value || ''}
-                                disabled={status !== 'rented'} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                    </div>
+
+                    {/* Seção de Investimentos */}
+                    <div className="pt-4">
+                      <InvestmentsList
+                        investments={investments}
+                        onChange={setInvestments}
                       />
                     </div>
                   </CardContent>
