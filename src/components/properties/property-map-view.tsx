@@ -1,4 +1,3 @@
-
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
@@ -21,21 +20,22 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   
-  const { getTokenForContext, getStyleForContext, isTokenLoading } = useMapbox();
+  const { getTokenForContext, getStyleForContext, isReady } = useMapbox();
   const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
 
   // Get specific token and style for property list context
-  const token = getTokenForContext('mapbox_token_property_list');
+  const token = isReady ? getTokenForContext('mapbox_token_property_list') : null;
   const mapStyle = getStyleForContext('mapbox_style_property_list');
 
   console.log('PropertyMapView: Render state:', { 
     token: !!token, 
+    tokenValue: token ? `${token.substring(0, 20)}...` : 'null',
     mapboxLoaded, 
     mapboxLoading, 
     mapboxError,
     propertiesCount: properties.length,
     isMapInitialized,
-    isTokenLoading
+    isReady
   });
 
   // Memoize properties with coordinates only
@@ -87,20 +87,32 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   useEffect(() => {
     console.log('PropertyMapView: Map initialization effect triggered');
     
-    if (!mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl || mapRef.current || isMapInitialized) {
-      console.log('PropertyMapView: Map initialization skipped:', { 
-        mapboxLoaded, 
-        token: !!token, 
-        container: !!mapContainer.current, 
-        mapboxgl: !!window.mapboxgl,
-        existingMap: !!mapRef.current,
-        isMapInitialized
-      });
+    // More specific condition checking
+    const canInitializeMap = mapboxLoaded && 
+                            token && 
+                            mapContainer.current && 
+                            window.mapboxgl && 
+                            !mapRef.current && 
+                            !isMapInitialized &&
+                            isReady;
+    
+    console.log('PropertyMapView: Initialization conditions:', { 
+      mapboxLoaded, 
+      token: !!token, 
+      container: !!mapContainer.current, 
+      mapboxgl: !!window.mapboxgl,
+      existingMap: !!mapRef.current,
+      isMapInitialized,
+      isReady,
+      canInitialize: canInitializeMap
+    });
+    
+    if (!canInitializeMap) {
       return;
     }
 
     try {
-      console.log('PropertyMapView: Initializing map...');
+      console.log('PropertyMapView: Initializing map with token:', token?.substring(0, 20) + '...');
       
       window.mapboxgl.accessToken = token;
       
@@ -146,7 +158,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       console.error('PropertyMapView: Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-  }, [mapboxLoaded, token, mapStyle, propertiesWithCoords.length, isMapInitialized]);
+  }, [mapboxLoaded, token, mapStyle, propertiesWithCoords.length, isMapInitialized, isReady]);
 
   // Update markers when properties change
   useEffect(() => {
@@ -275,12 +287,12 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     };
   }, []);
 
-  if (isTokenLoading || mapboxLoading) {
+  if (!isReady || mapboxLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4">
           <Loader2 className="mx-auto h-10 w-10 text-primary animate-spin mb-2" />
-          <p className="text-muted-foreground">Carregando mapa...</p>
+          <p className="text-muted-foreground">Carregando configurações do mapa...</p>
         </div>
       </div>
     );

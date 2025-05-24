@@ -10,6 +10,7 @@ interface MapboxContextType {
   getTokenForContext: (tokenType: MapboxTokenType) => string | null;
   getStyleForContext: (styleType: MapboxStyleType) => string | null;
   isTokenLoading: boolean;
+  isReady: boolean;
 }
 
 const defaultMapboxContext: MapboxContextType = {
@@ -20,6 +21,7 @@ const defaultMapboxContext: MapboxContextType = {
   getTokenForContext: () => null,
   getStyleForContext: () => null,
   isTokenLoading: true,
+  isReady: false,
 };
 
 const LOCAL_STORAGE_KEY = 'mapbox_token';
@@ -34,16 +36,23 @@ interface MapboxProviderProps {
 
 export const MapboxProvider = ({ children }: MapboxProviderProps) => {
   const [legacyToken, setLegacyTokenState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLegacyLoading, setIsLegacyLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { getMapboxToken, getMapboxStyle, isLoading: isSettingsLoading, error: settingsError } = useSystemSettings();
+  const { 
+    getMapboxToken, 
+    getMapboxStyle, 
+    isLoading: isSettingsLoading, 
+    error: settingsError,
+    isInitialized: isSettingsInitialized 
+  } = useSystemSettings();
 
   console.log('MapboxProvider: Render state:', { 
     isSettingsLoading, 
+    isSettingsInitialized,
     settingsError, 
     legacyToken: !!legacyToken,
-    isLoading 
+    isLegacyLoading 
   });
 
   // Load legacy token from localStorage on mount
@@ -60,7 +69,7 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
     } catch (e) {
       console.error('MapboxProvider: Error loading legacy token:', e);
     } finally {
-      setIsLoading(false);
+      setIsLegacyLoading(false);
     }
   }, []);
 
@@ -89,6 +98,13 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
 
   const getTokenForContext = (tokenType: MapboxTokenType): string | null => {
     console.log(`MapboxProvider: Getting token for context: ${tokenType}`);
+    console.log(`MapboxProvider: Settings initialized: ${isSettingsInitialized}`);
+    
+    // Wait for settings to be initialized
+    if (!isSettingsInitialized) {
+      console.log(`MapboxProvider: Settings not initialized, returning null for ${tokenType}`);
+      return null;
+    }
     
     // First try to get the token from system settings
     const systemToken = getMapboxToken(tokenType);
@@ -98,7 +114,7 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
     }
 
     // Fallback to legacy token for backward compatibility
-    if (legacyToken) {
+    if (legacyToken && !isLegacyLoading) {
       console.log(`MapboxProvider: Using legacy token for ${tokenType}`);
       return legacyToken;
     }
@@ -110,10 +126,15 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
   const getStyleForContext = (styleType: MapboxStyleType): string | null => {
     console.log(`MapboxProvider: Getting style for context: ${styleType}`);
     
-    const style = getMapboxStyle(styleType);
-    if (style) {
-      console.log(`MapboxProvider: Found custom style for ${styleType}:`, style);
-      return style;
+    // Wait for settings to be initialized
+    if (!isSettingsInitialized) {
+      console.log(`MapboxProvider: Settings not initialized, returning fallback for ${styleType}`);
+    } else {
+      const style = getMapboxStyle(styleType);
+      if (style) {
+        console.log(`MapboxProvider: Found custom style for ${styleType}:`, style);
+        return style;
+      }
     }
 
     // Default fallback styles based on context
@@ -136,25 +157,33 @@ export const MapboxProvider = ({ children }: MapboxProviderProps) => {
     return fallbackStyle;
   };
 
+  // Calculate loading and ready states
+  const isTokenLoading = isSettingsLoading || isLegacyLoading || !isSettingsInitialized;
+  const isReady = isSettingsInitialized && !isLegacyLoading;
+  
   // For backward compatibility, return property_list token as default
-  const defaultToken = getTokenForContext('mapbox_token_property_list') || legacyToken;
+  const defaultToken = isReady ? getTokenForContext('mapbox_token_property_list') : null;
 
   console.log('MapboxProvider: Final state:', {
     defaultToken: !!defaultToken,
-    isLoading: isLoading || isSettingsLoading,
+    isTokenLoading,
+    isReady,
     error,
-    tokenLength: defaultToken?.length || 0
+    tokenLength: defaultToken?.length || 0,
+    isSettingsInitialized,
+    isLegacyLoading
   });
 
   return (
     <MapboxContext.Provider value={{ 
       token: defaultToken, 
-      isLoading: isLoading || isSettingsLoading, 
+      isLoading: isTokenLoading, 
       setToken, 
       error,
       getTokenForContext,
       getStyleForContext,
-      isTokenLoading: isSettingsLoading
+      isTokenLoading,
+      isReady
     }}>
       {children}
     </MapboxContext.Provider>
