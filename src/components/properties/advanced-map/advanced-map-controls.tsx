@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,13 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+interface LayersState {
+  properties: boolean;
+  boundaries: boolean;
+  poi: boolean;
+  transit: boolean;
+}
+
 interface AdvancedMapControlsProps {
   viewMode: 'cluster' | 'heatmap' | 'analytics';
   onViewModeChange: (mode: 'cluster' | 'heatmap' | 'analytics') => void;
@@ -28,13 +34,8 @@ interface AdvancedMapControlsProps {
   onHeatmapMetricChange: (metric: 'value' | 'density' | 'roi') => void;
   mapStyle: string;
   onMapStyleChange: (style: string) => void;
-  layers: {
-    properties: boolean;
-    boundaries: boolean;
-    poi: boolean;
-    transit: boolean;
-  };
-  onLayerToggle: (layer: keyof typeof layers) => void;
+  layers: LayersState;
+  onLayerToggle: (layer: keyof LayersState) => void;
 }
 
 export function AdvancedMapControls({

@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMapView } from './property-map-view';
+import { AdvancedMapView } from './advanced-map/advanced-map-view';
 import { MapDebugPanel } from './map-debug-panel';
 
 interface PropertyListProps {

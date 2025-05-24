@@ -1,9 +1,8 @@
-
 import { useState, useMemo } from 'react';
 import { Property } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/ui/progress';
 import { MapPin, TrendingUp, Users, DollarSign, Home, Building2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -184,7 +183,7 @@ export function LocationAnalytics({ properties }: LocationAnalyticsProps) {
           <CardContent>
             <div className="space-y-2">
               <div className="text-2xl font-bold">{marketInsights.occupancyRate.toFixed(1)}%</div>
-              <Progress value={marketInsights.occupancyRate} className="h-2" />
+              <ProgressBar value={marketInsights.occupancyRate} className="h-2" />
               <div className="text-sm text-muted-foreground">
                 {marketInsights.rentedCount} alugados de {marketInsights.totalProperties}
               </div>
