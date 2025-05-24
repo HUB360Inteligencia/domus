@@ -2,7 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency, formatPercentage } from '@/hooks/use-financial-dashboard';
+import { formatCurrency } from '@/utils/currency';
+
+// Local formatting function
+const formatPercentage = (value: number): string => {
+  return `${value.toFixed(2)}%`;
+};
 
 interface RankingItem {
   id: string;

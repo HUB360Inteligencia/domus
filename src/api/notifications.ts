@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Notification {
@@ -40,7 +39,13 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
       throw error;
     }
 
-    return data || [];
+    // Type assertion with validation
+    return (data || []).map(item => ({
+      ...item,
+      type: (['info', 'warning', 'error', 'success'].includes(item.type) 
+        ? item.type 
+        : 'info') as 'info' | 'warning' | 'error' | 'success'
+    }));
   } catch (err) {
     console.error('Failed to fetch notifications:', err);
     throw err;
@@ -68,7 +73,13 @@ export const createNotification = async (notificationData: CreateNotificationDat
       throw error;
     }
 
-    return data;
+    // Type assertion with validation
+    return {
+      ...data,
+      type: (['info', 'warning', 'error', 'success'].includes(data.type) 
+        ? data.type 
+        : 'info') as 'info' | 'warning' | 'error' | 'success'
+    };
   } catch (err) {
     console.error('Failed to create notification:', err);
     throw err;

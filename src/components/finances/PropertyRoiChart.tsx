@@ -3,7 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useTheme } from "@/components/theme-provider";
-import { formatPercentage } from '@/hooks/use-financial-dashboard';
+
+// Local formatting function
+const formatPercentage = (value: number): string => {
+  return `${value.toFixed(2)}%`;
+};
 
 interface PropertyRoiChartProps {
   data: Array<{

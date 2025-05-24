@@ -5,7 +5,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, ResponsiveContainer } from "recharts";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from '@/hooks/use-financial-dashboard';
+import { formatCurrency } from '@/utils/currency';
 
 interface PatrimonyValueChartProps {
   data: Array<{

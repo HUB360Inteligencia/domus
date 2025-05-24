@@ -10,7 +10,6 @@ import { ptBR } from 'date-fns/locale';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuHeader,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -71,7 +70,7 @@ export const NotificationCenter = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuHeader className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4">
           <h3 className="font-semibold">Notificações</h3>
           {unreadCount > 0 && (
             <Button
@@ -84,7 +83,7 @@ export const NotificationCenter = () => {
               <CheckCheck className="h-4 w-4" />
             </Button>
           )}
-        </DropdownMenuHeader>
+        </div>
         <DropdownMenuSeparator />
         
         <ScrollArea className="max-h-96">
