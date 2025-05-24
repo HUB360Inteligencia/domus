@@ -1,4 +1,3 @@
-
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -21,7 +20,6 @@ import {
   Scroll
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
 interface Links {
   label: string;
@@ -125,34 +123,55 @@ const DesktopSidebar = ({
 const MobileSidebar = () => {
   const { open, setOpen } = useSidebar();
   return (
-    <div className="h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border">
-      <div className="flex items-center gap-2">
-        <Building className="h-6 w-6 text-petroleum" />
-        <span className="font-bold text-sm">Gestão Patrimonial</span>
-      </div>
-      <div className="flex justify-end z-20 relative">
-        <Menu
-          className="text-sidebar-foreground cursor-pointer h-6 w-6"
+    <>
+      {/* Mobile Header Bar */}
+      <div className="h-14 px-4 py-2 flex flex-row md:hidden items-center justify-between bg-sidebar text-sidebar-foreground w-full border-b border-sidebar-border relative z-50">
+        <div className="flex items-center gap-2">
+          <Building className="h-5 w-5 text-petroleum" />
+          <span className="font-bold text-sm">Gestão Patrimonial</span>
+        </div>
+        <button
           onClick={() => setOpen(!open)}
-        />
-        
-        <AnimatePresence>
-          {open && (
+          className="flex justify-center items-center"
+        >
+          {open ? (
+            <X className="text-sidebar-foreground cursor-pointer h-5 w-5" />
+          ) : (
+            <Menu className="text-sidebar-foreground cursor-pointer h-5 w-5" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full right-0 mt-2 w-64 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50"
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setOpen(false)}
+            />
+            
+            {/* Menu Panel */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-80 bg-sidebar border-r border-sidebar-border z-50 md:hidden overflow-y-auto"
             >
-              <div className="p-2">
+              <div className="p-4">
                 <SidebarMenuContent />
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -167,9 +186,17 @@ const SidebarLink = ({
   isActive?: boolean;
 }) => {
   const { open, animate } = useSidebar();
+  const { setOpen } = useSidebar();
+  
   return (
     <Link
       to={link.href}
+      onClick={() => {
+        // Close mobile menu when link is clicked
+        if (window.innerWidth < 768) {
+          setOpen(false);
+        }
+      }}
       className={cn(
         "flex items-center justify-start gap-3 group/sidebar py-2 px-2 rounded-md transition-all duration-200",
         isActive 
@@ -291,7 +318,7 @@ const SidebarMenuContent = () => {
         </button>
         
         <AnimatePresence>
-          {financeSubmenuOpen && open && (
+          {financeSubmenuOpen && (open || window.innerWidth < 768) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}

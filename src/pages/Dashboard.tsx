@@ -58,17 +58,17 @@ export default function Dashboard() {
   return (
     <div className="container relative pb-6">
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Property Stats Cards */}
+        {/* Stats Cards - Responsive Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total de Imóveis</CardTitle>
+            <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+              <CardTitle className="text-xs md:text-sm font-medium leading-tight">Total de Imóveis</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-6 md:h-7 w-12 md:w-20" />
               ) : (
-                <div className="text-2xl font-bold">
+                <div className="text-lg md:text-2xl font-bold">
                   {contractAnalytics?.totalProperties || 0}
                 </div>
               )}
@@ -76,14 +76,14 @@ export default function Dashboard() {
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+            <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+              <CardTitle className="text-xs md:text-sm font-medium leading-tight">Receita Total</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-6 md:h-7 w-16 md:w-20" />
               ) : (
-                <div className="text-2xl font-bold">
+                <div className="text-sm md:text-2xl font-bold">
                   {formatCurrency(contractAnalytics?.totalRevenue || 0)}
                 </div>
               )}
@@ -91,14 +91,14 @@ export default function Dashboard() {
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Aluguel Médio</CardTitle>
+            <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+              <CardTitle className="text-xs md:text-sm font-medium leading-tight">Aluguel Médio</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-6 md:h-7 w-16 md:w-20" />
               ) : (
-                <div className="text-2xl font-bold">
+                <div className="text-sm md:text-2xl font-bold">
                   {formatCurrency(contractAnalytics?.averageRent || 0)}
                 </div>
               )}
@@ -106,14 +106,14 @@ export default function Dashboard() {
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Ocupação</CardTitle>
+            <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+              <CardTitle className="text-xs md:text-sm font-medium leading-tight">Taxa de Ocupação</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-6 md:h-7 w-12 md:w-20" />
               ) : (
-                <div className="text-2xl font-bold">
+                <div className="text-lg md:text-2xl font-bold">
                   {contractAnalytics?.occupancyRate || 0}%
                 </div>
               )}
@@ -121,75 +121,77 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Charts Section - Stack on Mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Tipos de Imóveis</CardTitle>
-              <CardDescription>Distribuição dos tipos de imóveis</CardDescription>
+            <CardHeader className="px-3 md:px-6 py-3 md:py-6">
+              <CardTitle className="text-sm md:text-lg">Tipos de Imóveis</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Distribuição dos tipos de imóveis</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <div className="h-[200px] flex items-center justify-center">
-                  <Skeleton className="h-[200px] w-full" />
+                <div className="h-32 md:h-[200px] flex items-center justify-center">
+                  <Skeleton className="h-full w-full" />
                 </div>
               ) : (
-                <div className="h-[200px] flex items-center justify-center">
-                  <p className="text-muted-foreground">Gráfico de distribuição de imóveis</p>
+                <div className="h-32 md:h-[200px] flex items-center justify-center">
+                  <p className="text-xs md:text-sm text-muted-foreground text-center">Gráfico de distribuição de imóveis</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Próximos Vencimentos</CardTitle>
-              <CardDescription>Contratos com vencimento nos próximos 60 dias</CardDescription>
+            <CardHeader className="px-3 md:px-6 py-3 md:py-6">
+              <CardTitle className="text-sm md:text-lg">Próximos Vencimentos</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Contratos com vencimento nos próximos 60 dias</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
               {isLoading ? (
-                <Skeleton className="h-[200px] w-full" />
+                <Skeleton className="h-32 md:h-[200px] w-full" />
               ) : contractAnalytics?.expirations && contractAnalytics.expirations.length > 0 ? (
                 <div className="space-y-4">
                   {contractAnalytics.expirations.map((expiration: any) => (
                     <div key={expiration.id} className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{expiration.title}</p>
-                        <p className="text-sm text-muted-foreground">{expiration.property_title}</p>
+                        <p className="font-medium text-xs md:text-sm">{expiration.title}</p>
+                        <p className="text-xs text-muted-foreground">{expiration.property_title}</p>
                       </div>
-                      <Badge>{expiration.daysRemaining} dias</Badge>
+                      <Badge className="text-xs">{expiration.daysRemaining} dias</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhum contrato com vencimento próximo.</p>
+                <div className="text-center py-4 md:py-8">
+                  <p className="text-xs md:text-sm text-muted-foreground">Nenhum contrato com vencimento próximo.</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Tasks Section - Stack on Mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Tarefas Atrasadas</CardTitle>
-              <CardDescription>Tarefas que estão atrasadas</CardDescription>
+            <CardHeader className="px-3 md:px-6 py-3 md:py-6">
+              <CardTitle className="text-sm md:text-lg">Tarefas Atrasadas</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Tarefas que estão atrasadas</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Nenhuma tarefa atrasada.</p>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+              <div className="text-center py-4 md:py-8">
+                <p className="text-xs md:text-sm text-muted-foreground">Nenhuma tarefa atrasada.</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Próximas Tarefas</CardTitle>
-              <CardDescription>Tarefas agendadas para os próximos dias</CardDescription>
+            <CardHeader className="px-3 md:px-6 py-3 md:py-6">
+              <CardTitle className="text-sm md:text-lg">Próximas Tarefas</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Tarefas agendadas para os próximos dias</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Nenhuma tarefa agendada.</p>
+            <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+              <div className="text-center py-4 md:py-8">
+                <p className="text-xs md:text-sm text-muted-foreground">Nenhuma tarefa agendada.</p>
               </div>
             </CardContent>
           </Card>
