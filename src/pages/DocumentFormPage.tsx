@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -69,7 +68,9 @@ export default function DocumentFormPage() {
   };
 
   const handleSelectChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+    // Handle the special "none" value for contract selection
+    const finalValue = value === "none" ? undefined : value;
+    setFormData({ ...formData, [field]: finalValue });
   };
 
   const handleSwitchChange = (field: string, checked: boolean) => {
@@ -159,14 +160,14 @@ export default function DocumentFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="contract_id">Contrato Relacionado (Opcional)</Label>
                 <Select
-                  value={formData.contract_id || ""}
+                  value={formData.contract_id || "none"}
                   onValueChange={(value) => handleSelectChange("contract_id", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um contrato (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum contrato</SelectItem>
+                    <SelectItem value="none">Nenhum contrato</SelectItem>
                     {contracts.map((contract) => (
                       <SelectItem key={contract.id} value={contract.id}>
                         {contract.title}
