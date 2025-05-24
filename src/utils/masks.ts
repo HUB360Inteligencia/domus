@@ -1,4 +1,3 @@
-
 /**
  * Applies a date mask in DD/MM/YYYY format
  * @param value - The input value
@@ -69,26 +68,49 @@ export const convertFromISO = (isoDate: string): string => {
 };
 
 /**
- * Applies Brazilian currency mask (R$ 0.000,00) - FIXED VERSION
- * @param value - The input value
+ * Applies Brazilian currency mask (R$ 0.000,00) - NEW APPROACH
+ * @param value - The input value (can be string or number)
  * @returns Formatted currency string
  */
-export const applyCurrencyMask = (value: string): string => {
-  // Remove all non-digit characters
-  const digits = value.replace(/\D/g, '');
+export const applyCurrencyMask = (value: string | number): string => {
+  // Handle empty or invalid values
+  if (!value && value !== 0) return '';
   
-  // If empty, return empty string
+  // Convert to string and remove all non-digit characters
+  const stringValue = String(value);
+  const digits = stringValue.replace(/\D/g, '');
+  
+  // If no digits, return empty
   if (!digits) return '';
   
-  // Convert to number and divide by 100 to handle cents
-  const number = parseInt(digits) / 100;
+  // Pad with zeros if needed to ensure at least 3 digits (for cents)
+  const paddedDigits = digits.padStart(3, '0');
   
-  // Format as Brazilian currency
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2
-  }).format(number);
+  // Split into integer and decimal parts
+  const integerPart = paddedDigits.slice(0, -2);
+  const decimalPart = paddedDigits.slice(-2);
+  
+  // Remove leading zeros from integer part, but keep at least one digit
+  const cleanIntegerPart = integerPart.replace(/^0+/, '') || '0';
+  
+  // Format with thousands separator
+  const formattedInteger = cleanIntegerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  
+  return `R$ ${formattedInteger},${decimalPart}`;
+};
+
+/**
+ * Applies currency mask for input fields - handles user typing
+ * @param currentValue - Current input value
+ * @param newInput - New character or input
+ * @returns Formatted currency string
+ */
+export const applyCurrencyInputMask = (currentValue: string, newInput: string): string => {
+  // Get all digits from the new input
+  const allDigits = newInput.replace(/\D/g, '');
+  
+  // Apply the mask
+  return applyCurrencyMask(allDigits);
 };
 
 /**
@@ -106,6 +128,21 @@ export const parseCurrencyToNumber = (currencyString: string): number => {
     .replace(',', '.');
     
   return parseFloat(cleanValue) || 0;
+};
+
+/**
+ * Converts number to currency display format
+ * @param value - Number to format
+ * @returns Formatted currency string
+ */
+export const numberToCurrencyDisplay = (value: number): string => {
+  if (!value && value !== 0) return '';
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2
+  }).format(value);
 };
 
 /**

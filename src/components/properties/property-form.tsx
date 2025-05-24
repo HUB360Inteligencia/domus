@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -20,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvestmentsList, Investment } from './InvestmentsList';
 import { PartnersList } from './PartnersList';
 import { PropertyDocuments } from './PropertyDocuments';
-import { applyDateMask, applyCurrencyMask, isValidDateFormat, parseCurrencyToNumber, convertToISO, convertFromISO } from '@/utils/masks';
+import { applyDateMask, applyCurrencyMask, applyCurrencyInputMask, isValidDateFormat, parseCurrencyToNumber, convertToISO, convertFromISO, numberToCurrencyDisplay } from '@/utils/masks';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres' }),
@@ -81,6 +80,11 @@ export function PropertyForm({
   const [partners, setPartners] = useState<Partner[]>(initialData?.partners || []);
   const [ownerPercentage, setOwnerPercentage] = useState<number>(initialData?.owner_percentage || 0);
   const [documents, setDocuments] = useState<PropertyDocument[]>(initialData?.documents || []);
+
+  // Estados para valores monetários formatados
+  const [valueDisplay, setValueDisplay] = useState<string>('');
+  const [condoFeeDisplay, setCondoFeeDisplay] = useState<string>('');
+  const [purchaseValueDisplay, setPurchaseValueDisplay] = useState<string>('');
 
   // Check if we have initial coordinates
   useEffect(() => {
@@ -172,6 +176,17 @@ export function PropertyForm({
         agency_contact: initialData.agency_contact || null,
       });
       
+      // Atualizar estados de display dos valores monetários
+      if (initialData.value) {
+        setValueDisplay(numberToCurrencyDisplay(initialData.value));
+      }
+      if (initialData.condo_fee) {
+        setCondoFeeDisplay(numberToCurrencyDisplay(initialData.condo_fee));
+      }
+      if (initialData.purchase_value) {
+        setPurchaseValueDisplay(numberToCurrencyDisplay(initialData.purchase_value));
+      }
+      
       if (initialData.image_url) {
         setImagePreview(initialData.image_url);
       }
@@ -198,28 +213,6 @@ export function PropertyForm({
     setMapCoordinates(coords);
     form.setValue('latitude', coords.lat);
     form.setValue('longitude', coords.lng);
-  };
-
-  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
-    // Convert purchase_date to ISO format if provided
-    const formattedData = {
-      ...data,
-      purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null,
-      // Calcular valor do m² automaticamente
-      square_meter_value: data.area && data.value ? data.value / data.area : null,
-      // Adicionar dados de sociedade
-      partners: data.has_partners ? partners : null,
-      owner_percentage: data.has_partners ? ownerPercentage : null,
-      // Adicionar documentos
-      documents: documents
-    };
-
-    // If we have map coordinates, make sure they're included in the submission
-    if (mapCoordinates) {
-      formattedData.latitude = mapCoordinates.lat;
-      formattedData.longitude = mapCoordinates.lng;
-    }
-    onSubmit(formattedData as PropertyFormData, imageFile || undefined);
   };
 
   const handleCEPLookup = async () => {
@@ -255,6 +248,50 @@ export function PropertyForm({
     } finally {
       setIsSearchingCEP(false);
     }
+  };
+
+  // Funções para lidar com mudanças nos campos monetários
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyCurrencyInputMask(valueDisplay, e.target.value);
+    setValueDisplay(maskedValue);
+    const numericValue = parseCurrencyToNumber(maskedValue);
+    form.setValue('value', numericValue);
+  };
+
+  const handleCondoFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyCurrencyInputMask(condoFeeDisplay, e.target.value);
+    setCondoFeeDisplay(maskedValue);
+    const numericValue = parseCurrencyToNumber(maskedValue);
+    form.setValue('condo_fee', numericValue);
+  };
+
+  const handlePurchaseValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyCurrencyInputMask(purchaseValueDisplay, e.target.value);
+    setPurchaseValueDisplay(maskedValue);
+    const numericValue = parseCurrencyToNumber(maskedValue);
+    form.setValue('purchase_value', numericValue);
+  };
+
+  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
+    // Convert purchase_date to ISO format if provided
+    const formattedData = {
+      ...data,
+      purchase_date: data.purchase_date ? convertToISO(data.purchase_date) : null,
+      // Calcular valor do m² automaticamente
+      square_meter_value: data.area && data.value ? data.value / data.area : null,
+      // Adicionar dados de sociedade
+      partners: data.has_partners ? partners : null,
+      owner_percentage: data.has_partners ? ownerPercentage : null,
+      // Adicionar documentos
+      documents: documents
+    };
+
+    // If we have map coordinates, make sure they're included in the submission
+    if (mapCoordinates) {
+      formattedData.latitude = mapCoordinates.lat;
+      formattedData.longitude = mapCoordinates.lng;
+    }
+    onSubmit(formattedData as PropertyFormData, imageFile || undefined);
   };
 
   // Get the current address values from the form
@@ -515,7 +552,7 @@ export function PropertyForm({
                       />
                     </div>
                     
-                    {/* Property value and condo fee with currency formatting */}
+                    {/* Property value and condo fee with new currency formatting */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -526,11 +563,8 @@ export function PropertyForm({
                             <FormControl>
                               <Input 
                                 placeholder="R$ 0,00"
-                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
-                                onChange={(e) => {
-                                  const maskedValue = applyCurrencyMask(e.target.value);
-                                  field.onChange(parseCurrencyToNumber(maskedValue));
-                                }}
+                                value={valueDisplay}
+                                onChange={handleValueChange}
                               />
                             </FormControl>
                             <FormMessage />
@@ -547,11 +581,8 @@ export function PropertyForm({
                             <FormControl>
                               <Input 
                                 placeholder="R$ 0,00"
-                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
-                                onChange={(e) => {
-                                  const maskedValue = applyCurrencyMask(e.target.value);
-                                  field.onChange(parseCurrencyToNumber(maskedValue));
-                                }}
+                                value={condoFeeDisplay}
+                                onChange={handleCondoFeeChange}
                               />
                             </FormControl>
                             <FormMessage />
@@ -698,11 +729,8 @@ export function PropertyForm({
                             <FormControl>
                               <Input
                                 placeholder="R$ 0,00"
-                                value={field.value ? applyCurrencyMask(field.value.toString()) : ''}
-                                onChange={(e) => {
-                                  const maskedValue = applyCurrencyMask(e.target.value);
-                                  field.onChange(parseCurrencyToNumber(maskedValue));
-                                }}
+                                value={purchaseValueDisplay}
+                                onChange={handlePurchaseValueChange}
                               />
                             </FormControl>
                             <FormMessage />
