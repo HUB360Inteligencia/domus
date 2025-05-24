@@ -5,22 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { format, isPast, isFuture, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface Activity {
-  id: string;
-  title: string;
-  activity_type: string;
-  due_date: string;
-  status: string;
-  property_id?: string;
-}
-
-interface Property {
-  id: string;
-  title: string;
-  neighborhood?: string;
-  type: string;
-}
+import { Activity } from '@/types/activity';
+import { Property } from '@/types/property';
 
 interface ActivitiesCardProps {
   activities: Activity[];
@@ -41,7 +27,7 @@ export function ActivitiesCard({ activities, properties, isLoading }: Activities
       activity.due_date && 
       isPast(parseISO(activity.due_date))
     )
-    .sort((a, b) => parseISO(a.due_date).getTime() - parseISO(b.due_date).getTime());
+    .sort((a, b) => parseISO(a.due_date!).getTime() - parseISO(b.due_date!).getTime());
 
   const upcomingActivities = activities
     .filter(activity => 
@@ -49,7 +35,7 @@ export function ActivitiesCard({ activities, properties, isLoading }: Activities
       activity.due_date && 
       isFuture(parseISO(activity.due_date))
     )
-    .sort((a, b) => parseISO(a.due_date).getTime() - parseISO(b.due_date).getTime())
+    .sort((a, b) => parseISO(a.due_date!).getTime() - parseISO(b.due_date!).getTime())
     .slice(0, 10); // Limit to 10 upcoming activities
 
   const renderActivityList = (activitiesList: Activity[], emptyMessage: string) => {
@@ -65,7 +51,7 @@ export function ActivitiesCard({ activities, properties, isLoading }: Activities
       <div className="space-y-3 max-h-[300px] overflow-y-auto">
         {activitiesList.map((activity) => {
           const property = getPropertyInfo(activity.property_id);
-          const dueDate = parseISO(activity.due_date);
+          const dueDate = activity.due_date ? parseISO(activity.due_date) : null;
           
           return (
             <div key={activity.id} className="p-3 rounded-lg border">
@@ -81,9 +67,11 @@ export function ActivitiesCard({ activities, properties, isLoading }: Activities
                     <Badge variant="outline" className="text-xs">
                       {activity.activity_type}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {format(dueDate, 'dd/MM/yyyy', { locale: ptBR })}
-                    </span>
+                    {dueDate && (
+                      <span className="text-xs text-muted-foreground">
+                        {format(dueDate, 'dd/MM/yyyy', { locale: ptBR })}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

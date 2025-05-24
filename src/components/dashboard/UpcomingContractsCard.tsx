@@ -4,16 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays, parseISO, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface Contract {
-  id: string;
-  title: string;
-  end_date: string;
-  property?: {
-    title: string;
-    neighborhood?: string;
-  };
-}
+import { Contract } from '@/types/contract';
 
 interface UpcomingContractsCardProps {
   contracts: Contract[];
@@ -76,7 +67,7 @@ export function UpcomingContractsCard({ contracts, isLoading }: UpcomingContract
                     {contract.title}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {contract.property?.title} - {contract.property?.neighborhood}
+                    {contract.property?.title || 'Sem imóvel'} - {contract.property?.neighborhood || ''}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Vence em {format(contract.endDate, 'dd/MM/yyyy', { locale: ptBR })}
