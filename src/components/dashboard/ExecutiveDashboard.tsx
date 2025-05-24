@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   BarChart,
@@ -255,21 +255,21 @@ export function ExecutiveDashboard() {
               <span>Meta de Ocupação</span>
               <span>94% / 95%</span>
             </div>
-            <Progress value={94} className="h-2" />
+            <ProgressBar value={94} className="h-2" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span>Meta de Receita</span>
               <span>R$ 348.500 / R$ 400.000</span>
             </div>
-            <Progress value={87} className="h-2" />
+            <ProgressBar value={87} className="h-2" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span>Novos Contratos</span>
               <span>12 / 15</span>
             </div>
-            <Progress value={80} className="h-2" />
+            <ProgressBar value={80} className="h-2" />
           </div>
         </CardContent>
       </Card>

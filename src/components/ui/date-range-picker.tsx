@@ -62,3 +62,6 @@ export function DatePickerWithRange({
     </div>
   )
 }
+
+// Export with both names for compatibility
+export const DateRangePicker = DatePickerWithRange;
