@@ -1,61 +1,44 @@
 
-import { useState, useCallback } from 'react';
-import { Property, PropertyFormData } from '@/types/property';
-import { usePropertyQueries } from './use-property-queries';
-import { usePropertyMutations } from './use-property-mutations';
-import { useCurrentUserClientId } from './use-client-users';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Property {
+  id: string;
+  title: string;
+  description?: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code?: string;
+  type: string;
+  status: string;
+  value: number;
+  image_url?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useProperties = () => {
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const { data: clientId } = useCurrentUserClientId();
+  const { data: properties = [], isLoading } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const setSelectedPropertyIdCallback = useCallback((id: string | null) => {
-    setSelectedPropertyId(id);
-  }, []);
+      if (error) {
+        console.error('Error fetching properties:', error);
+        throw error;
+      }
 
-  const { 
-    properties, 
-    selectedProperty,
-    isLoading,
-    isLoadingProperties,
-    refetchProperties,
-    refetchSelectedProperty
-  } = usePropertyQueries(selectedPropertyId);
-
-  const {
-    createProperty,
-    updateProperty,
-    deleteProperty,
-    uploadPropertyImage,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    isUploading
-  } = usePropertyMutations();
+      return data as Property[];
+    }
+  });
 
   return {
-    // Data
     properties,
-    selectedProperty,
-    clientId,
-    
-    // Loading states
-    isLoading,
-    isLoadingProperties,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    isUploading,
-    
-    // Actions
-    setSelectedPropertyId: setSelectedPropertyIdCallback,
-    createProperty,
-    updateProperty,
-    deleteProperty,
-    uploadPropertyImage,
-    
-    // Refetch functions
-    refetchProperties,
-    refetchSelectedProperty
+    isLoading
   };
 };

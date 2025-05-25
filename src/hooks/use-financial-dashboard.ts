@@ -1,187 +1,79 @@
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  fetchFinancialMetrics, 
-  fetchMonthlyFinancialData, 
-  fetchPropertyFinancialRanking,
-  FinancialMetrics,
-  MonthlyFinancialData,
-  PropertyFinancialRanking
-} from '@/api/financial-dashboard';
-
-// Formatting utilities
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-export const formatPercentage = (value: number): string => {
-  return `${value.toFixed(2)}%`;
-};
+import { fetchFinancialMetrics, fetchMonthlyFinancialData, fetchPropertyFinancialRanking } from '@/api/financial-dashboard';
 
 export const useFinancialDashboard = () => {
   // State for UI controls
   const [showMarketValue, setShowMarketValue] = useState(true);
-  const [propertyRankingType, setPropertyRankingType] = useState<'value' | 'percentage'>('value');
-  const [neighborhoodRankingType, setNeighborhoodRankingType] = useState<'value' | 'percentage'>('value');
-  const [chartViewMode, setChartViewMode] = useState<'monthly' | 'yearly'>('monthly');
+  const [propertyRankingType, setPropertyRankingType] = useState<'revenue' | 'roi'>('roi');
+  const [neighborhoodRankingType, setNeighborhoodRankingType] = useState<'revenue' | 'count'>('revenue');
+  const [chartViewMode, setChartViewMode] = useState<'patrimony' | 'roi'>('patrimony');
 
-  const {
-    data: metrics,
-    isLoading: isLoadingMetrics,
-    refetch: refetchMetrics
-  } = useQuery<FinancialMetrics>({
+  // Fetch financial metrics
+  const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['financial-metrics'],
     queryFn: fetchFinancialMetrics,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const {
-    data: monthlyData = [],
-    isLoading: isLoadingMonthlyData,
-    refetch: refetchMonthlyData
-  } = useQuery<MonthlyFinancialData[]>({
+  // Fetch monthly data
+  const { data: monthlyData = [], isLoading: isLoadingMonthly } = useQuery({
     queryKey: ['monthly-financial-data'],
     queryFn: () => fetchMonthlyFinancialData(12),
-    staleTime: 1000 * 60 * 5,
   });
 
-  const {
-    data: propertyRankings = [],
-    isLoading: isLoadingRankings,
-    refetch: refetchRankings
-  } = useQuery<PropertyFinancialRanking[]>({
-    queryKey: ['property-financial-rankings'],
+  // Fetch property rankings
+  const { data: propertyRankings = [], isLoading: isLoadingRankings } = useQuery({
+    queryKey: ['property-financial-ranking'],
     queryFn: fetchPropertyFinancialRanking,
-    staleTime: 1000 * 60 * 5,
   });
 
-  // Transform data for UI components
-  const assetValueData = useMemo(() => {
-    if (!metrics) {
-      return {
-        acquisition: 'R$ 0,00',
-        current: 'R$ 0,00',
-        growthPercentage: 0
-      };
-    }
+  const isLoading = isLoadingMetrics || isLoadingMonthly || isLoadingRankings;
 
-    const acquisition = metrics.totalAcquisitionValue || 0;
-    const current = showMarketValue ? (metrics.totalMarketValue || 0) : (metrics.totalBookValue || 0);
-    const growth = acquisition > 0 ? ((current - acquisition) / acquisition) * 100 : 0;
+  // Transform data for components
+  const assetValueData = metrics ? {
+    totalMarketValue: metrics.totalMarketValue || 0,
+    totalBookValue: metrics.totalBookValue || 0,
+    totalAcquisitionValue: metrics.totalAcquisitionValue || 0,
+  } : null;
 
-    return {
-      acquisition: formatCurrency(acquisition),
-      current: formatCurrency(current),
-      growthPercentage: growth
-    };
-  }, [metrics, showMarketValue]);
+  const performanceData = metrics ? {
+    averageMonthlyReturn: metrics.averageMonthlyReturn || 0,
+    previousMonthReturn: metrics.previousMonthReturn || 0,
+    totalProperties: metrics.totalProperties || 0,
+    occupancyRate: metrics.occupancyRate || 0,
+  } : null;
 
-  const performanceData = useMemo(() => {
-    if (!metrics) {
-      return {
-        monthlyAverage: 'R$ 0,00',
-        previousMonth: {
-          percentage: '0,00%',
-          value: 'R$ 0,00',
-          trend: 'neutral' as const
-        },
-        occupancyRate: '0,00%'
-      };
-    }
+  const topPropertiesData = propertyRankings.slice(0, 5);
 
-    const monthlyAvg = metrics.averageMonthlyReturn || 0;
-    const prevMonth = metrics.previousMonthReturn || 0;
-    const occupancy = metrics.occupancyRate || 0;
-    
-    const trend: 'up' | 'down' | 'neutral' = prevMonth > monthlyAvg ? 'up' : prevMonth < monthlyAvg ? 'down' : 'neutral';
+  // Mock neighborhood data (would be calculated from properties)
+  const neighborhoodData = [
+    { name: 'Centro', revenue: 15000, count: 3, roi: 8.5 },
+    { name: 'Vila Nova', revenue: 12000, count: 2, roi: 7.2 },
+    { name: 'Jardim América', revenue: 10000, count: 2, roi: 6.8 },
+    { name: 'Santa Rosa', revenue: 8000, count: 1, roi: 9.1 },
+    { name: 'Copacabana', revenue: 7500, count: 1, roi: 5.5 },
+  ];
 
-    return {
-      monthlyAverage: formatCurrency(monthlyAvg),
-      previousMonth: {
-        percentage: formatPercentage(prevMonth),
-        value: formatCurrency(prevMonth),
-        trend
-      },
-      occupancyRate: formatPercentage(occupancy)
-    };
-  }, [metrics]);
+  const assetGrowthData = monthlyData.map(item => ({
+    month: item.month,
+    marketValue: item.marketValue || 0,
+    bookValue: item.bookValue || 0,
+    acquisitionValue: item.acquisitionValue || 0,
+  }));
 
-  const assetGrowthData = useMemo(() => {
-    return monthlyData.map(item => ({
-      month: item.month,
-      fullLabel: item.month,
-      year: new Date().getFullYear(),
-      value: showMarketValue ? (item.marketValue || 0) : (item.bookValue || 0),
-      acquisition: item.acquisitionValue || 0
-    }));
-  }, [monthlyData, showMarketValue]);
-
-  const roiByPropertyType = useMemo(() => {
-    if (!metrics?.roiByPropertyType) return [];
-    
-    return Object.entries(metrics.roiByPropertyType).map(([type, roi]) => ({
-      type,
-      roi: Number(roi) || 0
-    }));
-  }, [metrics]);
-
-  const topPropertiesData = useMemo(() => {
-    return propertyRankings.slice(0, 5).map(property => ({
-      id: property.id || property.propertyId,
-      name: property.name || property.propertyTitle,
-      type: property.type || 'Residencial',
-      location: property.location || 'Não informado',
-      return: property.monthlyReturn || property.netIncome || 0,
-      percentage: property.returnPercentage || property.roi || 0
-    }));
-  }, [propertyRankings]);
-
-  const neighborhoodData = useMemo(() => {
-    // Group properties by neighborhood and calculate totals
-    const neighborhoods = propertyRankings.reduce((acc, property) => {
-      const neighborhood = property.neighborhood || 'Não informado';
-      if (!acc[neighborhood]) {
-        acc[neighborhood] = {
-          id: neighborhood,
-          name: neighborhood,
-          properties: 0,
-          totalReturn: 0,
-          averageReturn: 0
-        };
-      }
-      acc[neighborhood].properties += 1;
-      acc[neighborhood].totalReturn += property.monthlyReturn || property.netIncome || 0;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Calculate averages and convert to array
-    return Object.values(neighborhoods).map((neighborhood: any) => ({
-      ...neighborhood,
-      averageReturn: neighborhood.properties > 0 ? neighborhood.totalReturn / neighborhood.properties : 0
-    }));
-  }, [propertyRankings]);
+  const roiByPropertyType = metrics?.roiByPropertyType || {};
 
   return {
-    // Original API data
-    metrics,
-    monthlyData,
-    propertyRankings,
-    
-    // Transformed data for UI
+    // Data
     assetValueData,
     performanceData,
-    assetGrowthData,
-    roiByPropertyType,
     topPropertiesData,
     neighborhoodData,
+    assetGrowthData,
+    roiByPropertyType,
     
-    // UI state
+    // UI State
     showMarketValue,
     setShowMarketValue,
     propertyRankingType,
@@ -191,20 +83,7 @@ export const useFinancialDashboard = () => {
     chartViewMode,
     setChartViewMode,
     
-    // Loading states
-    isLoading: isLoadingMetrics || isLoadingMonthlyData || isLoadingRankings,
-    isLoadingMetrics,
-    isLoadingMonthlyData,
-    isLoadingRankings,
-    
-    // Refetch functions
-    refetchMetrics,
-    refetchMonthlyData,
-    refetchRankings,
-    refetchAll: () => {
-      refetchMetrics();
-      refetchMonthlyData();
-      refetchRankings();
-    }
+    // Loading
+    isLoading,
   };
 };
