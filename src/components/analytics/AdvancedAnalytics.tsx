@@ -4,64 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, BarChart3, PieChart, AlertTriangle, Target } from 'lucide-react';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { TrendingUp, TrendingDown, BarChart3, PieChart, Target } from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { addDays, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { useAdvancedReportsData } from '@/hooks/use-advanced-reports-data';
 
-interface AnalyticsData {
-  month: string;
-  revenue: number;
-  expenses: number;
-  profit: number;
-  occupancy: number;
-  newProperties: number;
-  marketValue: number;
-}
-
-interface MarketComparison {
-  region: string;
-  avgPrice: number;
-  ourAvgPrice: number;
-  difference: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-interface Projection {
-  period: string;
-  conservative: number;
-  optimistic: number;
-  pessimistic: number;
-}
-
-const mockAnalyticsData: AnalyticsData[] = [
-  { month: 'Jan', revenue: 45000, expenses: 12000, profit: 33000, occupancy: 85, newProperties: 2, marketValue: 2800000 },
-  { month: 'Fev', revenue: 48000, expenses: 13500, profit: 34500, occupancy: 87, newProperties: 1, marketValue: 2850000 },
-  { month: 'Mar', revenue: 52000, expenses: 14000, profit: 38000, occupancy: 90, newProperties: 3, marketValue: 2920000 },
-  { month: 'Abr', revenue: 49000, expenses: 15000, profit: 34000, occupancy: 88, newProperties: 0, marketValue: 2980000 },
-  { month: 'Mai', revenue: 55000, expenses: 16000, profit: 39000, occupancy: 92, newProperties: 2, marketValue: 3050000 },
-  { month: 'Jun', revenue: 58000, expenses: 15500, profit: 42500, occupancy: 94, newProperties: 1, marketValue: 3120000 },
-];
-
-const mockMarketComparison: MarketComparison[] = [
-  { region: 'Vila Madalena', avgPrice: 8500, ourAvgPrice: 9200, difference: 8.2, trend: 'up' },
-  { region: 'Jardins', avgPrice: 12000, ourAvgPrice: 11500, difference: -4.2, trend: 'down' },
-  { region: 'Moema', avgPrice: 9800, ourAvgPrice: 10100, difference: 3.1, trend: 'up' },
-  { region: 'Pinheiros', avgPrice: 7500, ourAvgPrice: 7800, difference: 4.0, trend: 'stable' },
-];
-
-const mockProjections: Projection[] = [
-  { period: 'Jul 2024', conservative: 52000, optimistic: 62000, pessimistic: 45000 },
-  { period: 'Ago 2024', conservative: 54000, optimistic: 65000, pessimistic: 47000 },
-  { period: 'Set 2024', conservative: 56000, optimistic: 68000, pessimistic: 49000 },
-  { period: 'Out 2024', conservative: 58000, optimistic: 70000, pessimistic: 51000 },
-  { period: 'Nov 2024', conservative: 60000, optimistic: 72000, pessimistic: 53000 },
-  { period: 'Dez 2024', conservative: 62000, optimistic: 75000, pessimistic: 55000 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+// Paleta de cores em escala de cinza
+const COLORS = ['#000000', '#404040', '#808080', '#A0A0A0', '#C0C0C0'];
 
 export function AdvancedAnalytics() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -71,17 +22,25 @@ export function AdvancedAnalytics() {
   const [analysisType, setAnalysisType] = useState<'trend' | 'comparison' | 'projection'>('trend');
   const [metric, setMetric] = useState<'revenue' | 'profit' | 'occupancy' | 'marketValue'>('revenue');
 
+  const { 
+    analyticsData, 
+    marketComparison, 
+    projections, 
+    kpiMetrics, 
+    isLoading 
+  } = useAdvancedReportsData();
+
   const chartData = useMemo(() => {
-    return mockAnalyticsData.map(item => ({
+    return analyticsData.map(item => ({
       ...item,
       netProfit: item.revenue - item.expenses,
-      profitMargin: ((item.revenue - item.expenses) / item.revenue * 100).toFixed(1)
+      profitMargin: item.revenue > 0 ? ((item.revenue - item.expenses) / item.revenue * 100).toFixed(1) : '0'
     }));
-  }, []);
+  }, [analyticsData]);
 
   const currentMetricValue = chartData[chartData.length - 1]?.[metric] || 0;
   const previousMetricValue = chartData[chartData.length - 2]?.[metric] || 0;
-  const metricChange = ((currentMetricValue - previousMetricValue) / previousMetricValue * 100).toFixed(1);
+  const metricChange = previousMetricValue > 0 ? ((currentMetricValue - previousMetricValue) / previousMetricValue * 100).toFixed(1) : '0';
 
   const getMetricLabel = (metric: string) => {
     const labels = {
@@ -109,14 +68,14 @@ export function AdvancedAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Receita Total</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-black">
                   {formatCurrency(chartData.reduce((sum, item) => sum + item.revenue, 0))}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-black" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              +{metricChange}% vs mês anterior
+              {Number(metricChange) >= 0 ? '+' : ''}{metricChange}% vs mês anterior
             </p>
           </CardContent>
         </Card>
@@ -126,14 +85,14 @@ export function AdvancedAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Lucro Médio</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.length)}
+                <p className="text-2xl font-bold text-gray-800">
+                  {formatCurrency(chartData.reduce((sum, item) => sum + item.profit, 0) / Math.max(chartData.length, 1))}
                 </p>
               </div>
-              <Target className="h-8 w-8 text-blue-600" />
+              <Target className="h-8 w-8 text-gray-800" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Margem de {((chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.reduce((sum, item) => sum + item.revenue, 0)) * 100).toFixed(1)}%
+              Margem de {chartData.length > 0 ? ((chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.reduce((sum, item) => sum + item.revenue, 0)) * 100).toFixed(1) : '0'}%
             </p>
           </CardContent>
         </Card>
@@ -143,11 +102,11 @@ export function AdvancedAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Taxa de Ocupação</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {(chartData.reduce((sum, item) => sum + item.occupancy, 0) / chartData.length).toFixed(1)}%
+                <p className="text-2xl font-bold text-gray-600">
+                  {chartData.length > 0 ? (chartData.reduce((sum, item) => sum + item.occupancy, 0) / chartData.length).toFixed(1) : '0'}%
                 </p>
               </div>
-              <PieChart className="h-8 w-8 text-purple-600" />
+              <PieChart className="h-8 w-8 text-gray-600" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Meta: 95%
@@ -160,11 +119,11 @@ export function AdvancedAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Valor Patrimonial</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-2xl font-bold text-gray-400">
                   {formatCurrency(chartData[chartData.length - 1]?.marketValue || 0)}
                 </p>
               </div>
-              <BarChart3 className="h-8 w-8 text-orange-600" />
+              <BarChart3 className="h-8 w-8 text-gray-400" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Atualizado hoje
@@ -195,15 +154,18 @@ export function AdvancedAnalytics() {
           
           <ResponsiveContainer width="100%" height={400}>
             <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => metric === 'occupancy' ? `${value}%` : formatCurrency(Number(value))} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="month" stroke="#666" />
+              <YAxis stroke="#666" />
+              <Tooltip 
+                formatter={(value) => metric === 'occupancy' ? `${value}%` : formatCurrency(Number(value))}
+                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
+              />
               <Area 
                 type="monotone" 
                 dataKey={metric} 
-                stroke="#8884d8" 
-                fill="#8884d8" 
+                stroke="#000000" 
+                fill="#404040" 
                 fillOpacity={0.3}
               />
             </AreaChart>
@@ -221,7 +183,7 @@ export function AdvancedAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockMarketComparison.map((item, index) => (
+            {marketComparison.map((item, index) => (
               <div key={item.region} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex-1">
                   <h4 className="font-medium">{item.region}</h4>
@@ -234,8 +196,8 @@ export function AdvancedAnalytics() {
                   <Badge variant={item.difference > 0 ? 'default' : 'secondary'}>
                     {item.difference > 0 ? '+' : ''}{item.difference.toFixed(1)}%
                   </Badge>
-                  {item.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                  {item.trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
+                  {item.trend === 'up' && <TrendingUp className="h-4 w-4 text-black" />}
+                  {item.trend === 'down' && <TrendingDown className="h-4 w-4 text-gray-600" />}
                   {item.trend === 'stable' && <div className="h-4 w-4 bg-gray-400 rounded-full" />}
                 </div>
               </div>
@@ -250,13 +212,16 @@ export function AdvancedAnalytics() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={mockMarketComparison}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="region" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Bar dataKey="avgPrice" fill="#8884d8" name="Mercado" />
-              <Bar dataKey="ourAvgPrice" fill="#82ca9d" name="Nossos Imóveis" />
+            <BarChart data={marketComparison}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="region" stroke="#666" />
+              <YAxis stroke="#666" />
+              <Tooltip 
+                formatter={(value) => formatCurrency(Number(value))}
+                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
+              />
+              <Bar dataKey="avgPrice" fill="#808080" name="Mercado" />
+              <Bar dataKey="ourAvgPrice" fill="#000000" name="Nossos Imóveis" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -272,14 +237,34 @@ export function AdvancedAnalytics() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={mockProjections}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="period" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Line type="monotone" dataKey="conservative" stroke="#8884d8" strokeDasharray="5 5" name="Conservador" />
-              <Line type="monotone" dataKey="optimistic" stroke="#82ca9d" name="Otimista" />
-              <Line type="monotone" dataKey="pessimistic" stroke="#ff7300" strokeDasharray="10 5" name="Pessimista" />
+            <LineChart data={projections}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="period" stroke="#666" />
+              <YAxis stroke="#666" />
+              <Tooltip 
+                formatter={(value) => formatCurrency(Number(value))}
+                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="conservative" 
+                stroke="#808080" 
+                strokeDasharray="5 5" 
+                name="Conservador" 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="optimistic" 
+                stroke="#000000" 
+                name="Otimista" 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="pessimistic" 
+                stroke="#404040" 
+                strokeDasharray="10 5" 
+                name="Pessimista" 
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -290,8 +275,8 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Cenário Conservador</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatCurrency(mockProjections.reduce((sum, item) => sum + item.conservative, 0))}
+              <p className="text-2xl font-bold text-gray-800">
+                {formatCurrency(projections.reduce((sum, item) => sum + item.conservative, 0))}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
             </div>
@@ -302,8 +287,8 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Cenário Otimista</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(mockProjections.reduce((sum, item) => sum + item.optimistic, 0))}
+              <p className="text-2xl font-bold text-black">
+                {formatCurrency(projections.reduce((sum, item) => sum + item.optimistic, 0))}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
             </div>
@@ -314,8 +299,8 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Cenário Pessimista</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {formatCurrency(mockProjections.reduce((sum, item) => sum + item.pessimistic, 0))}
+              <p className="text-2xl font-bold text-gray-600">
+                {formatCurrency(projections.reduce((sum, item) => sum + item.pessimistic, 0))}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
             </div>
@@ -324,6 +309,17 @@ export function AdvancedAnalytics() {
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando dados analíticos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

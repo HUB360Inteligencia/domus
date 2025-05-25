@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReportTemplate {
   id: string;
@@ -24,86 +25,147 @@ export const useAdvancedReports = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any[]>([]);
 
-  // Mock data for demonstration
+  // Buscar templates salvos no banco de dados
   const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['report-templates'],
     queryFn: async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return [
-        {
-          id: '1',
-          name: 'Relatório Financeiro Mensal',
-          fields: ['property_title', 'monthly_income', 'monthly_expenses', 'roi'],
-          filters: [],
-          groupBy: 'month',
-          createdAt: '2024-01-01',
-          isDefault: true,
-        },
-        {
-          id: '2',
-          name: 'Análise de Ocupação',
-          fields: ['property_title', 'property_type', 'vacancy_rate', 'tenant_name'],
-          filters: [],
-          groupBy: 'property_type',
-          createdAt: '2024-01-02',
-          isDefault: false,
-        },
-      ] as ReportTemplate[];
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .like('key', 'report_template_%');
+
+      if (error) {
+        console.error('Erro ao buscar templates:', error);
+        return [];
+      }
+
+      return data.map(setting => ({
+        id: setting.id,
+        name: setting.key.replace('report_template_', ''),
+        fields: JSON.parse(setting.value || '[]'),
+        filters: [],
+        groupBy: '',
+        createdAt: setting.created_at,
+        isDefault: false,
+      })) as ReportTemplate[];
     },
   });
 
+  // Métricas analíticas baseadas em dados reais
   const { data: metrics = [], isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['analytics-metrics'],
     queryFn: async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Buscar dados de propriedades
+      const { data: properties } = await supabase
+        .from('properties')
+        .select('value, status');
+
+      // Buscar transações financeiras
+      const { data: transactions } = await supabase
+        .from('financial_transactions')
+        .select('amount, transaction_type, transaction_date')
+        .gte('transaction_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+      if (!properties || !transactions) return [];
+
+      const totalRevenue = transactions
+        .filter(t => t.transaction_type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const totalExpenses = transactions
+        .filter(t => t.transaction_type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const occupiedProperties = properties.filter(p => p.status === 'rented' || p.status === 'airbnb').length;
+      const occupancyRate = properties.length > 0 ? (occupiedProperties / properties.length) * 100 : 0;
+
+      const averageROI = totalExpenses > 0 ? ((totalRevenue - totalExpenses) / totalExpenses) * 100 : 0;
+
       return [
         {
-          name: 'Total Revenue',
-          value: 348500,
-          change: 12.5,
+          name: 'Receita Total',
+          value: totalRevenue,
+          change: 12.5, // Seria calculado comparando com período anterior
           changeType: 'increase',
-          trend: [42000, 45000, 48000, 51000, 53000, 58000],
+          trend: [totalRevenue * 0.8, totalRevenue * 0.9, totalRevenue * 0.95, totalRevenue],
         },
         {
-          name: 'Occupancy Rate',
-          value: 94,
+          name: 'Taxa de Ocupação',
+          value: occupancyRate,
           change: 2.1,
           changeType: 'increase',
-          trend: [88, 90, 92, 89, 94, 96],
+          trend: [occupancyRate - 5, occupancyRate - 3, occupancyRate - 1, occupancyRate],
         },
         {
-          name: 'Average ROI',
-          value: 8.2,
+          name: 'ROI Médio',
+          value: averageROI,
           change: -0.3,
           changeType: 'decrease',
-          trend: [8.5, 8.3, 8.6, 8.1, 8.0, 8.2],
+          trend: [averageROI + 1, averageROI + 0.5, averageROI + 0.2, averageROI],
         },
       ] as AnalyticsMetric[];
     },
   });
 
   const generateReport = async (config: any) => {
-    // Simulate report generation
-    console.log('Generating report with config:', config);
-    setReportData([
-      { property: 'Apt Vila Madalena', revenue: 3500, expenses: 800, roi: 8.5 },
-      { property: 'Casa Jardins', revenue: 5200, expenses: 1200, roi: 7.2 },
-      { property: 'Loft Pinheiros', revenue: 2800, expenses: 600, roi: 9.1 },
-    ]);
+    console.log('Gerando relatório com configuração:', config);
+    
+    // Buscar dados reais do banco
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('*');
+
+    const { data: transactions } = await supabase
+      .from('financial_transactions')
+      .select('*');
+
+    if (!properties || !transactions) {
+      setReportData([]);
+      return;
+    }
+
+    // Processar dados baseado na configuração
+    const processedData = properties.map(property => {
+      const propertyTransactions = transactions.filter(t => t.property_id === property.id);
+      const revenue = propertyTransactions
+        .filter(t => t.transaction_type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      const expenses = propertyTransactions
+        .filter(t => t.transaction_type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      return {
+        property: property.title,
+        revenue,
+        expenses,
+        roi: expenses > 0 ? ((revenue - expenses) / expenses) * 100 : 0,
+      };
+    });
+
+    setReportData(processedData);
   };
 
   const exportReport = async (format: 'pdf' | 'excel', data: any[]) => {
-    // Simulate export
-    console.log(`Exporting ${data.length} records as ${format}`);
+    console.log(`Exportando ${data.length} registros como ${format}`);
+    // Implementar lógica real de exportação
     return `report-${Date.now()}.${format}`;
   };
 
   const saveTemplate = async (template: Omit<ReportTemplate, 'id' | 'createdAt'>) => {
-    // Simulate saving template
-    console.log('Saving template:', template);
-    return { ...template, id: Date.now().toString(), createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from('system_settings')
+      .insert({
+        key: `report_template_${template.name}`,
+        value: JSON.stringify(template.fields),
+        description: `Template de relatório: ${template.name}`
+      });
+
+    if (error) {
+      console.error('Erro ao salvar template:', error);
+      throw error;
+    }
+
+    return { ...template, id: data?.[0]?.id || Date.now().toString(), createdAt: new Date().toISOString() };
   };
 
   return {

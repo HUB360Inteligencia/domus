@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
@@ -12,7 +12,7 @@ export default function AdvancedReportsPage() {
     <div className="container py-6">
       <PageHeader
         title="Relatórios e Analytics Avançados"
-        description="Sistema completo de relatórios personalizáveis e análises avançadas"
+        description="Sistema completo de relatórios personalizáveis e análises avançadas dos seus investimentos imobiliários"
       />
 
       <Tabs defaultValue="dashboard" className="space-y-6">

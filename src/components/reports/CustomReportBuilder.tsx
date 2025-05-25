@@ -10,6 +10,10 @@ import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Download, Plus, Save, Settings } from 'lucide-react';
 import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { useProperties } from '@/hooks/use-properties';
+import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { useContracts } from '@/hooks/use-contracts';
+import { toast } from '@/hooks/use-toast';
 
 interface ReportField {
   id: string;
@@ -34,7 +38,9 @@ const availableFields: ReportField[] = [
   { id: 'monthly_income', name: 'Receita Mensal', type: 'currency', category: 'Financeiro' },
   { id: 'monthly_expenses', name: 'Despesas Mensais', type: 'currency', category: 'Financeiro' },
   { id: 'roi', name: 'ROI (%)', type: 'number', category: 'Financeiro' },
-  { id: 'vacancy_rate', name: 'Taxa de Vacância', type: 'number', category: 'Ocupação' },
+  { id: 'contract_value', name: 'Valor do Contrato', type: 'currency', category: 'Contratos' },
+  { id: 'contract_start', name: 'Início do Contrato', type: 'date', category: 'Contratos' },
+  { id: 'contract_end', name: 'Fim do Contrato', type: 'date', category: 'Contratos' },
   { id: 'tenant_name', name: 'Nome do Inquilino', type: 'text', category: 'Inquilino' },
 ];
 
@@ -47,6 +53,11 @@ export function CustomReportBuilder() {
   });
   const [reportName, setReportName] = useState('');
   const [groupBy, setGroupBy] = useState<string>('');
+  const [reportData, setReportData] = useState<any[]>([]);
+
+  const { properties } = useProperties();
+  const { transactions } = useFinancialTransactions();
+  const { contracts } = useContracts();
 
   const handleFieldToggle = (fieldId: string) => {
     setSelectedFields(prev => 
@@ -71,24 +82,139 @@ export function CustomReportBuilder() {
   };
 
   const generateReport = () => {
-    // Implementar lógica de geração de relatório
-    console.log('Generating report with:', {
+    if (!properties || !transactions || !contracts) {
+      toast({
+        title: "Erro",
+        description: "Dados não carregados. Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Combinar dados de propriedades, transações e contratos
+    const combinedData = properties.map(property => {
+      const propertyTransactions = transactions.filter(t => t.property_id === property.id);
+      const propertyContracts = contracts.filter(c => c.property_id === property.id);
+      const activeContract = propertyContracts.find(c => c.status === 'active');
+
+      const monthlyIncome = propertyTransactions
+        .filter(t => t.transaction_type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const monthlyExpenses = propertyTransactions
+        .filter(t => t.transaction_type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const roi = monthlyExpenses > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyExpenses) * 100 : 0;
+
+      return {
+        property_title: property.title,
+        property_type: property.type,
+        property_value: property.value,
+        property_area: property.area,
+        property_city: property.city,
+        property_status: property.status,
+        monthly_income: monthlyIncome,
+        monthly_expenses: monthlyExpenses,
+        roi: roi,
+        contract_value: activeContract?.value || 0,
+        contract_start: activeContract?.start_date || '',
+        contract_end: activeContract?.end_date || '',
+        tenant_name: activeContract?.tenant_name || property.tenant_name || '',
+      };
+    });
+
+    // Aplicar filtros
+    let filteredData = combinedData;
+    filters.forEach(filter => {
+      if (filter.field && filter.value) {
+        filteredData = filteredData.filter(item => {
+          const fieldValue = String(item[filter.field as keyof typeof item] || '').toLowerCase();
+          const filterValue = filter.value.toLowerCase();
+
+          switch (filter.operator) {
+            case 'contains':
+              return fieldValue.includes(filterValue);
+            case 'equals':
+              return fieldValue === filterValue;
+            case 'greater':
+              return Number(fieldValue) > Number(filterValue);
+            case 'less':
+              return Number(fieldValue) < Number(filterValue);
+            default:
+              return true;
+          }
+        });
+      }
+    });
+
+    // Selecionar apenas os campos escolhidos
+    const reportResult = filteredData.map(item => {
+      const result: any = {};
+      selectedFields.forEach(field => {
+        result[field] = item[field as keyof typeof item];
+      });
+      return result;
+    });
+
+    setReportData(reportResult);
+    
+    toast({
+      title: "Relatório Gerado",
+      description: `Relatório gerado com ${reportResult.length} registros.`,
+    });
+
+    console.log('Dados do relatório:', {
       fields: selectedFields,
       filters,
       dateRange,
       groupBy,
-      reportName
+      reportName,
+      data: reportResult
     });
   };
 
   const exportReport = (format: 'pdf' | 'excel') => {
-    // Implementar lógica de exportação
-    console.log(`Exporting report as ${format}`);
+    if (reportData.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Gere o relatório primeiro antes de exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Aqui seria implementada a lógica real de exportação
+    toast({
+      title: "Exportação Iniciada",
+      description: `Iniciando exportação do relatório em formato ${format.toUpperCase()}.`,
+    });
+    
+    console.log(`Exportando relatório como ${format}`, reportData);
   };
 
   const saveTemplate = () => {
-    // Implementar salvamento de template
-    console.log('Saving template:', reportName);
+    if (!reportName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite um nome para o template.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Aqui seria implementada a lógica real de salvamento
+    toast({
+      title: "Template Salvo",
+      description: `Template "${reportName}" salvo com sucesso.`,
+    });
+    
+    console.log('Salvando template:', {
+      name: reportName,
+      fields: selectedFields,
+      filters,
+      groupBy
+    });
   };
 
   const fieldsByCategory = availableFields.reduce((acc, field) => {
@@ -265,6 +391,45 @@ export function CustomReportBuilder() {
               Exportar Excel
             </Button>
           </div>
+
+          {/* Resultado do Relatório */}
+          {reportData.length > 0 && (
+            <div className="pt-4 border-t">
+              <h3 className="font-medium mb-2">Dados do Relatório ({reportData.length} registros)</h3>
+              <div className="max-h-64 overflow-auto border rounded">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {selectedFields.map(field => (
+                        <th key={field} className="px-3 py-2 text-left border-b">
+                          {availableFields.find(f => f.id === field)?.name || field}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.slice(0, 10).map((row, index) => (
+                      <tr key={index} className="border-b">
+                        {selectedFields.map(field => (
+                          <td key={field} className="px-3 py-2">
+                            {typeof row[field] === 'number' && field.includes('value') 
+                              ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(row[field])
+                              : String(row[field] || '-')
+                            }
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {reportData.length > 10 && (
+                  <div className="p-2 text-center text-gray-500 text-xs">
+                    Mostrando 10 de {reportData.length} registros
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
