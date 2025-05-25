@@ -4,19 +4,16 @@ import { StatsCards } from '@/components/finances/StatsCards';
 
 interface FinancialStatsSectionProps {
   assetValueData: {
-    acquisition: string;
-    current: string;
-    growthPercentage: number;
-  };
+    totalMarketValue: number;
+    totalBookValue: number;
+    totalAcquisitionValue: number;
+  } | null;
   performanceData: {
-    monthlyAverage: string;
-    previousMonth: {
-      percentage: string;
-      value: string;
-      trend: 'up' | 'down' | 'neutral';
-    };
-    occupancyRate: string;
-  };
+    averageMonthlyReturn: number;
+    previousMonthReturn: number;
+    totalProperties: number;
+    occupancyRate: number;
+  } | null;
   showMarketValue: boolean;
   setShowMarketValue: (value: boolean) => void;
   isLoading?: boolean;
@@ -29,11 +26,34 @@ export const FinancialStatsSection: React.FC<FinancialStatsSectionProps> = ({
   setShowMarketValue,
   isLoading
 }) => {
+  // Transform data to match StatsCards expected format
+  const transformedAssetData = assetValueData ? {
+    acquisition: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(assetValueData.totalAcquisitionValue),
+    current: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(assetValueData.totalMarketValue),
+    growthPercentage: assetValueData.totalAcquisitionValue > 0 
+      ? ((assetValueData.totalMarketValue - assetValueData.totalAcquisitionValue) / assetValueData.totalAcquisitionValue) * 100 
+      : 0
+  } : { acquisition: 'R$ 0,00', current: 'R$ 0,00', growthPercentage: 0 };
+
+  const transformedPerformanceData = performanceData ? {
+    monthlyAverage: `${performanceData.averageMonthlyReturn.toFixed(1)}%`,
+    previousMonth: {
+      percentage: `${performanceData.previousMonthReturn.toFixed(1)}%`,
+      value: 'R$ 0,00', // This would need to be calculated from actual revenue data
+      trend: performanceData.previousMonthReturn >= 0 ? 'up' as const : 'down' as const
+    },
+    occupancyRate: `${performanceData.occupancyRate.toFixed(1)}%`
+  } : {
+    monthlyAverage: '0%',
+    previousMonth: { percentage: '0%', value: 'R$ 0,00', trend: 'neutral' as const },
+    occupancyRate: '0%'
+  };
+
   return (
     <div className="mb-6">
       <StatsCards
-        assetValueData={assetValueData}
-        performanceData={performanceData}
+        assetValueData={transformedAssetData}
+        performanceData={transformedPerformanceData}
         showMarketValue={showMarketValue}
         setShowMarketValue={setShowMarketValue}
         isLoading={isLoading}
