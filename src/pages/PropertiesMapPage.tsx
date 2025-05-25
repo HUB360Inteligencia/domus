@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/page-header';
 import { PropertyMapView } from '@/components/properties/property-map-view';
 import { useProperties } from '@/hooks/use-properties';
@@ -7,6 +8,11 @@ import { Loader2, MapPin } from 'lucide-react';
 
 export default function PropertiesMapPage() {
   const { properties, isLoadingProperties } = useProperties();
+  const navigate = useNavigate();
+
+  const handlePropertySelect = (propertyId: string) => {
+    navigate(`/properties/${propertyId}`);
+  };
 
   if (isLoadingProperties) {
     return (
@@ -33,8 +39,11 @@ export default function PropertiesMapPage() {
         </div>
       </PageHeader>
 
-      <div className="w-full">
-        <PropertyMapView />
+      <div className="w-full h-[600px]">
+        <PropertyMapView 
+          properties={properties}
+          onSelect={handlePropertySelect}
+        />
       </div>
     </div>
   );
