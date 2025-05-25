@@ -48,6 +48,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Component to handle old property detail route redirect
+function PropertyDetailRedirect() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const id = searchParams.get('id');
+  
+  if (id) {
+    return <Navigate to={`/properties/${id}`} replace />;
+  }
+  
+  return <Navigate to="/properties" replace />;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -85,6 +97,18 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <PropertiesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Redirect old property detail route to new format */}
+          <Route 
+            path="/properties/detail" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PropertyDetailRedirect />
                 </AppLayout>
               </ProtectedRoute>
             } 

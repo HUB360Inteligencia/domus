@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Edit, Trash2, MapPin, Home, Info, User, Building, Banknote, SquareStack, Ticket, ImageIcon } from 'lucide-react';
+import { MapPin, Info, User, Building, Banknote, SquareStack, Ticket, ImageIcon, Home } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +11,7 @@ import { PropertyContractSection } from './PropertyContractSection';
 import { PropertyImageGallery } from './PropertyImageGallery';
 import { PropertyInvestmentSection } from './PropertyInvestmentSection';
 import { PropertyOccupancySection } from './PropertyOccupancySection';
+import { PropertyHeroHeader } from './property-hero-header';
 
 interface PropertyDetailProps {
   property: Property | null | undefined;
@@ -42,113 +41,24 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
     }).format(value);
   };
 
-  // Function to render property details or skeletons when loading
-  const renderPropertyInfo = () => {
-    if (isLoading) {
-      return (
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-3/4" />
-          <Skeleton className="h-5 w-1/2" />
-          <div className="flex items-center gap-2 mt-2">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-20" />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">{property?.title}</h1>
-        <p className="text-muted-foreground">{property?.address}, {property?.property_number} - {property?.city}, {property?.state}</p>
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          <Badge variant="outline" className="text-muted-foreground">
-            {property?.type === 'apartment' ? 'Apartamento' :
-             property?.type === 'house' ? 'Casa' :
-             property?.type === 'commercial' ? 'Comercial' :
-             property?.type === 'land' ? 'Terreno' :
-             property?.type === 'rural' ? 'Rural' :
-             property?.type || 'N/A'}
-          </Badge>
-          <Badge 
-            variant={
-              property?.status === 'rented' ? 'default' :
-              property?.status === 'available' ? 'outline' :
-              property?.status === 'airbnb' ? 'secondary' :
-              property?.status === 'maintenance' ? 'destructive' :
-              'outline'
-            }
-          >
-            {property?.status === 'rented' ? 'Alugado' :
-             property?.status === 'available' ? 'Disponível' :
-             property?.status === 'airbnb' ? 'Airbnb' :
-             property?.status === 'maintenance' ? 'Em manutenção' :
-             property?.status === 'sold' ? 'Vendido' :
-             property?.status || 'N/A'}
-          </Badge>
-          {property?.tags && property.tags.length > 0 && (
-            property.tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                {tag}
-              </Badge>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={onBack}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          {renderPropertyInfo()}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir Imóvel</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={onDelete}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'Excluindo...' : 'Excluir'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+    <div className="space-y-8">
+      {/* Modern Hero Header */}
+      <PropertyHeroHeader
+        property={property}
+        isLoading={isLoading}
+        onBack={onBack}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+      />
 
       {/* Property Tabs */}
       <Tabs
         defaultValue="overview"
         value={activeTab}
         onValueChange={setActiveTab}
-        className="space-y-4"
+        className="space-y-6"
       >
         <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center gap-2">
@@ -189,32 +99,16 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Property Image */}
-            <Card className="lg:col-span-2 overflow-hidden">
-              {isLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : property?.image_url ? (
-                <img 
-                  src={property.image_url} 
-                  alt={property.title}
-                  className="w-full h-[300px] object-cover"
-                />
-              ) : (
-                <div className="w-full h-[300px] bg-muted flex items-center justify-center">
-                  <Home className="h-16 w-16 text-muted-foreground opacity-20" />
-                </div>
-              )}
-            </Card>
-
             {/* Key Property Details */}
-            <Card>
+            <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="text-lg">Detalhes do Imóvel</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
+                  // ... keep existing code (loading skeletons)
                   <>
                     <div className="flex justify-between">
                       <Skeleton className="h-4 w-20" />
@@ -238,6 +132,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                     </div>
                   </>
                 ) : (
+                  // ... keep existing code (property details display)
                   <>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Valor</span>
@@ -274,6 +169,23 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                   </>
                 )}
               </CardContent>
+            </Card>
+
+            {/* Property Image */}
+            <Card className="lg:col-span-2 overflow-hidden">
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : property?.image_url ? (
+                <img 
+                  src={property.image_url} 
+                  alt={property.title}
+                  className="w-full h-[300px] object-cover"
+                />
+              ) : (
+                <div className="w-full h-[300px] bg-muted flex items-center justify-center">
+                  <Home className="h-16 w-16 text-muted-foreground opacity-20" />
+                </div>
+              )}
             </Card>
           </div>
 
