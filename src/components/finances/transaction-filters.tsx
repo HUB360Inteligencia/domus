@@ -104,7 +104,7 @@ export function TransactionFilters({
               onValueChange={(value) => {
                 if (value === "all") {
                   onFilterChange({ type: undefined });
-                } else {
+                } else if (value && value.trim() !== '') {
                   onFilterChange({ type: [value] });
                 }
               }}
@@ -128,7 +128,7 @@ export function TransactionFilters({
               onValueChange={(value) => {
                 if (value === "all") {
                   onFilterChange({ category: undefined });
-                } else {
+                } else if (value && value.trim() !== '') {
                   onFilterChange({ category: [value] });
                 }
               }}
@@ -138,9 +138,11 @@ export function TransactionFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                ))}
+                {categories
+                  .filter(cat => cat.value && cat.value.trim() !== '' && cat.value !== '')
+                  .map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -160,9 +162,11 @@ export function TransactionFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All properties</SelectItem>
-                  {properties.map((prop) => (
-                    <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
-                  ))}
+                  {properties
+                    .filter(prop => prop.value && prop.value.trim() !== '' && prop.value !== '')
+                    .map((prop) => (
+                      <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -28,11 +28,13 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {categories.filter(category => category.value && category.value.trim() !== '').map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
+              {categories
+                .filter(category => category.value && category.value.trim() !== '' && category.value !== '')
+                .map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <FormMessage />

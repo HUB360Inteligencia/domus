@@ -63,11 +63,13 @@ export const SelectField = ({
             </FormControl>
             <SelectContent>
               {allowEmpty && <SelectItem value="none">Nenhum</SelectItem>}
-              {options.filter(option => option.value && option.value.trim() !== '').map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {options
+                .filter(option => option.value && option.value.trim() !== '' && option.value !== '')
+                .map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <FormMessage />

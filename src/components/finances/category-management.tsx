@@ -74,10 +74,13 @@ export function CategoryManagement() {
   };
 
   const handleSelectChange = (value: string) => {
-    setFormData({
-      ...formData,
-      type: value as 'income' | 'expense',
-    });
+    // Ensure value is never empty string
+    if (value && value.trim() !== '') {
+      setFormData({
+        ...formData,
+        type: value as 'income' | 'expense',
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

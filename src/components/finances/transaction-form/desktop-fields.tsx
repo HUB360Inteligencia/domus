@@ -98,11 +98,13 @@ export function DesktopFields({ form, properties }: DesktopFieldsProps) {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="none">Nenhum</SelectItem>
-                  {properties.map((property) => (
-                    <SelectItem key={property.value} value={property.value}>
-                      {property.label}
-                    </SelectItem>
-                  ))}
+                  {properties
+                    .filter(property => property.value && property.value.trim() !== '' && property.value !== '')
+                    .map((property) => (
+                      <SelectItem key={property.value} value={property.value}>
+                        {property.label}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <FormMessage />
