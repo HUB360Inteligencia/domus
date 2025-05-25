@@ -28,7 +28,7 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {categories.map((category) => (
+              {categories.filter(category => category.value && category.value.trim() !== '').map((category) => (
                 <SelectItem key={category.value} value={category.value}>
                   {category.label}
                 </SelectItem>
