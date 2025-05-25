@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Sheet,
@@ -88,16 +87,6 @@ const financeItems = [
     title: "Dashboard Financeiro",
     url: "/finances/dashboard",
     icon: LineChart,
-  },
-  {
-    title: "Receitas",
-    url: "/finances/income",
-    icon: ArrowUpCircle,
-  },
-  {
-    title: "Despesas",
-    url: "/finances/expenses",
-    icon: ArrowDownCircle,
   },
   {
     title: "Transações",

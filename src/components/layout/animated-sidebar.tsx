@@ -272,16 +272,6 @@ const SidebarMenuContent = () => {
       icon: <LineChart className="h-4 w-4" />,
     },
     {
-      label: "Receitas",
-      href: "/finances/income",
-      icon: <ArrowUpCircle className="h-4 w-4" />,
-    },
-    {
-      label: "Despesas",
-      href: "/finances/expenses",
-      icon: <ArrowDownCircle className="h-4 w-4" />,
-    },
-    {
       label: "Transações",
       href: "/finances/transactions",
       icon: <BarChart3 className="h-4 w-4" />,

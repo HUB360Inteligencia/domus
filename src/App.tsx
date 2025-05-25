@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -252,12 +251,13 @@ function App() {
             } 
           />
           
+          {/* Redirect income and expenses to transactions page */}
           <Route 
             path="/finances/income" 
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <IncomePage />
+                  <Navigate to="/finances/transactions?tab=income" replace />
                 </AppLayout>
               </ProtectedRoute>
             } 
@@ -268,7 +268,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <ExpensesPage />
+                  <Navigate to="/finances/transactions?tab=expense" replace />
                 </AppLayout>
               </ProtectedRoute>
             } 
