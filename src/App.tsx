@@ -219,6 +219,39 @@ function App() {
             } 
           />
           
+          <Route 
+            path="/activities/new" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ActivityFormPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/activities/:id" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ActivityDetailPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/activities/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ActivityFormPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
           {/* Redirect old schedules route to activities for compatibility */}
           <Route 
             path="/schedules" 

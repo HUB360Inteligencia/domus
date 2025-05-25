@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, CheckSquare } from "lucide-react";
 
 import { useActivities } from "@/hooks/use-activities";
@@ -15,13 +15,12 @@ import { ActivityForm } from "@/components/activities/activity-form";
 import { toast } from "sonner";
 
 export default function ActivityFormPage() {
-  const [searchParams] = useSearchParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   
-  // Get id from search params for edit mode
-  const activityId = searchParams.get("id");
   // Get optional date param for new activity with pre-filled date
-  const dateParam = searchParams.get("date");
+  const urlParams = new URLSearchParams(window.location.search);
+  const dateParam = urlParams.get("date");
   
   const [loading, setLoading] = useState(false);
   const [initialData, setInitialData] = useState<Partial<ActivityFormData> | null>(null);
@@ -40,8 +39,8 @@ export default function ActivityFormPage() {
 
   // For edit mode, load the activity data
   useEffect(() => {
-    if (activityId) {
-      setSelectedActivityId(activityId);
+    if (id) {
+      setSelectedActivityId(id);
     } else if (dateParam) {
       // Pre-fill with date from params if provided
       setInitialData({
@@ -51,7 +50,7 @@ export default function ActivityFormPage() {
       // Ensure we always have initialData defined, even if it's empty
       setInitialData({});
     }
-  }, [activityId, dateParam, setSelectedActivityId]);
+  }, [id, dateParam, setSelectedActivityId]);
 
   // Update initial data when selected activity changes
   useEffect(() => {
@@ -71,9 +70,9 @@ export default function ActivityFormPage() {
     try {
       setLoading(true);
       
-      if (activityId) {
+      if (id) {
         // Update existing activity
-        await updateActivity({ id: activityId, data: formData });
+        await updateActivity({ id, data: formData });
         toast.success("Atividade atualizada com sucesso");
       } else {
         // Create new activity
@@ -84,7 +83,7 @@ export default function ActivityFormPage() {
       navigate("/activities");
     } catch (error) {
       console.error("Error submitting activity:", error);
-      toast.error(activityId 
+      toast.error(id 
         ? "Erro ao atualizar atividade" 
         : "Erro ao criar atividade"
       );
@@ -95,7 +94,7 @@ export default function ActivityFormPage() {
 
   // Handle cancel action
   const handleCancel = () => {
-    navigate(activityId ? `/activities/detail?id=${activityId}` : "/activities");
+    navigate(id ? `/activities/${id}` : "/activities");
   };
   
   // Map properties for form select options
@@ -111,7 +110,7 @@ export default function ActivityFormPage() {
   }));
 
   // Show loading state if we're editing and still loading the activity data
-  if (activityId && !initialData) {
+  if (id && !initialData) {
     return (
       <div className="flex items-center justify-center h-64">
         <p>Carregando...</p>
@@ -122,8 +121,8 @@ export default function ActivityFormPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={activityId ? "Editar Atividade" : "Nova Atividade"}
-        description={activityId 
+        title={id ? "Editar Atividade" : "Nova Atividade"}
+        description={id 
           ? "Modifique os dados da atividade existente" 
           : "Adicione uma nova atividade ao sistema"
         }

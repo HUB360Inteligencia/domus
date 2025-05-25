@@ -8,6 +8,7 @@ import {
   Plus, 
   Calendar as CalendarIcon, 
   KanbanSquare, 
+  List,
   Search 
 } from "lucide-react";
 
@@ -21,12 +22,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityBoard } from "@/components/activities/activity-board";
+import { ActivityList } from "@/components/activities/activity-list";
 import { ActivityFiltersBar } from "@/components/activities/activity-filters";
 import { ActivityCalendar } from "@/components/activities/activity-calendar";
 
 export default function ActivitiesPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("board");
+  const [activeTab, setActiveTab] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   
@@ -40,7 +42,8 @@ export default function ActivitiesPage() {
     isLoading,
     handleStatusChange,
     handleFilterChange,
-    convertToExpense
+    convertToExpense,
+    deleteActivity
   } = useActivities();
 
   // Function to handle creating a new activity
@@ -50,7 +53,12 @@ export default function ActivitiesPage() {
   
   // Function to handle clicking on an activity
   const handleSelectActivity = (id: string) => {
-    navigate(`/activities/detail?id=${id}`);
+    navigate(`/activities/${id}`);
+  };
+
+  // Function to handle editing an activity
+  const handleEditActivity = (id: string) => {
+    navigate(`/activities/${id}/edit`);
   };
   
   // Map properties for select options
@@ -121,6 +129,10 @@ export default function ActivitiesPage() {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Lista
+          </TabsTrigger>
           <TabsTrigger value="board" className="flex items-center gap-2">
             <KanbanSquare className="h-4 w-4" />
             Quadro
@@ -130,6 +142,19 @@ export default function ActivitiesPage() {
             Calendário
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="list" className="mt-4">
+          <ActivityList
+            activities={searchedActivities}
+            properties={properties}
+            isLoading={isLoading}
+            onSelect={handleSelectActivity}
+            onEdit={handleEditActivity}
+            onDelete={deleteActivity}
+            onStatusChange={handleStatusChange}
+            onConvertToExpense={convertToExpense}
+          />
+        </TabsContent>
         
         <TabsContent value="board" className="mt-4">
           <DndProvider backend={HTML5Backend}>
