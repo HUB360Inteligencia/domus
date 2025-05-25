@@ -37,6 +37,7 @@ export default function FinancialTransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<(TransactionFormData & { id: string }) | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [newTransactionType, setNewTransactionType] = useState<'income' | 'expense' | undefined>(undefined);
   
   const { 
     transactions: allTransactions, 
@@ -77,12 +78,14 @@ export default function FinancialTransactionsPage() {
   const handleOpenModal = (transaction?: any) => {
     if (transaction) {
       setSelectedTransaction(transaction);
+      setNewTransactionType(undefined);
     } else {
-      // Pre-configure transaction type based on active tab
+      // For new transactions, just set the type and clear selected transaction
       const transactionType = activeTab === 'income' ? 'income' : 
                              activeTab === 'expense' ? 'expense' : 
                              undefined;
-      setSelectedTransaction(transactionType ? { transaction_type: transactionType } : null);
+      setSelectedTransaction(null);
+      setNewTransactionType(transactionType);
     }
     setIsModalOpen(true);
   };
@@ -90,6 +93,7 @@ export default function FinancialTransactionsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedTransaction(null);
+    setNewTransactionType(undefined);
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
@@ -98,6 +102,8 @@ export default function FinancialTransactionsPage() {
       data.transaction_type = 'income';
     } else if (activeTab === 'expense') {
       data.transaction_type = 'expense';
+    } else if (newTransactionType) {
+      data.transaction_type = newTransactionType;
     }
     
     try {
@@ -315,7 +321,12 @@ export default function FinancialTransactionsPage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
-        initialData={selectedTransaction || undefined}
+        initialData={selectedTransaction ? { 
+          ...selectedTransaction,
+          transaction_type: selectedTransaction.transaction_type 
+        } : newTransactionType ? { 
+          transaction_type: newTransactionType 
+        } as any : undefined}
         isSubmitting={isCreating || isUpdating}
         properties={propertyOptions}
         categories={categoryOptions}
