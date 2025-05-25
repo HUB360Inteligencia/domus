@@ -1,10 +1,11 @@
+
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapIcon, Loader2 } from 'lucide-react';
+import { AlertCircle, MapIcon, Loader2, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface PropertyMapViewProps {
@@ -19,26 +20,28 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const [error, setError] = useState<string | null>(null);
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
-  const { getTokenForContext, getStyleForContext, isReady } = useMapbox();
-  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
+  const { getTokenForContext, getStyleForContext, isReady, error: mapboxError, retryInitialization } = useMapbox();
+  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: loaderError, retryLoad } = useMapboxLoader();
 
   // Get specific token and style for property list context
-  const token = isReady ? getTokenForContext('mapbox_token_property_list') : null;
+  const token = getTokenForContext('mapbox_token_property_list');
   const mapStyle = getStyleForContext('mapbox_style_property_list');
 
-  console.log('PropertyMapView: Render state:', { 
+  console.log('PropertyMapView: Current state:', { 
     token: !!token, 
-    tokenValue: token ? `${token.substring(0, 20)}...` : 'null',
     mapboxLoaded, 
     mapboxLoading, 
     mapboxError,
+    loaderError,
     propertiesCount: properties.length,
     isMapInitialized,
-    isReady
+    isReady,
+    retryCount
   });
 
-  // Memoize properties with coordinates only
+  // Properties with coordinates
   const propertiesWithCoords = useMemo(() => {
     const filtered = properties.filter(p => p.latitude && p.longitude);
     console.log('PropertyMapView: Properties with coords:', {
@@ -48,71 +51,56 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     return filtered;
   }, [properties]);
 
-  // Property type icons mapping
+  // Property type icons and colors
   const getPropertyIcon = (type: string) => {
-    switch (type) {
-      case 'apartment': return '🏢';
-      case 'house': return '🏠';
-      case 'commercial': return '🏪';
-      case 'land': return '🏞️';
-      case 'rural': return '🏡';
-      default: return '📍';
-    }
+    const icons = {
+      'apartment': '🏢',
+      'house': '🏠',
+      'commercial': '🏪',
+      'land': '🏞️',
+      'rural': '🏡'
+    };
+    return icons[type as keyof typeof icons] || '📍';
   };
 
-  // Property status colors
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return '#10b981';
-      case 'rented': return '#3b82f6';
-      case 'airbnb': return '#ef4444';
-      case 'maintenance': return '#f59e0b';
-      case 'sold': return '#8b5cf6';
-      default: return '#6b7280';
-    }
+    const colors = {
+      'available': '#10b981',
+      'rented': '#3b82f6',
+      'airbnb': '#ef4444',
+      'maintenance': '#f59e0b',
+      'sold': '#8b5cf6'
+    };
+    return colors[status as keyof typeof colors] || '#6b7280';
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'available': return 'Disponível';
-      case 'rented': return 'Alugado';
-      case 'airbnb': return 'Airbnb';
-      case 'maintenance': return 'Manutenção';
-      case 'sold': return 'Vendido';
-      default: return status;
-    }
+    const labels = {
+      'available': 'Disponível',
+      'rented': 'Alugado',
+      'airbnb': 'Airbnb',
+      'maintenance': 'Manutenção',
+      'sold': 'Vendido'
+    };
+    return labels[status as keyof typeof labels] || status;
   };
 
-  // Initialize map when all conditions are met
+  // Initialize map
   useEffect(() => {
-    console.log('PropertyMapView: Map initialization effect triggered');
-    
-    // More specific condition checking
-    const canInitializeMap = mapboxLoaded && 
-                            token && 
-                            mapContainer.current && 
-                            window.mapboxgl && 
-                            !mapRef.current && 
-                            !isMapInitialized &&
-                            isReady;
-    
-    console.log('PropertyMapView: Initialization conditions:', { 
-      mapboxLoaded, 
-      token: !!token, 
-      container: !!mapContainer.current, 
-      mapboxgl: !!window.mapboxgl,
-      existingMap: !!mapRef.current,
-      isMapInitialized,
-      isReady,
-      canInitialize: canInitializeMap
-    });
-    
-    if (!canInitializeMap) {
+    if (!isReady || !mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl || mapRef.current) {
+      console.log('PropertyMapView: Skipping initialization:', {
+        isReady,
+        mapboxLoaded,
+        token: !!token,
+        container: !!mapContainer.current,
+        mapboxgl: !!window.mapboxgl,
+        existingMap: !!mapRef.current
+      });
       return;
     }
 
     try {
-      console.log('PropertyMapView: Initializing map with token:', token?.substring(0, 20) + '...');
+      console.log('PropertyMapView: Initializing map');
       
       window.mapboxgl.accessToken = token;
       
@@ -138,32 +126,41 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
       // Add navigation controls
       mapRef.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
 
-      // Fit to bounds if multiple properties
-      if (propertiesWithCoords.length > 1) {
-        const bounds = new window.mapboxgl.LngLatBounds();
-        propertiesWithCoords.forEach(property => {
-          bounds.extend([property.longitude!, property.latitude!]);
-        });
+      // Handle map load
+      mapRef.current.on('load', () => {
+        console.log('PropertyMapView: Map loaded successfully');
+        setIsMapInitialized(true);
+        setError(null);
         
-        mapRef.current.fitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          maxZoom: 15
-        });
-      }
+        // Fit to bounds if multiple properties
+        if (propertiesWithCoords.length > 1) {
+          const bounds = new window.mapboxgl.LngLatBounds();
+          propertiesWithCoords.forEach(property => {
+            bounds.extend([property.longitude!, property.latitude!]);
+          });
+          
+          mapRef.current.fitBounds(bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 15
+          });
+        }
+      });
 
-      setIsMapInitialized(true);
-      console.log('PropertyMapView: Map initialized successfully');
-      setError(null);
+      // Handle map errors
+      mapRef.current.on('error', (e: any) => {
+        console.error('PropertyMapView: Map error:', e);
+        setError('Erro no mapa: ' + (e.error?.message || 'Erro desconhecido'));
+      });
+
     } catch (err) {
       console.error('PropertyMapView: Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
-  }, [mapboxLoaded, token, mapStyle, propertiesWithCoords.length, isMapInitialized, isReady]);
+  }, [isReady, mapboxLoaded, token, mapStyle, propertiesWithCoords.length, retryCount]);
 
   // Update markers when properties change
   useEffect(() => {
     if (!mapRef.current || !isMapInitialized) {
-      console.log('PropertyMapView: Skipping marker update - map not ready');
       return;
     }
 
@@ -278,7 +275,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('PropertyMapView: Component unmounting, cleaning up');
+      console.log('PropertyMapView: Component unmounting');
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -287,46 +284,54 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     };
   }, []);
 
+  const handleRetry = () => {
+    console.log('PropertyMapView: Retrying map initialization');
+    setError(null);
+    setRetryCount(prev => prev + 1);
+    retryInitialization();
+    retryLoad();
+  };
+
+  // Loading state
   if (!isReady || mapboxLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4">
           <Loader2 className="mx-auto h-10 w-10 text-primary animate-spin mb-2" />
           <p className="text-muted-foreground">Carregando configurações do mapa...</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Tentativa {retryCount + 1}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (mapboxError) {
-    return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-4">
-          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
-          <p className="text-muted-foreground mb-4">{mapboxError}</p>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.reload()}
-          >
-            Tentar novamente
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!token) {
+  // Error states
+  if (mapboxError || loaderError || error) {
+    const errorMessage = error || mapboxError || loaderError;
     return (
       <div className="flex items-center justify-center h-full bg-muted rounded-lg">
         <div className="text-center p-4 max-w-md">
-          <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
-          <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa das propriedades, configure o token "Listagem de Imóveis" nas configurações do sistema.
-          </p>
-          <Button onClick={() => setTokenDialogOpen(true)} variant="outline">
-            Configurar Token Temporário
-          </Button>
+          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
+          <p className="text-muted-foreground mb-4">{errorMessage}</p>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRetry}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Tentar Novamente
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setTokenDialogOpen(true)}
+            >
+              Configurar Token
+            </Button>
+          </div>
           <MapboxTokenDialog 
             isOpen={tokenDialogOpen} 
             onClose={() => setTokenDialogOpen(false)} 
@@ -336,28 +341,19 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     );
   }
 
-  if (error) {
+  // No token state
+  if (!token) {
     return (
       <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-4">
-          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <div className="flex gap-2 justify-center">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.reload()}
-            >
-              Tentar novamente
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setTokenDialogOpen(true)}
-            >
-              Alterar Token
-            </Button>
-          </div>
+        <div className="text-center p-4 max-w-md">
+          <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
+          <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
+          <p className="text-muted-foreground text-sm mb-4">
+            Para exibir o mapa das propriedades, configure um token Mapbox válido.
+          </p>
+          <Button onClick={() => setTokenDialogOpen(true)} variant="outline">
+            Configurar Token Temporário
+          </Button>
           <MapboxTokenDialog 
             isOpen={tokenDialogOpen} 
             onClose={() => setTokenDialogOpen(false)} 
@@ -406,6 +402,17 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
           ))}
         </div>
       </div>
+
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs p-2 rounded">
+          <div>Ready: {isReady ? 'Yes' : 'No'}</div>
+          <div>Loaded: {mapboxLoaded ? 'Yes' : 'No'}</div>
+          <div>Token: {token ? 'Yes' : 'No'}</div>
+          <div>Properties: {properties.length}</div>
+          <div>Retry: {retryCount}</div>
+        </div>
+      )}
     </div>
   );
 }

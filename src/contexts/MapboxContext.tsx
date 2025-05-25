@@ -9,7 +9,6 @@ interface MapboxContextType {
   error: string | null;
   getTokenForContext: (tokenType: MapboxTokenType) => string | null;
   getStyleForContext: (styleType: MapboxStyleType) => string | null;
-  isTokenLoading: boolean;
   isReady: boolean;
   retryInitialization: () => void;
 }
@@ -21,7 +20,6 @@ const defaultMapboxContext: MapboxContextType = {
   error: null,
   getTokenForContext: () => null,
   getStyleForContext: () => null,
-  isTokenLoading: true,
   isReady: false,
   retryInitialization: () => {},
 };
@@ -40,7 +38,7 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
   const [legacyToken, setLegacyTokenState] = useState<string | null>(null);
   const [isLegacyLoading, setIsLegacyLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initializationKey, setInitializationKey] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   
   const { 
     getMapboxToken, 
@@ -50,32 +48,27 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
     isInitialized: isSettingsInitialized 
   } = useSystemSettings();
 
-  console.log('MapboxProvider: Render state:', { 
+  console.log('MapboxProvider: State:', { 
     isSettingsLoading, 
     isSettingsInitialized,
     settingsError, 
     legacyToken: !!legacyToken,
     isLegacyLoading,
-    initializationKey
+    retryKey
   });
 
-  // Load legacy token from localStorage on mount
+  // Load legacy token from localStorage
   useEffect(() => {
-    console.log('MapboxProvider: Loading legacy token from localStorage');
+    console.log('MapboxProvider: Loading legacy token');
     try {
       const savedToken = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedToken) {
-        console.log('MapboxProvider: Legacy token found in localStorage');
-        setLegacyTokenState(savedToken);
-      } else {
-        console.log('MapboxProvider: No legacy token in localStorage');
-      }
+      setLegacyTokenState(savedToken);
     } catch (e) {
       console.error('MapboxProvider: Error loading legacy token:', e);
     } finally {
       setIsLegacyLoading(false);
     }
-  }, [initializationKey]);
+  }, [retryKey]);
 
   // Set error from settings
   useEffect(() => {
@@ -93,7 +86,6 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
       localStorage.setItem(LOCAL_STORAGE_KEY, newToken);
       setLegacyTokenState(newToken);
       setError(null);
-      console.log('MapboxProvider: Legacy token updated successfully');
     } catch (e) {
       console.error('MapboxProvider: Error saving legacy token:', e);
       setError('Failed to save token');
@@ -103,27 +95,22 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
   const retryInitialization = () => {
     console.log('MapboxProvider: Retrying initialization');
     setError(null);
-    setInitializationKey(prev => prev + 1);
+    setRetryKey(prev => prev + 1);
   };
 
   const getTokenForContext = (tokenType: MapboxTokenType): string | null => {
-    console.log(`MapboxProvider: Getting token for context: ${tokenType}`);
-    console.log(`MapboxProvider: Settings initialized: ${isSettingsInitialized}`);
+    console.log(`MapboxProvider: Getting token for ${tokenType}`);
     
-    // Wait for settings to be initialized
-    if (!isSettingsInitialized) {
-      console.log(`MapboxProvider: Settings not initialized, returning null for ${tokenType}`);
-      return null;
-    }
-    
-    // First try to get the token from system settings
-    const systemToken = getMapboxToken(tokenType);
-    if (systemToken) {
-      console.log(`MapboxProvider: Found system token for ${tokenType}`);
-      return systemToken;
+    // First try system settings (if initialized)
+    if (isSettingsInitialized && !isSettingsLoading) {
+      const systemToken = getMapboxToken(tokenType);
+      if (systemToken) {
+        console.log(`MapboxProvider: Using system token for ${tokenType}`);
+        return systemToken;
+      }
     }
 
-    // Fallback to legacy token for backward compatibility
+    // Fallback to legacy token
     if (legacyToken && !isLegacyLoading) {
       console.log(`MapboxProvider: Using legacy token for ${tokenType}`);
       return legacyToken;
@@ -134,65 +121,48 @@ export const MapboxProvider: React.FC<MapboxProviderProps> = ({ children }) => {
   };
 
   const getStyleForContext = (styleType: MapboxStyleType): string | null => {
-    console.log(`MapboxProvider: Getting style for context: ${styleType}`);
+    console.log(`MapboxProvider: Getting style for ${styleType}`);
     
-    // Wait for settings to be initialized
-    if (!isSettingsInitialized) {
-      console.log(`MapboxProvider: Settings not initialized, returning fallback for ${styleType}`);
-    } else {
+    if (isSettingsInitialized && !isSettingsLoading) {
       const style = getMapboxStyle(styleType);
       if (style) {
-        console.log(`MapboxProvider: Found custom style for ${styleType}:`, style);
         return style;
       }
     }
 
-    // Default fallback styles based on context
-    const fallbackStyle = (() => {
-      switch (styleType) {
-        case 'mapbox_style_property_list':
-          return 'mapbox://styles/mapbox/streets-v12';
-        case 'mapbox_style_property_detail':
-          return 'mapbox://styles/mapbox/satellite-streets-v12';
-        case 'mapbox_style_property_3d':
-          return 'mapbox://styles/mapbox/streets-v12';
-        case 'mapbox_style_analytics':
-          return 'mapbox://styles/mapbox/light-v11';
-        default:
-          return 'mapbox://styles/mapbox/streets-v12';
-      }
-    })();
+    // Default fallback styles
+    const fallbackStyles = {
+      'mapbox_style_property_list': 'mapbox://styles/mapbox/streets-v12',
+      'mapbox_style_property_detail': 'mapbox://styles/mapbox/satellite-streets-v12',
+      'mapbox_style_property_3d': 'mapbox://styles/mapbox/streets-v12',
+      'mapbox_style_analytics': 'mapbox://styles/mapbox/light-v11'
+    };
     
-    console.log(`MapboxProvider: Using fallback style for ${styleType}:`, fallbackStyle);
-    return fallbackStyle;
+    return fallbackStyles[styleType] || 'mapbox://styles/mapbox/streets-v12';
   };
 
-  // Calculate loading and ready states
-  const isTokenLoading = isSettingsLoading || isLegacyLoading || !isSettingsInitialized;
-  const isReady = isSettingsInitialized && !isLegacyLoading && !error;
+  // Simplified ready state calculation
+  const isReady = !isLegacyLoading && (!isSettingsLoading || !isSettingsInitialized);
+  const isLoading = isLegacyLoading || isSettingsLoading;
   
-  // For backward compatibility, return property_list token as default
+  // Get default token for backward compatibility
   const defaultToken = isReady ? getTokenForContext('mapbox_token_property_list') : null;
 
   console.log('MapboxProvider: Final state:', {
     defaultToken: !!defaultToken,
-    isTokenLoading,
+    isLoading,
     isReady,
-    error,
-    tokenLength: defaultToken?.length || 0,
-    isSettingsInitialized,
-    isLegacyLoading
+    error
   });
 
   return (
     <MapboxContext.Provider value={{ 
       token: defaultToken, 
-      isLoading: isTokenLoading, 
+      isLoading, 
       setToken, 
       error,
       getTokenForContext,
       getStyleForContext,
-      isTokenLoading,
       isReady,
       retryInitialization
     }}>

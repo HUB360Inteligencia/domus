@@ -34,7 +34,7 @@ export const useSystemSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      console.log('useSystemSettings: Starting fetch...');
+      console.log('useSystemSettings: Fetching settings...');
       setIsLoading(true);
       setError(null);
       
@@ -48,27 +48,13 @@ export const useSystemSettings = () => {
         throw error;
       }
       
-      console.log('useSystemSettings: Raw data received:', data);
-      console.log('useSystemSettings: Settings count:', data?.length || 0);
-      
-      // Log each setting for debugging
-      data?.forEach(setting => {
-        console.log(`useSystemSettings: Setting ${setting.key}:`, {
-          hasValue: !!setting.value,
-          valueLength: setting.value?.length || 0,
-          valuePreview: setting.value ? setting.value.substring(0, 20) + '...' : 'null'
-        });
-      });
-      
+      console.log('useSystemSettings: Settings loaded:', data?.length || 0);
       setSettings(data || []);
-      setError(null);
       setIsInitialized(true);
-      
-      console.log('useSystemSettings: Settings loaded successfully');
     } catch (err: any) {
-      console.error('useSystemSettings: Error fetching settings:', err);
+      console.error('useSystemSettings: Error:', err);
       setError(err.message);
-      setIsInitialized(true); // Still mark as initialized even with error
+      setIsInitialized(true); // Mark as initialized even with error
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +62,7 @@ export const useSystemSettings = () => {
 
   const updateSetting = async (key: string, value: string | null) => {
     try {
-      console.log('useSystemSettings: Updating setting:', { key, hasValue: !!value });
+      console.log('useSystemSettings: Updating setting:', key);
       
       const { error } = await supabase
         .from('system_settings')
@@ -98,7 +84,6 @@ export const useSystemSettings = () => {
         )
       );
       
-      console.log('useSystemSettings: Setting updated successfully:', key);
       return true;
     } catch (err: any) {
       console.error('useSystemSettings: Error updating setting:', err);
@@ -108,58 +93,43 @@ export const useSystemSettings = () => {
   };
 
   const getSetting = (key: string): SystemSetting | null => {
-    if (!isInitialized) {
-      console.log('useSystemSettings: getSetting called before initialization:', key);
-      return null;
-    }
-    
-    const setting = settings.find(setting => setting.key === key) || null;
-    console.log('useSystemSettings: Getting setting:', { 
+    const setting = settings.find(s => s.key === key) || null;
+    console.log('useSystemSettings: Get setting:', { 
       key, 
       found: !!setting, 
-      value: setting?.value,
-      hasValue: !!setting?.value,
-      isInitialized,
-      totalSettings: settings.length
+      hasValue: !!setting?.value 
     });
     return setting;
   };
 
   const getMapboxToken = (tokenType: MapboxTokenType): string | null => {
-    console.log(`useSystemSettings: Getting Mapbox token for ${tokenType}`);
-    
     if (!isInitialized) {
-      console.log(`useSystemSettings: Not initialized, returning null for ${tokenType}`);
+      console.log(`useSystemSettings: Not initialized for ${tokenType}`);
       return null;
     }
     
     const setting = getSetting(tokenType);
     const token = setting?.value || null;
     
-    console.log(`useSystemSettings: Token result for ${tokenType}:`, {
+    console.log(`useSystemSettings: Token for ${tokenType}:`, {
       found: !!setting,
       hasValue: !!token,
-      tokenLength: token?.length || 0,
-      tokenStart: token ? token.substring(0, 10) + '...' : 'null',
-      settingExists: !!setting,
-      rawValue: setting?.value
+      tokenLength: token?.length || 0
     });
     
     return token;
   };
 
   const getMapboxStyle = (styleType: MapboxStyleType): string | null => {
-    console.log(`useSystemSettings: Getting Mapbox style for ${styleType}`);
-    
     if (!isInitialized) {
-      console.log(`useSystemSettings: Not initialized, returning null for ${styleType}`);
+      console.log(`useSystemSettings: Not initialized for ${styleType}`);
       return null;
     }
     
     const setting = getSetting(styleType);
     const style = setting?.value || null;
     
-    console.log(`useSystemSettings: Style result for ${styleType}:`, {
+    console.log(`useSystemSettings: Style for ${styleType}:`, {
       found: !!setting,
       hasValue: !!style,
       style
@@ -170,34 +140,20 @@ export const useSystemSettings = () => {
 
   // Initial fetch
   useEffect(() => {
-    console.log('useSystemSettings: Component mounted, starting initial fetch');
+    console.log('useSystemSettings: Initial fetch');
     fetchSettings();
+    
+    // Set timeout to avoid infinite loading
+    const timeout = setTimeout(() => {
+      if (!isInitialized) {
+        console.log('useSystemSettings: Timeout reached, marking as initialized');
+        setIsInitialized(true);
+        setIsLoading(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
   }, []);
-
-  // Retry mechanism for failed loads
-  useEffect(() => {
-    if (error && !isLoading && isInitialized) {
-      console.log('useSystemSettings: Error detected, setting up retry in 3 seconds');
-      const retryTimer = setTimeout(() => {
-        console.log('useSystemSettings: Retrying fetch after error');
-        fetchSettings();
-      }, 3000);
-      
-      return () => clearTimeout(retryTimer);
-    }
-  }, [error, isLoading, isInitialized]);
-
-  // Debug state changes
-  useEffect(() => {
-    console.log('useSystemSettings: State update:', {
-      settingsCount: settings.length,
-      isLoading,
-      isInitialized,
-      error,
-      settingsKeys: settings.map(s => s.key),
-      hasMapboxTokens: settings.filter(s => s.key.includes('mapbox_token')).length
-    });
-  }, [settings, isLoading, error, isInitialized]);
 
   return {
     settings,
