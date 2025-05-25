@@ -1,5 +1,6 @@
+
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -44,8 +45,7 @@ import { toast } from "sonner";
 
 export default function ActivityDetailPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const activityId = searchParams.get("id");
+  const { id } = useParams();
   
   const { properties } = useProperties();
   const { contracts } = useContracts();
@@ -61,8 +61,8 @@ export default function ActivityDetailPage() {
   
   // Load the activity details when the component mounts
   useEffect(() => {
-    if (activityId) {
-      setSelectedActivityId(activityId);
+    if (id) {
+      setSelectedActivityId(id);
     } else {
       navigate("/activities");
     }
@@ -70,20 +70,20 @@ export default function ActivityDetailPage() {
     return () => {
       setSelectedActivityId(null);
     };
-  }, [activityId, setSelectedActivityId, navigate]);
+  }, [id, setSelectedActivityId, navigate]);
   
   const handleGoBack = () => {
     navigate("/activities");
   };
   
   const handleEdit = () => {
-    navigate(`/activities/edit?id=${activityId}`);
+    navigate(`/activities/${id}/edit`);
   };
   
   const handleDelete = async () => {
-    if (activityId) {
+    if (id) {
       try {
-        await deleteActivity(activityId);
+        await deleteActivity(id);
         toast.success("Atividade excluída com sucesso");
         navigate("/activities");
       } catch (error) {
@@ -93,9 +93,9 @@ export default function ActivityDetailPage() {
   };
   
   const handleStatusChange = async (newStatus: ActivityStatus) => {
-    if (activityId) {
+    if (id) {
       try {
-        await updateActivityStatus({ id: activityId, status: newStatus });
+        await updateActivityStatus({ id, status: newStatus });
         refetchSelectedActivity();
         toast.success(`Status atualizado para ${getStatusName(newStatus)}`);
       } catch (error) {
@@ -105,9 +105,9 @@ export default function ActivityDetailPage() {
   };
   
   const handleConvertToExpense = async () => {
-    if (activityId) {
+    if (id) {
       try {
-        await convertToExpense(activityId);
+        await convertToExpense(id);
         refetchSelectedActivity();
         toast.success("Atividade convertida em despesa");
       } catch (error) {

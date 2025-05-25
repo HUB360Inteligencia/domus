@@ -17,6 +17,8 @@ import ContractsPage from '@/pages/ContractsPage';
 import ContractDetailPage from '@/pages/ContractDetailPage';
 import ContractFormPage from '@/pages/ContractFormPage';
 import ActivitiesPage from '@/pages/ActivitiesPage';
+import ActivityFormPage from '@/pages/ActivityFormPage';
+import ActivityDetailPage from '@/pages/ActivityDetailPage';
 import UsersPage from '@/pages/users/UsersPage';
 
 // Finance Pages
