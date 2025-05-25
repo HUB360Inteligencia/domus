@@ -13,8 +13,8 @@ interface MapDebugPanelProps {
 
 export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
   const [showDetails, setShowDetails] = useState(isVisible);
-  const { getTokenForContext, getStyleForContext, isTokenLoading, error: contextError } = useMapbox();
-  const { isLoaded, isLoading, error: loaderError } = useMapboxLoader();
+  const { getTokenForContext, getStyleForContext, isLoading, error: contextError } = useMapbox();
+  const { isLoaded, isLoading: mapboxLoading, error: loaderError } = useMapboxLoader();
 
   if (!showDetails && !isVisible) {
     return (
@@ -89,9 +89,9 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
           <div>
             <h4 className="font-medium mb-1">Mapbox Loader</h4>
             <div className="flex items-center gap-2">
-              {getStatusIcon(isLoaded, isLoading)}
-              <Badge className={getStatusColor(isLoaded, isLoading)}>
-                {isLoading ? 'Carregando...' : isLoaded ? 'Carregado' : 'Não carregado'}
+              {getStatusIcon(isLoaded, mapboxLoading)}
+              <Badge className={getStatusColor(isLoaded, mapboxLoading)}>
+                {mapboxLoading ? 'Carregando...' : isLoaded ? 'Carregado' : 'Não carregado'}
               </Badge>
             </div>
             {loaderError && (
@@ -103,9 +103,9 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
           <div>
             <h4 className="font-medium mb-1">Context</h4>
             <div className="flex items-center gap-2">
-              {getStatusIcon(!contextError, isTokenLoading)}
-              <Badge className={getStatusColor(!contextError, isTokenLoading)}>
-                {isTokenLoading ? 'Carregando...' : contextError ? 'Erro' : 'OK'}
+              {getStatusIcon(!contextError, isLoading)}
+              <Badge className={getStatusColor(!contextError, isLoading)}>
+                {isLoading ? 'Carregando...' : contextError ? 'Erro' : 'OK'}
               </Badge>
             </div>
             {contextError && (
@@ -191,9 +191,9 @@ export function MapDebugPanel({ isVisible = false }: MapDebugPanelProps) {
               variant="outline" 
               onClick={() => {
                 console.log('=== MAPBOX DEBUG DUMP ===');
-                console.log('Loader state:', { isLoaded, isLoading, error: loaderError });
+                console.log('Loader state:', { isLoaded, isLoading: mapboxLoading, error: loaderError });
                 console.log('Context error:', contextError);
-                console.log('Token loading:', isTokenLoading);
+                console.log('Context loading:', isLoading);
                 console.log('Tokens:', tokenTypes.map(t => ({ type: t, token: getTokenForContext(t) })));
                 console.log('Styles:', styleTypes.map(t => ({ type: t, style: getStyleForContext(t) })));
                 console.log('Debug info:', debugInfo);

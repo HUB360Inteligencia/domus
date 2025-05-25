@@ -45,7 +45,7 @@ export function PropertyMap({
   const [isLocating, setIsLocating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
-  const { getTokenForContext, getStyleForContext, isTokenLoading } = useMapbox();
+  const { getTokenForContext, getStyleForContext, isLoading } = useMapbox();
   const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: mapboxError } = useMapboxLoader();
   
   // Get appropriate token and style based on map type
@@ -207,7 +207,7 @@ export function PropertyMap({
     }
   };
 
-  if (isTokenLoading || mapboxLoading) {
+  if (isLoading || mapboxLoading) {
     return (
       <div className={`flex items-center justify-center h-64 bg-muted rounded-lg ${className}`}>
         <div className="text-center p-4">
