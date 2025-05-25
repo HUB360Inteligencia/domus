@@ -97,6 +97,16 @@ export function CustomReportBuilder() {
     return acc;
   }, {} as Record<string, ReportField[]>);
 
+  // Filter valid fields to ensure no empty IDs
+  const validAvailableFields = availableFields.filter(field => 
+    field.id && 
+    typeof field.id === 'string' && 
+    field.id.trim() !== '' &&
+    field.name &&
+    typeof field.name === 'string' &&
+    field.name.trim() !== ''
+  );
+
   return (
     <div className="space-y-6">
       <Card>
@@ -126,16 +136,25 @@ export function CustomReportBuilder() {
                 <div key={category}>
                   <h4 className="font-medium text-sm text-muted-foreground mb-2">{category}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {fields.map((field) => (
-                      <div key={field.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={field.id}
-                          checked={selectedFields.includes(field.id)}
-                          onCheckedChange={() => handleFieldToggle(field.id)}
-                        />
-                        <Label htmlFor={field.id} className="text-sm">{field.name}</Label>
-                      </div>
-                    ))}
+                    {fields
+                      .filter(field => 
+                        field.id && 
+                        typeof field.id === 'string' && 
+                        field.id.trim() !== '' &&
+                        field.name &&
+                        typeof field.name === 'string' &&
+                        field.name.trim() !== ''
+                      )
+                      .map((field) => (
+                        <div key={field.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={field.id}
+                            checked={selectedFields.includes(field.id)}
+                            onCheckedChange={() => handleFieldToggle(field.id)}
+                          />
+                          <Label htmlFor={field.id} className="text-sm">{field.name}</Label>
+                        </div>
+                      ))}
                   </div>
                 </div>
               ))}
@@ -187,7 +206,7 @@ export function CustomReportBuilder() {
                     <SelectValue placeholder="Campo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableFields.map((field) => (
+                    {validAvailableFields.map((field) => (
                       <SelectItem key={field.id} value={field.id}>
                         {field.name}
                       </SelectItem>
