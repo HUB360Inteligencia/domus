@@ -29,7 +29,14 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
             </FormControl>
             <SelectContent>
               {categories
-                .filter(category => category.value && category.value.trim() !== '' && category.value !== '')
+                .filter(category => 
+                  category.value && 
+                  typeof category.value === 'string' && 
+                  category.value.trim() !== '' && 
+                  category.label &&
+                  typeof category.label === 'string' &&
+                  category.label.trim() !== ''
+                )
                 .map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}

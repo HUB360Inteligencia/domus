@@ -45,6 +45,25 @@ export function TransactionFilters({
     return value !== undefined && value !== null;
   }).length;
 
+  // Filter valid categories and properties
+  const validCategories = categories.filter(cat => 
+    cat.value && 
+    typeof cat.value === 'string' && 
+    cat.value.trim() !== '' && 
+    cat.label &&
+    typeof cat.label === 'string' &&
+    cat.label.trim() !== ''
+  );
+
+  const validProperties = properties.filter(prop => 
+    prop.value && 
+    typeof prop.value === 'string' && 
+    prop.value.trim() !== '' && 
+    prop.label &&
+    typeof prop.label === 'string' &&
+    prop.label.trim() !== ''
+  );
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -138,17 +157,15 @@ export function TransactionFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
-                {categories
-                  .filter(cat => cat.value && cat.value.trim() !== '' && cat.value !== '')
-                  .map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                  ))}
+                {validCategories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           
           {/* Property */}
-          {properties.length > 0 && (
+          {validProperties.length > 0 && (
             <div>
               <label className="text-sm font-medium">Property</label>
               <Select 
@@ -162,11 +179,9 @@ export function TransactionFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All properties</SelectItem>
-                  {properties
-                    .filter(prop => prop.value && prop.value.trim() !== '' && prop.value !== '')
-                    .map((prop) => (
-                      <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
-                    ))}
+                  {validProperties.map((prop) => (
+                    <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

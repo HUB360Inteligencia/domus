@@ -64,7 +64,14 @@ export const SelectField = ({
             <SelectContent>
               {allowEmpty && <SelectItem value="none">Nenhum</SelectItem>}
               {options
-                .filter(option => option.value && option.value.trim() !== '' && option.value !== '')
+                .filter(option => 
+                  option.value && 
+                  typeof option.value === 'string' && 
+                  option.value.trim() !== '' && 
+                  option.label &&
+                  typeof option.label === 'string' &&
+                  option.label.trim() !== ''
+                )
                 .map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}

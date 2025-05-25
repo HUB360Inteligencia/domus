@@ -43,8 +43,15 @@ export default function ReportsPage() {
     return acc;
   }, {});
   
-  // Property options for dropdown
-  const propertyOptions = properties?.map(property => ({
+  // Property options for dropdown - filter out invalid entries
+  const propertyOptions = properties?.filter(property => 
+    property.id && 
+    typeof property.id === 'string' && 
+    property.id.trim() !== '' &&
+    property.title &&
+    typeof property.title === 'string' &&
+    property.title.trim() !== ''
+  ).map(property => ({
     label: property.title,
     value: property.id
   })) || [];
