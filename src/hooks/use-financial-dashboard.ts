@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchFinancialMetrics, fetchMonthlyFinancialData, fetchPropertyFinancialRanking } from '@/api/financial-dashboard';
+import { PropertyFinancialRanking, PropertyRankingItem } from '@/types/financial-ranking';
 
 export const useFinancialDashboard = () => {
   // State for UI controls
@@ -44,7 +45,15 @@ export const useFinancialDashboard = () => {
     occupancyRate: metrics.occupancyRate || 0,
   } : null;
 
-  const topPropertiesData = propertyRankings.slice(0, 5);
+  // Transform PropertyFinancialRanking to PropertyRankingItem
+  const topPropertiesData: PropertyRankingItem[] = propertyRankings.slice(0, 5).map((item: PropertyFinancialRanking) => ({
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    location: item.location,
+    return: item.revenue,
+    percentage: item.roi,
+  }));
 
   // Mock neighborhood data (would be calculated from properties)
   const neighborhoodData = [

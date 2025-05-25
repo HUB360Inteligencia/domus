@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Contract, ContractStatus, SignatureStatus } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
@@ -242,7 +243,7 @@ export const fetchUpcomingEvents = async () => {
       return {
         id: contract.id,
         title: contract.title,
-        property_title: contract.property?.title || 'Unknown Property',
+        property_title: contract.property?.[0]?.title || 'Unknown Property',
         type: 'payment',
         date: eventDate.toISOString().split('T')[0],
         amount: contract.value
@@ -253,7 +254,7 @@ export const fetchUpcomingEvents = async () => {
     const expirationEvents = expiringContracts.map(contract => ({
       id: contract.id,
       title: contract.title,
-      property_title: contract.property?.title || 'Unknown Property',
+      property_title: contract.property?.[0]?.title || 'Unknown Property',
       type: 'expiration',
       date: contract.end_date,
       daysRemaining: Math.ceil((new Date(contract.end_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
