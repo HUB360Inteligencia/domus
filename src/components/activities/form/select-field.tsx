@@ -40,6 +40,17 @@ export const SelectField = ({
   onChange,
   allowEmpty = false
 }: SelectFieldProps) => {
+  // Filter options more strictly to prevent empty values
+  const validOptions = options.filter(option => 
+    option && 
+    option.value && 
+    typeof option.value === 'string' && 
+    option.value.trim() !== '' && 
+    option.label &&
+    typeof option.label === 'string' &&
+    option.label.trim() !== ''
+  );
+
   return (
     <FormField
       control={control}
@@ -49,10 +60,14 @@ export const SelectField = ({
           <FormLabel>{label}</FormLabel>
           <Select 
             onValueChange={(value) => {
-              // If the user selects "none", set the value to null
-              const finalValue = value === "none" ? null : value;
-              field.onChange(finalValue);
-              onChange?.(value);
+              // Ensure we never pass empty strings to SelectItem
+              if (value === "none" || !value || value.trim() === '') {
+                field.onChange(null);
+                onChange?.(allowEmpty ? "none" : "");
+              } else {
+                field.onChange(value);
+                onChange?.(value);
+              }
             }} 
             defaultValue={field.value?.toString() || undefined}
           >
@@ -63,20 +78,11 @@ export const SelectField = ({
             </FormControl>
             <SelectContent>
               {allowEmpty && <SelectItem value="none">Nenhum</SelectItem>}
-              {options
-                .filter(option => 
-                  option.value && 
-                  typeof option.value === 'string' && 
-                  option.value.trim() !== '' && 
-                  option.label &&
-                  typeof option.label === 'string' &&
-                  option.label.trim() !== ''
-                )
-                .map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+              {validOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <FormMessage />

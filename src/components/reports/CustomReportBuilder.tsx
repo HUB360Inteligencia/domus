@@ -223,7 +223,7 @@ export function CustomReportBuilder() {
     return acc;
   }, {} as Record<string, ReportField[]>);
 
-  // Filter valid fields to ensure no empty IDs
+  // Filter valid fields more strictly
   const validAvailableFields = availableFields.filter(field => 
     field.id && 
     typeof field.id === 'string' && 
@@ -298,12 +298,12 @@ export function CustomReportBuilder() {
           {/* Agrupamento */}
           <div>
             <Label htmlFor="groupBy">Agrupar Por</Label>
-            <Select value={groupBy} onValueChange={setGroupBy}>
+            <Select value={groupBy || ""} onValueChange={(value) => setGroupBy(value || "")}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um campo para agrupamento" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sem agrupamento</SelectItem>
+                <SelectItem value="none">Sem agrupamento</SelectItem>
                 <SelectItem value="property_type">Tipo de Propriedade</SelectItem>
                 <SelectItem value="property_city">Cidade</SelectItem>
                 <SelectItem value="property_status">Status</SelectItem>
@@ -325,8 +325,8 @@ export function CustomReportBuilder() {
             {filters.map((filter, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <Select 
-                  value={filter.field} 
-                  onValueChange={(value) => updateFilter(index, 'field', value)}
+                  value={filter.field || ""} 
+                  onValueChange={(value) => updateFilter(index, 'field', value || "")}
                 >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Campo" />
@@ -341,8 +341,8 @@ export function CustomReportBuilder() {
                 </Select>
                 
                 <Select 
-                  value={filter.operator} 
-                  onValueChange={(value) => updateFilter(index, 'operator', value)}
+                  value={filter.operator || "equals"} 
+                  onValueChange={(value) => updateFilter(index, 'operator', value || "equals")}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />

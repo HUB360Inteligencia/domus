@@ -45,8 +45,9 @@ export function TransactionFilters({
     return value !== undefined && value !== null;
   }).length;
 
-  // Filter valid categories and properties
+  // Filter valid categories and properties with stricter validation
   const validCategories = categories.filter(cat => 
+    cat && 
     cat.value && 
     typeof cat.value === 'string' && 
     cat.value.trim() !== '' && 
@@ -56,6 +57,7 @@ export function TransactionFilters({
   );
 
   const validProperties = properties.filter(prop => 
+    prop && 
     prop.value && 
     typeof prop.value === 'string' && 
     prop.value.trim() !== '' && 
@@ -121,9 +123,9 @@ export function TransactionFilters({
             <Select 
               value={filters.type?.length === 1 ? filters.type[0] : "all"} 
               onValueChange={(value) => {
-                if (value === "all") {
+                if (value === "all" || !value || value.trim() === '') {
                   onFilterChange({ type: undefined });
-                } else if (value && value.trim() !== '') {
+                } else {
                   onFilterChange({ type: [value] });
                 }
               }}
@@ -145,9 +147,9 @@ export function TransactionFilters({
             <Select 
               value={filters.category?.length === 1 ? filters.category[0] : "all"} 
               onValueChange={(value) => {
-                if (value === "all") {
+                if (value === "all" || !value || value.trim() === '') {
                   onFilterChange({ category: undefined });
-                } else if (value && value.trim() !== '') {
+                } else {
                   onFilterChange({ category: [value] });
                 }
               }}
@@ -171,7 +173,7 @@ export function TransactionFilters({
               <Select 
                 value={filters.propertyId || "all"} 
                 onValueChange={(value) => onFilterChange({ 
-                  propertyId: value === "all" ? undefined : value 
+                  propertyId: value === "all" || !value || value.trim() === '' ? undefined : value 
                 })}
               >
                 <SelectTrigger className="mt-1">
