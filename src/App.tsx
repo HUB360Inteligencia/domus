@@ -11,8 +11,11 @@ import RegisterPage from '@/pages/auth/Register';
 import Dashboard from '@/pages/Dashboard';
 import PropertiesPage from '@/pages/Properties';
 import PropertyDetailPage from '@/pages/PropertyDetailPage';
+import PropertyFormPage from '@/pages/PropertyFormPage';
 import PropertiesMapPage from '@/pages/PropertiesMapPage';
 import ContractsPage from '@/pages/ContractsPage';
+import ContractDetailPage from '@/pages/ContractDetailPage';
+import ContractFormPage from '@/pages/ContractFormPage';
 import ActivitiesPage from '@/pages/ActivitiesPage';
 import UsersPage from '@/pages/users/UsersPage';
 import FinancesDashboardPage from '@/pages/finances/FinanceDashboardPage';
@@ -88,11 +91,11 @@ function App() {
           />
           
           <Route 
-            path="/properties/map" 
+            path="/properties/new" 
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <PropertiesMapPage />
+                  <PropertyFormPage />
                 </AppLayout>
               </ProtectedRoute>
             } 
@@ -110,11 +113,66 @@ function App() {
           />
           
           <Route 
+            path="/properties/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PropertyFormPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/properties/map" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PropertiesMapPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
             path="/contracts" 
             element={
               <ProtectedRoute>
                 <AppLayout>
                   <ContractsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/contracts/new" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ContractFormPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/contracts/:id" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ContractDetailPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/contracts/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ContractFormPage />
                 </AppLayout>
               </ProtectedRoute>
             } 

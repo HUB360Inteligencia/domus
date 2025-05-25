@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
 import { PropertyFormData } from '@/types/property';
@@ -8,9 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PropertyFormPage() {
-  const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [propertyId, setPropertyId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   
   const { 
@@ -25,38 +24,29 @@ export default function PropertyFormPage() {
     isUploading
   } = useProperties();
 
-  // Optimize URL params parsing
-  const urlParams = useMemo(() => {
-    return new URLSearchParams(location.search);
-  }, [location.search]);
-
   // Optimize property data loading function
-  const loadPropertyData = useCallback((id: string) => {
-    console.log('Loading property data for ID:', id);
-    setSelectedPropertyId(id);
+  const loadPropertyData = useCallback((propertyId: string) => {
+    console.log('Loading property data for ID:', propertyId);
+    setSelectedPropertyId(propertyId);
   }, [setSelectedPropertyId]);
 
   // Optimize the main effect that handles URL changes
   useEffect(() => {
-    const id = urlParams.get('id');
-    
-    if (id && id !== propertyId) {
-      console.log('URL changed, loading property:', id);
-      setPropertyId(id);
+    if (id) {
+      console.log('Edit mode detected for property ID:', id);
       loadPropertyData(id);
       setIsEditMode(true);
-    } else if (!id && (isEditMode || propertyId)) {
-      console.log('No ID in URL, switching to create mode');
+    } else {
+      console.log('Create mode detected');
       setIsEditMode(false);
-      setPropertyId(null);
       setSelectedPropertyId(null);
     }
-  }, [urlParams, loadPropertyData, setSelectedPropertyId, propertyId, isEditMode]);
+  }, [id, loadPropertyData, setSelectedPropertyId]);
 
   // Optimize form submission handler
   const handleSubmit = useCallback(async (data: PropertyFormData, imageFile?: File) => {
     try {
-      console.log('Submitting property form:', { isEditMode, propertyId, data });
+      console.log('Submitting property form:', { isEditMode, propertyId: id, data });
       
       // Filter only fields that exist in the database
       const filteredData: PropertyFormData = {
@@ -93,13 +83,13 @@ export default function PropertyFormPage() {
         tags: data.tags,
       };
 
-      if (isEditMode && propertyId) {
+      if (isEditMode && id) {
         console.log('Updating existing property');
-        await updateProperty({ id: propertyId, ...filteredData });
+        await updateProperty({ id, ...filteredData });
         
         if (imageFile) {
           console.log('Uploading new image');
-          await uploadPropertyImage({ id: propertyId, imageFile });
+          await uploadPropertyImage({ id, imageFile });
         }
         
         toast.success('Imóvel atualizado com sucesso!');
@@ -120,7 +110,7 @@ export default function PropertyFormPage() {
       console.error('Error saving property:', error);
       toast.error('Erro ao salvar imóvel: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     }
-  }, [isEditMode, propertyId, updateProperty, uploadPropertyImage, createProperty, navigate]);
+  }, [isEditMode, id, updateProperty, uploadPropertyImage, createProperty, navigate]);
 
   // Optimize cancel handler
   const handleCancel = useCallback(() => {

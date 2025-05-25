@@ -1,46 +1,39 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { PropertyDetail } from '@/components/properties/property-detail';
 import { useProperties } from '@/hooks/use-properties';
 
 export default function PropertyDetailPage() {
-  const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [propertyId, setPropertyId] = useState<string | null>(null);
   const { setSelectedPropertyId, selectedProperty, isLoading, deleteProperty, isDeleting } = useProperties();
   
   // Use useCallback to stabilize the function reference
-  const loadPropertyData = useCallback((id: string) => {
-    setSelectedPropertyId(id);
+  const loadPropertyData = useCallback((propertyId: string) => {
+    setSelectedPropertyId(propertyId);
   }, [setSelectedPropertyId]);
   
   useEffect(() => {
-    // Extract propertyId from URL query parameters
-    const params = new URLSearchParams(location.search);
-    const id = params.get('id');
-    
     if (id) {
-      setPropertyId(id);
       loadPropertyData(id);
     } else {
       // If no ID is provided in the URL, redirect to the properties list
       navigate('/properties');
     }
-  }, [location.search, navigate, loadPropertyData]);
+  }, [id, navigate, loadPropertyData]);
 
   const handleBack = () => {
     navigate('/properties');
   };
 
   const handleEdit = () => {
-    navigate(`/properties/edit?id=${propertyId}`);
+    navigate(`/properties/${id}/edit`);
   };
 
   const handleDelete = async () => {
-    if (propertyId) {
-      // Pass the id as an argument to the deleteProperty function
-      deleteProperty(propertyId);
+    if (id) {
+      deleteProperty(id);
       navigate('/properties');
     }
   };

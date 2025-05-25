@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractFormData } from '@/types/contract';
 import { Loader2 } from 'lucide-react';
@@ -8,11 +8,9 @@ import { toast } from 'sonner';
 import { ContractForm } from '@/components/contracts/contract-form';
 
 export default function ContractFormPage() {
-  const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const params = useParams();
   
-  const [contractId, setContractId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   
   const { 
@@ -27,35 +25,23 @@ export default function ContractFormPage() {
   } = useContracts();
 
   // Use useCallback to stabilize this function reference
-  const loadContractData = useCallback((id: string) => {
-    console.log('Loading contract data for ID:', id);
-    setSelectedContractId(id);
+  const loadContractData = useCallback((contractId: string) => {
+    console.log('Loading contract data for ID:', contractId);
+    setSelectedContractId(contractId);
   }, [setSelectedContractId]);
 
   useEffect(() => {
-    // Check if we're in edit mode by looking for an ID in the URL params or query params
-    // First check route params (/:id/edit)
-    const id = params.id;
-    
-    // If not in params, check query string (?id=...)
-    const queryParams = new URLSearchParams(location.search);
-    const queryId = queryParams.get('id');
-    
-    const contractIdToUse = id || queryId;
-    
-    if (contractIdToUse) {
-      console.log('Edit mode detected for contract ID:', contractIdToUse);
-      setContractId(contractIdToUse);
-      loadContractData(contractIdToUse);
+    if (id) {
+      console.log('Edit mode detected for contract ID:', id);
+      loadContractData(id);
       setIsEditMode(true);
     } else {
       console.log('Create mode detected');
       setIsEditMode(false);
-      setContractId(null);
       // Reset selected contract when in create mode
       setSelectedContractId(null);
     }
-  }, [location.search, loadContractData, params.id, setSelectedContractId]);
+  }, [id, loadContractData, setSelectedContractId]);
 
   // Debug log to track selectedContract changes
   useEffect(() => {
@@ -66,15 +52,15 @@ export default function ContractFormPage() {
 
   const handleSubmit = async (data: ContractFormData, documentFile?: File) => {
     try {
-      if (isEditMode && contractId) {
+      if (isEditMode && id) {
         // Update existing contract
-        console.log('Updating contract with data:', { id: contractId, ...data });
-        await updateContract({ id: contractId, ...data });
+        console.log('Updating contract with data:', { id, ...data });
+        await updateContract({ id, ...data });
         
         // If there's a new document, upload it
         if (documentFile) {
           console.log('Uploading new document for contract');
-          await uploadContractDocument({ contractId, file: documentFile });
+          await uploadContractDocument({ contractId: id, file: documentFile });
         }
         
         toast.success('Contrato atualizado com sucesso!');
