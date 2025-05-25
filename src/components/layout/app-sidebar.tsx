@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Sheet,
@@ -61,8 +62,8 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Agendamentos",
-    url: "/schedules",
+    title: "Atividades",
+    url: "/activities",
     icon: Calendar,
   },
   {

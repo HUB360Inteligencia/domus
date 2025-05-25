@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -206,12 +207,25 @@ function App() {
             } 
           />
           
+          {/* Activities Routes */}
+          <Route 
+            path="/activities" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ActivitiesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Redirect old schedules route to activities for compatibility */}
           <Route 
             path="/schedules" 
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <ActivitiesPage />
+                  <Navigate to="/activities" replace />
                 </AppLayout>
               </ProtectedRoute>
             } 
