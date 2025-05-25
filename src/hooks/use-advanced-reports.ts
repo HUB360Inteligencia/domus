@@ -158,14 +158,21 @@ export const useAdvancedReports = () => {
         key: `report_template_${template.name}`,
         value: JSON.stringify(template.fields),
         description: `Template de relatório: ${template.name}`
-      });
+      })
+      .select();
 
     if (error) {
       console.error('Erro ao salvar template:', error);
       throw error;
     }
 
-    return { ...template, id: data?.[0]?.id || Date.now().toString(), createdAt: new Date().toISOString() };
+    const insertedId = data && data.length > 0 ? data[0].id : Date.now().toString();
+    
+    return { 
+      ...template, 
+      id: insertedId, 
+      createdAt: new Date().toISOString() 
+    };
   };
 
   return {
