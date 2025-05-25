@@ -33,6 +33,10 @@ import {
   Building,
   MapPin,
   TrendingUp,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  LineChart,
+  Scroll,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,21 +62,6 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Financeiro",
-    url: "/finances",
-    icon: DollarSign,
-  },
-  {
-    title: "Transações",
-    url: "/transactions",
-    icon: DollarSign,
-  },
-  {
-    title: "Relatórios",
-    url: "/reports",
-    icon: BarChart3,
-  },
-  {
     title: "Agendamentos",
     url: "/schedules",
     icon: Calendar,
@@ -91,6 +80,34 @@ const items = [
     title: "Relatórios Avançados",
     url: "/advanced-reports",
     icon: TrendingUp,
+  },
+];
+
+const financeItems = [
+  {
+    title: "Dashboard Financeiro",
+    url: "/finances/dashboard",
+    icon: LineChart,
+  },
+  {
+    title: "Receitas",
+    url: "/finances/income",
+    icon: ArrowUpCircle,
+  },
+  {
+    title: "Despesas",
+    url: "/finances/expenses",
+    icon: ArrowDownCircle,
+  },
+  {
+    title: "Transações",
+    url: "/finances/transactions",
+    icon: DollarSign,
+  },
+  {
+    title: "Relatórios",
+    url: "/finances/reports",
+    icon: Scroll,
   },
 ];
 
@@ -143,6 +160,31 @@ export function AppSidebar() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
             ))}
+            
+            {/* Finance Section */}
+            <div className="pt-2">
+              <div className="text-xs font-medium text-muted-foreground px-4 pb-2">
+                Financeiro
+              </div>
+              {financeItems.map((item) => (
+                <NavigationMenuItem key={item.url}>
+                  <NavigationMenuLink
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm",
+                      location.pathname === item.url && "bg-secondary"
+                    )}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate(item.url);
+                    }}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.title}
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              ))}
+            </div>
           </NavigationMenuList>
         </NavigationMenu>
         <Separator />

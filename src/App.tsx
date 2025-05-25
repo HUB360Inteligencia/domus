@@ -18,9 +18,14 @@ import ContractDetailPage from '@/pages/ContractDetailPage';
 import ContractFormPage from '@/pages/ContractFormPage';
 import ActivitiesPage from '@/pages/ActivitiesPage';
 import UsersPage from '@/pages/users/UsersPage';
+
+// Finance Pages
 import FinancesDashboardPage from '@/pages/finances/FinanceDashboardPage';
 import FinancialTransactionsPage from '@/pages/finances/FinancialTransactionsPage';
 import ReportsPage from '@/pages/finances/ReportsPage';
+import IncomePage from '@/pages/finances/IncomePage';
+import ExpensesPage from '@/pages/finances/ExpensesPage';
+
 import SettingsPage from '@/pages/admin/SettingsPage';
 import AdvancedReportsPage from '@/pages/AdvancedReportsPage';
 
@@ -224,8 +229,20 @@ function App() {
             } 
           />
           
+          {/* Finance Routes - Reorganized */}
           <Route 
             path="/finances" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Navigate to="/finances/dashboard" replace />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/finances/dashboard" 
             element={
               <ProtectedRoute>
                 <AppLayout>
@@ -236,7 +253,29 @@ function App() {
           />
           
           <Route 
-            path="/transactions" 
+            path="/finances/income" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <IncomePage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/finances/expenses" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ExpensesPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/finances/transactions" 
             element={
               <ProtectedRoute>
                 <AppLayout>
@@ -247,11 +286,34 @@ function App() {
           />
           
           <Route 
-            path="/reports" 
+            path="/finances/reports" 
             element={
               <ProtectedRoute>
                 <AppLayout>
                   <ReportsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Legacy routes - redirect to new finance structure */}
+          <Route 
+            path="/transactions" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Navigate to="/finances/transactions" replace />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Navigate to="/finances/reports" replace />
                 </AppLayout>
               </ProtectedRoute>
             } 

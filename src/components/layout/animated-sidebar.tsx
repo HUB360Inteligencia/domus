@@ -17,7 +17,8 @@ import {
   LineChart,
   ArrowUpCircle,
   ArrowDownCircle,
-  Scroll
+  Scroll,
+  BarChart3
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -266,7 +267,7 @@ const SidebarMenuContent = () => {
 
   const financeSubMenu: Links[] = [
     {
-      label: "Painel",
+      label: "Dashboard",
       href: "/finances/dashboard",
       icon: <LineChart className="h-4 w-4" />,
     },
@@ -281,11 +282,19 @@ const SidebarMenuContent = () => {
       icon: <ArrowDownCircle className="h-4 w-4" />,
     },
     {
+      label: "Transações",
+      href: "/finances/transactions",
+      icon: <BarChart3 className="h-4 w-4" />,
+    },
+    {
       label: "Relatórios",
       href: "/finances/reports",
       icon: <Scroll className="h-4 w-4" />,
     }
   ];
+
+  // Check if any finance route is active
+  const isFinanceActive = location.pathname.startsWith('/finances');
 
   return (
     <div className="flex flex-col h-full space-y-1">
@@ -305,7 +314,12 @@ const SidebarMenuContent = () => {
       >
         <button
           onClick={() => setFinanceSubmenuOpen(!financeSubmenuOpen)}
-          className="flex items-center justify-start gap-3 w-full py-2 px-2 rounded-md transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className={cn(
+            "flex items-center justify-start gap-3 w-full py-2 px-2 rounded-md transition-all duration-200",
+            isFinanceActive 
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+              : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
         >
           <Wallet className="h-5 w-5 flex-shrink-0" />
           <motion.span
