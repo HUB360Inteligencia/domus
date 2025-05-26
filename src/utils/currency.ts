@@ -76,22 +76,12 @@ export const applyCurrencyMask = (value: string): string => {
   }).format(reals);
 };
 
-// New utility function for better currency handling in forms
-export const formatCurrencyInput = (value: number): string => {
-  if (value === 0) return '0,00';
-  
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-// Enhanced currency parsing that handles zero values properly
+// Enhanced currency parsing that handles zero values and preserves decimals
 export const parseCurrencyInput = (value: string): number => {
   if (!value || value === '') return 0;
   
   // Handle direct zero input
-  if (value === '0' || value === '0,00' || value === '0.00') return 0;
+  if (value === '0' || value === '0,00' || value === '0.00' || value === 'R$ 0,00') return 0;
   
   // Remove currency symbols and clean the string
   const cleanValue = value.replace(/[R$\s]/g, '').trim();
@@ -131,4 +121,23 @@ export const parseCurrencyInput = (value: string): number => {
   
   // No separators, just numbers
   return parseFloat(cleanValue) || 0;
+};
+
+// Calculate property appreciation percentage
+export const calculateAppreciation = (purchaseValue: number, currentValue: number): number => {
+  if (purchaseValue <= 0) return 0;
+  return ((currentValue - purchaseValue) / purchaseValue) * 100;
+};
+
+// Format appreciation with proper color coding
+export const formatAppreciation = (appreciation: number): { 
+  formatted: string; 
+  isPositive: boolean;
+  colorClass: string;
+} => {
+  const isPositive = appreciation >= 0;
+  const formatted = `${isPositive ? '+' : ''}${appreciation.toFixed(2)}%`;
+  const colorClass = isPositive ? 'text-green-600' : 'text-red-600';
+  
+  return { formatted, isPositive, colorClass };
 };

@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { CurrencyInput } from '@/components/ui/currency-input';
-import { parseCurrencyInput } from '@/utils/currency';
+import { parseCurrencyInput, formatCurrency } from '@/utils/currency';
 
 interface PropertyInvestmentSectionProps {
   property: Property | null | undefined;
@@ -70,15 +70,9 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   const getInvestmentTypeLabel = (type: InvestmentType) => {
     const labels = {
+      purchase: 'Compra',
       improvement: 'Melhoria',
       repair: 'Reparo',
       maintenance: 'Manutenção',
@@ -91,6 +85,7 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
 
   const getInvestmentTypeBadgeColor = (type: InvestmentType) => {
     const colors = {
+      purchase: 'bg-orange-100 text-orange-800',
       improvement: 'bg-blue-100 text-blue-800',
       repair: 'bg-red-100 text-red-800',
       maintenance: 'bg-yellow-100 text-yellow-800',

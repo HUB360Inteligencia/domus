@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +15,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { usePropertyValuations } from '@/hooks/use-property-valuations';
 import { usePropertyFinancialMetrics } from '@/hooks/use-property-financial-metrics';
+import { usePropertyAppreciation } from '@/hooks/use-property-appreciation';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { formatCurrency, parseCurrencyInput } from '@/utils/currency';
 
 interface PropertyFinancialSectionProps {
   property: Property | null | undefined;
@@ -43,12 +45,15 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
     isLoadingMetrics,
   } = usePropertyFinancialMetrics(property?.id || null);
 
+  const appreciation = usePropertyAppreciation({ property, valuations });
+
   const handleAddValuation = async () => {
     if (!newValuationValue || !property?.id) return;
     
     try {
+      const numericValue = parseCurrencyInput(newValuationValue);
       await createValuation({
-        value: Number(newValuationValue),
+        value: numericValue,
         date: newValuationDate,
         notes: newValuationNotes || undefined
       });
@@ -90,13 +95,6 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
         </CardContent>
       </Card>
     );
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
   };
 
   const formatPercentage = (value: number) => {
@@ -199,7 +197,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
         isLoading={isLoading || isLoadingValuations}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {renderFinancialCard(
           'Valor Atual de Mercado',
           formatCurrency(currentMarketValue),
@@ -217,14 +215,27 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
         
         {renderFinancialCard(
           'Valorização',
-          purchaseValue > 0 
-            ? <span className={`${currentMarketValue > purchaseValue ? 'text-green-500' : 'text-red-500'}`}>
-                {((currentMarketValue - purchaseValue) / purchaseValue * 100).toFixed(2)}%
+          appreciation.hasData ? (
+            <div className="flex items-center gap-1">
+              {appreciation.percentage >= 0 ? (
+                <TrendingUp className="h-5 w-5 text-green-500" />
+              ) : (
+                <TrendingDown className="h-5 w-5 text-red-500" />
+              )}
+              <span className={appreciation.formatted.colorClass}>
+                {appreciation.formatted.formatted}
               </span>
-            : 'N/A',
-          purchaseValue > 0 
-            ? `${formatCurrency(currentMarketValue - purchaseValue)} de diferença` 
+            </div>
+          ) : 'N/A',
+          appreciation.hasData 
+            ? `${formatCurrency(appreciation.absolute)} de diferença` 
             : 'Valor de aquisição não informado'
+        )}
+        
+        {renderFinancialCard(
+          'Valor por m²',
+          property?.area ? formatCurrency(currentMarketValue / property.area) : 'N/A',
+          property?.area ? `Área: ${property.area} m²` : 'Área não informada'
         )}
       </div>
 
@@ -232,13 +243,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
 
       <div>
         <h4 className="text-lg font-medium mb-4">Indicadores Financeiros</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {renderFinancialCard(
-            'Valor por m²',
-            property?.area ? formatCurrency(currentMarketValue / property.area) : 'N/A',
-            property?.area ? `Área: ${property.area} m²` : 'Área não informada'
-          )}
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {renderFinancialCard(
             'Rentabilidade Mensal',
             financialMetrics ? formatPercentage(financialMetrics.monthlyProfitability) : 'N/A',
