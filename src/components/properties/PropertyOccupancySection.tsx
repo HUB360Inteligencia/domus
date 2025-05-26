@@ -1,643 +1,405 @@
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableFooter, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table"
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from "@/components/ui/alert-dialog"
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DatePicker } from "@/components/ui/date-picker"
+
+import React, { useState, useEffect } from 'react';
+import { Plus, User, Calendar, FileText, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { 
-  Property,
-} from '@/types/property';
-import { 
-  PropertyOccupancyPeriod, 
-  OccupancyType, 
-  PropertyOccupancyFormData 
-} from '@/types/property-occupancy';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Property } from '@/types/property';
+import { OccupancyType } from '@/types/property-occupancy';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePropertyOccupancy } from '@/hooks/use-property-occupancy';
+import { usePropertyFinancialMetrics } from '@/hooks/use-property-financial-metrics';
 
-const formSchema = z.object({
-  occupancy_type: z.enum(['rented', 'airbnb', 'vacant', 'maintenance', 'owner_occupied']),
-  start_date: z.date(),
-  end_date: z.date().optional().nullable(),
-  tenant_name: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  contract_id: z.string().optional().nullable(),
-})
+interface PropertyOccupancySectionProps {
+  property: Property | null | undefined;
+  isLoading?: boolean;
+}
 
-export const PropertyOccupancySection = ({ property, isLoading }: { property: Property | null | undefined; isLoading: boolean }) => {
-  const { 
-    occupancyPeriods, 
-    vacancyRate, 
+export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> = ({ 
+  property, 
+  isLoading = false 
+}) => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newOccupancyData, setNewOccupancyData] = useState({
+    occupancy_type: 'traditional_rental' as OccupancyType,
+    tenant_name: '',
+    start_date: format(new Date(), 'yyyy-MM-dd'),
+    end_date: '',
+    notes: '',
+  });
+
+  const {
+    occupancyPeriods,
+    vacancyRate,
     isLoadingOccupancy,
-    registerOccupancy,
-    updateOccupancy,
-    endOccupancy,
-    deleteOccupancy,
     isCreating,
-    isUpdating,
-    isDeleting
+    registerOccupancy,
+    endOccupancy,
+    refetchOccupancy,
   } = usePropertyOccupancy(property?.id || null);
 
-  const [isAddOccupancyOpen, setIsAddOccupancyOpen] = useState(false);
-  const [isEditOccupancyOpen, setIsEditOccupancyOpen] = useState(false);
-  const [selectedOccupancy, setSelectedOccupancy] = useState<PropertyOccupancyPeriod | null>(null);
-  const [isEndingOccupancy, setIsEndingOccupancy] = useState(false);
-  const [endingPeriodId, setEndingPeriodId] = useState<string | null>(null);
-  const [endingDate, setEndingDate] = useState<Date | null>(null);
+  const {
+    activeContract,
+    isLoadingContract,
+  } = usePropertyFinancialMetrics(property?.id || null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      occupancy_type: 'rented',
-      start_date: new Date(),
-      end_date: null,
-      tenant_name: null,
-      notes: null,
-      contract_id: null,
-    },
-  })
+  // Auto-fill occupancy data from active contract
+  useEffect(() => {
+    if (activeContract && !newOccupancyData.tenant_name) {
+      setNewOccupancyData(prev => ({
+        ...prev,
+        tenant_name: activeContract.tenant_name || '',
+        start_date: activeContract.start_date || format(new Date(), 'yyyy-MM-dd'),
+        end_date: activeContract.end_date || '',
+        occupancy_type: 'traditional_rental' as OccupancyType,
+      }));
+    }
+  }, [activeContract, newOccupancyData.tenant_name]);
 
-  const handleOpenAddOccupancy = () => {
-    form.reset();
-    setIsAddOccupancyOpen(true);
-  };
-
-  const handleCloseAddOccupancy = () => {
-    setIsAddOccupancyOpen(false);
-  };
-
-  const handleOpenEditOccupancy = (occupancy: PropertyOccupancyPeriod) => {
-    setSelectedOccupancy(occupancy);
-    form.setValue('occupancy_type', occupancy.occupancy_type);
-    form.setValue('start_date', new Date(occupancy.start_date));
-    form.setValue('end_date', occupancy.end_date ? new Date(occupancy.end_date) : null);
-    form.setValue('tenant_name', occupancy.tenant_name || null);
-    form.setValue('notes', occupancy.notes || null);
-    form.setValue('contract_id', occupancy.contract_id || null);
-    setIsEditOccupancyOpen(true);
-  };
-
-  const handleCloseEditOccupancy = () => {
-    setIsEditOccupancyOpen(false);
-    setSelectedOccupancy(null);
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleAddOccupancy = async () => {
+    if (!newOccupancyData.tenant_name || !newOccupancyData.start_date) return;
+    
     try {
-      await registerOccupancy({
-        occupancy_type: values.occupancy_type,
-        start_date: format(values.start_date, 'yyyy-MM-dd'),
-        end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : null,
-        tenant_name: values.tenant_name,
-        notes: values.notes,
-        contract_id: values.contract_id,
+      await registerOccupancy(newOccupancyData);
+      
+      // Reset form and close dialog
+      setNewOccupancyData({
+        occupancy_type: 'traditional_rental' as OccupancyType,
+        tenant_name: '',
+        start_date: format(new Date(), 'yyyy-MM-dd'),
+        end_date: '',
+        notes: '',
       });
-      handleCloseAddOccupancy();
+      setIsAddDialogOpen(false);
+      refetchOccupancy();
     } catch (error) {
-      console.error("Error registering occupancy:", error);
+      console.error('Error adding occupancy:', error);
     }
   };
 
-  const handleUpdateOccupancy = async (id: string, data: Partial<PropertyOccupancyFormData>) => {
-    try {
-      await updateOccupancy(id, data);
-      handleCloseEditOccupancy();
-    } catch (error) {
-      console.error("Error updating occupancy:", error);
+  const getOccupancyTypeLabel = (type: OccupancyType) => {
+    const labels = {
+      traditional_rental: 'Aluguel Tradicional',
+      airbnb: 'Airbnb',
+      owner_occupied: 'Ocupação do Proprietário',
+      vacant: 'Vago',
+      maintenance: 'Manutenção',
+      other: 'Outros'
+    };
+    return labels[type] || type;
+  };
+
+  const getOccupancyStatusBadge = (period: any) => {
+    const now = new Date();
+    const startDate = new Date(period.start_date);
+    const endDate = period.end_date ? new Date(period.end_date) : null;
+
+    if (!endDate || endDate > now) {
+      return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
+    } else {
+      return <Badge variant="outline">Finalizado</Badge>;
     }
   };
 
-  const handleOpenEndOccupancy = (periodId: string) => {
-    setIsEndingOccupancy(true);
-    setEndingPeriodId(periodId);
-  };
+  const currentOccupancy = occupancyPeriods.find(period => {
+    const now = new Date();
+    const startDate = new Date(period.start_date);
+    const endDate = period.end_date ? new Date(period.end_date) : null;
+    return startDate <= now && (!endDate || endDate > now);
+  });
 
-  const handleCloseEndOccupancy = () => {
-    setIsEndingOccupancy(false);
-    setEndingPeriodId(null);
-    setEndingDate(null);
-  };
-
-  const handleConfirmEndOccupancy = async () => {
-    if (endingPeriodId && endingDate) {
-      try {
-        await endOccupancy(endingPeriodId, format(endingDate, 'yyyy-MM-dd'));
-        handleCloseEndOccupancy();
-      } catch (error) {
-        console.error("Error ending occupancy:", error);
-      }
-    }
-  };
-
-  // Function to get proper badge variant based on occupancy type
-  const getOccupancyBadgeVariant = (type: OccupancyType): "default" | "destructive" | "outline" | "secondary" => {
-    switch (type) {
-      case 'rented': return "default";
-      case 'airbnb': return "secondary";
-      case 'vacant': return "outline";
-      case 'maintenance': return "destructive";
-      case 'owner_occupied': return "secondary";
-      default: return "outline";
-    }
-  };
-  
-  const translateOccupancyType = (type: OccupancyType): string => {
-    switch (type) {
-      case 'rented': return 'Alugado';
-      case 'airbnb': return 'Airbnb';
-      case 'vacant': return 'Vazio';
-      case 'maintenance': return 'Manutenção';
-      case 'owner_occupied': return 'Proprietário';
-      default: return 'Desconhecido';
-    }
-  };
-  
-  const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'N/A';
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return 'N/A';
-    }
-  };
+  if (isLoading || isLoadingOccupancy || isLoadingContract) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-8 w-2/3 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
-      {/* Vacancy Rate */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Taxa de Vacância</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-7 w-20" />
-          ) : (
-            <div className="text-2xl font-bold">
-              {vacancyRate !== null ? `${vacancyRate.toFixed(1)}%` : 'N/A'}
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-semibold">Ocupação do Imóvel</h3>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Registrar Ocupação</span>
+              <span className="inline sm:hidden">Ocupação</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Registrar Período de Ocupação</DialogTitle>
+              <DialogDescription>
+                Registre um novo período de ocupação para este imóvel.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="occupancy_type" className="text-right">
+                  Tipo
+                </Label>
+                <Select 
+                  value={newOccupancyData.occupancy_type} 
+                  onValueChange={(value: OccupancyType) => 
+                    setNewOccupancyData(prev => ({ ...prev, occupancy_type: value }))
+                  }
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="traditional_rental">Aluguel Tradicional</SelectItem>
+                    <SelectItem value="airbnb">Airbnb</SelectItem>
+                    <SelectItem value="owner_occupied">Ocupação do Proprietário</SelectItem>
+                    <SelectItem value="vacant">Vago</SelectItem>
+                    <SelectItem value="maintenance">Manutenção</SelectItem>
+                    <SelectItem value="other">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="tenant_name" className="text-right">
+                  Locatário
+                </Label>
+                <Input
+                  id="tenant_name"
+                  value={newOccupancyData.tenant_name}
+                  onChange={(e) => setNewOccupancyData(prev => ({ ...prev, tenant_name: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Nome do locatário"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="start_date" className="text-right">
+                  Data Início
+                </Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={newOccupancyData.start_date}
+                  onChange={(e) => setNewOccupancyData(prev => ({ ...prev, start_date: e.target.value }))}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="end_date" className="text-right">
+                  Data Fim
+                </Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={newOccupancyData.end_date}
+                  onChange={(e) => setNewOccupancyData(prev => ({ ...prev, end_date: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Opcional"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="notes" className="text-right">
+                  Observações
+                </Label>
+                <Textarea
+                  id="notes"
+                  value={newOccupancyData.notes}
+                  onChange={(e) => setNewOccupancyData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Observações sobre a ocupação"
+                />
+              </div>
             </div>
-          )}
-          <p className="text-muted-foreground text-sm">
-            Taxa de vacância atual do imóvel.
-          </p>
-        </CardContent>
-      </Card>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleAddOccupancy} 
+                disabled={!newOccupancyData.tenant_name || isCreating}
+              >
+                {isCreating ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Contract Integration Alert */}
+      {activeContract && (
+        <Alert>
+          <FileText className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex justify-between items-center">
+              <span>
+                Existe um contrato ativo para este imóvel com <strong>{activeContract.tenant_name}</strong>
+                {' '}de {format(new Date(activeContract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                {' '}até {format(new Date(activeContract.end_date), 'dd/MM/yyyy', { locale: ptBR })}.
+              </span>
+              {!currentOccupancy && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(true)}
+                >
+                  Registrar Ocupação
+                </Button>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Occupancy Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground mb-1">Status Atual</div>
+            <div className="text-2xl font-bold">
+              {currentOccupancy ? 'Ocupado' : 'Vago'}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {currentOccupancy 
+                ? `${getOccupancyTypeLabel(currentOccupancy.occupancy_type)}`
+                : 'Disponível para locação'
+              }
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground mb-1">Taxa de Vacância</div>
+            <div className="text-2xl font-bold text-red-500">
+              {vacancyRate?.toFixed(1) || '0.0'}%
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Últimos 12 meses
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground mb-1">Períodos Registrados</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {occupancyPeriods.length}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Histórico de ocupação
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Current Occupancy */}
+      {currentOccupancy && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Ocupação Atual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-green-100 text-green-800">
+                    {getOccupancyTypeLabel(currentOccupancy.occupancy_type)}
+                  </Badge>
+                  {getOccupancyStatusBadge(currentOccupancy)}
+                </div>
+                <p className="font-medium">{currentOccupancy.tenant_name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Desde {format(new Date(currentOccupancy.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  {currentOccupancy.end_date && 
+                    ` até ${format(new Date(currentOccupancy.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
+                  }
+                </p>
+                {currentOccupancy.notes && (
+                  <p className="text-sm text-muted-foreground mt-2">{currentOccupancy.notes}</p>
+                )}
+              </div>
+              {!currentOccupancy.end_date && (
+                <Button
+                  variant="outline"
+                  onClick={() => endOccupancy(currentOccupancy.id, format(new Date(), 'yyyy-MM-dd'))}
+                >
+                  Finalizar Ocupação
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Occupancy History */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Histórico de Ocupação</CardTitle>
-          <Button size="sm" onClick={handleOpenAddOccupancy} disabled={isLoading || !property}>
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Ocupação
-          </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Início</TableHead>
-                <TableHead>Fim</TableHead>
-                <TableHead>Inquilino</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingOccupancy ? (
-                <>
-                  {[...Array(5)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
-                    </TableRow>
-                  ))}
-                </>
-              ) : occupancyPeriods.length > 0 ? (
-                occupancyPeriods.map((period) => (
-                  <TableRow key={period.id}>
-                    <TableCell>
-                      <Badge variant={getOccupancyBadgeVariant(period.occupancy_type)}>
-                        {translateOccupancyType(period.occupancy_type)}
+          {occupancyPeriods.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum período de ocupação registrado</p>
+              <p className="text-sm">Registre períodos de ocupação para acompanhar a vacância</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {occupancyPeriods.map((period) => (
+                <div key={period.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-blue-100 text-blue-800">
+                        {getOccupancyTypeLabel(period.occupancy_type)}
                       </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(period.start_date)}</TableCell>
-                    <TableCell>{formatDate(period.end_date)}</TableCell>
-                    <TableCell>{period.tenant_name || 'N/A'}</TableCell>
-                    <TableCell className="text-right">
-                      {period.end_date ? (
-                        <Button variant="ghost" size="sm" disabled>
-                          Finalizado
-                        </Button>
-                      ) : (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleOpenEditOccupancy(period)} disabled={isUpdating}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleOpenEndOccupancy(period.id)} disabled={isUpdating}>
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Finalizar
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Ocupação</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir este período de ocupação? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={() => deleteOccupancy(period.id)}
-                                  disabled={isDeleting}
-                                >
-                                  {isDeleting ? 'Excluindo...' : 'Excluir'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    Nenhum período de ocupação registrado.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={5}>
-                  Total de períodos: {isLoadingOccupancy ? <Skeleton className="h-4 w-10" /> : occupancyPeriods.length}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+                      {getOccupancyStatusBadge(period)}
+                    </div>
+                    <p className="font-medium">{period.tenant_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(period.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      {period.end_date && 
+                        ` - ${format(new Date(period.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
+                      }
+                    </p>
+                    {period.notes && (
+                      <p className="text-xs text-muted-foreground mt-1">{period.notes}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Add Occupancy Dialog */}
-      <AlertDialog open={isAddOccupancyOpen} onOpenChange={setIsAddOccupancyOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Adicionar Período de Ocupação</AlertDialogTitle>
-            <AlertDialogDescription>
-              Preencha os campos abaixo para registrar um novo período de ocupação.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="occupancy_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Ocupação</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="rented">Alugado</SelectItem>
-                        <SelectItem value="airbnb">Airbnb</SelectItem>
-                        <SelectItem value="vacant">Vazio</SelectItem>
-                        <SelectItem value="maintenance">Manutenção</SelectItem>
-                        <SelectItem value="owner_occupied">Proprietário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Início</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value}
-                        onSelect={field.onChange}
-                        defaultMonth={field.value}
-                        selected={field.value}
-                        mode="single"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Selecione a data de início da ocupação.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Fim (Opcional)</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value || undefined}
-                        onSelect={field.onChange}
-                        defaultMonth={field.value || undefined}
-                        selected={field.value || undefined}
-                        mode="single"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Selecione a data de fim da ocupação, se aplicável.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tenant_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Inquilino (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do inquilino" {...field} value={field.value || ''}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notas (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Informações adicionais"
-                        className="resize-none"
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contract_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID do Contrato (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ID do contrato" {...field} value={field.value || ''}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleCloseAddOccupancy}>Cancelar</AlertDialogCancel>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? 'Adicionando...' : 'Adicionar'}
-                </Button>
-              </AlertDialogFooter>
-            </form>
-          </Form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Edit Occupancy Dialog */}
-      <AlertDialog open={isEditOccupancyOpen} onOpenChange={setIsEditOccupancyOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Editar Período de Ocupação</AlertDialogTitle>
-            <AlertDialogDescription>
-              Edite os campos abaixo para atualizar o período de ocupação.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(async (values) => {
-              if (selectedOccupancy) {
-                await handleUpdateOccupancy(selectedOccupancy.id, {
-                  occupancy_type: values.occupancy_type,
-                  start_date: format(values.start_date, 'yyyy-MM-dd'),
-                  end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : null,
-                  tenant_name: values.tenant_name,
-                  notes: values.notes,
-                  contract_id: values.contract_id,
-                });
-              }
-            })} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="occupancy_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Ocupação</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="rented">Alugado</SelectItem>
-                        <SelectItem value="airbnb">Airbnb</SelectItem>
-                        <SelectItem value="vacant">Vazio</SelectItem>
-                        <SelectItem value="maintenance">Manutenção</SelectItem>
-                        <SelectItem value="owner_occupied">Proprietário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Início</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value}
-                        onSelect={field.onChange}
-                        defaultMonth={field.value}
-                        selected={field.value}
-                        mode="single"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Selecione a data de início da ocupação.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Fim (Opcional)</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value || undefined}
-                        onSelect={field.onChange}
-                        defaultMonth={field.value || undefined}
-                        selected={field.value || undefined}
-                        mode="single"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Selecione a data de fim da ocupação, se aplicável.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tenant_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Inquilino (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do inquilino" {...field} value={field.value || ''}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notas (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Informações adicionais"
-                        className="resize-none"
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contract_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID do Contrato (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ID do contrato" {...field} value={field.value || ''}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleCloseEditOccupancy}>Cancelar</AlertDialogCancel>
-                <Button type="submit" disabled={isUpdating}>
-                  {isUpdating ? 'Atualizando...' : 'Atualizar'}
-                </Button>
-              </AlertDialogFooter>
-            </form>
-          </Form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* End Occupancy Dialog */}
-      <AlertDialog open={isEndingOccupancy} onOpenChange={setIsEndingOccupancy}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar Período de Ocupação</AlertDialogTitle>
-            <AlertDialogDescription>
-              Selecione a data de fim para o período de ocupação.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex flex-col space-y-1.5">
-              <label htmlFor="endingDate" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-                Data de Fim
-              </label>
-              <DatePicker
-                date={endingDate || undefined}
-                onSelect={setEndingDate}
-                mode="single"
-              />
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseEndOccupancy}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmEndOccupancy} disabled={isUpdating}>
-              {isUpdating ? 'Finalizando...' : 'Finalizar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

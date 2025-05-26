@@ -14,6 +14,8 @@ import { Property, PropertyValuation } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { usePropertyValuations } from '@/hooks/use-property-valuations';
+import { usePropertyFinancialMetrics } from '@/hooks/use-property-financial-metrics';
+import { CurrencyInput } from '@/components/ui/currency-input';
 
 interface PropertyFinancialSectionProps {
   property: Property | null | undefined;
@@ -35,6 +37,11 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
     createValuation,
     isCreating,
   } = usePropertyValuations(property?.id || null);
+
+  const {
+    financialMetrics,
+    isLoadingMetrics,
+  } = usePropertyFinancialMetrics(property?.id || null);
 
   const handleAddValuation = async () => {
     if (!newValuationValue || !property?.id) return;
@@ -62,7 +69,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
     subtitle?: string,
     isHighlighted: boolean = false
   ) => {
-    if (isLoading) {
+    if (isLoading || isLoadingMetrics) {
       return (
         <Card className={`overflow-hidden ${isHighlighted ? 'border-blue-500 shadow-md' : ''}`}>
           <CardContent className="p-6">
@@ -90,6 +97,10 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(2)}%`;
   };
 
   // Calculate latest valuation value
@@ -128,15 +139,12 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
                 <Label htmlFor="value" className="text-right">
                   Valor
                 </Label>
-                <div className="col-span-3 flex items-center">
-                  <span className="mr-2">R$</span>
-                  <Input
+                <div className="col-span-3">
+                  <CurrencyInput
                     id="value"
-                    type="number"
                     value={newValuationValue}
-                    onChange={(e) => setNewValuationValue(e.target.value)}
-                    className="w-full"
-                    placeholder="0,00"
+                    onChange={setNewValuationValue}
+                    placeholder="R$ 0,00"
                   />
                 </div>
               </div>
@@ -223,7 +231,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
       <Separator className="my-6" />
 
       <div>
-        <h4 className="text-lg font-medium mb-4">Mais Indicadores Financeiros</h4>
+        <h4 className="text-lg font-medium mb-4">Indicadores Financeiros</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {renderFinancialCard(
             'Valor por m²',
@@ -233,20 +241,20 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
           
           {renderFinancialCard(
             'Rentabilidade Mensal',
-            'Em breve',
-            'Conecte receitas e despesas ao imóvel'
+            financialMetrics ? formatPercentage(financialMetrics.monthlyProfitability) : 'N/A',
+            financialMetrics ? 'Média últimos 12 meses' : 'Sem dados suficientes'
           )}
           
           {renderFinancialCard(
             'ROI Acumulado',
-            'Em breve',
-            'Acompanhe o retorno do investimento'
+            financialMetrics ? formatPercentage(financialMetrics.accumulatedROI) : 'N/A',
+            financialMetrics ? `${formatCurrency(financialMetrics.netIncome)} de retorno líquido` : 'Sem dados de transações'
           )}
           
           {renderFinancialCard(
-            'Vacância',
-            'Em breve',
-            'Últimos 12 meses'
+            'Taxa de Vacância',
+            financialMetrics ? formatPercentage(financialMetrics.vacancyRate) : 'N/A',
+            financialMetrics ? 'Últimos 12 meses' : 'Sem dados de ocupação'
           )}
         </div>
       </div>
