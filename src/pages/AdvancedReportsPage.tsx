@@ -5,17 +5,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomReportBuilder } from '@/components/reports/CustomReportBuilder';
 import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
 import { ExecutiveDashboard } from '@/components/dashboard/ExecutiveDashboard';
-import { BarChart3, TrendingUp, Target } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 export default function AdvancedReportsPage() {
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'dashboard';
+
   return (
     <div className="container py-6">
       <PageHeader
         title="Relatórios e Analytics Avançados"
         description="Sistema completo de relatórios personalizáveis e análises avançadas dos seus investimentos imobiliários"
-      />
+      >
+        <Button variant="outline" asChild>
+          <Link to="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar ao Dashboard
+          </Link>
+        </Button>
+      </PageHeader>
 
-      <Tabs defaultValue="dashboard" className="space-y-6">
+      <Tabs defaultValue={defaultTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
