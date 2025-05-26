@@ -60,9 +60,18 @@ export const useRealRentalData = () => {
         new Date(contract.end_date) >= start
       );
 
-      // Receita mensal baseada em aluguéis (contratos ativos)
+      // Receita mensal baseada em valores de aluguel dos contratos ativos
       const monthlyRevenue = activeContractsInPeriod.reduce((sum, contract) => {
-        return sum + Number(contract.value || 0);
+        // Primeiro tenta usar o valor do contrato, se não tiver, usa o rental_value da propriedade
+        const contractValue = Number(contract.value || 0);
+        if (contractValue > 0) {
+          return sum + contractValue;
+        }
+        
+        // Se não tiver valor no contrato, busca o rental_value da propriedade
+        const property = properties.find(p => p.id === contract.property_id);
+        const rentalValue = Number(property?.rental_value || 0);
+        return sum + rentalValue;
       }, 0);
 
       // Despesas do período

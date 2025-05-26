@@ -34,7 +34,8 @@ export interface Property {
   zip_code?: string;
   type: PropertyType | string;
   status: PropertyStatus;
-  value: number;
+  value: number; // Valor de mercado
+  rental_value?: number; // Valor de aluguel
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -63,7 +64,6 @@ export interface Property {
   monthly_return_rate?: number | null;
   annual_return_rate?: number | null;
   vacancy_rate?: number | null;
-  // Removi os campos que não existem no banco: has_partners, partners, owner_percentage, documents
 }
 
 export interface PropertyFormData {
@@ -78,7 +78,8 @@ export interface PropertyFormData {
   zip_code?: string;
   type: string;
   status: PropertyStatus;
-  value: number;
+  value: number; // Valor de mercado
+  rental_value?: number; // Valor de aluguel
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -98,7 +99,6 @@ export interface PropertyFormData {
   agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
-  // Removi os campos que não existem no banco: has_partners, partners, owner_percentage, documents
 }
 
 export interface PropertyValuation {

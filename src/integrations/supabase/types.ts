@@ -1308,6 +1308,7 @@ export type Database = {
           property_number: string | null
           purchase_date: string | null
           purchase_value: number | null
+          rental_value: number | null
           square_meter_value: number | null
           state: string
           status: string
@@ -1352,6 +1353,7 @@ export type Database = {
           property_number?: string | null
           purchase_date?: string | null
           purchase_value?: number | null
+          rental_value?: number | null
           square_meter_value?: number | null
           state: string
           status: string
@@ -1396,6 +1398,7 @@ export type Database = {
           property_number?: string | null
           purchase_date?: string | null
           purchase_value?: number | null
+          rental_value?: number | null
           square_meter_value?: number | null
           state?: string
           status?: string

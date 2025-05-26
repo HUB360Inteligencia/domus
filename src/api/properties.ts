@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
 import { handleAuthError } from "@/utils/auth-utils";
@@ -35,7 +36,8 @@ export const fetchProperties = async (): Promise<Property[]> => {
       ...item,
       status: item.status as PropertyStatus,
       furnished: item.furnished as FurnishedStatus,
-      tags: item.tags || []
+      tags: item.tags || [],
+      rental_value: item.rental_value || 0
     }));
   } catch (err) {
     console.error('Failed to fetch properties:', err);
@@ -79,7 +81,8 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
-      tags: data.tags || []
+      tags: data.tags || [],
+      rental_value: data.rental_value || 0
     } : null;
   } catch (err) {
     console.error(`Failed to fetch property ${id}:`, err);
@@ -120,7 +123,8 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
-      tags: data.tags || []
+      tags: data.tags || [],
+      rental_value: data.rental_value || 0
     };
   } catch (err) {
     console.error('Failed to create property:', err);
@@ -156,7 +160,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       ...updatedData,
       status: updatedData.status as PropertyStatus,
       furnished: updatedData.furnished as FurnishedStatus,
-      tags: updatedData.tags || []
+      tags: updatedData.tags || [],
+      rental_value: updatedData.rental_value || 0
     };
   } catch (err) {
     console.error('Failed to update property:', err);
