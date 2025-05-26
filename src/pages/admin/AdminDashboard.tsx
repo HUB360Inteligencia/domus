@@ -81,37 +81,37 @@ export default function AdminDashboard() {
               title="Faturamento Mensal (MRR)"
               value={financialStats.mrr}
               description="Receita mensal recorrente"
-              icon={CircleDollarSign}
+              icon={<CircleDollarSign className="h-4 w-4" />}
               iconColor="text-emerald-500"
-              trend="up"
-              trendValue={financialStats.growthRate}
+              trend={financialStats.growthRate}
+              trendDirection="up"
             />
             <StatsCard
               title="Total de Clientes"
               value={financialStats.totalClients.toString()}
               description="Clientes ativos na plataforma"
-              icon={Users}
+              icon={<Users className="h-4 w-4" />}
               iconColor="text-blue-500"
-              trend="up"
-              trendValue="+12%"
+              trend="+12%"
+              trendDirection="up"
             />
             <StatsCard
               title="Taxa de Retenção"
               value={financialStats.activeRate}
               description="Clientes que renovaram"
-              icon={CircleCheck}
+              icon={<CircleCheck className="h-4 w-4" />}
               iconColor="text-purple-500"
-              trend="up"
-              trendValue="+2%"
+              trend="+2%"
+              trendDirection="up"
             />
             <StatsCard
               title="Taxa de Crescimento"
               value={financialStats.growthRate}
               description="Em relação ao mês anterior"
-              icon={TrendingUp}
+              icon={<TrendingUp className="h-4 w-4" />}
               iconColor="text-amber-500"
-              trend="up"
-              trendValue="+3%"
+              trend="+3%"
+              trendDirection="up"
             />
           </>
         )}

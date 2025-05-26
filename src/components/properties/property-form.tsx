@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,20 +95,33 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     if (initialData) {
       // Handle features properly based on the type
       let featuresArray: string[] = [];
+      let featuresObject: Record<string, any> = {};
+      
       if (Array.isArray(initialData.features)) {
         featuresArray = initialData.features;
+        featuresObject = initialData.features.reduce((acc, feat) => {
+          acc[feat] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
       } else if (typeof initialData.features === 'object' && initialData.features) {
+        featuresObject = initialData.features;
         featuresArray = Object.keys(initialData.features).filter(key => initialData.features![key]);
       } else if (typeof initialData.features === 'string') {
         try {
           const parsed = JSON.parse(initialData.features);
           if (Array.isArray(parsed)) {
             featuresArray = parsed;
+            featuresObject = parsed.reduce((acc, feat) => {
+              acc[feat] = true;
+              return acc;
+            }, {} as Record<string, boolean>);
           } else if (typeof parsed === 'object') {
+            featuresObject = parsed;
             featuresArray = Object.keys(parsed).filter(key => parsed[key]);
           }
         } catch {
           featuresArray = [];
+          featuresObject = {};
         }
       }
 
@@ -132,7 +146,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
         condo_fee: Number(initialData.condo_fee) || 0,
         floor_number: Number(initialData.floor_number) || 0,
         furnished: initialData.furnished || 'not_furnished',
-        features: initialData.features || {},
+        features: featuresObject,
         latitude: initialData.latitude,
         longitude: initialData.longitude,
         purchase_date: initialData.purchase_date,

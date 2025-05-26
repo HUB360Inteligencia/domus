@@ -10,6 +10,8 @@ interface StatsCardProps {
   trend?: string;
   trendDirection?: 'up' | 'down' | 'neutral';
   className?: string;
+  description?: string;
+  iconColor?: string;
 }
 
 export function StatsCard({ 
@@ -18,7 +20,9 @@ export function StatsCard({
   icon, 
   trend, 
   trendDirection = 'neutral',
-  className 
+  className,
+  description,
+  iconColor
 }: StatsCardProps) {
   return (
     <Card className={cn("", className)}>
@@ -26,7 +30,7 @@ export function StatsCard({
         <CardTitle className="text-xs font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="h-4 w-4 text-muted-foreground">
+        <div className={cn("h-4 w-4 text-muted-foreground", iconColor)}>
           {icon}
         </div>
       </CardHeader>
@@ -40,6 +44,11 @@ export function StatsCard({
             trendDirection === 'neutral' && "text-muted-foreground"
           )}>
             {trend}
+          </p>
+        )}
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {description}
           </p>
         )}
       </CardContent>
