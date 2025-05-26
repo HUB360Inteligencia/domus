@@ -43,7 +43,7 @@ export interface Property {
   condo_fee?: number;
   floor_number?: number;
   furnished?: FurnishedStatus;
-  features?: Json | Record<string, any>;
+  features?: string | string[] | Record<string, any> | null;
   image_url?: string;
   user_id: string;
   created_at: string;

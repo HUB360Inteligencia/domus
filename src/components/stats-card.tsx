@@ -26,7 +26,7 @@ export function StatsCard({
           {title}
         </CardTitle>
         <div className="h-4 w-4 text-muted-foreground">
-          {icon}
+          {React.isValidElement(icon) ? icon : <span>{icon}</span>}
         </div>
       </CardHeader>
       <CardContent className="pt-1">

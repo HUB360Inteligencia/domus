@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import ProtectedRoute from './ProtectedRoute';
+import { ProtectedRoute } from './ProtectedRoute';
 
 // Import pages
 import Index from '@/pages/Index';
@@ -51,7 +51,7 @@ import NotFound from '@/pages/NotFound';
 import Unauthorized from '@/pages/Unauthorized';
 
 // Redirect component
-import PropertyDetailRedirect from './PropertyDetailRedirect';
+import { PropertyDetailRedirect } from './PropertyDetailRedirect';
 
 export default function AppRoutes() {
   const { session } = useAuth();

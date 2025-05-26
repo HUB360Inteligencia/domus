@@ -12,3 +12,5 @@ export function PropertyDetailRedirect() {
   
   return <Navigate to="/properties" replace />;
 }
+
+export default PropertyDetailRedirect;
