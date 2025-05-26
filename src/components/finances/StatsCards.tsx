@@ -71,11 +71,22 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           <p className="text-2xl font-bold text-primary">
             {showMarketValue ? assetValueData.current : assetValueData.acquisition}
           </p>
-          {showMarketValue && assetValueData.growthPercentage > 0 && (
+          {showMarketValue && assetValueData.growthPercentage !== 0 && (
             <div className="flex items-center mt-1">
-              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                <ArrowUp className="h-3 w-3 mr-1" />
-                {assetValueData.growthPercentage}%
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${
+                  assetValueData.growthPercentage > 0 
+                    ? 'bg-green-50 text-green-700 border-green-200' 
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}
+              >
+                {assetValueData.growthPercentage > 0 ? (
+                  <ArrowUp className="h-3 w-3 mr-1" />
+                ) : (
+                  <ArrowDown className="h-3 w-3 mr-1" />
+                )}
+                {Math.abs(assetValueData.growthPercentage).toFixed(1)}%
               </Badge>
               <span className="text-xs text-muted-foreground ml-2">vs. valor de aquisição</span>
             </div>
@@ -102,12 +113,16 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             {performanceData.previousMonth.trend === 'up' ? (
               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                 <ArrowUp className="h-3 w-3 mr-1" />
-                0.3%
+                Crescimento
               </Badge>
-            ) : (
+            ) : performanceData.previousMonth.trend === 'down' ? (
               <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
                 <ArrowDown className="h-3 w-3 mr-1" />
-                0.2%
+                Queda
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs">
+                Estável
               </Badge>
             )}
           </div>

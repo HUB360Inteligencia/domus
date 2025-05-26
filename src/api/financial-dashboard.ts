@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface FinancialMetrics {
@@ -16,6 +15,7 @@ export interface FinancialMetrics {
   totalBookValue?: number;
   averageMonthlyReturn?: number;
   previousMonthReturn?: number;
+  previousMonthValue?: number;
   roiByPropertyType?: Record<string, number>;
 }
 
@@ -47,6 +47,48 @@ export interface PropertyFinancialRanking {
   returnPercentage?: number;
 }
 
+const getMonthDateRange = (monthsAgo: number = 0) => {
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  const endDate = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 0);
+  
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0]
+  };
+};
+
+const calculateMonthlyReturn = async (userId: string, monthsAgo: number = 0) => {
+  const { start, end } = getMonthDateRange(monthsAgo);
+  
+  // Fetch income for the specific month
+  const { data: incomeData, error: incomeError } = await supabase
+    .from('financial_transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('transaction_type', 'income')
+    .gte('transaction_date', start)
+    .lte('transaction_date', end);
+
+  if (incomeError) throw incomeError;
+
+  // Fetch expenses for the specific month
+  const { data: expenseData, error: expenseError } = await supabase
+    .from('financial_transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('transaction_type', 'expense')
+    .gte('transaction_date', start)
+    .lte('transaction_date', end);
+
+  if (expenseError) throw expenseError;
+
+  const income = incomeData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+  const expenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+  
+  return { income, expenses, netIncome: income - expenses };
+};
+
 export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
   try {
     const session = await supabase.auth.getSession();
@@ -54,47 +96,40 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
       throw new Error('User not authenticated');
     }
 
-    // Fetch total revenue (income transactions)
-    const { data: revenueData, error: revenueError } = await supabase
-      .from('financial_transactions')
-      .select('amount')
-      .eq('user_id', session.data.session.user.id)
-      .eq('transaction_type', 'income');
+    const userId = session.data.session.user.id;
 
-    if (revenueError) throw revenueError;
-
-    // Fetch total expenses
-    const { data: expenseData, error: expenseError } = await supabase
-      .from('financial_transactions')
-      .select('amount')
-      .eq('user_id', session.data.session.user.id)
-      .eq('transaction_type', 'expense');
-
-    if (expenseError) throw expenseError;
+    // Fetch current month data
+    const currentMonth = await calculateMonthlyReturn(userId, 0);
+    
+    // Fetch previous month data
+    const previousMonth = await calculateMonthlyReturn(userId, 1);
 
     // Fetch property data
     const { data: propertiesData, error: propertiesError } = await supabase
       .from('properties')
       .select('id, status, value, purchase_value, total_investment, type')
-      .eq('user_id', session.data.session.user.id);
+      .eq('user_id', userId);
 
     if (propertiesError) throw propertiesError;
-
-    const totalRevenue = revenueData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-    const totalExpenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-    const netIncome = totalRevenue - totalExpenses;
 
     const totalProperties = propertiesData?.length || 0;
     const occupiedProperties = propertiesData?.filter(p => p.status === 'rented' || p.status === 'airbnb').length || 0;
     const occupancyRate = totalProperties > 0 ? (occupiedProperties / totalProperties) * 100 : 0;
-    const averageRent = propertiesData?.reduce((sum, p) => sum + (p.value || 0), 0) / Math.max(totalProperties, 1) || 0;
 
     // Calculate additional dashboard metrics
     const totalAcquisitionValue = propertiesData?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
     const totalMarketValue = propertiesData?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
-    const totalBookValue = totalMarketValue; // For now, use market value as book value
-    const averageMonthlyReturn = totalRevenue / Math.max(totalProperties, 1) || 0;
-    const previousMonthReturn = averageMonthlyReturn * 0.95; // Mock data for now
+    const totalBookValue = totalMarketValue;
+
+    // Calculate ROI percentages
+    const currentMonthROI = totalAcquisitionValue > 0 ? (currentMonth.netIncome / totalAcquisitionValue) * 100 : 0;
+    const previousMonthROI = totalAcquisitionValue > 0 ? (previousMonth.netIncome / totalAcquisitionValue) * 100 : 0;
+
+    // Calculate growth percentage
+    const monthlyGrowth = previousMonth.income > 0 ? ((currentMonth.income - previousMonth.income) / previousMonth.income) * 100 : 0;
+
+    // Calculate average rent (current month income divided by occupied properties)
+    const averageRent = occupiedProperties > 0 ? currentMonth.income / occupiedProperties : 0;
 
     // Calculate ROI by property type
     const roiByPropertyType: Record<string, number> = {};
@@ -102,51 +137,30 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
       const typeGroups = propertiesData.reduce((acc, property) => {
         const type = property.type || 'Outros';
         if (!acc[type]) {
-          acc[type] = { count: 0, totalROI: 0 };
+          acc[type] = { count: 0, totalROI: 0, totalInvestment: 0 };
         }
         acc[type].count += 1;
-        // Calculate a basic ROI based on revenue vs acquisition cost
-        const acquisition = property.purchase_value || property.total_investment || property.value || 1;
-        const monthlyReturn = totalRevenue / totalProperties;
-        const roi = (monthlyReturn * 12 / acquisition) * 100;
-        acc[type].totalROI += roi;
+        const investment = property.purchase_value || property.total_investment || property.value || 1;
+        acc[type].totalInvestment += investment;
         return acc;
-      }, {} as Record<string, { count: number; totalROI: number }>);
+      }, {} as Record<string, { count: number; totalROI: number; totalInvestment: number }>);
 
-      Object.entries(typeGroups).forEach(([type, data]) => {
-        roiByPropertyType[type] = data.totalROI / data.count;
-      });
+      // Calculate ROI for each type based on their transactions
+      for (const [type, data] of Object.entries(typeGroups)) {
+        const typeProperties = propertiesData.filter(p => (p.type || 'Outros') === type);
+        const typePropertyIds = typeProperties.map(p => p.id);
+        
+        // This would need additional queries for accurate ROI by type
+        // For now, distribute current month income proportionally
+        const typeIncome = currentMonth.income * (data.totalInvestment / totalAcquisitionValue);
+        roiByPropertyType[type] = data.totalInvestment > 0 ? (typeIncome / data.totalInvestment) * 100 : 0;
+      }
     }
 
-    // Calculate monthly growth (simplified - comparing last 2 months)
-    const currentDate = new Date();
-    const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-    const twoMonthsAgo = new Date(currentDate.getFullYear(), currentDate.getMonth() - 2, 1);
-
-    const { data: lastMonthData } = await supabase
-      .from('financial_transactions')
-      .select('amount')
-      .eq('user_id', session.data.session.user.id)
-      .eq('transaction_type', 'income')
-      .gte('transaction_date', lastMonth.toISOString().split('T')[0])
-      .lt('transaction_date', currentDate.toISOString().split('T')[0]);
-
-    const { data: previousMonthData } = await supabase
-      .from('financial_transactions')
-      .select('amount')
-      .eq('user_id', session.data.session.user.id)
-      .eq('transaction_type', 'income')
-      .gte('transaction_date', twoMonthsAgo.toISOString().split('T')[0])
-      .lt('transaction_date', lastMonth.toISOString().split('T')[0]);
-
-    const lastMonthRevenue = lastMonthData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-    const previousMonthRevenue = previousMonthData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-    const monthlyGrowth = previousMonthRevenue > 0 ? ((lastMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
-
     return {
-      totalRevenue,
-      totalExpenses,
-      netIncome,
+      totalRevenue: currentMonth.income,
+      totalExpenses: currentMonth.expenses,
+      netIncome: currentMonth.netIncome,
       monthlyGrowth,
       totalProperties,
       occupiedProperties,
@@ -155,8 +169,9 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
       totalAcquisitionValue,
       totalMarketValue,
       totalBookValue,
-      averageMonthlyReturn,
-      previousMonthReturn,
+      averageMonthlyReturn: currentMonthROI,
+      previousMonthReturn: previousMonthROI,
+      previousMonthValue: previousMonth.netIncome,
       roiByPropertyType
     };
   } catch (error) {
@@ -236,7 +251,7 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
     // Fetch properties with their financial data
     const { data: properties, error: propertiesError } = await supabase
       .from('properties')
-      .select('id, title, total_investment, type, address, neighborhood')
+      .select('id, title, total_investment, purchase_value, type, address, neighborhood')
       .eq('user_id', session.data.session.user.id);
 
     if (propertiesError) throw propertiesError;
@@ -263,7 +278,7 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
       const revenue = revenueData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const expenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const netIncome = revenue - expenses;
-      const investment = property.total_investment || 0;
+      const investment = property.purchase_value || property.total_investment || 0;
       const roi = investment > 0 ? (netIncome / investment) * 100 : 0;
 
       rankings.push({

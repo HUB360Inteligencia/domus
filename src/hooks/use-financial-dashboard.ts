@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchFinancialMetrics, fetchMonthlyFinancialData, fetchPropertyFinancialRanking } from '@/api/financial-dashboard';
+import { fetchNeighborhoodFinancialData } from '@/api/neighborhood-financial-data';
 import { PropertyRankingItem } from '@/types/financial-ranking';
 
 export const useFinancialDashboard = () => {
@@ -29,7 +30,13 @@ export const useFinancialDashboard = () => {
     queryFn: fetchPropertyFinancialRanking,
   });
 
-  const isLoading = isLoadingMetrics || isLoadingMonthly || isLoadingRankings;
+  // Fetch neighborhood data
+  const { data: neighborhoodRankings = [], isLoading: isLoadingNeighborhoods } = useQuery({
+    queryKey: ['neighborhood-financial-data'],
+    queryFn: fetchNeighborhoodFinancialData,
+  });
+
+  const isLoading = isLoadingMetrics || isLoadingMonthly || isLoadingRankings || isLoadingNeighborhoods;
 
   // Transform data for components
   const assetValueData = metrics ? {
@@ -55,14 +62,13 @@ export const useFinancialDashboard = () => {
     percentage: item.roi,
   }));
 
-  // Mock neighborhood data (would be calculated from properties)
-  const neighborhoodData = [
-    { name: 'Centro', revenue: 15000, count: 3, roi: 8.5 },
-    { name: 'Vila Nova', revenue: 12000, count: 2, roi: 7.2 },
-    { name: 'Jardim América', revenue: 10000, count: 2, roi: 6.8 },
-    { name: 'Santa Rosa', revenue: 8000, count: 1, roi: 9.1 },
-    { name: 'Copacabana', revenue: 7500, count: 1, roi: 5.5 },
-  ];
+  // Use real neighborhood data instead of mock data
+  const neighborhoodData = neighborhoodRankings.map(item => ({
+    name: item.name,
+    revenue: item.revenue,
+    count: item.count,
+    roi: item.roi,
+  }));
 
   const assetGrowthData = monthlyData.map(item => ({
     month: item.month,

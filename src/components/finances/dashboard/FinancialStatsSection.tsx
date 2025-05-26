@@ -36,11 +36,19 @@ export const FinancialStatsSection: React.FC<FinancialStatsSectionProps> = ({
   } : { acquisition: 'R$ 0,00', current: 'R$ 0,00', growthPercentage: 0 };
 
   const transformedPerformanceData = performanceData ? {
-    monthlyAverage: `${performanceData.averageMonthlyReturn.toFixed(1)}%`,
+    monthlyAverage: `${performanceData.averageMonthlyReturn.toFixed(2)}%`,
     previousMonth: {
-      percentage: `${performanceData.previousMonthReturn.toFixed(1)}%`,
-      value: 'R$ 0,00', // This would need to be calculated from actual revenue data
-      trend: performanceData.previousMonthReturn >= 0 ? 'up' as const : 'down' as const
+      percentage: `${performanceData.previousMonthReturn.toFixed(2)}%`,
+      value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+        assetValueData?.totalAcquisitionValue 
+          ? (performanceData.previousMonthReturn / 100) * assetValueData.totalAcquisitionValue
+          : 0
+      ),
+      trend: (() => {
+        const diff = performanceData.averageMonthlyReturn - performanceData.previousMonthReturn;
+        if (Math.abs(diff) < 0.01) return 'neutral' as const;
+        return diff > 0 ? 'up' as const : 'down' as const;
+      })()
     },
     occupancyRate: `${performanceData.occupancyRate.toFixed(1)}%`
   } : {
