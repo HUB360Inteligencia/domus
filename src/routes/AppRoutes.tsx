@@ -1,9 +1,8 @@
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import { ProtectedRoute } from './ProtectedRoute';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // Import pages
 import Index from '@/pages/Index';
@@ -298,7 +297,7 @@ export default function AppRoutes() {
 
       {/* Admin routes */}
       <Route path="/admin" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <AdminDashboard />
           </AdminLayout>
@@ -306,7 +305,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/clients" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <ClientsPage />
           </AdminLayout>
@@ -314,7 +313,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/clients/new" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <ClientFormPage />
           </AdminLayout>
@@ -322,7 +321,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/clients/:id" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <ClientDetailPage />
           </AdminLayout>
@@ -330,7 +329,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/users" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <UsersPage />
           </AdminLayout>
@@ -338,7 +337,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/users/:id" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <UserDetailPage />
           </AdminLayout>
@@ -346,7 +345,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/users/invite" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <UserInvitePage />
           </AdminLayout>
@@ -354,7 +353,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/admin/settings" element={
-        <ProtectedRoute requireAdmin>
+        <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <SettingsPage />
           </AdminLayout>

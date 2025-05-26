@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,7 @@ export function StatsCard({
           {title}
         </CardTitle>
         <div className="h-4 w-4 text-muted-foreground">
-          {React.isValidElement(icon) ? icon : <span>{icon}</span>}
+          {icon}
         </div>
       </CardHeader>
       <CardContent className="pt-1">

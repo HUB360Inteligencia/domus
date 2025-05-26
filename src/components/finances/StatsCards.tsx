@@ -98,7 +98,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         title="Rentabilidade Mensal Média"
         value={performanceData.monthlyAverage}
         description="Média dos últimos 12 meses"
-        icon={TrendingUp}
+        icon={<TrendingUp className="h-4 w-4" />}
         iconColor="text-primary"
       />
 
@@ -133,7 +133,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         title="Taxa de Ocupação"
         value={performanceData.occupancyRate}
         description="Imóveis alugados vs. total"
-        icon={Building}
+        icon={<Building className="h-4 w-4" />}
         iconColor="text-primary"
       />
     </div>

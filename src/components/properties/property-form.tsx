@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,11 +92,24 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
 
   useEffect(() => {
     if (initialData) {
-      const featuresArray = Array.isArray(initialData.features) 
-        ? initialData.features 
-        : initialData.features 
-          ? Object.keys(initialData.features).filter(key => initialData.features![key])
-          : [];
+      // Handle features properly based on the type
+      let featuresArray: string[] = [];
+      if (Array.isArray(initialData.features)) {
+        featuresArray = initialData.features;
+      } else if (typeof initialData.features === 'object' && initialData.features) {
+        featuresArray = Object.keys(initialData.features).filter(key => initialData.features![key]);
+      } else if (typeof initialData.features === 'string') {
+        try {
+          const parsed = JSON.parse(initialData.features);
+          if (Array.isArray(parsed)) {
+            featuresArray = parsed;
+          } else if (typeof parsed === 'object') {
+            featuresArray = Object.keys(parsed).filter(key => parsed[key]);
+          }
+        } catch {
+          featuresArray = [];
+        }
+      }
 
       setFormData({
         title: initialData.title || '',
