@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Upload, Calendar, Receipt, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -16,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { parseCurrencyInput } from '@/utils/currency';
 
 interface PropertyInvestmentSectionProps {
   property: Property | null | undefined;
@@ -48,7 +48,13 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
   const handleAddInvestment = async () => {
     if (!newInvestmentData.amount || !property?.id) return;
     
-    const success = await registerInvestment(newInvestmentData, receiptFile || undefined);
+    // Convert amount string to number before passing to registerInvestment
+    const investmentDataWithNumericAmount = {
+      ...newInvestmentData,
+      amount: parseCurrencyInput(newInvestmentData.amount)
+    };
+    
+    const success = await registerInvestment(investmentDataWithNumericAmount, receiptFile || undefined);
     
     if (success) {
       // Reset form and close dialog

@@ -10,7 +10,6 @@ import {
   calculateTotalInvestment
 } from '@/api/property-investments';
 import { PropertyInvestmentFormData, PropertyInvestment, InvestmentType } from '@/types/property-investment';
-import { parseCurrencyInput } from '@/utils/currency';
 
 export const usePropertyInvestments = (propertyId: string | null) => {
   const [totalInvestment, setTotalInvestment] = useState<number>(0);
@@ -89,10 +88,8 @@ export const usePropertyInvestments = (propertyId: string | null) => {
           receiptUrl = await uploadReceiptMutation.mutateAsync(receiptFile);
         }
         
-        // Enhanced parsing that properly handles zero values
-        const amountValue = typeof data.amount === 'string' 
-          ? parseCurrencyInput(data.amount) 
-          : data.amount;
+        // Ensure amount is a number
+        const amountValue = typeof data.amount === 'number' ? data.amount : Number(data.amount);
           
         console.log('Parsed amount value:', amountValue);
           
