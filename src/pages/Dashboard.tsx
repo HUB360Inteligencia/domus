@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, Home, DollarSign, Calendar, BarChart3, Target, PieChart } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Home, DollarSign, Calendar, BarChart3, Target, PieChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/use-properties';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
