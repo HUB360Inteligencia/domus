@@ -245,7 +245,7 @@ const SidebarMenuContent = () => {
       icon: <Building className="h-5 w-5" />,
     },
     {
-      label: "Contratos",
+      label: "Gestão de Locações",
       href: "/contracts",
       icon: <FileText className="h-5 w-5" />,
     },

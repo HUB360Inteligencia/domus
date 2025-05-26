@@ -17,7 +17,7 @@ export default function AdvancedReportsPage() {
   return (
     <div className="container py-6">
       <PageHeader
-        title="Relatórios e Analytics Avançados"
+        title="Relatórios e Análises Avançadas"
         description="Sistema completo de relatórios personalizáveis e análises avançadas dos seus investimentos imobiliários"
       >
         <Button variant="outline" asChild>
@@ -40,7 +40,7 @@ export default function AdvancedReportsPage() {
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Analytics Avançados
+            Análises Avançadas
           </TabsTrigger>
         </TabsList>
 

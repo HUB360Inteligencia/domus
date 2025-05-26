@@ -27,6 +27,7 @@ import {
   Target,
 } from 'lucide-react';
 import { useExecutiveDashboardData } from '@/hooks/use-executive-dashboard-data';
+import { GoalsEditor } from '@/components/dashboard/GoalsEditor';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -61,21 +62,24 @@ export function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
-      <div className="flex gap-2">
-        {['week', 'month', 'quarter', 'year'].map((period) => (
-          <Button
-            key={period}
-            variant={selectedPeriod === period ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedPeriod(period)}
-          >
-            {period === 'week' && 'Semana'}
-            {period === 'month' && 'Mês'}
-            {period === 'quarter' && 'Trimestre'}
-            {period === 'year' && 'Ano'}
-          </Button>
-        ))}
+      {/* Period Selector and Goals Editor */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex gap-2">
+          {['week', 'month', 'quarter', 'year'].map((period) => (
+            <Button
+              key={period}
+              variant={selectedPeriod === period ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPeriod(period)}
+            >
+              {period === 'week' && 'Semana'}
+              {period === 'month' && 'Mês'}
+              {period === 'quarter' && 'Trimestre'}
+              {period === 'year' && 'Ano'}
+            </Button>
+          ))}
+        </div>
+        <GoalsEditor />
       </div>
 
       {/* KPI Cards */}
@@ -111,7 +115,7 @@ export function ExecutiveDashboard() {
       {revenueData && revenueData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Receitas vs Despesas</CardTitle>
+            <CardTitle>Receitas de Locações vs Despesas</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -124,7 +128,7 @@ export function ExecutiveDashboard() {
                     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
                   }
                 />
-                <Bar dataKey="revenue" fill="#8884d8" name="Receitas" />
+                <Bar dataKey="revenue" fill="#8884d8" name="Receitas de Locações" />
                 <Bar dataKey="expenses" fill="#82ca9d" name="Despesas" />
               </BarChart>
             </ResponsiveContainer>
@@ -215,7 +219,6 @@ export function ExecutiveDashboard() {
         </CardHeader>
         <CardContent className="space-y-4">
           {goals.map((goal, index) => {
-            const progress = Math.min((goal.current / goal.target) * 100, 100);
             const formatValue = (value: number) => {
               if (goal.unit === 'R$') {
                 return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -231,7 +234,7 @@ export function ExecutiveDashboard() {
                     {formatValue(goal.current)} / {formatValue(goal.target)}
                   </span>
                 </div>
-                <ProgressBar value={progress} className="h-2" />
+                <ProgressBar value={goal.progress} className="h-2" />
               </div>
             );
           })}

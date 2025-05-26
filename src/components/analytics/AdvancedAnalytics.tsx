@@ -9,7 +9,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { addDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { useAdvancedReportsData } from '@/hooks/use-advanced-reports-data';
+import { useRealRentalData } from '@/hooks/use-real-rental-data';
 
 // Paleta de cores em escala de cinza
 const COLORS = ['#000000', '#404040', '#808080', '#A0A0A0', '#C0C0C0'];
@@ -20,21 +20,19 @@ export function AdvancedAnalytics() {
     to: new Date(),
   });
   const [analysisType, setAnalysisType] = useState<'trend' | 'comparison' | 'projection'>('trend');
-  const [metric, setMetric] = useState<'revenue' | 'profit' | 'occupancy' | 'marketValue'>('revenue');
+  const [metric, setMetric] = useState<'revenue' | 'profit' | 'occupancy' | 'activeContracts'>('revenue');
 
   const { 
     analyticsData, 
-    marketComparison, 
-    projections, 
-    kpiMetrics, 
+    kpiData, 
     isLoading 
-  } = useAdvancedReportsData();
+  } = useRealRentalData();
 
   const chartData = useMemo(() => {
     return analyticsData.map(item => ({
       ...item,
-      netProfit: item.revenue - item.expenses,
-      profitMargin: item.revenue > 0 ? ((item.revenue - item.expenses) / item.revenue * 100).toFixed(1) : '0'
+      netProfit: item.profit,
+      profitMargin: item.revenue > 0 ? ((item.profit / item.revenue) * 100).toFixed(1) : '0'
     }));
   }, [analyticsData]);
 
@@ -44,10 +42,10 @@ export function AdvancedAnalytics() {
 
   const getMetricLabel = (metric: string) => {
     const labels = {
-      revenue: 'Receita',
-      profit: 'Lucro',
-      occupancy: 'Ocupação',
-      marketValue: 'Valor de Mercado'
+      revenue: 'Receita de Locações',
+      profit: 'Lucro Líquido',
+      occupancy: 'Taxa de Ocupação',
+      activeContracts: 'Contratos Ativos'
     };
     return labels[metric as keyof typeof labels] || metric;
   };
@@ -62,12 +60,12 @@ export function AdvancedAnalytics() {
   const renderTrendAnalysis = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* KPIs */}
+        {/* KPIs baseados em dados reais */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Receita Total</p>
+                <p className="text-sm text-muted-foreground">Receita Total de Locações</p>
                 <p className="text-2xl font-bold text-black">
                   {formatCurrency(chartData.reduce((sum, item) => sum + item.revenue, 0))}
                 </p>
@@ -84,7 +82,7 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Lucro Médio</p>
+                <p className="text-sm text-muted-foreground">Lucro Líquido Médio</p>
                 <p className="text-2xl font-bold text-gray-800">
                   {formatCurrency(chartData.reduce((sum, item) => sum + item.profit, 0) / Math.max(chartData.length, 1))}
                 </p>
@@ -92,7 +90,9 @@ export function AdvancedAnalytics() {
               <Target className="h-8 w-8 text-gray-800" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Margem de {chartData.length > 0 ? ((chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.reduce((sum, item) => sum + item.revenue, 0)) * 100).toFixed(1) : '0'}%
+              Margem de {chartData.length > 0 && chartData.reduce((sum, item) => sum + item.revenue, 0) > 0 
+                ? ((chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.reduce((sum, item) => sum + item.revenue, 0)) * 100).toFixed(1) 
+                : '0'}%
             </p>
           </CardContent>
         </Card>
@@ -101,7 +101,7 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Taxa de Ocupação</p>
+                <p className="text-sm text-muted-foreground">Taxa de Ocupação Média</p>
                 <p className="text-2xl font-bold text-gray-600">
                   {chartData.length > 0 ? (chartData.reduce((sum, item) => sum + item.occupancy, 0) / chartData.length).toFixed(1) : '0'}%
                 </p>
@@ -109,7 +109,7 @@ export function AdvancedAnalytics() {
               <PieChart className="h-8 w-8 text-gray-600" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Meta: 95%
+              Baseado em contratos ativos
             </p>
           </CardContent>
         </Card>
@@ -118,15 +118,15 @@ export function AdvancedAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Valor Patrimonial</p>
+                <p className="text-sm text-muted-foreground">Contratos Ativos</p>
                 <p className="text-2xl font-bold text-gray-400">
-                  {formatCurrency(chartData[chartData.length - 1]?.marketValue || 0)}
+                  {chartData[chartData.length - 1]?.activeContracts || 0}
                 </p>
               </div>
               <BarChart3 className="h-8 w-8 text-gray-400" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Atualizado hoje
+              Contratos de locação vigentes
             </p>
           </CardContent>
         </Card>
@@ -144,10 +144,10 @@ export function AdvancedAnalytics() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="revenue">Receita</SelectItem>
-                <SelectItem value="profit">Lucro</SelectItem>
+                <SelectItem value="revenue">Receita de Locações</SelectItem>
+                <SelectItem value="profit">Lucro Líquido</SelectItem>
                 <SelectItem value="occupancy">Taxa de Ocupação</SelectItem>
-                <SelectItem value="marketValue">Valor de Mercado</SelectItem>
+                <SelectItem value="activeContracts">Contratos Ativos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -158,7 +158,11 @@ export function AdvancedAnalytics() {
               <XAxis dataKey="month" stroke="#666" />
               <YAxis stroke="#666" />
               <Tooltip 
-                formatter={(value) => metric === 'occupancy' ? `${value}%` : formatCurrency(Number(value))}
+                formatter={(value) => 
+                  metric === 'occupancy' || metric === 'activeContracts' 
+                    ? `${value}${metric === 'occupancy' ? '%' : ''}`
+                    : formatCurrency(Number(value))
+                }
                 contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
               />
               <Area 
@@ -172,141 +176,6 @@ export function AdvancedAnalytics() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-    </div>
-  );
-
-  const renderMarketComparison = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparativo de Mercado por Região</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {marketComparison.map((item, index) => (
-              <div key={item.region} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.region}</h4>
-                  <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                    <span>Mercado: {formatCurrency(item.avgPrice)}/m²</span>
-                    <span>Nossos: {formatCurrency(item.ourAvgPrice)}/m²</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={item.difference > 0 ? 'default' : 'secondary'}>
-                    {item.difference > 0 ? '+' : ''}{item.difference.toFixed(1)}%
-                  </Badge>
-                  {item.trend === 'up' && <TrendingUp className="h-4 w-4 text-black" />}
-                  {item.trend === 'down' && <TrendingDown className="h-4 w-4 text-gray-600" />}
-                  {item.trend === 'stable' && <div className="h-4 w-4 bg-gray-400 rounded-full" />}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance vs Mercado</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={marketComparison}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="region" stroke="#666" />
-              <YAxis stroke="#666" />
-              <Tooltip 
-                formatter={(value) => formatCurrency(Number(value))}
-                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
-              />
-              <Bar dataKey="avgPrice" fill="#808080" name="Mercado" />
-              <Bar dataKey="ourAvgPrice" fill="#000000" name="Nossos Imóveis" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderProjections = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Projeções Financeiras</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={projections}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="period" stroke="#666" />
-              <YAxis stroke="#666" />
-              <Tooltip 
-                formatter={(value) => formatCurrency(Number(value))}
-                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="conservative" 
-                stroke="#808080" 
-                strokeDasharray="5 5" 
-                name="Conservador" 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="optimistic" 
-                stroke="#000000" 
-                name="Otimista" 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="pessimistic" 
-                stroke="#404040" 
-                strokeDasharray="10 5" 
-                name="Pessimista" 
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Cenário Conservador</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {formatCurrency(projections.reduce((sum, item) => sum + item.conservative, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Cenário Otimista</p>
-              <p className="text-2xl font-bold text-black">
-                {formatCurrency(projections.reduce((sum, item) => sum + item.optimistic, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Cenário Pessimista</p>
-              <p className="text-2xl font-bold text-gray-600">
-                {formatCurrency(projections.reduce((sum, item) => sum + item.pessimistic, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Próximos 6 meses</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 
@@ -324,7 +193,7 @@ export function AdvancedAnalytics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <h2 className="text-2xl font-bold">Analytics Avançados</h2>
+        <h2 className="text-2xl font-bold">Análises Avançadas</h2>
         <div className="flex gap-2">
           <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
           <Select value={analysisType} onValueChange={(value: any) => setAnalysisType(value)}>
@@ -341,8 +210,26 @@ export function AdvancedAnalytics() {
       </div>
 
       {analysisType === 'trend' && renderTrendAnalysis()}
-      {analysisType === 'comparison' && renderMarketComparison()}
-      {analysisType === 'projection' && renderProjections()}
+      {analysisType === 'comparison' && (
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center text-muted-foreground">
+              <BarChart3 className="h-12 w-12 mx-auto mb-4" />
+              <p>Análise comparativa de mercado será implementada em breve</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {analysisType === 'projection' && (
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center text-muted-foreground">
+              <TrendingUp className="h-12 w-12 mx-auto mb-4" />
+              <p>Projeções financeiras serão implementadas em breve</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

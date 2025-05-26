@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +7,12 @@ import { Plus, TrendingUp, TrendingDown, Home, DollarSign, Calendar, BarChart3, 
 import { Link } from 'react-router-dom';
 import { useProperties } from '@/hooks/use-properties';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
-import { useAdvancedReportsData } from '@/hooks/use-advanced-reports-data';
+import { useRealRentalData } from '@/hooks/use-real-rental-data';
 
 export default function Dashboard() {
   const { properties } = useProperties();
   const { transactions } = useFinancialTransactions();
-  const { kpiMetrics } = useAdvancedReportsData();
+  const { kpiData } = useRealRentalData();
 
   // Calculate basic metrics
   const totalProperties = properties.length;
@@ -24,7 +25,7 @@ export default function Dashboard() {
   const netIncome = totalRevenue - totalExpenses;
 
   // Get latest metrics for preview
-  const latestMetrics = kpiMetrics.length > 0 ? kpiMetrics[0] : null;
+  const latestMetrics = kpiData.length > 0 ? kpiData[0] : null;
 
   return (
     <div className="container py-6">
@@ -108,45 +109,42 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Analytics Avançados
+                Análises Avançadas
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(latestMetrics.value)}
+                    {latestMetrics.value}
                   </div>
-                  <p className="text-sm text-muted-foreground">{latestMetrics.name}</p>
+                  <p className="text-sm text-muted-foreground">{latestMetrics.title}</p>
                   <div className="flex items-center justify-center mt-1">
-                    {latestMetrics.changeType === 'increase' ? (
+                    {latestMetrics.trend === 'up' ? (
                       <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                     ) : (
                       <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
                     )}
-                    <span className={`text-xs ${latestMetrics.changeType === 'increase' ? 'text-green-500' : 'text-red-500'}`}>
-                      {latestMetrics.change >= 0 ? '+' : ''}{latestMetrics.change.toFixed(1)}%
+                    <span className={`text-xs ${latestMetrics.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                      {latestMetrics.change}
                     </span>
                   </div>
                 </div>
                 
-                {kpiMetrics.slice(1, 3).map((metric, index) => (
+                {kpiData.slice(1, 3).map((metric, index) => (
                   <div key={index} className="text-center">
                     <div className="text-2xl font-bold">
-                      {metric.name.includes('Taxa') 
-                        ? `${metric.value.toFixed(1)}%` 
-                        : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metric.value)
-                      }
+                      {metric.value}
                     </div>
-                    <p className="text-sm text-muted-foreground">{metric.name}</p>
+                    <p className="text-sm text-muted-foreground">{metric.title}</p>
                     <div className="flex items-center justify-center mt-1">
-                      {metric.changeType === 'increase' ? (
+                      {metric.trend === 'up' ? (
                         <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                       ) : (
                         <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
                       )}
-                      <span className={`text-xs ${metric.changeType === 'increase' ? 'text-green-500' : 'text-red-500'}`}>
-                        {metric.change >= 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                      <span className={`text-xs ${metric.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                        {metric.change}
                       </span>
                     </div>
                   </div>
@@ -163,7 +161,7 @@ export default function Dashboard() {
                 <Button variant="outline" asChild>
                   <Link to="/advanced-reports?tab=analytics">
                     <Target className="mr-2 h-4 w-4" />
-                    Analytics Avançados
+                    Análises Avançadas
                   </Link>
                 </Button>
               </div>
@@ -216,19 +214,19 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Relatórios e Analytics</CardTitle>
+            <CardTitle>Gestão de Locações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/advanced-reports">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Dashboard Executivo
+              <Link to="/contracts">
+                <PieChart className="mr-2 h-4 w-4" />
+                Ver Contratos de Locação
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/advanced-reports?tab=reports">
-                <PieChart className="mr-2 h-4 w-4" />
-                Relatórios Personalizados
+              <Link to="/advanced-reports">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Análises Avançadas
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
