@@ -4,7 +4,7 @@ import { ChartContainer } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 
 interface MinimalChartProps {
-  children: React.ReactNode;
+  children: React.ReactElement;
   config: any;
   className?: string;
   height?: string;
