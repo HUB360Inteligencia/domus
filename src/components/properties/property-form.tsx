@@ -63,8 +63,8 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     zip_code: '',
     type: 'apartment',
     status: 'available',
-    value: 0, // Valor de mercado
-    rental_value: 0, // Valor de aluguel
+    value: 0,
+    rental_value: 0,
     area: 0,
     bedrooms: 0,
     bathrooms: 0,
