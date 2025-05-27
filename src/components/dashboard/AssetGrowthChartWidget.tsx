@@ -2,16 +2,26 @@
 import React, { useState } from 'react';
 import { MinimalCard } from '@/components/finances/dashboard/MinimalCard';
 import { SimpleToggle } from '@/components/finances/dashboard/SimpleToggle';
-import { RevenueExpenseChart } from '@/components/dashboard/RevenueExpenseChart';
-import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { PatrimonyChart } from '@/components/dashboard/PatrimonyChart';
+import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
 
 export function AssetGrowthChartWidget() {
-  const [viewMode, setViewMode] = useState('patrimony');
-  const { transactions, isLoadingTransactions } = useFinancialTransactions();
+  const [viewMode, setViewMode] = useState<'patrimony' | 'cashflow'>('patrimony');
+  const metrics = useDashboardMetrics();
 
   const viewOptions = [
     { value: 'patrimony', label: 'Patrimônio' },
     { value: 'cashflow', label: 'Fluxo de Caixa' }
+  ];
+
+  // Simular dados históricos para demonstração
+  const chartData = [
+    { month: 'Jan', marketValue: metrics.totalMarketValue * 0.85, acquisitionValue: metrics.totalPurchaseValue },
+    { month: 'Fev', marketValue: metrics.totalMarketValue * 0.88, acquisitionValue: metrics.totalPurchaseValue },
+    { month: 'Mar', marketValue: metrics.totalMarketValue * 0.92, acquisitionValue: metrics.totalPurchaseValue },
+    { month: 'Abr', marketValue: metrics.totalMarketValue * 0.95, acquisitionValue: metrics.totalPurchaseValue },
+    { month: 'Mai', marketValue: metrics.totalMarketValue * 0.98, acquisitionValue: metrics.totalPurchaseValue },
+    { month: 'Jun', marketValue: metrics.totalMarketValue, acquisitionValue: metrics.totalPurchaseValue }
   ];
 
   return (
@@ -21,14 +31,16 @@ export function AssetGrowthChartWidget() {
           <h3 className="text-lg font-semibold text-gray-900">Valorização Patrimonial</h3>
           <SimpleToggle 
             value={viewMode}
-            onValueChange={setViewMode}
+            onValueChange={(value) => setViewMode(value as 'patrimony' | 'cashflow')}
             options={viewOptions}
           />
         </div>
         
-        <div className="h-64">
-          <RevenueExpenseChart transactions={transactions} isLoading={isLoadingTransactions} />
-        </div>
+        <PatrimonyChart 
+          data={chartData}
+          viewMode={viewMode}
+          isLoading={false}
+        />
       </div>
     </MinimalCard>
   );
