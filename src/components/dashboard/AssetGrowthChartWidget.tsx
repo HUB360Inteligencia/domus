@@ -7,7 +7,7 @@ import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 
 export function AssetGrowthChartWidget() {
   const [viewMode, setViewMode] = useState('patrimony');
-  const { transactions, isLoading } = useFinancialTransactions();
+  const { transactions, isLoadingTransactions } = useFinancialTransactions();
 
   const viewOptions = [
     { value: 'patrimony', label: 'Patrimônio' },
@@ -27,7 +27,7 @@ export function AssetGrowthChartWidget() {
         </div>
         
         <div className="h-64">
-          <RevenueExpenseChart transactions={transactions} isLoading={isLoading} />
+          <RevenueExpenseChart transactions={transactions} isLoading={isLoadingTransactions} />
         </div>
       </div>
     </MinimalCard>
