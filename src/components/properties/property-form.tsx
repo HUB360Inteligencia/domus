@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -179,7 +180,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     }
   }, [formData.address, formData.city, formData.state]);
 
-  const handleInputChange = <K extends keyof PropertyFormData>(field: K, value: PropertyFormData[K]) => {
+  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -272,7 +273,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             
             <div>
               <Label htmlFor="type">Tipo de Imóvel</Label>
-              <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+              <Select value={formData.type} onValueChange={(value: PropertyType) => handleInputChange('type', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -290,7 +291,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <Select value={formData.status} onValueChange={(value: PropertyStatus) => handleInputChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -581,7 +582,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             
             <div>
               <Label htmlFor="furnished">Mobiliado</Label>
-              <Select value={formData.furnished} onValueChange={(value) => handleInputChange('furnished', value)}>
+              <Select value={formData.furnished} onValueChange={(value: FurnishedStatus) => handleInputChange('furnished', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
