@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -43,6 +42,10 @@ export function TransactionTable({
         </Button>
       ),
       cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy'),
+    }),
+    columnHelper.accessor('name', {
+      header: 'Nome',
+      cell: info => info.getValue() || '-',
     }),
     columnHelper.accessor('description', {
       header: 'Descrição',

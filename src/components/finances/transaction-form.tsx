@@ -8,6 +8,7 @@ import { useTransactionForm } from '@/hooks/use-transaction-form';
 
 // Import Form Components
 import { TransactionTypeSelector } from './transaction-form/transaction-type-selector';
+import { NameField } from './transaction-form/name-field';
 import { AmountField } from './transaction-form/amount-field';
 import { DateField } from './transaction-form/date-field';
 import { CategoryField } from './transaction-form/category-field';
@@ -45,6 +46,9 @@ export function TransactionForm({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Transaction Type */}
         <TransactionTypeSelector form={form} />
+
+        {/* Name */}
+        <NameField form={form} />
 
         {/* Amount */}
         <AmountField form={form} transactionType={watchTransactionType} />

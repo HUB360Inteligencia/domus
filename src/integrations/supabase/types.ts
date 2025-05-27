@@ -972,6 +972,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          name: string
           payment_method: string | null
           property_id: string | null
           receipt_url: string | null
@@ -990,6 +991,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          name: string
           payment_method?: string | null
           property_id?: string | null
           receipt_url?: string | null
@@ -1008,6 +1010,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          name?: string
           payment_method?: string | null
           property_id?: string | null
           receipt_url?: string | null

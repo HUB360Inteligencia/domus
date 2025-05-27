@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 export interface FinancialTransaction {
   id: string;
+  name: string;
   amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
@@ -26,6 +27,7 @@ export interface FinancialTransaction {
 }
 
 export interface TransactionFormData {
+  name: string;
   amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
@@ -62,8 +64,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         .from('financial_transactions')
         .select(`
           *,
-          properties:property_id (id, title),
-          financial_categories!inner(id, name)
+          properties:property_id (id, title)
         `);
 
       // Apply filters
@@ -115,13 +116,14 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     ...tx,
     // Ensure transaction_type is properly typed
     transaction_type: tx.transaction_type === 'income' ? 'income' : 'expense',
-    // Get category name from joined table
-    category: tx.financial_categories?.name || tx.category,
-    category_name: tx.financial_categories?.name,
+    // Use category as is since it's now just a string/ID reference
+    category: tx.category,
     // Ensure property_title is properly set if properties data exists
     property_title: tx.properties?.title || undefined,
     // Ensure numbers are properly typed
     amount: typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount,
+    // Ensure name exists
+    name: tx.name || tx.description || 'Transação sem nome',
   }));
 
   // Upload receipt and get URL

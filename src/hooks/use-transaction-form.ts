@@ -7,6 +7,7 @@ import { TransactionFormData } from '@/hooks/use-financial-transactions';
 
 // Schema for form validation with receipt
 const transactionSchema = z.object({
+  name: z.string().min(1, 'Nome da transação é obrigatório'),
   amount: z.number().positive('Amount must be positive'),
   transaction_type: z.enum(['income', 'expense']),
   category: z.string().min(1, 'Category is required'),
@@ -23,6 +24,7 @@ const transactionSchema = z.object({
 
 export function useTransactionForm(initialData?: TransactionFormData & { id?: string }) {
   const defaultValues: TransactionFormData = initialData || {
+    name: '',
     amount: 0,
     transaction_type: 'expense',
     category: '',
