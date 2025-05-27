@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,7 +94,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     if (initialData) {
       // Handle features properly based on the type
       let featuresArray: string[] = [];
-      let featuresObject: Record<string, any> = {};
+      let featuresObject: Record<string, boolean> = {};
       
       if (Array.isArray(initialData.features)) {
         featuresArray = initialData.features;
@@ -104,8 +103,8 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
           return acc;
         }, {} as Record<string, boolean>);
       } else if (typeof initialData.features === 'object' && initialData.features) {
-        featuresObject = initialData.features;
-        featuresArray = Object.keys(initialData.features).filter(key => initialData.features![key]);
+        featuresObject = initialData.features as Record<string, boolean>;
+        featuresArray = Object.keys(featuresObject).filter(key => featuresObject[key]);
       } else if (typeof initialData.features === 'string') {
         try {
           const parsed = JSON.parse(initialData.features);
