@@ -1,7 +1,8 @@
+
 import React from 'react';
-import { useReactTable, getCoreRowModel, flexRender, createColumnHelper } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Edit, Trash2, Receipt } from 'lucide-react';
+import { Edit, Trash2, Receipt, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   Tooltip,
@@ -26,31 +27,54 @@ export function TransactionTable({
   onDelete,
   onViewReceipt
 }: TransactionTableProps) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const columnHelper = createColumnHelper<FinancialTransaction>();
 
   const columns = [
     columnHelper.accessor('transaction_date', {
-      header: 'Date',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
+        >
+          Data
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy'),
     }),
     columnHelper.accessor('description', {
-      header: 'Description',
+      header: 'Descrição',
       cell: info => info.getValue() || '-',
     }),
     columnHelper.accessor('category', {
-      header: 'Category',
+      header: 'Categoria',
       cell: info => info.getValue(),
     }),
+    columnHelper.accessor('property_title', {
+      header: 'Propriedade',
+      cell: info => info.getValue() || 'Nenhuma',
+    }),
     columnHelper.accessor('transaction_type', {
-      header: 'Type',
+      header: 'Tipo',
       cell: info => (
         <span className={`font-medium ${info.getValue() === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-          {info.getValue() === 'income' ? 'Income' : 'Expense'}
+          {info.getValue() === 'income' ? 'Receita' : 'Despesa'}
         </span>
       ),
     }),
     columnHelper.accessor('amount', {
-      header: 'Amount',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
+        >
+          Valor
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: info => (
         <span className={`font-medium ${info.row.original.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(info.getValue()))}
@@ -59,7 +83,7 @@ export function TransactionTable({
     }),
     columnHelper.display({
       id: 'actions',
-      header: 'Actions',
+      header: 'Ações',
       cell: info => (
         <div className="flex items-center space-x-1">
           {info.row.original.receipt_url && onViewReceipt && (
@@ -71,7 +95,7 @@ export function TransactionTable({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>View Receipt</p>
+                  <p>Ver Comprovante</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -85,7 +109,7 @@ export function TransactionTable({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Edit Transaction</p>
+                  <p>Editar Transação</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -99,7 +123,7 @@ export function TransactionTable({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Delete Transaction</p>
+                  <p>Excluir Transação</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -113,13 +137,18 @@ export function TransactionTable({
     data: transactions,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      sorting,
+    },
   });
 
   if (isLoading) {
     return (
       <div className="p-4 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-2">Loading transactions...</p>
+        <p className="mt-2">Carregando transações...</p>
       </div>
     );
   }
@@ -127,8 +156,8 @@ export function TransactionTable({
   if (transactions.length === 0) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        <p>No transactions found.</p>
-        <p className="text-sm mt-2">Add a new transaction to get started.</p>
+        <p>Nenhuma transação encontrada.</p>
+        <p className="text-sm mt-2">Adicione uma nova transação para começar.</p>
       </div>
     );
   }

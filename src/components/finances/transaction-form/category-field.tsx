@@ -7,12 +7,18 @@ import { TransactionFormData } from '@/hooks/use-financial-transactions';
 
 interface CategoryFieldProps {
   form: UseFormReturn<TransactionFormData>;
-  categories: { value: string; label: string }[];
+  categories: { value: string; label: string; type?: string }[];
+  transactionType?: 'income' | 'expense';
 }
 
-export function CategoryField({ form, categories }: CategoryFieldProps) {
+export function CategoryField({ form, categories, transactionType }: CategoryFieldProps) {
+  // Filter categories based on transaction type if specified
+  const filteredCategories = transactionType 
+    ? categories.filter(category => category.type === transactionType)
+    : categories;
+
   // More strict filtering to ensure no empty values
-  const validCategories = categories.filter(category => {
+  const validCategories = filteredCategories.filter(category => {
     // Log any problematic categories for debugging
     if (!category || !category.value || !category.label) {
       console.log('Filtering out invalid category:', category);

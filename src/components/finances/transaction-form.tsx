@@ -22,7 +22,7 @@ interface TransactionFormProps {
   onCancel?: () => void;
   isSubmitting?: boolean;
   properties?: { value: string; label: string }[];
-  categories?: { value: string; label: string }[];
+  categories?: { value: string; label: string; type?: string }[];
 }
 
 export function TransactionForm({ 
@@ -52,8 +52,12 @@ export function TransactionForm({
         {/* Date */}
         <DateField form={form} name="transaction_date" label="Data" />
 
-        {/* Category */}
-        <CategoryField form={form} categories={categories} />
+        {/* Category - Filter by transaction type */}
+        <CategoryField 
+          form={form} 
+          categories={categories} 
+          transactionType={watchTransactionType}
+        />
 
         {/* Mobile or Desktop specific fields */}
         {isMobile ? (

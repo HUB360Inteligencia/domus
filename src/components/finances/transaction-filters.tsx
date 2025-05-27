@@ -105,7 +105,7 @@ export function TransactionFilters({
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {/* Date Range */}
           <div>
-            <label className="text-sm font-medium">Date Range</label>
+            <label className="text-sm font-medium">Período</label>
             <div className="flex gap-2 mt-1">
               <Popover>
                 <PopoverTrigger asChild>
@@ -115,7 +115,7 @@ export function TransactionFilters({
                     size="sm"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.startDate ? format(new Date(filters.startDate), "dd/MM/yyyy") : "Start Date"}
+                    {filters.startDate ? format(new Date(filters.startDate), "dd/MM/yyyy") : "Data Inicial"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -135,7 +135,7 @@ export function TransactionFilters({
                     size="sm"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.endDate ? format(new Date(filters.endDate), "dd/MM/yyyy") : "End Date"}
+                    {filters.endDate ? format(new Date(filters.endDate), "dd/MM/yyyy") : "Data Final"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -152,7 +152,7 @@ export function TransactionFilters({
           
           {/* Transaction Type */}
           <div>
-            <label className="text-sm font-medium">Transaction Type</label>
+            <label className="text-sm font-medium">Tipo de Transação</label>
             <Select 
               value={filters.type?.length === 1 ? filters.type[0] : "all"} 
               onValueChange={(value) => {
@@ -164,19 +164,19 @@ export function TransactionFilters({
               }}
             >
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="All types" />
+                <SelectValue placeholder="Todos os tipos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="income">Receita</SelectItem>
+                <SelectItem value="expense">Despesa</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           {/* Category */}
           <div>
-            <label className="text-sm font-medium">Category</label>
+            <label className="text-sm font-medium">Categoria</label>
             <Select 
               value={filters.category?.length === 1 ? filters.category[0] : "all"} 
               onValueChange={(value) => {
@@ -188,10 +188,10 @@ export function TransactionFilters({
               }}
             >
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">Todas as categorias</SelectItem>
                 {validCategories.length > 0 ? (
                   validCategories.map((cat) => {
                     // Additional safety check before rendering
@@ -213,7 +213,7 @@ export function TransactionFilters({
           {/* Property */}
           {validProperties.length > 0 && (
             <div>
-              <label className="text-sm font-medium">Property</label>
+              <label className="text-sm font-medium">Propriedade</label>
               <Select 
                 value={filters.propertyId || "all"} 
                 onValueChange={(value) => onFilterChange({ 
@@ -221,10 +221,10 @@ export function TransactionFilters({
                 })}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="All properties" />
+                  <SelectValue placeholder="Todas as propriedades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All properties</SelectItem>
+                  <SelectItem value="all">Todas as propriedades</SelectItem>
                   {validProperties.map((prop) => {
                     // Additional safety check before rendering
                     if (!prop.value || prop.value.trim() === '') {
@@ -246,7 +246,7 @@ export function TransactionFilters({
           <div className="flex flex-wrap gap-2 mt-4">
             {filters.startDate && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                From: {format(new Date(filters.startDate), "dd/MM/yyyy")}
+                De: {format(new Date(filters.startDate), "dd/MM/yyyy")}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ startDate: undefined })}
@@ -256,7 +256,7 @@ export function TransactionFilters({
             
             {filters.endDate && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                To: {format(new Date(filters.endDate), "dd/MM/yyyy")}
+                Até: {format(new Date(filters.endDate), "dd/MM/yyyy")}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ endDate: undefined })}
@@ -266,7 +266,7 @@ export function TransactionFilters({
             
             {filters.type?.length === 1 && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Type: {filters.type[0] === 'income' ? 'Income' : 'Expense'}
+                Tipo: {filters.type[0] === 'income' ? 'Receita' : 'Despesa'}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ type: undefined })}
@@ -276,7 +276,7 @@ export function TransactionFilters({
             
             {filters.category?.length === 1 && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Category: {categories.find(c => c.value === filters.category?.[0])?.label || filters.category[0]}
+                Categoria: {categories.find(c => c.value === filters.category?.[0])?.label || filters.category[0]}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ category: undefined })}
@@ -286,7 +286,7 @@ export function TransactionFilters({
             
             {filters.propertyId && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Property: {properties.find(p => p.value === filters.propertyId)?.label || filters.propertyId}
+                Propriedade: {properties.find(p => p.value === filters.propertyId)?.label || filters.propertyId}
                 <XCircle 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => onFilterChange({ propertyId: undefined })}
@@ -300,7 +300,7 @@ export function TransactionFilters({
               onClick={onResetFilters}
               className="ml-auto"
             >
-              Clear All
+              Limpar Tudo
             </Button>
           </div>
         )}

@@ -53,7 +53,20 @@ export default function FinancialTransactionsPage() {
   } = useFinancialTransactions();
 
   const { properties } = useProperties();
-  const { categories, categoryOptions } = useFinancialCategories();
+  const { 
+    categories, 
+    categoryOptions,
+    incomeCategoryOptions,
+    expenseCategoryOptions,
+    initializeDefaultCategories 
+  } = useFinancialCategories();
+
+  // Initialize default categories on component mount
+  useEffect(() => {
+    if (categories.length === 0) {
+      initializeDefaultCategories();
+    }
+  }, [categories.length, initializeDefaultCategories]);
 
   // Property options for dropdown
   const propertyOptions = properties?.map(property => ({
@@ -183,6 +196,18 @@ export default function FinancialTransactionsPage() {
     }
   };
 
+  // Get appropriate categories based on active tab
+  const getCategories = () => {
+    switch (activeTab) {
+      case 'income':
+        return incomeCategoryOptions;
+      case 'expense':
+        return expenseCategoryOptions;
+      default:
+        return categoryOptions;
+    }
+  };
+
   return (
     <div className="container py-6">
       <PageHeader title="Transações Financeiras" description="Gerencie todas as suas transações financeiras">
@@ -222,7 +247,6 @@ export default function FinancialTransactionsPage() {
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {/* Filters */}
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Filtros</h2>
             <TransactionFilters
@@ -234,7 +258,6 @@ export default function FinancialTransactionsPage() {
             />
           </div>
 
-          {/* Transactions Table */}
           <div className="bg-white rounded-lg shadow border">
             <h2 className="text-lg font-medium p-4 border-b">Todas as Transações</h2>
             <TransactionTable 
@@ -248,7 +271,6 @@ export default function FinancialTransactionsPage() {
         </TabsContent>
 
         <TabsContent value="income" className="space-y-4">
-          {/* Income Summary */}
           <div className="bg-white rounded-lg shadow p-4 border mb-6">
             <h3 className="text-sm font-medium text-gray-500">Total de Receitas</h3>
             <p className="text-2xl font-bold text-green-600">
@@ -256,19 +278,17 @@ export default function FinancialTransactionsPage() {
             </p>
           </div>
 
-          {/* Filters */}
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Filtros</h2>
             <TransactionFilters
               filters={{...filters, type: ['income']}}
               onFilterChange={handleFilterChange}
               onResetFilters={resetFilters}
-              categories={categoryOptions}
+              categories={incomeCategoryOptions}
               properties={propertyOptions}
             />
           </div>
 
-          {/* Income Table */}
           <div className="bg-white rounded-lg shadow border">
             <h2 className="text-lg font-medium p-4 border-b">Receitas</h2>
             <TransactionTable 
@@ -282,7 +302,6 @@ export default function FinancialTransactionsPage() {
         </TabsContent>
 
         <TabsContent value="expense" className="space-y-4">
-          {/* Expense Summary */}
           <div className="bg-white rounded-lg shadow p-4 border mb-6">
             <h3 className="text-sm font-medium text-gray-500">Total de Despesas</h3>
             <p className="text-2xl font-bold text-red-600">
@@ -290,19 +309,17 @@ export default function FinancialTransactionsPage() {
             </p>
           </div>
 
-          {/* Filters */}
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Filtros</h2>
             <TransactionFilters
               filters={{...filters, type: ['expense']}}
               onFilterChange={handleFilterChange}
               onResetFilters={resetFilters}
-              categories={categoryOptions}
+              categories={expenseCategoryOptions}
               properties={propertyOptions}
             />
           </div>
 
-          {/* Expense Table */}
           <div className="bg-white rounded-lg shadow border">
             <h2 className="text-lg font-medium p-4 border-b">Despesas</h2>
             <TransactionTable 
@@ -329,7 +346,7 @@ export default function FinancialTransactionsPage() {
         } as any : undefined}
         isSubmitting={isCreating || isUpdating}
         properties={propertyOptions}
-        categories={categoryOptions}
+        categories={getCategories()}
       />
 
       {/* Delete Confirmation Dialog */}

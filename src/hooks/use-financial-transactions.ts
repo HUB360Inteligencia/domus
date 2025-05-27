@@ -9,6 +9,7 @@ export interface FinancialTransaction {
   amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
+  category_name?: string;
   subcategory?: string | null;
   description?: string | null;
   transaction_date: string;
@@ -53,7 +54,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   const [filters, setFilters] = useState<TransactionFilters>(initialFilters);
   const queryClient = useQueryClient();
 
-  // Fetch all transactions
+  // Fetch all transactions with category and property names
   const { data: rawTransactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['financial-transactions', filters],
     queryFn: async () => {
@@ -61,7 +62,8 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         .from('financial_transactions')
         .select(`
           *,
-          properties:property_id (id, title)
+          properties:property_id (id, title),
+          financial_categories!inner(id, name)
         `);
 
       // Apply filters
@@ -100,7 +102,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
 
       if (error) {
         console.error('Error fetching financial transactions:', error);
-        toast.error('Failed to fetch transactions');
+        toast.error('Falha ao buscar transações');
         return [];
       }
 
@@ -113,6 +115,9 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     ...tx,
     // Ensure transaction_type is properly typed
     transaction_type: tx.transaction_type === 'income' ? 'income' : 'expense',
+    // Get category name from joined table
+    category: tx.financial_categories?.name || tx.category,
+    category_name: tx.financial_categories?.name,
     // Ensure property_title is properly set if properties data exists
     property_title: tx.properties?.title || undefined,
     // Ensure numbers are properly typed
@@ -175,11 +180,11 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
-      toast.success('Transaction created successfully');
+      toast.success('Transação criada com sucesso');
     },
     onError: (error) => {
       console.error('Failed to create transaction:', error);
-      toast.error('Failed to create transaction');
+      toast.error('Falha ao criar transação');
     }
   });
 
@@ -201,11 +206,11 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
-      toast.success('Transaction updated successfully');
+      toast.success('Transação atualizada com sucesso');
     },
     onError: (error) => {
       console.error('Failed to update transaction:', error);
-      toast.error('Failed to update transaction');
+      toast.error('Falha ao atualizar transação');
     }
   });
 
@@ -252,11 +257,11 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
-      toast.success('Transaction deleted successfully');
+      toast.success('Transação excluída com sucesso');
     },
     onError: (error) => {
       console.error('Failed to delete transaction:', error);
-      toast.error('Failed to delete transaction');
+      toast.error('Falha ao excluir transação');
     }
   });
 
