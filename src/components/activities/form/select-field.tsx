@@ -40,12 +40,14 @@ export const SelectField = ({
   onChange,
   allowEmpty = false
 }: SelectFieldProps) => {
-  // Filter options more strictly to prevent empty values
+  // More strict filtering to ensure no empty values
   const validOptions = options.filter(option => 
     option && 
     option.value && 
     typeof option.value === 'string' && 
     option.value.trim() !== '' && 
+    option.value !== 'undefined' &&
+    option.value !== 'null' &&
     option.label &&
     typeof option.label === 'string' &&
     option.label.trim() !== ''

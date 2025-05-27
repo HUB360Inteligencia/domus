@@ -11,6 +11,19 @@ interface CategoryFieldProps {
 }
 
 export function CategoryField({ form, categories }: CategoryFieldProps) {
+  // More strict filtering to ensure no empty values
+  const validCategories = categories.filter(category => 
+    category && 
+    category.value && 
+    typeof category.value === 'string' && 
+    category.value.trim() !== '' && 
+    category.value !== 'undefined' &&
+    category.value !== 'null' &&
+    category.label &&
+    typeof category.label === 'string' &&
+    category.label.trim() !== ''
+  );
+
   return (
     <FormField
       control={form.control}
@@ -28,20 +41,11 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {categories
-                .filter(category => 
-                  category.value && 
-                  typeof category.value === 'string' && 
-                  category.value.trim() !== '' && 
-                  category.label &&
-                  typeof category.label === 'string' &&
-                  category.label.trim() !== ''
-                )
-                .map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
-                ))}
+              {validCategories.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <FormMessage />

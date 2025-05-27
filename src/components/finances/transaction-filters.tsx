@@ -45,12 +45,14 @@ export function TransactionFilters({
     return value !== undefined && value !== null;
   }).length;
 
-  // Filter valid categories and properties with stricter validation
+  // More strict filtering to ensure no empty values
   const validCategories = categories.filter(cat => 
     cat && 
     cat.value && 
     typeof cat.value === 'string' && 
     cat.value.trim() !== '' && 
+    cat.value !== 'undefined' &&
+    cat.value !== 'null' &&
     cat.label &&
     typeof cat.label === 'string' &&
     cat.label.trim() !== ''
@@ -61,6 +63,8 @@ export function TransactionFilters({
     prop.value && 
     typeof prop.value === 'string' && 
     prop.value.trim() !== '' && 
+    prop.value !== 'undefined' &&
+    prop.value !== 'null' &&
     prop.label &&
     typeof prop.label === 'string' &&
     prop.label.trim() !== ''
