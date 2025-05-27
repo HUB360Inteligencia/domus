@@ -213,7 +213,7 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
             <Label>Data Início</Label>
             <DatePicker
               date={periodStartDate}
-              onDateChange={setPeriodStartDate}
+              onSelect={setPeriodStartDate}
               placeholder="Selecione data início"
             />
           </div>
@@ -221,7 +221,7 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
             <Label>Data Fim</Label>
             <DatePicker
               date={periodEndDate}
-              onDateChange={setPeriodEndDate}
+              onSelect={setPeriodEndDate}
               placeholder="Selecione data fim"
             />
           </div>
@@ -290,8 +290,19 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
         properties={property ? [{ value: property.id, label: property.title }] : []}
         categories={[]}
         initialData={{
+          name: '',
+          amount: 0,
+          transaction_type: 'expense' as const,
+          category: '',
+          transaction_date: format(new Date(), 'yyyy-MM-dd'),
           property_id: property?.id || null,
-          transaction_type: 'expense'
+          subcategory: null,
+          description: '',
+          payment_method: null,
+          recurring: false,
+          recurring_frequency: null,
+          recurring_end_date: null,
+          receipt_url: null,
         }}
       />
     </div>
