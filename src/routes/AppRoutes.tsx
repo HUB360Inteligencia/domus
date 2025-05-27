@@ -286,7 +286,7 @@ export default function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Advanced Reports */}
+      {/* Reports routes */}
       <Route path="/reports" element={
         <ProtectedRoute>
           <AppLayout>

@@ -4,45 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus, Target, DollarSign, Home, Percent } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { useAdvancedReports } from '@/hooks/use-advanced-reports';
+import { useRealRentalData } from '@/hooks/use-real-rental-data';
+import { useRegionalAnalysis } from '@/hooks/use-regional-analysis';
 
 export function AdvancedAnalytics() {
-  const { metrics, isLoadingMetrics } = useAdvancedReports();
+  const { analyticsData, kpiData, isLoading } = useRealRentalData();
+  const { regionalAnalysis, propertyTypeAnalysis, occupancyData } = useRegionalAnalysis();
 
-  // Dados exemplo para os gráficos (em uma implementação real, viriam da API)
-  const monthlyTrends = [
-    { mes: 'Jan', receita: 15000, despesas: 8000, roi: 87.5 },
-    { mes: 'Fev', receita: 18000, despesas: 9200, roi: 95.7 },
-    { mes: 'Mar', receita: 16500, despesas: 8800, roi: 87.5 },
-    { mes: 'Abr', receita: 19200, despesas: 9500, roi: 102.1 },
-    { mes: 'Mai', receita: 20100, despesas: 9800, roi: 105.2 },
-    { mes: 'Jun', receita: 22500, despesas: 10200, roi: 120.6 }
-  ];
-
-  const propertyTypeData = [
-    { tipo: 'Apartamentos', quantidade: 12, receita: 45000 },
-    { tipo: 'Casas', quantidade: 8, receita: 32000 },
-    { tipo: 'Comercial', quantidade: 3, receita: 18000 },
-    { tipo: 'Terrenos', quantidade: 2, receita: 5000 }
-  ];
-
-  const occupancyData = [
-    { name: 'Ocupado', value: 85, color: '#10b981' },
-    { name: 'Vago', value: 15, color: '#ef4444' }
-  ];
-
-  const regionAnalysis = [
-    { regiao: 'Centro', propriedades: 8, valorMedio: 450000, ocupacao: 92 },
-    { regiao: 'Zona Sul', propriedades: 6, valorMedio: 680000, ocupacao: 88 },
-    { regiao: 'Zona Norte', propriedades: 7, valorMedio: 320000, ocupacao: 85 },
-    { regiao: 'Zona Oeste', propriedades: 4, valorMedio: 280000, ocupacao: 90 }
-  ];
-
-  const getTrendIcon = (changeType: string) => {
-    switch (changeType) {
-      case 'increase':
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up':
         return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'decrease':
+      case 'down':
         return <TrendingDown className="h-4 w-4 text-red-600" />;
       default:
         return <Minus className="h-4 w-4 text-gray-600" />;
@@ -56,7 +29,7 @@ export function AdvancedAnalytics() {
     });
   };
 
-  if (isLoadingMetrics) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -68,25 +41,21 @@ export function AdvancedAnalytics() {
     <div className="space-y-6">
       {/* Métricas Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
+        {kpiData.map((metric, index) => (
           <Card key={index}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{metric.name}</p>
-                  <p className="text-2xl font-bold">
-                    {metric.name.includes('Receita') ? formatCurrency(metric.value) : 
-                     metric.name.includes('Taxa') ? `${metric.value.toFixed(1)}%` : 
-                     `${metric.value.toFixed(1)}%`}
-                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                  <p className="text-2xl font-bold">{metric.value}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {getTrendIcon(metric.changeType)}
+                  {getTrendIcon(metric.trend)}
                   <span className={`text-sm ${
-                    metric.changeType === 'increase' ? 'text-green-600' : 
-                    metric.changeType === 'decrease' ? 'text-red-600' : 'text-gray-600'
+                    metric.trend === 'up' ? 'text-green-600' : 
+                    metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                   }`}>
-                    {metric.change > 0 ? '+' : ''}{metric.change}%
+                    {metric.change}
                   </span>
                 </div>
               </div>
@@ -106,9 +75,9 @@ export function AdvancedAnalytics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyTrends}>
+              <AreaChart data={analyticsData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
+                <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
                 <Tooltip 
                   formatter={(value: number) => [formatCurrency(value), '']}
@@ -117,7 +86,7 @@ export function AdvancedAnalytics() {
                 <Legend />
                 <Area 
                   type="monotone" 
-                  dataKey="receita" 
+                  dataKey="revenue" 
                   stackId="1" 
                   stroke="#10b981" 
                   fill="#10b981" 
@@ -126,7 +95,7 @@ export function AdvancedAnalytics() {
                 />
                 <Area 
                   type="monotone" 
-                  dataKey="despesas" 
+                  dataKey="expenses" 
                   stackId="2" 
                   stroke="#ef4444" 
                   fill="#ef4444" 
@@ -142,22 +111,22 @@ export function AdvancedAnalytics() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Percent className="h-5 w-5" />
-              ROI Mensal
+              Taxa de Ocupação
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyTrends}>
+              <LineChart data={analyticsData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
+                <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => `${value}%`} />
                 <Tooltip 
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'ROI']}
+                  formatter={(value: number) => [`${value}%`, 'Taxa de Ocupação']}
                   labelFormatter={(label) => `Mês: ${label}`}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="roi" 
+                  dataKey="occupancy" 
                   stroke="#3b82f6" 
                   strokeWidth={3}
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
@@ -179,7 +148,7 @@ export function AdvancedAnalytics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={propertyTypeData}>
+              <BarChart data={propertyTypeAnalysis}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="tipo" />
                 <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
@@ -196,7 +165,7 @@ export function AdvancedAnalytics() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
-              Taxa de Ocupação
+              Taxa de Ocupação Geral
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -240,19 +209,21 @@ export function AdvancedAnalytics() {
                   <th className="text-left p-4">Propriedades</th>
                   <th className="text-left p-4">Valor Médio</th>
                   <th className="text-left p-4">Taxa de Ocupação</th>
+                  <th className="text-left p-4">Receita</th>
                   <th className="text-left p-4">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {regionAnalysis.map((region, index) => (
+                {regionalAnalysis.map((region, index) => (
                   <tr key={index} className="border-b hover:bg-muted/50">
                     <td className="p-4 font-medium">{region.regiao}</td>
                     <td className="p-4">{region.propriedades}</td>
                     <td className="p-4">{formatCurrency(region.valorMedio)}</td>
                     <td className="p-4">{region.ocupacao}%</td>
+                    <td className="p-4">{formatCurrency(region.receita)}</td>
                     <td className="p-4">
-                      <Badge variant={region.ocupacao >= 90 ? "default" : region.ocupacao >= 80 ? "secondary" : "destructive"}>
-                        {region.ocupacao >= 90 ? "Excelente" : region.ocupacao >= 80 ? "Bom" : "Atenção"}
+                      <Badge variant={region.ocupacaoStatus === 'excelente' ? "default" : region.ocupacaoStatus === 'bom' ? "secondary" : "destructive"}>
+                        {region.ocupacaoStatus === 'excelente' ? "Excelente" : region.ocupacaoStatus === 'bom' ? "Bom" : "Atenção"}
                       </Badge>
                     </td>
                   </tr>
@@ -263,30 +234,42 @@ export function AdvancedAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Insights e Recomendações */}
+      {/* Insights e Recomendações baseados em dados reais */}
       <Card>
         <CardHeader>
           <CardTitle>Insights e Recomendações</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <h4 className="font-semibold text-green-800 mb-2">🎯 Oportunidade</h4>
-            <p className="text-green-700">
-              A Zona Sul apresenta o maior valor médio por propriedade. Considere investir mais nesta região para maximizar retornos.
-            </p>
-          </div>
-          
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-            <h4 className="font-semibold text-amber-800 mb-2">⚠️ Atenção</h4>
-            <p className="text-amber-700">
-              A taxa de ocupação da Zona Norte está abaixo da média. Revise preços ou estratégias de marketing para esta região.
-            </p>
-          </div>
+          {regionalAnalysis.length > 0 && (
+            <>
+              {regionalAnalysis.find(r => r.ocupacaoStatus === 'excelente') && (
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-2">🎯 Oportunidade</h4>
+                  <p className="text-green-700">
+                    {regionalAnalysis.find(r => r.ocupacaoStatus === 'excelente')?.regiao} apresenta excelente taxa de ocupação. 
+                    Considere expandir investimentos nesta região.
+                  </p>
+                </div>
+              )}
+              
+              {regionalAnalysis.find(r => r.ocupacaoStatus === 'atencao') && (
+                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <h4 className="font-semibold text-amber-800 mb-2">⚠️ Atenção</h4>
+                  <p className="text-amber-700">
+                    A região {regionalAnalysis.find(r => r.ocupacaoStatus === 'atencao')?.regiao} está com baixa ocupação. 
+                    Revise preços ou estratégias de marketing para esta região.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
 
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 className="font-semibold text-blue-800 mb-2">💡 Dica</h4>
             <p className="text-blue-700">
-              Seu ROI está crescendo consistentemente. Continue monitorando para identificar padrões sazonais.
+              {analyticsData.length > 0 && analyticsData[analyticsData.length - 1]?.profit > 0 
+                ? 'Seu portfólio está gerando lucro. Continue monitorando para identificar padrões sazonais.'
+                : 'Analise as despesas e considere otimizar custos para melhorar a rentabilidade.'}
             </p>
           </div>
         </CardContent>

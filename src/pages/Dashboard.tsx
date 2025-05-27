@@ -153,13 +153,13 @@ export default function Dashboard() {
               
               <div className="flex gap-2">
                 <Button asChild className="flex-1">
-                  <Link to="/advanced-reports">
+                  <Link to="/reports">
                     <BarChart3 className="mr-2 h-4 w-4" />
                     Ver Relatórios Completos
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link to="/advanced-reports?tab=analytics">
+                  <Link to="/reports?tab=analytics">
                     <Target className="mr-2 h-4 w-4" />
                     Análises Avançadas
                   </Link>
@@ -224,7 +224,7 @@ export default function Dashboard() {
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/advanced-reports">
+              <Link to="/reports">
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Análises Avançadas
               </Link>
