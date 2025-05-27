@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -7,19 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionTable } from '@/components/finances/transaction-table';
 import { TransactionModal } from '@/components/finances/transaction-modal';
 import { TransactionFilters } from '@/components/finances/transaction-filters';
-import { useFinancialTransactions, TransactionFormData } from '@/hooks/use-financial-transactions';
+import { useFinancialTransactions, TransactionFormData, FinancialTransaction } from '@/hooks/use-financial-transactions';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useProperties } from '@/hooks/use-properties';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 
 export default function FinancialTransactionsPage() {
   const location = useLocation();
@@ -35,8 +27,8 @@ export default function FinancialTransactionsPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<(TransactionFormData & { id: string }) | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<FinancialTransaction | null>(null);
   const [newTransactionType, setNewTransactionType] = useState<'income' | 'expense' | undefined>(undefined);
   
   const { 
@@ -131,21 +123,21 @@ export default function FinancialTransactionsPage() {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteClick = (transaction: FinancialTransaction) => {
+    setTransactionToDelete(transaction);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (transactionToDelete) {
       try {
-        await deleteTransaction(transactionToDelete);
-        setDeleteConfirmOpen(false);
+        await deleteTransaction(transactionToDelete.id);
+        setDeleteModalOpen(false);
         setTransactionToDelete(null);
       } catch (error) {
         console.error('Erro ao excluir transação:', error);
       }
     }
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setTransactionToDelete(id);
-    setDeleteConfirmOpen(true);
   };
 
   const resetFilters = () => {
@@ -349,28 +341,17 @@ export default function FinancialTransactionsPage() {
         categories={getCategories()}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso excluirá permanentemente a
-              transação selecionada.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Modal */}
+      <DeleteTransactionModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setTransactionToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        transactionName={transactionToDelete?.name}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

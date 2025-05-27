@@ -8,26 +8,17 @@ import { TransactionTable } from '@/components/finances/transaction-table';
 import { TransactionModal } from '@/components/finances/transaction-modal';
 import { TransactionFilters } from '@/components/finances/transaction-filters';
 import { CategoryManagement } from '@/components/finances/category-management';
-import { useFinancialTransactions, TransactionFormData } from '@/hooks/use-financial-transactions';
+import { useFinancialTransactions, TransactionFormData, FinancialTransaction } from '@/hooks/use-financial-transactions';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useProperties } from '@/hooks/use-properties';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function FinancesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<(TransactionFormData & { id: string }) | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<FinancialTransaction | null>(null);
   const isMobile = useIsMobile();
   
   const { 
@@ -79,21 +70,21 @@ export default function FinancesPage() {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteClick = (transaction: FinancialTransaction) => {
+    setTransactionToDelete(transaction);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (transactionToDelete) {
       try {
-        await deleteTransaction(transactionToDelete);
-        setDeleteConfirmOpen(false);
+        await deleteTransaction(transactionToDelete.id);
+        setDeleteModalOpen(false);
         setTransactionToDelete(null);
       } catch (error) {
         console.error('Error deleting transaction:', error);
       }
     }
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setTransactionToDelete(id);
-    setDeleteConfirmOpen(true);
   };
 
   const resetFilters = () => {
@@ -207,28 +198,17 @@ export default function FinancesPage() {
         categories={categoryOptions}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              selected transaction.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Modal */}
+      <DeleteTransactionModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setTransactionToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        transactionName={transactionToDelete?.name}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
