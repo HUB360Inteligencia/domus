@@ -1,209 +1,140 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Plus, Edit, Trash2, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
-import { applyDateMask, applyCurrencyMask, isValidDateFormat, parseCurrencyToNumber, convertToISO } from '@/utils/masks';
-
-export interface Investment {
-  id: string;
-  type: string;
-  amount: number;
-  date: string;
-  description: string;
-}
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Property } from '@/types/property';
+import { PropertyInvestment } from '@/types/property-investment';
+import { usePropertyInvestments } from '@/hooks/use-property-investments';
+import { formatCurrency } from '@/utils/currency';
 
 interface InvestmentsListProps {
-  investments: Investment[];
-  onChange: (investments: Investment[]) => void;
+  property: Property | null | undefined;
+  investments: PropertyInvestment[];
+  isLoading?: boolean;
 }
 
-const investmentTypes = [
-  { value: 'purchase', label: 'Compra' },
-  { value: 'improvement', label: 'Benfeitorias' },
-  { value: 'renovation', label: 'Reformas' },
-  { value: 'maintenance', label: 'Manutenção' },
-  { value: 'expropriation', label: 'Desapropriação' },
-  { value: 'demolition', label: 'Demolição' },
-  { value: 'earthworks', label: 'Terraplanagem' },
-  { value: 'landscaping', label: 'Paisagismo' },
-  { value: 'infrastructure', label: 'Infraestrutura' },
-  { value: 'other', label: 'Outros' }
-];
-
 export const InvestmentsList: React.FC<InvestmentsListProps> = ({
+  property,
   investments,
-  onChange
+  isLoading = false
 }) => {
-  const [newInvestment, setNewInvestment] = useState<Omit<Investment, 'id'>>({
-    type: '',
-    amount: 0,
-    date: '',
-    description: ''
-  });
+  const { deleteInvestment, isDeleting } = usePropertyInvestments(property?.id || null);
 
-  const addInvestment = () => {
-    if (!newInvestment.type || !newInvestment.amount || !newInvestment.date) {
-      return;
-    }
-
-    if (!isValidDateFormat(newInvestment.date)) {
-      return;
-    }
-
-    const investment: Investment = {
-      id: Math.random().toString(36).substring(2, 15),
-      ...newInvestment,
-      date: convertToISO(newInvestment.date)
-    };
-
-    onChange([...investments, investment]);
-    setNewInvestment({
-      type: '',
-      amount: 0,
-      date: '',
-      description: ''
-    });
+  const investmentTypeLabels: Record<string, string> = {
+    purchase: 'Compra',
+    improvement: 'Melhorias',
+    renovation: 'Reformas',
+    maintenance: 'Manutenção',
+    other: 'Outros'
   };
 
-  const removeInvestment = (id: string) => {
-    onChange(investments.filter(inv => inv.id !== id));
+  const investmentTypeColors: Record<string, string> = {
+    purchase: 'bg-blue-100 text-blue-800',
+    improvement: 'bg-green-100 text-green-800',
+    renovation: 'bg-purple-100 text-purple-800',
+    maintenance: 'bg-orange-100 text-orange-800',
+    other: 'bg-gray-100 text-gray-800'
   };
 
-  const handleAmountChange = (value: string) => {
-    const maskedValue = applyCurrencyMask(value);
-    setNewInvestment(prev => ({
-      ...prev,
-      amount: parseCurrencyToNumber(maskedValue)
-    }));
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-64" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-6 w-20" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-  const handleDateChange = (value: string) => {
-    const maskedValue = applyDateMask(value);
-    setNewInvestment(prev => ({
-      ...prev,
-      date: maskedValue
-    }));
-  };
+  if (investments.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-10">
+          <div className="text-center text-muted-foreground">
+            <p>Nenhum investimento registrado.</p>
+            <p className="text-sm mt-2">
+              Os investimentos ajudam a calcular o ROI do imóvel.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Lista de investimentos existentes */}
-      {investments.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-base font-medium">Investimentos Cadastrados</Label>
-          {investments.map((investment) => (
-            <Card key={investment.id} className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="font-medium">
-                      {investmentTypes.find(t => t.value === investment.type)?.label}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      }).format(investment.amount)}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {new Date(investment.date).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                  {investment.description && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {investment.description}
-                    </p>
+      {investments.map((investment) => (
+        <Card key={investment.id}>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-3">
+                  <Badge className={investmentTypeColors[investment.investment_type] || investmentTypeColors.other}>
+                    {investmentTypeLabels[investment.investment_type] || investment.investment_type}
+                  </Badge>
+                  <span className="text-lg font-semibold">
+                    {formatCurrency(investment.amount)}
+                  </span>
+                </div>
+                
+                {investment.description && (
+                  <p className="text-muted-foreground">
+                    {investment.description}
+                  </p>
+                )}
+                
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>
+                    {format(new Date(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  </span>
+                  {investment.receipt_url && (
+                    <div className="flex items-center gap-1">
+                      <Receipt className="h-3 w-3" />
+                      <span>Comprovante anexado</span>
+                    </div>
                   )}
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 ml-4">
+                {investment.receipt_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(investment.receipt_url!, '_blank')}
+                  >
+                    <Receipt className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
-                  type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeInvestment(investment.id)}
+                  onClick={() => deleteInvestment(investment.id)}
+                  disabled={isDeleting}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Formulário para novo investimento */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Adicionar Investimento</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="investment-type">Tipo de Investimento</Label>
-              <Select
-                value={newInvestment.type}
-                onValueChange={(value) => setNewInvestment(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {investmentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-
-            <div>
-              <Label htmlFor="investment-amount">Valor</Label>
-              <Input
-                id="investment-amount"
-                placeholder="R$ 0,00"
-                value={newInvestment.amount > 0 ? applyCurrencyMask(newInvestment.amount.toString()) : ''}
-                onChange={(e) => handleAmountChange(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="investment-date">Data</Label>
-              <Input
-                id="investment-date"
-                placeholder="dd/mm/aaaa"
-                value={newInvestment.date}
-                onChange={(e) => handleDateChange(e.target.value)}
-                maxLength={10}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="investment-description">Descrição (opcional)</Label>
-            <Textarea
-              id="investment-description"
-              placeholder="Descrição do investimento"
-              value={newInvestment.description}
-              onChange={(e) => setNewInvestment(prev => ({ ...prev, description: e.target.value }))}
-              rows={2}
-            />
-          </div>
-
-          <Button
-            type="button"
-            onClick={addInvestment}
-            disabled={!newInvestment.type || !newInvestment.amount || !newInvestment.date || !isValidDateFormat(newInvestment.date)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Investimento
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
