@@ -80,18 +80,19 @@ export function ActivitiesWidget() {
   return (
     <MinimalCard className="h-full">
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900">Atividades</h3>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <SimpleToggle 
               value={viewMode}
               onValueChange={(value) => setViewMode(value as 'upcoming' | 'pending')}
               options={viewOptions}
+              className="bg-gray-100 p-0.5 rounded-md h-7 text-xs"
             />
             <Button
               size="sm"
               onClick={() => navigate('/activities/new')}
-              className="h-8 px-2"
+              className="h-6 w-6 p-0"
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -144,12 +145,12 @@ export function ActivitiesWidget() {
           )}
         </div>
 
-        <div className="mt-4 pt-3 border-t">
+        <div className="mt-3 pt-3 border-t">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/activities')}
-            className="w-full h-8 text-xs"
+            className="w-full h-7 text-xs"
           >
             Ver todas as atividades
             <ArrowRight className="h-3 w-3 ml-1" />

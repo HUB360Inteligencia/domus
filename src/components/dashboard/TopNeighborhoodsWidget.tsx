@@ -15,15 +15,15 @@ export function TopNeighborhoodsWidget() {
     { value: 'count', label: 'Quantidade' }
   ];
 
-  // Ordenar dados baseado no modo de visualização
+  // Ordenar dados baseado no modo de visualização (do maior para o menor)
   const sortedData = React.useMemo(() => {
     if (!neighborhoodData) return [];
     
     return [...neighborhoodData].sort((a, b) => {
       if (viewMode === 'revenue') {
-        return b.revenue - a.revenue;
+        return b.revenue - a.revenue; // Maior receita primeiro
       }
-      return b.count - a.count;
+      return b.count - a.count; // Maior quantidade primeiro
     });
   }, [neighborhoodData, viewMode]);
 
@@ -51,6 +51,7 @@ export function TopNeighborhoodsWidget() {
             value={viewMode}
             onValueChange={(value) => setViewMode(value as 'revenue' | 'count')}
             options={viewOptions}
+            className="h-7"
           />
         </div>
 

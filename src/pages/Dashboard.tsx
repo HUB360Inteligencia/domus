@@ -14,10 +14,10 @@ import { PropertyROIWidget } from '@/components/dashboard/PropertyROIWidget';
 export default function Dashboard() {
   return (
     <div className="container py-6">
-      {/* Grid Layout responsivo - 3 widgets por linha em telas grandes */}
+      {/* Grid Layout responsivo - nova estrutura em 4 linhas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        {/* LINHA 1 - Propriedades, Patrimônio e Atividades (mesma altura e largura) */}
+        {/* LINHA 1 - Propriedades, Patrimônio e ROI Mensal (3 colunas iguais) */}
         <div className="md:col-span-1">
           <PropertyOccupancyWidget />
         </div>
@@ -25,26 +25,26 @@ export default function Dashboard() {
           <AssetValueWidget />
         </div>
         <div className="md:col-span-1">
-          <ActivitiesWidget />
-        </div>
-        
-        {/* LINHA 2 - Performance Financeira menor, Tipos de Imóveis, ROI por Tipo, ROI Mensal */}
-        <div className="md:col-span-1">
-          <FinancialPerformanceWidget />
-        </div>
-        <div className="md:col-span-1 space-y-4">
-          <div className="h-[calc(50%-0.5rem)]">
-            <PropertyTypesWidget />
-          </div>
-          <div className="h-[calc(50%-0.5rem)]">
-            <PropertyROIWidget />
-          </div>
-        </div>
-        <div className="md:col-span-1">
           <MonthlyROIWidget />
         </div>
         
-        {/* LINHA 3 - Top Propriedades, Top Bairros e Valorização Patrimonial */}
+        {/* LINHA 2 - Performance Financeira (1 col) e Atividades (2 cols) */}
+        <div className="md:col-span-1">
+          <FinancialPerformanceWidget />
+        </div>
+        <div className="md:col-span-2">
+          <ActivitiesWidget />
+        </div>
+        
+        {/* LINHA 3 - Tipos de Imóveis (1 col) e Valorização Patrimonial (2 cols) */}
+        <div className="md:col-span-1">
+          <PropertyTypesWidget />
+        </div>
+        <div className="md:col-span-2">
+          <AssetGrowthChartWidget />
+        </div>
+        
+        {/* LINHA 4 - Top Propriedades, Top Bairros e ROI por Tipo (3 colunas iguais) */}
         <div className="md:col-span-1">
           <TopPropertiesWidget />
         </div>
@@ -52,7 +52,7 @@ export default function Dashboard() {
           <TopNeighborhoodsWidget />
         </div>
         <div className="md:col-span-1">
-          <AssetGrowthChartWidget />
+          <PropertyROIWidget />
         </div>
         
       </div>

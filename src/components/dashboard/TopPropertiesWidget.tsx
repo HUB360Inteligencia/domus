@@ -15,6 +15,18 @@ export function TopPropertiesWidget() {
     { value: 'roi', label: 'ROI' }
   ];
 
+  // Ordenar dados baseado no modo de visualização (do maior para o menor)
+  const sortedData = React.useMemo(() => {
+    if (!topPropertiesData) return [];
+    
+    return [...topPropertiesData].sort((a, b) => {
+      if (viewMode === 'revenue') {
+        return b.return - a.return; // Maior receita primeiro
+      }
+      return b.percentage - a.percentage; // Maior ROI primeiro
+    });
+  }, [topPropertiesData, viewMode]);
+
   if (isLoading) {
     return (
       <MinimalCard className="h-full">
@@ -39,13 +51,14 @@ export function TopPropertiesWidget() {
             value={viewMode}
             onValueChange={(value) => setViewMode(value as 'revenue' | 'roi')}
             options={viewOptions}
+            className="h-7"
           />
         </div>
 
         <div className="flex-1 min-h-0">
-          {topPropertiesData.length > 0 ? (
+          {sortedData.length > 0 ? (
             <div className="space-y-3">
-              {topPropertiesData.slice(0, 5).map((property, index) => (
+              {sortedData.slice(0, 5).map((property, index) => (
                 <div key={property.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary rounded-full text-xs font-bold">

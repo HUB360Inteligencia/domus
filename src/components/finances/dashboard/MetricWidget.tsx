@@ -43,7 +43,7 @@ export function MetricWidget({
         )}
       </div>
       
-      <div className="text-3xl font-bold text-gray-900">
+      <div className="text-xl font-bold text-gray-900">
         {value}
       </div>
       

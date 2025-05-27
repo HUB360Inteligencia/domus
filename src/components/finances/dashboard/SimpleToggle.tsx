@@ -25,7 +25,7 @@ export function SimpleToggle({ value, onValueChange, options, className }: Simpl
         <ToggleGroupItem
           key={option.value}
           value={option.value}
-          className="text-xs px-3 py-1 data-[state=on]:bg-white data-[state=on]:shadow-sm"
+          className="text-xs px-2 py-1 data-[state=on]:bg-white data-[state=on]:shadow-sm"
         >
           {option.label}
         </ToggleGroupItem>
