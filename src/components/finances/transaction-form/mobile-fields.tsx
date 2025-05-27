@@ -72,14 +72,17 @@ export function MobileFields({ form, properties = [] }: MobileFieldsProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Propriedade</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ''}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                value={field.value || "none"}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma propriedade" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma propriedade</SelectItem>
+                  <SelectItem value="none">Nenhuma propriedade</SelectItem>
                   {properties.map((property) => (
                     <SelectItem key={property.value} value={property.value}>
                       {property.label}
