@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { PropertyFormData, Property } from '@/types/property';
 import { BasicInfoSection } from './form-sections/basic-info-section';
@@ -61,6 +60,8 @@ export function PropertyForm({
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [showMap, setShowMap] = useState(false);
 
   // Initialize form data with initial data
   useEffect(() => {
@@ -106,6 +107,14 @@ export function PropertyForm({
       if (initialData.image_url) {
         setImagePreview(initialData.image_url);
       }
+
+      // Extract features from initialData
+      if (initialData.features && typeof initialData.features === 'object') {
+        const features = Object.keys(initialData.features).filter(key => 
+          initialData.features[key] === true
+        );
+        setSelectedFeatures(features);
+      }
     }
   }, [initialData]);
 
@@ -115,6 +124,40 @@ export function PropertyForm({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleFeatureToggle = (feature: string) => {
+    setSelectedFeatures(prev => {
+      const newFeatures = prev.includes(feature)
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature];
+      
+      // Update form data features
+      const featuresObject = newFeatures.reduce((acc, feat) => {
+        acc[feat] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      
+      handleInputChange('features', featuresObject);
+      return newFeatures;
+    });
+  };
+
+  const handleAddressFound = (address: {
+    address: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  }) => {
+    handleInputChange('address', address.address);
+    handleInputChange('neighborhood', address.neighborhood);
+    handleInputChange('city', address.city);
+    handleInputChange('state', address.state);
+  };
+
+  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
+    handleInputChange('latitude', coords.lat);
+    handleInputChange('longitude', coords.lng);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,6 +193,9 @@ export function PropertyForm({
       <LocationSection
         formData={formData}
         onInputChange={handleInputChange}
+        showMap={showMap}
+        onAddressFound={handleAddressFound}
+        onCoordsChange={handleCoordsChange}
       />
       
       <FinancialSection
@@ -160,6 +206,8 @@ export function PropertyForm({
       <CharacteristicsSection
         formData={formData}
         onInputChange={handleInputChange}
+        selectedFeatures={selectedFeatures}
+        onFeatureToggle={handleFeatureToggle}
       />
       
       <TenantInfoSection
