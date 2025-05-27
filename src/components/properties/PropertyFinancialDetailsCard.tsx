@@ -29,7 +29,15 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
   };
 
   const formatROI = (roi: number | null) => {
-    if (roi === null) return 'N/A';
+    if (roi === null) {
+      return {
+        value: 'N/A',
+        isPositive: false,
+        icon: TrendingUp,
+        colorClass: 'text-muted-foreground'
+      };
+    }
+    
     const isPositive = roi >= 0;
     return {
       value: `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`,
