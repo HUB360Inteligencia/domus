@@ -12,17 +12,33 @@ interface CategoryFieldProps {
 
 export function CategoryField({ form, categories }: CategoryFieldProps) {
   // More strict filtering to ensure no empty values
-  const validCategories = categories.filter(category => 
-    category && 
-    category.value && 
-    typeof category.value === 'string' && 
-    category.value.trim() !== '' && 
-    category.value !== 'undefined' &&
-    category.value !== 'null' &&
-    category.label &&
-    typeof category.label === 'string' &&
-    category.label.trim() !== ''
-  );
+  const validCategories = categories.filter(category => {
+    // Log any problematic categories for debugging
+    if (!category || !category.value || !category.label) {
+      console.log('Filtering out invalid category:', category);
+      return false;
+    }
+    
+    const hasValidValue = category.value && 
+                         typeof category.value === 'string' && 
+                         category.value.trim() !== '' && 
+                         category.value !== 'undefined' &&
+                         category.value !== 'null' &&
+                         category.value !== 'empty';
+                         
+    const hasValidLabel = category.label &&
+                         typeof category.label === 'string' &&
+                         category.label.trim() !== '';
+    
+    if (!hasValidValue || !hasValidLabel) {
+      console.log('Filtering out category with invalid value/label:', category);
+      return false;
+    }
+    
+    return true;
+  });
+
+  console.log('Valid categories for select:', validCategories);
 
   return (
     <FormField
@@ -33,7 +49,7 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
           <FormLabel>Categoria</FormLabel>
           <Select 
             onValueChange={field.onChange} 
-            defaultValue={field.value || undefined}
+            value={field.value || undefined}
           >
             <FormControl>
               <SelectTrigger>
@@ -41,11 +57,24 @@ export function CategoryField({ form, categories }: CategoryFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {validCategories.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
+              {validCategories.length > 0 ? (
+                validCategories.map((category) => {
+                  // Additional safety check before rendering
+                  if (!category.value || category.value.trim() === '') {
+                    console.error('Attempting to render SelectItem with empty value:', category);
+                    return null;
+                  }
+                  return (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  );
+                })
+              ) : (
+                <SelectItem value="no-categories" disabled>
+                  Nenhuma categoria disponível
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
           <FormMessage />

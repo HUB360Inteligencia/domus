@@ -46,29 +46,58 @@ export function TransactionFilters({
   }).length;
 
   // More strict filtering to ensure no empty values
-  const validCategories = categories.filter(cat => 
-    cat && 
-    cat.value && 
-    typeof cat.value === 'string' && 
-    cat.value.trim() !== '' && 
-    cat.value !== 'undefined' &&
-    cat.value !== 'null' &&
-    cat.label &&
-    typeof cat.label === 'string' &&
-    cat.label.trim() !== ''
-  );
+  const validCategories = categories.filter(cat => {
+    if (!cat || !cat.value || !cat.label) {
+      console.log('Filtering out invalid category:', cat);
+      return false;
+    }
+    
+    const hasValidValue = cat.value && 
+                         typeof cat.value === 'string' && 
+                         cat.value.trim() !== '' && 
+                         cat.value !== 'undefined' &&
+                         cat.value !== 'null' &&
+                         cat.value !== 'empty';
+                         
+    const hasValidLabel = cat.label &&
+                         typeof cat.label === 'string' &&
+                         cat.label.trim() !== '';
+    
+    if (!hasValidValue || !hasValidLabel) {
+      console.log('Filtering out category with invalid value/label:', cat);
+      return false;
+    }
+    
+    return true;
+  });
 
-  const validProperties = properties.filter(prop => 
-    prop && 
-    prop.value && 
-    typeof prop.value === 'string' && 
-    prop.value.trim() !== '' && 
-    prop.value !== 'undefined' &&
-    prop.value !== 'null' &&
-    prop.label &&
-    typeof prop.label === 'string' &&
-    prop.label.trim() !== ''
-  );
+  const validProperties = properties.filter(prop => {
+    if (!prop || !prop.value || !prop.label) {
+      console.log('Filtering out invalid property:', prop);
+      return false;
+    }
+    
+    const hasValidValue = prop.value && 
+                         typeof prop.value === 'string' && 
+                         prop.value.trim() !== '' && 
+                         prop.value !== 'undefined' &&
+                         prop.value !== 'null' &&
+                         prop.value !== 'empty';
+                         
+    const hasValidLabel = prop.label &&
+                         typeof prop.label === 'string' &&
+                         prop.label.trim() !== '';
+    
+    if (!hasValidValue || !hasValidLabel) {
+      console.log('Filtering out property with invalid value/label:', prop);
+      return false;
+    }
+    
+    return true;
+  });
+
+  console.log('Valid categories for filters:', validCategories);
+  console.log('Valid properties for filters:', validProperties);
 
   return (
     <Card>
@@ -163,9 +192,20 @@ export function TransactionFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
-                {validCategories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                ))}
+                {validCategories.length > 0 ? (
+                  validCategories.map((cat) => {
+                    // Additional safety check before rendering
+                    if (!cat.value || cat.value.trim() === '') {
+                      console.error('Attempting to render SelectItem with empty value:', cat);
+                      return null;
+                    }
+                    return (
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    );
+                  })
+                ) : (
+                  <SelectItem value="no-categories" disabled>Nenhuma categoria disponível</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -185,9 +225,16 @@ export function TransactionFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All properties</SelectItem>
-                  {validProperties.map((prop) => (
-                    <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
-                  ))}
+                  {validProperties.map((prop) => {
+                    // Additional safety check before rendering
+                    if (!prop.value || prop.value.trim() === '') {
+                      console.error('Attempting to render SelectItem with empty value:', prop);
+                      return null;
+                    }
+                    return (
+                      <SelectItem key={prop.value} value={prop.value}>{prop.label}</SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
