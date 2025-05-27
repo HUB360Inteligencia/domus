@@ -1031,6 +1031,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_financial_transactions_category"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
         ]
       }
       goals: {

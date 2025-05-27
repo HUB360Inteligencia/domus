@@ -17,34 +17,18 @@ export function CategoryField({ form, categories, transactionType }: CategoryFie
     ? categories.filter(category => category.type === transactionType)
     : categories;
 
-  // More strict filtering to ensure no empty values
+  // Ensure valid categories for rendering
   const validCategories = filteredCategories.filter(category => {
-    // Log any problematic categories for debugging
-    if (!category || !category.value || !category.label) {
-      console.log('Filtering out invalid category:', category);
-      return false;
-    }
-    
     const hasValidValue = category.value && 
                          typeof category.value === 'string' && 
-                         category.value.trim() !== '' && 
-                         category.value !== 'undefined' &&
-                         category.value !== 'null' &&
-                         category.value !== 'empty';
+                         category.value.trim() !== '';
                          
     const hasValidLabel = category.label &&
                          typeof category.label === 'string' &&
                          category.label.trim() !== '';
     
-    if (!hasValidValue || !hasValidLabel) {
-      console.log('Filtering out category with invalid value/label:', category);
-      return false;
-    }
-    
-    return true;
+    return hasValidValue && hasValidLabel;
   });
-
-  console.log('Valid categories for select:', validCategories);
 
   return (
     <FormField
@@ -64,18 +48,11 @@ export function CategoryField({ form, categories, transactionType }: CategoryFie
             </FormControl>
             <SelectContent>
               {validCategories.length > 0 ? (
-                validCategories.map((category) => {
-                  // Additional safety check before rendering
-                  if (!category.value || category.value.trim() === '') {
-                    console.error('Attempting to render SelectItem with empty value:', category);
-                    return null;
-                  }
-                  return (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  );
-                })
+                validCategories.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))
               ) : (
                 <SelectItem value="no-categories" disabled>
                   Nenhuma categoria disponível

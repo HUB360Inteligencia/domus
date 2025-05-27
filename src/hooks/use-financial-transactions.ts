@@ -117,7 +117,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     ...tx,
     // Ensure transaction_type is properly typed
     transaction_type: tx.transaction_type === 'income' ? 'income' : 'expense',
-    // Use category as is since it's now just a string/ID reference
+    // Use category as is since it's now a UUID reference
     category: tx.category,
     // Add category name from the join
     category_name: tx.financial_categories?.name || 'Categoria não encontrada',
@@ -129,49 +129,13 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     name: tx.name || tx.description || 'Transação sem nome',
   }));
 
-  // Upload receipt and get URL
-  const uploadReceipt = async (file: File): Promise<string | null> => {
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) throw new Error('User not authenticated');
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `${user.data.user.id}/${fileName}`;
-
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('transaction_receipts')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading receipt:', uploadError);
-        throw uploadError;
-      }
-
-      // Get the public URL
-      const { data } = supabase.storage
-        .from('transaction_receipts')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Receipt upload error:', error);
-      return null;
-    }
-  };
-
   // Create transaction
   const { mutateAsync: createTransaction, isPending: isCreating } = useMutation({
     mutationFn: async (transaction: TransactionFormData) => {
-      // Handle receipt upload if a file is provided
-      let receipt_url = transaction.receipt_url;
-
       const { data, error } = await supabase
         .from('financial_transactions')
         .insert([{
           ...transaction,
-          receipt_url,
           user_id: (await supabase.auth.getUser()).data.user?.id
         }])
         .select();

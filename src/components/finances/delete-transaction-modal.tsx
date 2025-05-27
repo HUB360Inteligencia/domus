@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 interface DeleteTransactionModalProps {
   isOpen: boolean;
@@ -30,11 +31,18 @@ export function DeleteTransactionModal({
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tem certeza que deseja excluir a transação "{transactionName}"?
-            Esta ação não pode ser desfeita.
-          </AlertDialogDescription>
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir a transação "{transactionName}"?
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </div>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose} disabled={isDeleting}>
