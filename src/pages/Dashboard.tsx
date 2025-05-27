@@ -1,31 +1,17 @@
 
 import React from 'react';
 import { PageHeader } from '@/components/ui/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, TrendingDown, Home, DollarSign, Calendar, BarChart3, Target, PieChart } from 'lucide-react';
+import { Plus, Home, DollarSign, TrendingUp, Percent, Building, Target, BarChart3, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useProperties } from '@/hooks/use-properties';
-import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
-import { useRealRentalData } from '@/hooks/use-real-rental-data';
+import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { formatCurrency } from '@/utils/currency';
 
 export default function Dashboard() {
-  const { properties } = useProperties();
-  const { transactions } = useFinancialTransactions();
-  const { kpiData } = useRealRentalData();
+  const metrics = useDashboardMetrics();
 
-  // Calculate basic metrics
-  const totalProperties = properties.length;
-  const totalRevenue = transactions
-    .filter(tx => tx.transaction_type === 'income')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const totalExpenses = transactions
-    .filter(tx => tx.transaction_type === 'expense')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const netIncome = totalRevenue - totalExpenses;
-
-  // Get latest metrics for preview
-  const latestMetrics = kpiData.length > 0 ? kpiData[0] : null;
+  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
 
   return (
     <div className="container py-6">
@@ -49,194 +35,148 @@ export default function Dashboard() {
         </div>
       </PageHeader>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Propriedades</CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalProperties}</div>
-            <p className="text-xs text-muted-foreground">propriedades no portfólio</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}
-            </div>
-            <p className="text-xs text-muted-foreground">receitas acumuladas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpenses)}
-            </div>
-            <p className="text-xs text-muted-foreground">despesas acumuladas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro Líquido</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netIncome)}
-            </div>
-            <p className="text-xs text-muted-foreground">receitas - despesas</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Analytics Preview Section */}
-      {latestMetrics && (
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Análises Avançadas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {latestMetrics.value}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{latestMetrics.title}</p>
-                  <div className="flex items-center justify-center mt-1">
-                    {latestMetrics.trend === 'up' ? (
-                      <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
-                    )}
-                    <span className={`text-xs ${latestMetrics.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-                      {latestMetrics.change}
-                    </span>
-                  </div>
-                </div>
-                
-                {kpiData.slice(1, 3).map((metric, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-2xl font-bold">
-                      {metric.value}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{metric.title}</p>
-                    <div className="flex items-center justify-center mt-1">
-                      {metric.trend === 'up' ? (
-                        <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
-                      )}
-                      <span className={`text-xs ${metric.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-                        {metric.change}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                <Button asChild className="flex-1">
-                  <Link to="/reports">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Ver Relatórios Completos
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/reports?tab=analytics">
-                    <Target className="mr-2 h-4 w-4" />
-                    Análises Avançadas
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="space-y-8">
+        {/* Seção 1: Portfólio de Imóveis */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Portfólio de Imóveis</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricCard
+              title="Total de Propriedades"
+              value={metrics.totalProperties.toString()}
+              subtitle="propriedades no portfólio"
+              icon={<Building />}
+              colorScheme="blue"
+            />
+            <MetricCard
+              title="Propriedades Locadas"
+              value={metrics.rentedProperties.toString()}
+              subtitle={`de ${metrics.totalProperties} propriedades`}
+              icon={<Home />}
+              colorScheme="green"
+            />
+            <MetricCard
+              title="Taxa de Ocupação"
+              value={formatPercentage(metrics.occupancyRate)}
+              subtitle="imóveis ocupados"
+              icon={<Percent />}
+              colorScheme="purple"
+            />
+          </div>
         </div>
-      )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestão de Propriedades</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" asChild>
+        {/* Seção 2: Patrimônio */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Patrimônio</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricCard
+              title="Valor de Compra Total"
+              value={formatCurrency(metrics.totalPurchaseValue)}
+              subtitle="investimento total realizado"
+              icon={<DollarSign />}
+              colorScheme="orange"
+            />
+            <MetricCard
+              title="Valor de Mercado Atual"
+              value={formatCurrency(metrics.totalMarketValue)}
+              subtitle="valor patrimonial atual"
+              icon={<TrendingUp />}
+              colorScheme="blue"
+              size="large"
+            />
+            <MetricCard
+              title="Crescimento Patrimonial"
+              value={formatPercentage(metrics.assetGrowthPercentage)}
+              subtitle="valorização do portfólio"
+              icon={<BarChart3 />}
+              colorScheme={metrics.assetGrowthPercentage >= 0 ? 'green' : 'red'}
+              trend={metrics.assetGrowthPercentage >= 0 ? 'up' : 'down'}
+              trendValue={`${formatCurrency(metrics.totalMarketValue - metrics.totalPurchaseValue)}`}
+            />
+          </div>
+        </div>
+
+        {/* Seção 3: Performance Financeira Mensal */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Performance Financeira (Mês Atual)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricCard
+              title="Receita Mensal"
+              value={formatCurrency(metrics.monthlyRevenue)}
+              subtitle="receitas do mês"
+              icon={<DollarSign />}
+              colorScheme="green"
+              trend={metrics.revenueTrend}
+              trendValue={`${metrics.revenueTrend === 'up' ? '+' : metrics.revenueTrend === 'down' ? '-' : ''}${formatPercentage(Math.abs(10))}`}
+            />
+            <MetricCard
+              title="Despesas Mensais"
+              value={formatCurrency(metrics.monthlyExpenses)}
+              subtitle="despesas do mês"
+              icon={<DollarSign />}
+              colorScheme="red"
+              trend={metrics.expensesTrend === 'up' ? 'down' : metrics.expensesTrend === 'down' ? 'up' : 'neutral'}
+              trendValue={`${metrics.expensesTrend === 'up' ? '+' : metrics.expensesTrend === 'down' ? '-' : ''}${formatPercentage(Math.abs(5))}`}
+            />
+            <MetricCard
+              title="Lucro Líquido"
+              value={formatCurrency(metrics.monthlyProfit)}
+              subtitle="receitas - despesas"
+              icon={<Target />}
+              colorScheme={metrics.monthlyProfit >= 0 ? 'green' : 'red'}
+              trend={metrics.profitTrend}
+              trendValue={`${metrics.profitTrend === 'up' ? '+' : metrics.profitTrend === 'down' ? '-' : ''}${formatPercentage(Math.abs(15))}`}
+              size="large"
+            />
+          </div>
+        </div>
+
+        {/* Seção 4: Rentabilidade */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Rentabilidade Anual</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <MetricCard
+              title="ROI sobre Valor Investido"
+              value={formatPercentage(metrics.roiOnInvestment)}
+              subtitle="retorno sobre investimento realizado"
+              icon={<TrendingUp />}
+              colorScheme="purple"
+              size="large"
+            />
+            <MetricCard
+              title="Yield sobre Valor de Mercado"
+              value={formatPercentage(metrics.currentYield)}
+              subtitle="retorno sobre valor atual de mercado"
+              icon={<Percent />}
+              colorScheme="blue"
+              size="large"
+            />
+          </div>
+        </div>
+
+        {/* Seção 5: Ações Rápidas */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Ações Rápidas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Button variant="outline" className="h-20 flex-col gap-2" asChild>
               <Link to="/properties">
-                <Home className="mr-2 h-4 w-4" />
-                Ver Todas as Propriedades
+                <Home className="h-6 w-6" />
+                Gerenciar Propriedades
               </Link>
             </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/properties/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Propriedade
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestão Financeira</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" asChild>
+            <Button variant="outline" className="h-20 flex-col gap-2" asChild>
               <Link to="/finances/dashboard">
-                <TrendingUp className="mr-2 h-4 w-4" />
+                <BarChart3 className="h-6 w-6" />
                 Painel Financeiro
               </Link>
             </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/finances/transactions">
-                <DollarSign className="mr-2 h-4 w-4" />
-                Transações
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestão de Locações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" asChild>
+            <Button variant="outline" className="h-20 flex-col gap-2" asChild>
               <Link to="/contracts">
-                <PieChart className="mr-2 h-4 w-4" />
-                Ver Contratos de Locação
+                <Calendar className="h-6 w-6" />
+                Contratos de Locação
               </Link>
             </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/reports">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Análises Avançadas
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/activities">
-                <Calendar className="mr-2 h-4 w-4" />
-                Ver Atividades
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
