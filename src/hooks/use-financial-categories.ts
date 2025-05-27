@@ -12,6 +12,11 @@ export interface FinancialCategory {
   created_at: string;
 }
 
+export interface CategoryFormData {
+  name: string;
+  type: 'income' | 'expense';
+}
+
 // Categorias padrão de receita para imóveis
 const DEFAULT_INCOME_CATEGORIES = [
   'Aluguel',
@@ -53,7 +58,7 @@ export const useFinancialCategories = () => {
   const queryClient = useQueryClient();
 
   // Fetch categories
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['financial-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -127,7 +132,7 @@ export const useFinancialCategories = () => {
 
   // Create category
   const { mutateAsync: createCategory, isPending: isCreating } = useMutation({
-    mutationFn: async (category: { name: string; type: 'income' | 'expense' }) => {
+    mutationFn: async (category: CategoryFormData) => {
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('User not authenticated');
 
@@ -155,6 +160,33 @@ export const useFinancialCategories = () => {
     onError: (error) => {
       console.error('Failed to create category:', error);
       toast.error('Erro ao criar categoria');
+    }
+  });
+
+  // Update category
+  const { mutateAsync: updateCategory, isPending: isUpdating } = useMutation({
+    mutationFn: async ({ id, ...category }: CategoryFormData & { id: string }) => {
+      const { data, error } = await supabase
+        .from('financial_categories')
+        .update(category)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating category:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-categories'] });
+      toast.success('Categoria atualizada com sucesso');
+    },
+    onError: (error) => {
+      console.error('Failed to update category:', error);
+      toast.error('Erro ao atualizar categoria');
     }
   });
 
@@ -213,11 +245,14 @@ export const useFinancialCategories = () => {
 
   return {
     categories,
-    isLoading,
+    isLoading: isLoadingCategories,
+    isLoadingCategories,
     createCategory,
+    updateCategory,
     deleteCategory,
     initializeDefaultCategories,
     isCreating,
+    isUpdating,
     isDeleting,
     categoryOptions,
     incomeCategoryOptions,
