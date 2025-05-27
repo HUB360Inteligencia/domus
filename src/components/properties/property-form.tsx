@@ -1,47 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { PropertyFormData, PropertyStatus, PropertyType, FurnishedStatus, Property } from '@/types/property';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { X, Upload, MapPin, DollarSign, Home, FileText, Users, Wrench } from 'lucide-react';
-import { PropertyMap } from './property-map';
-import { CEPLookup } from './cep-lookup';
+import { PropertyFormData, Property } from '@/types/property';
 import { toast } from 'sonner';
 import { PropertyFormEnhanced } from './property-form-enhanced';
 
-const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
-  { value: 'apartment', label: 'Apartamento' },
-  { value: 'house', label: 'Casa' },
-  { value: 'commercial', label: 'Comercial' },
-  { value: 'land', label: 'Terreno' },
-  { value: 'rural', label: 'Rural' },
-];
-
-const PROPERTY_STATUSES: { value: PropertyStatus; label: string }[] = [
-  { value: 'available', label: 'Disponível' },
-  { value: 'airbnb', label: 'Airbnb' },
-  { value: 'maintenance', label: 'Manutenção' },
-  { value: 'sold', label: 'Vendido' },
-];
-
-const FURNISHED_OPTIONS: { value: FurnishedStatus; label: string }[] = [
-  { value: 'not_furnished', label: 'Não Mobiliado' },
-  { value: 'partially_furnished', label: 'Semi-Mobiliado' },
-  { value: 'fully_furnished', label: 'Mobiliado' },
-];
-
-const PROPERTY_FEATURES = [
-  'Piscina', 'Academia', 'Churrasqueira', 'Jardim', 'Varanda', 'Sacada',
-  'Ar Condicionado', 'Aquecedor', 'Lareira', 'Closet', 'Despensa',
-  'Lavabo', 'Suíte Master', 'Banheira', 'Box Blindex', 'Piso Laminado',
-  'Piso Cerâmico', 'Portaria 24h', 'Interfone', 'Câmeras', 'Playground'
-];
+// Import the new section components
+import { BasicInfoSection } from './form-sections/basic-info-section';
+import { LocationSection } from './form-sections/location-section';
+import { FinancialSection } from './form-sections/financial-section';
+import { CharacteristicsSection } from './form-sections/characteristics-section';
+import { TenantInfoSection } from './form-sections/tenant-info-section';
+import { ImageUploadSection } from './form-sections/image-upload-section';
 
 interface PropertyFormProps {
   initialData?: Property;
@@ -214,6 +184,11 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     }
   };
 
+  const handleImageRemove = () => {
+    setImagePreview(null);
+    setImageFile(null);
+  };
+
   const handleAddressFound = (addressData: {
     address: string;
     neighborhood: string;
@@ -251,482 +226,46 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Informações Básicas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" />
-            Informações Básicas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Ex: Apartamento 2 quartos no Centro"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="type">Tipo de Imóvel</Label>
-              <Select value={formData.type} onValueChange={(value: PropertyType) => handleInputChange('type', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value: PropertyStatus) => handleInputChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Descreva as características do imóvel..."
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <BasicInfoSection 
+        formData={formData} 
+        onInputChange={handleInputChange} 
+      />
 
       {/* Localização */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Localização
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <CEPLookup
-            value={formData.zip_code}
-            onChange={(value) => handleInputChange('zip_code', value)}
-            onAddressFound={handleAddressFound}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <Label htmlFor="address">Endereço *</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Rua, Avenida..."
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="property_number">Número</Label>
-              <Input
-                id="property_number"
-                value={formData.property_number}
-                onChange={(e) => handleInputChange('property_number', e.target.value)}
-                placeholder="123"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="complement">Complemento</Label>
-              <Input
-                id="complement"
-                value={formData.complement}
-                onChange={(e) => handleInputChange('complement', e.target.value)}
-                placeholder="Apto 101, Bloco A..."
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="neighborhood">Bairro</Label>
-              <Input
-                id="neighborhood"
-                value={formData.neighborhood}
-                onChange={(e) => handleInputChange('neighborhood', e.target.value)}
-                placeholder="Centro, Copacabana..."
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="city">Cidade *</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="São Paulo"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="state">Estado *</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder="SP"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Mapa de Confirmação */}
-          {showMap && (
-            <div className="space-y-2">
-              <Label>Confirmar Localização</Label>
-              <PropertyMap
-                address={formData.address}
-                city={formData.city}
-                state={formData.state}
-                property_number={formData.property_number}
-                complement={formData.complement}
-                neighborhood={formData.neighborhood}
-                initialCoords={formData.latitude && formData.longitude ? 
-                  { lat: formData.latitude, lng: formData.longitude } : null}
-                editable={true}
-                onCoordsChange={handleCoordsChange}
-                className="w-full"
-              />
-              {formData.latitude && formData.longitude && (
-                <Badge variant="secondary" className="text-xs">
-                  Coordenadas: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-                </Badge>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <LocationSection 
+        formData={formData} 
+        onInputChange={handleInputChange}
+        showMap={showMap}
+        onAddressFound={handleAddressFound}
+        onCoordsChange={handleCoordsChange}
+      />
 
       {/* Valores Financeiros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Valores Financeiros
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="value">Valor de Mercado do Imóvel *</Label>
-              <Input
-                id="value"
-                type="number"
-                value={formData.value}
-                onChange={(e) => handleInputChange('value', Number(e.target.value))}
-                placeholder="500000"
-                min="0"
-                step="1000"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="rental_value">Valor de Aluguel</Label>
-              <Input
-                id="rental_value"
-                type="number"
-                value={formData.rental_value}
-                onChange={(e) => handleInputChange('rental_value', Number(e.target.value))}
-                placeholder="2500"
-                min="0"
-                step="100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="purchase_value">Valor de Compra</Label>
-              <Input
-                id="purchase_value"
-                type="number"
-                value={formData.purchase_value || ''}
-                onChange={(e) => handleInputChange('purchase_value', e.target.value ? Number(e.target.value) : null)}
-                placeholder="450000"
-                min="0"
-                step="1000"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="purchase_date">Data de Compra</Label>
-              <Input
-                id="purchase_date"
-                type="date"
-                value={formData.purchase_date || ''}
-                onChange={(e) => handleInputChange('purchase_date', e.target.value || null)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="condo_fee">Taxa de Condomínio</Label>
-            <Input
-              id="condo_fee"
-              type="number"
-              value={formData.condo_fee}
-              onChange={(e) => handleInputChange('condo_fee', Number(e.target.value))}
-              placeholder="300"
-              min="0"
-              step="50"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <FinancialSection 
+        formData={formData} 
+        onInputChange={handleInputChange} 
+      />
 
       {/* Características */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Características
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="area">Área (m²)</Label>
-              <Input
-                id="area"
-                type="number"
-                value={formData.area}
-                onChange={(e) => handleInputChange('area', Number(e.target.value))}
-                placeholder="100"
-                min="0"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="bedrooms">Quartos</Label>
-              <Input
-                id="bedrooms"
-                type="number"
-                value={formData.bedrooms}
-                onChange={(e) => handleInputChange('bedrooms', Number(e.target.value))}
-                placeholder="2"
-                min="0"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="bathrooms">Banheiros</Label>
-              <Input
-                id="bathrooms"
-                type="number"
-                value={formData.bathrooms}
-                onChange={(e) => handleInputChange('bathrooms', Number(e.target.value))}
-                placeholder="1"
-                min="0"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="garage_spots">Vagas</Label>
-              <Input
-                id="garage_spots"
-                type="number"
-                value={formData.garage_spots}
-                onChange={(e) => handleInputChange('garage_spots', Number(e.target.value))}
-                placeholder="1"
-                min="0"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="floor_number">Andar</Label>
-              <Input
-                id="floor_number"
-                type="number"
-                value={formData.floor_number}
-                onChange={(e) => handleInputChange('floor_number', Number(e.target.value))}
-                placeholder="5"
-                min="0"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="furnished">Mobiliado</Label>
-              <Select value={formData.furnished} onValueChange={(value: FurnishedStatus) => handleInputChange('furnished', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FURNISHED_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label>Características Adicionais</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-              {PROPERTY_FEATURES.map(feature => (
-                <div key={feature} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={feature}
-                    checked={selectedFeatures.includes(feature)}
-                    onCheckedChange={() => handleFeatureToggle(feature)}
-                  />
-                  <Label htmlFor={feature} className="text-sm">
-                    {feature}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <CharacteristicsSection 
+        formData={formData} 
+        onInputChange={handleInputChange}
+        selectedFeatures={selectedFeatures}
+        onFeatureToggle={handleFeatureToggle}
+      />
 
       {/* Informações de Inquilino e Imobiliária */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Informações de Inquilino e Imobiliária
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="tenant_name">Nome do Inquilino</Label>
-              <Input
-                id="tenant_name"
-                value={formData.tenant_name}
-                onChange={(e) => handleInputChange('tenant_name', e.target.value)}
-                placeholder="João Silva"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="tenant_contact">Contato do Inquilino</Label>
-              <Input
-                id="tenant_contact"
-                value={formData.tenant_contact}
-                onChange={(e) => handleInputChange('tenant_contact', e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="agency_name">Nome da Imobiliária</Label>
-              <Input
-                id="agency_name"
-                value={formData.agency_name}
-                onChange={(e) => handleInputChange('agency_name', e.target.value)}
-                placeholder="Imobiliária XYZ"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="agency_responsible">Responsável</Label>
-              <Input
-                id="agency_responsible"
-                value={formData.agency_responsible}
-                onChange={(e) => handleInputChange('agency_responsible', e.target.value)}
-                placeholder="Maria Santos"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="agency_contact">Contato da Imobiliária</Label>
-              <Input
-                id="agency_contact"
-                value={formData.agency_contact}
-                onChange={(e) => handleInputChange('agency_contact', e.target.value)}
-                placeholder="(11) 3333-3333"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TenantInfoSection 
+        formData={formData} 
+        onInputChange={handleInputChange} 
+      />
 
       {/* Upload de Imagem */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Imagem do Imóvel
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="image">Selecionar Imagem</Label>
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="mt-1"
-              />
-            </div>
-            
-            {imagePreview && (
-              <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => {
-                    setImagePreview(null);
-                    setImageFile(null);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ImageUploadSection 
+        imagePreview={imagePreview}
+        onImageChange={handleImageChange}
+        onImageRemove={handleImageRemove}
+      />
 
       {/* Componente de melhorias avançadas */}
       <PropertyFormEnhanced 
