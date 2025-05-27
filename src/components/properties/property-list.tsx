@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
-import { Building, Search, Plus, Loader2, Filter, AlertCircle, LayoutGrid, LayoutList, Map as MapIcon, BarChart3 } from 'lucide-react';
+import { Building, Search, Plus, Loader2, Filter, AlertCircle, LayoutGrid, LayoutList, Map as MapIcon, BarChart3, Table as TableIcon } from 'lucide-react';
 import { Property } from '@/types/property';
 import { PropertyCard } from '@/components/property-card';
+import { PropertyTable } from './property-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +27,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'card' | 'list' | 'map' | 'advanced' | 'map-debug' | 'map-debug-advanced'>('card');
+  const [viewMode, setViewMode] = useState<'card' | 'list' | 'table' | 'map' | 'advanced'>('card');
   
   // Clear error after 5 seconds
   useEffect(() => {
@@ -65,6 +67,16 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
     });
   };
 
+  const handlePropertyEdit = (id: string) => {
+    // Navigate to edit page - this would be handled by parent component
+    console.log('Edit property:', id);
+  };
+
+  const handlePropertyDelete = (id: string) => {
+    // Handle delete - this would be handled by parent component
+    console.log('Delete property:', id);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -92,56 +104,62 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar imóveis..." 
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Only show filters for non-table views since table has its own filters */}
+      {viewMode !== 'table' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar imóveis..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterType || "all"} onValueChange={(value) => setFilterType(value === "all" ? null : value)}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="apartment">Apartamento</SelectItem>
+                <SelectItem value="house">Casa</SelectItem>
+                <SelectItem value="commercial">Comercial</SelectItem>
+                <SelectItem value="land">Terreno</SelectItem>
+                <SelectItem value="rural">Rural</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select value={filterStatus || "all"} onValueChange={(value) => setFilterStatus(value === "all" ? null : value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="available">Disponível</SelectItem>
+                <SelectItem value="rented">Alugado</SelectItem>
+                <SelectItem value="airbnb">Airbnb</SelectItem>
+                <SelectItem value="maintenance">Em manutenção</SelectItem>
+                <SelectItem value="sold">Vendido</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={filterType || "all"} onValueChange={(value) => setFilterType(value === "all" ? null : value)}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Filtrar por tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="apartment">Apartamento</SelectItem>
-              <SelectItem value="house">Casa</SelectItem>
-              <SelectItem value="commercial">Comercial</SelectItem>
-              <SelectItem value="land">Terreno</SelectItem>
-              <SelectItem value="rural">Rural</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Select value={filterStatus || "all"} onValueChange={(value) => setFilterStatus(value === "all" ? null : value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="available">Disponível</SelectItem>
-              <SelectItem value="rented">Alugado</SelectItem>
-              <SelectItem value="airbnb">Airbnb</SelectItem>
-              <SelectItem value="maintenance">Em manutenção</SelectItem>
-              <SelectItem value="sold">Vendido</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      )}
 
       <div className="flex justify-center mb-2">
-        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'card' | 'list' | 'map' | 'advanced')}>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as any)}>
           <ToggleGroupItem value="card" aria-label="View as cards">
             <LayoutGrid className="h-4 w-4" />
           </ToggleGroupItem>
           <ToggleGroupItem value="list" aria-label="View as list">
             <LayoutList className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="View as table">
+            <TableIcon className="h-4 w-4" />
           </ToggleGroupItem>
           <ToggleGroupItem value="map" aria-label="View as map">
             <MapIcon className="h-4 w-4" />
@@ -154,6 +172,15 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
       
       {filteredProperties.length > 0 ? (
         <>
+          {viewMode === 'table' && (
+            <PropertyTable 
+              properties={properties}
+              onSelect={onSelect}
+              onEdit={handlePropertyEdit}
+              onDelete={handlePropertyDelete}
+            />
+          )}
+          
           {viewMode === 'card' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {filteredProperties.map((property) => (

@@ -1,11 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { PropertyFormData, Property } from '@/types/property';
-import { toast } from 'sonner';
-import { PropertyFormEnhanced } from './property-form-enhanced';
-
-// Import the new section components
 import { BasicInfoSection } from './form-sections/basic-info-section';
 import { LocationSection } from './form-sections/location-section';
 import { FinancialSection } from './form-sections/financial-section';
@@ -14,13 +12,18 @@ import { TenantInfoSection } from './form-sections/tenant-info-section';
 import { ImageUploadSection } from './form-sections/image-upload-section';
 
 interface PropertyFormProps {
-  initialData?: Property;
+  initialData?: Property | null;
   onSubmit: (data: PropertyFormData, imageFile?: File) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = false }: PropertyFormProps) {
+export function PropertyForm({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isLoading = false 
+}: PropertyFormProps) {
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
     description: '',
@@ -47,54 +50,22 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     longitude: null,
     purchase_date: null,
     purchase_value: null,
-    tenant_name: '',
-    tenant_contact: '',
-    agency_name: '',
-    agency_responsible: '',
-    agency_contact: '',
-    square_meter_value: 0,
-    tags: [],
+    tenant_name: null,
+    tenant_contact: null,
+    agency_name: null,
+    agency_responsible: null,
+    agency_contact: null,
+    square_meter_value: null,
+    tags: null,
   });
 
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showMap, setShowMap] = useState(false);
 
+  // Initialize form data with initial data
   useEffect(() => {
     if (initialData) {
-      // Handle features properly based on the type
-      let featuresArray: string[] = [];
-      let featuresObject: Record<string, boolean> = {};
-      
-      if (Array.isArray(initialData.features)) {
-        featuresArray = initialData.features;
-        featuresObject = initialData.features.reduce((acc, feat) => {
-          acc[feat] = true;
-          return acc;
-        }, {} as Record<string, boolean>);
-      } else if (typeof initialData.features === 'object' && initialData.features) {
-        featuresObject = initialData.features as Record<string, boolean>;
-        featuresArray = Object.keys(featuresObject).filter(key => featuresObject[key]);
-      } else if (typeof initialData.features === 'string') {
-        try {
-          const parsed = JSON.parse(initialData.features);
-          if (Array.isArray(parsed)) {
-            featuresArray = parsed;
-            featuresObject = parsed.reduce((acc, feat) => {
-              acc[feat] = true;
-              return acc;
-            }, {} as Record<string, boolean>);
-          } else if (typeof parsed === 'object') {
-            featuresObject = parsed;
-            featuresArray = Object.keys(parsed).filter(key => parsed[key]);
-          }
-        } catch {
-          featuresArray = [];
-          featuresObject = {};
-        }
-      }
-
+      console.log('Initializing form with data:', initialData);
       setFormData({
         title: initialData.title || '',
         description: initialData.description || '',
@@ -107,69 +78,43 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
         zip_code: initialData.zip_code || '',
         type: initialData.type || 'apartment',
         status: initialData.status || 'available',
-        value: Number(initialData.value) || 0,
-        rental_value: Number(initialData.rental_value) || 0,
-        area: Number(initialData.area) || 0,
-        bedrooms: Number(initialData.bedrooms) || 0,
-        bathrooms: Number(initialData.bathrooms) || 0,
-        garage_spots: Number(initialData.garage_spots) || 0,
-        condo_fee: Number(initialData.condo_fee) || 0,
-        floor_number: Number(initialData.floor_number) || 0,
+        value: initialData.value || 0,
+        rental_value: initialData.rental_value || 0,
+        area: initialData.area || 0,
+        bedrooms: initialData.bedrooms || 0,
+        bathrooms: initialData.bathrooms || 0,
+        garage_spots: initialData.garage_spots || 0,
+        condo_fee: initialData.condo_fee || 0,
+        floor_number: initialData.floor_number || 0,
         furnished: initialData.furnished || 'not_furnished',
-        features: featuresObject,
-        latitude: initialData.latitude,
-        longitude: initialData.longitude,
-        purchase_date: initialData.purchase_date,
-        purchase_value: Number(initialData.purchase_value) || null,
-        tenant_name: initialData.tenant_name || '',
-        tenant_contact: initialData.tenant_contact || '',
-        agency_name: initialData.agency_name || '',
-        agency_responsible: initialData.agency_responsible || '',
-        agency_contact: initialData.agency_contact || '',
-        square_meter_value: Number(initialData.square_meter_value) || 0,
-        tags: initialData.tags || [],
+        features: (typeof initialData.features === 'object' && initialData.features !== null) 
+          ? initialData.features as Record<string, any>
+          : {},
+        latitude: initialData.latitude || null,
+        longitude: initialData.longitude || null,
+        purchase_date: initialData.purchase_date || null,
+        purchase_value: initialData.purchase_value || null,
+        tenant_name: initialData.tenant_name || null,
+        tenant_contact: initialData.tenant_contact || null,
+        agency_name: initialData.agency_name || null,
+        agency_responsible: initialData.agency_responsible || null,
+        agency_contact: initialData.agency_contact || null,
+        square_meter_value: initialData.square_meter_value || null,
+        tags: initialData.tags || null,
       });
-
-      setSelectedFeatures(featuresArray);
-
+      
       if (initialData.image_url) {
         setImagePreview(initialData.image_url);
-      }
-
-      // Show map if coordinates exist
-      if (initialData.latitude && initialData.longitude) {
-        setShowMap(true);
       }
     }
   }, [initialData]);
 
-  // Show map when we have enough address info
-  useEffect(() => {
-    if (formData.address && formData.city && formData.state) {
-      setShowMap(true);
-    }
-  }, [formData.address, formData.city, formData.state]);
-
   const handleInputChange = (field: keyof PropertyFormData, value: any) => {
+    console.log(`Updating ${field}:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleFeatureToggle = (feature: string) => {
-    const newFeatures = selectedFeatures.includes(feature)
-      ? selectedFeatures.filter(f => f !== feature)
-      : [...selectedFeatures, feature];
-    
-    setSelectedFeatures(newFeatures);
-    
-    const featuresObject = newFeatures.reduce((acc, feat) => {
-      acc[feat] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-    
-    handleInputChange('features', featuresObject);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,101 +130,62 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
   };
 
   const handleImageRemove = () => {
-    setImagePreview(null);
     setImageFile(null);
-  };
-
-  const handleAddressFound = (addressData: {
-    address: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-  }) => {
-    setFormData(prev => ({
-      ...prev,
-      address: addressData.address,
-      neighborhood: addressData.neighborhood,
-      city: addressData.city,
-      state: addressData.state,
-    }));
-  };
-
-  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
-    setFormData(prev => ({
-      ...prev,
-      latitude: coords.lat,
-      longitude: coords.lng
-    }));
+    setImagePreview(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title || !formData.address || !formData.city || !formData.state) {
-      toast.error('Preencha os campos obrigatórios');
-      return;
-    }
-
+    console.log('Submitting form data:', formData);
     onSubmit(formData, imageFile || undefined);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Informações Básicas */}
-      <BasicInfoSection 
-        formData={formData} 
-        onInputChange={handleInputChange} 
-      />
-
-      {/* Localização */}
-      <LocationSection 
-        formData={formData} 
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <BasicInfoSection
+        formData={formData}
         onInputChange={handleInputChange}
-        showMap={showMap}
-        onAddressFound={handleAddressFound}
-        onCoordsChange={handleCoordsChange}
       />
-
-      {/* Valores Financeiros */}
-      <FinancialSection 
-        formData={formData} 
-        onInputChange={handleInputChange} 
-      />
-
-      {/* Características */}
-      <CharacteristicsSection 
-        formData={formData} 
+      
+      <LocationSection
+        formData={formData}
         onInputChange={handleInputChange}
-        selectedFeatures={selectedFeatures}
-        onFeatureToggle={handleFeatureToggle}
       />
-
-      {/* Informações de Inquilino e Imobiliária */}
-      <TenantInfoSection 
-        formData={formData} 
-        onInputChange={handleInputChange} 
+      
+      <FinancialSection
+        formData={formData}
+        onInputChange={handleInputChange}
       />
-
-      {/* Upload de Imagem */}
-      <ImageUploadSection 
+      
+      <CharacteristicsSection
+        formData={formData}
+        onInputChange={handleInputChange}
+      />
+      
+      <TenantInfoSection
+        formData={formData}
+        onInputChange={handleInputChange}
+      />
+      
+      <ImageUploadSection
         imagePreview={imagePreview}
         onImageChange={handleImageChange}
         onImageRemove={handleImageRemove}
       />
 
-      {/* Componente de melhorias avançadas */}
-      <PropertyFormEnhanced 
-        formData={formData} 
-        onFormDataChange={setFormData}
-      />
-
-      {/* Botões de Ação */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end space-x-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Salvando...' : initialData ? 'Atualizar' : 'Criar'} Imóvel
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            'Salvar Imóvel'
+          )}
         </Button>
       </div>
     </form>

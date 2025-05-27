@@ -1,418 +1,302 @@
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Property } from '@/types/property';
-import { useMapbox } from '@/contexts/MapboxContext';
-import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { MapboxTokenDialog } from './mapbox-token-dialog';
+import { useMapbox } from '@/contexts/MapboxContext';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapIcon, Loader2, RefreshCw } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Settings, AlertCircle, MapPin } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PropertyMapViewProps {
   properties: Property[];
-  onSelect: (id: string) => void;
+  onSelect: (propertyId: string) => void;
 }
+
+const PROPERTY_TYPE_COLORS: Record<string, string> = {
+  apartment: '#3b82f6', // blue
+  house: '#10b981', // emerald
+  commercial: '#f59e0b', // amber
+  land: '#8b5cf6', // violet
+  rural: '#06b6d4', // cyan
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  available: '#10b981', // emerald
+  rented: '#3b82f6', // blue
+  airbnb: '#ef4444', // red
+  maintenance: '#f59e0b', // amber
+  sold: '#8b5cf6', // violet
+};
 
 export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
-  const [isMapInitialized, setIsMapInitialized] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  
-  const { getTokenForContext, getStyleForContext, isReady, error: mapboxError, retryInitialization } = useMapbox();
-  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: loaderError, retryLoad } = useMapboxLoader();
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
+  const { token, isConfigured } = useMapbox();
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Get specific token and style for property list context
-  const token = getTokenForContext('mapbox_token_property_list');
-  const mapStyle = getStyleForContext('mapbox_style_property_list');
+  // Filter properties that have coordinates
+  const propertiesWithCoords = properties.filter(
+    p => p.latitude !== null && p.longitude !== null
+  );
 
-  console.log('PropertyMapView: Current state:', { 
-    token: !!token, 
-    mapboxLoaded, 
-    mapboxLoading, 
-    mapboxError,
-    loaderError,
-    propertiesCount: properties.length,
-    isMapInitialized,
-    isReady,
-    retryCount
-  });
-
-  // Properties with coordinates
-  const propertiesWithCoords = useMemo(() => {
-    const filtered = properties.filter(p => p.latitude && p.longitude);
-    console.log('PropertyMapView: Properties with coords:', {
-      total: properties.length,
-      withCoords: filtered.length
-    });
-    return filtered;
-  }, [properties]);
-
-  // Property type icons and colors
-  const getPropertyIcon = (type: string) => {
-    const icons = {
-      'apartment': '🏢',
-      'house': '🏠',
-      'commercial': '🏪',
-      'land': '🏞️',
-      'rural': '🏡'
-    };
-    return icons[type as keyof typeof icons] || '📍';
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      'available': '#10b981',
-      'rented': '#3b82f6',
-      'airbnb': '#ef4444',
-      'maintenance': '#f59e0b',
-      'sold': '#8b5cf6'
-    };
-    return colors[status as keyof typeof colors] || '#6b7280';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels = {
-      'available': 'Disponível',
-      'rented': 'Alugado',
-      'airbnb': 'Airbnb',
-      'maintenance': 'Manutenção',
-      'sold': 'Vendido'
-    };
-    return labels[status as keyof typeof labels] || status;
-  };
-
-  // Initialize map
   useEffect(() => {
-    if (!isReady || !mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl || mapRef.current) {
-      console.log('PropertyMapView: Skipping initialization:', {
-        isReady,
-        mapboxLoaded,
-        token: !!token,
-        container: !!mapContainer.current,
-        mapboxgl: !!window.mapboxgl,
-        existingMap: !!mapRef.current
-      });
+    if (!isConfigured) {
+      setMapError('Token do Mapbox não configurado');
       return;
     }
 
-    try {
-      console.log('PropertyMapView: Initializing map');
-      
-      window.mapboxgl.accessToken = token;
-      
-      // Calculate center and zoom
-      let center = [-46.633308, -23.550520]; // Default to São Paulo
-      let zoom = 10;
-      
-      if (propertiesWithCoords.length > 0) {
-        if (propertiesWithCoords.length === 1) {
-          center = [propertiesWithCoords[0].longitude!, propertiesWithCoords[0].latitude!];
-          zoom = 15;
-        }
-      }
+    if (!mapContainer.current) return;
 
-      mapRef.current = new window.mapboxgl.Map({
+    try {
+      setIsLoading(true);
+      setMapError(null);
+
+      // Initialize Mapbox
+      mapboxgl.accessToken = token!;
+
+      // Create map
+      map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: mapStyle,
-        center,
-        zoom,
-        attributionControl: true
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [-46.633308, -23.550520], // São Paulo default
+        zoom: 10,
+        attributionControl: false
       });
 
       // Add navigation controls
-      mapRef.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      // Handle map load
-      mapRef.current.on('load', () => {
-        console.log('PropertyMapView: Map loaded successfully');
-        setIsMapInitialized(true);
-        setError(null);
-        
-        // Fit to bounds if multiple properties
-        if (propertiesWithCoords.length > 1) {
-          const bounds = new window.mapboxgl.LngLatBounds();
-          propertiesWithCoords.forEach(property => {
-            bounds.extend([property.longitude!, property.latitude!]);
-          });
-          
-          mapRef.current.fitBounds(bounds, {
-            padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 15
-          });
-        }
+      // Add attribution
+      map.current.addControl(new mapboxgl.AttributionControl({
+        compact: true
+      }), 'bottom-right');
+
+      map.current.on('load', () => {
+        setIsLoading(false);
+        console.log('Map loaded successfully');
       });
 
-      // Handle map errors
-      mapRef.current.on('error', (e: any) => {
-        console.error('PropertyMapView: Map error:', e);
-        setError('Erro no mapa: ' + (e.error?.message || 'Erro desconhecido'));
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+        setMapError('Erro ao carregar o mapa. Verifique seu token do Mapbox.');
+        setIsLoading(false);
       });
 
-    } catch (err) {
-      console.error('PropertyMapView: Error initializing map:', err);
-      setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      setMapError('Erro ao inicializar o mapa');
+      setIsLoading(false);
     }
-  }, [isReady, mapboxLoaded, token, mapStyle, propertiesWithCoords.length, retryCount]);
 
-  // Update markers when properties change
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, [token, isConfigured]);
+
+  // Add property markers
   useEffect(() => {
-    if (!mapRef.current || !isMapInitialized) {
-      return;
-    }
-
-    console.log('PropertyMapView: Updating markers for', propertiesWithCoords.length, 'properties');
+    if (!map.current || !isConfigured) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => {
-      if (marker.cleanupListeners) marker.cleanupListeners();
-      marker.remove();
-    });
-    markersRef.current = [];
+    markers.current.forEach(marker => marker.remove());
+    markers.current = [];
 
-    // Add markers for properties with coordinates
+    if (propertiesWithCoords.length === 0) return;
+
+    // Add markers for each property
     propertiesWithCoords.forEach(property => {
-      // Create custom marker element
+      if (property.latitude === null || property.longitude === null) return;
+
+      // Create marker element
       const markerElement = document.createElement('div');
-      markerElement.className = 'custom-marker';
+      markerElement.className = 'property-marker';
       markerElement.style.cssText = `
-        width: 40px;
-        height: 40px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background-color: ${getStatusColor(property.status)};
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
+        background-color: ${STATUS_COLORS[property.status] || '#6b7280'};
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         cursor: pointer;
         transition: transform 0.2s;
       `;
-      markerElement.innerHTML = getPropertyIcon(property.type);
-      
-      // Hover effect
-      const mouseEnterListener = () => {
+
+      markerElement.addEventListener('mouseenter', () => {
         markerElement.style.transform = 'scale(1.2)';
-        markerElement.style.zIndex = '1000';
-      };
-      
-      const mouseLeaveListener = () => {
+      });
+
+      markerElement.addEventListener('mouseleave', () => {
         markerElement.style.transform = 'scale(1)';
-        markerElement.style.zIndex = 'auto';
+      });
+
+      // Create popup
+      const popup = new mapboxgl.Popup({
+        offset: 15,
+        closeButton: false,
+        closeOnClick: false
+      });
+
+      const formatCurrency = (value: number) => {
+        return value.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        });
       };
-      
-      markerElement.addEventListener('mouseenter', mouseEnterListener);
-      markerElement.addEventListener('mouseleave', mouseLeaveListener);
 
-      // Create marker
-      const marker = new window.mapboxgl.Marker(markerElement)
-        .setLngLat([property.longitude!, property.latitude!])
-        .addTo(mapRef.current);
+      const getStatusLabel = (status: string) => {
+        const labels: Record<string, string> = {
+          available: 'Disponível',
+          rented: 'Alugado',
+          airbnb: 'Airbnb',
+          maintenance: 'Em manutenção',
+          sold: 'Vendido',
+        };
+        return labels[status] || status;
+      };
 
-      // Create popup content
-      const popupContent = `
-        <div class="p-3 max-w-xs">
-          ${property.image_url ? `
-            <img src="${property.image_url}" alt="${property.title}" 
-                 class="w-full h-24 object-cover rounded mb-2" />
-          ` : `
-            <div class="w-full h-24 bg-gray-200 rounded mb-2 flex items-center justify-center">
-              <span class="text-gray-500 text-2xl">${getPropertyIcon(property.type)}</span>
-            </div>
-          `}
+      const getTypeLabel = (type: string) => {
+        const labels: Record<string, string> = {
+          apartment: 'Apartamento',
+          house: 'Casa',
+          commercial: 'Comercial',
+          land: 'Terreno',
+          rural: 'Rural',
+        };
+        return labels[type] || type;
+      };
+
+      popup.setHTML(`
+        <div class="p-2 min-w-[200px]">
           <h3 class="font-semibold text-sm mb-1">${property.title}</h3>
           <p class="text-xs text-gray-600 mb-2">${property.address}, ${property.city}</p>
           <div class="flex justify-between items-center mb-2">
-            <span class="text-xs px-2 py-1 rounded text-white" 
-                  style="background-color: ${getStatusColor(property.status)}">
-              ${getStatusLabel(property.status)}
-            </span>
-            <span class="font-bold text-sm">${formatCurrency(property.value)}</span>
+            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${getTypeLabel(property.type)}</span>
+            <span class="text-xs px-2 py-1 rounded text-white" style="background-color: ${STATUS_COLORS[property.status] || '#6b7280'}">${getStatusLabel(property.status)}</span>
           </div>
+          <p class="font-semibold text-sm">${formatCurrency(property.value)}</p>
           <button 
-            class="w-full bg-blue-500 text-white text-xs py-1 px-2 rounded hover:bg-blue-600 transition-colors"
-            onclick="window.selectProperty('${property.id}')"
+            class="w-full mt-2 bg-blue-600 text-white text-xs py-1 px-2 rounded hover:bg-blue-700"
+            onclick="window.selectProperty?.('${property.id}')"
           >
             Ver Detalhes
           </button>
         </div>
-      `;
+      `);
 
-      // Create popup
-      const popup = new window.mapboxgl.Popup({
-        offset: 25,
-        closeButton: true,
-        closeOnClick: false
-      }).setHTML(popupContent);
+      // Create marker
+      const marker = new mapboxgl.Marker(markerElement)
+        .setLngLat([property.longitude, property.latitude])
+        .setPopup(popup)
+        .addTo(map.current);
 
-      // Add popup to marker
-      marker.setPopup(popup);
-
-      markersRef.current.push(marker);
-      
-      // Store cleanup functions for the marker
-      marker.cleanupListeners = () => {
-        markerElement.removeEventListener('mouseenter', mouseEnterListener);
-        markerElement.removeEventListener('mouseleave', mouseLeaveListener);
-      };
+      markers.current.push(marker);
     });
 
-    // Make selectProperty available globally for popup buttons
+    // Fit map to show all properties
+    if (propertiesWithCoords.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+      propertiesWithCoords.forEach(property => {
+        if (property.latitude !== null && property.longitude !== null) {
+          bounds.extend([property.longitude, property.latitude]);
+        }
+      });
+
+      map.current.fitBounds(bounds, {
+        padding: 50,
+        maxZoom: 15
+      });
+    }
+
+    // Global function for popup buttons
     (window as any).selectProperty = onSelect;
 
-    // Clean up event listeners
     return () => {
-      markersRef.current.forEach(marker => {
-        if (marker.cleanupListeners) marker.cleanupListeners();
-      });
+      delete (window as any).selectProperty;
     };
-  }, [propertiesWithCoords, onSelect, isMapInitialized]);
+  }, [propertiesWithCoords, onSelect, isConfigured]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      console.log('PropertyMapView: Component unmounting');
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-      setIsMapInitialized(false);
-    };
-  }, []);
-
-  const handleRetry = () => {
-    console.log('PropertyMapView: Retrying map initialization');
-    setError(null);
-    setRetryCount(prev => prev + 1);
-    retryInitialization();
-    retryLoad();
-  };
-
-  // Loading state
-  if (!isReady || mapboxLoading) {
+  if (!isConfigured) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-4">
-          <Loader2 className="mx-auto h-10 w-10 text-primary animate-spin mb-2" />
-          <p className="text-muted-foreground">Carregando configurações do mapa...</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Tentativa {retryCount + 1}
-          </p>
-        </div>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-muted rounded-lg">
+        <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Configuração do Mapbox Necessária</h3>
+        <p className="text-muted-foreground text-center mb-4 max-w-md">
+          Para visualizar o mapa de imóveis, é necessário configurar um token do Mapbox.
+        </p>
+        <Button onClick={() => setShowTokenDialog(true)}>
+          <Settings className="mr-2 h-4 w-4" />
+          Configurar Token
+        </Button>
+        
+        <MapboxTokenDialog 
+          isOpen={showTokenDialog}
+          onClose={() => setShowTokenDialog(false)}
+        />
       </div>
     );
   }
 
-  // Error states
-  if (mapboxError || loaderError || error) {
-    const errorMessage = error || mapboxError || loaderError;
+  if (mapError) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-4 max-w-md">
-          <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-2" />
-          <p className="text-muted-foreground mb-4">{errorMessage}</p>
-          <div className="flex gap-2 justify-center flex-wrap">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRetry}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Tentar Novamente
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setTokenDialogOpen(true)}
-            >
-              Configurar Token
-            </Button>
-          </div>
-          <MapboxTokenDialog 
-            isOpen={tokenDialogOpen} 
-            onClose={() => setTokenDialogOpen(false)} 
-          />
-        </div>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-muted rounded-lg">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {mapError}
+          </AlertDescription>
+        </Alert>
+        <Button 
+          onClick={() => setShowTokenDialog(true)}
+          className="mt-4"
+          variant="outline"
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Reconfigurar Token
+        </Button>
+        
+        <MapboxTokenDialog 
+          isOpen={showTokenDialog}
+          onClose={() => setShowTokenDialog(false)}
+        />
       </div>
     );
   }
-
-  // No token state
-  if (!token) {
-    return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-4 max-w-md">
-          <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
-          <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa das propriedades, configure um token Mapbox válido.
-          </p>
-          <Button onClick={() => setTokenDialogOpen(true)} variant="outline">
-            Configurar Token Temporário
-          </Button>
-          <MapboxTokenDialog 
-            isOpen={tokenDialogOpen} 
-            onClose={() => setTokenDialogOpen(false)} 
-          />
-        </div>
-      </div>
-    );
-  }
-
-  const propertiesWithoutCoords = properties.length - propertiesWithCoords.length;
 
   return (
-    <div className="relative h-full">
-      <div ref={mapContainer} className="w-full h-full rounded-lg shadow-sm" />
-      
-      {/* Info overlay */}
-      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
-        <div className="text-sm">
-          <div className="font-medium">{propertiesWithCoords.length} propriedades no mapa</div>
-          {propertiesWithoutCoords > 0 && (
-            <div className="text-muted-foreground text-xs">
-              {propertiesWithoutCoords} sem localização
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-sm">
-        <div className="text-xs font-medium mb-2">Status dos Imóveis</div>
-        <div className="space-y-1">
-          {[
-            { status: 'available', label: 'Disponível', color: '#10b981' },
-            { status: 'rented', label: 'Alugado', color: '#3b82f6' },
-            { status: 'airbnb', label: 'Airbnb', color: '#ef4444' },
-            { status: 'maintenance', label: 'Manutenção', color: '#f59e0b' },
-            { status: 'sold', label: 'Vendido', color: '#8b5cf6' }
-          ].map(({ status, label, color }) => (
-            <div key={status} className="flex items-center gap-2 text-xs">
-              <div 
-                className="w-3 h-3 rounded-full border border-white"
-                style={{ backgroundColor: color }}
-              />
-              <span>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs p-2 rounded">
-          <div>Ready: {isReady ? 'Yes' : 'No'}</div>
-          <div>Loaded: {mapboxLoaded ? 'Yes' : 'No'}</div>
-          <div>Token: {token ? 'Yes' : 'No'}</div>
-          <div>Properties: {properties.length}</div>
-          <div>Retry: {retryCount}</div>
+    <div className="relative w-full h-full">
+      {isLoading && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Carregando mapa...</p>
+          </div>
         </div>
       )}
+      
+      <div ref={mapContainer} className="w-full h-full rounded-lg" />
+      
+      {propertiesWithCoords.length === 0 && !isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="text-center">
+            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">Nenhum imóvel com coordenadas para exibir</p>
+          </div>
+        </div>
+      )}
+      
+      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-2">
+        <div className="text-xs text-muted-foreground">
+          {propertiesWithCoords.length} imóvel(eis) no mapa
+        </div>
+      </div>
     </div>
   );
 }

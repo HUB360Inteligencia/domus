@@ -1,17 +1,9 @@
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Building, MapPin, Home, Square } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { PropertyStatus } from "@/types/property";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Building, MapPin, Bed, Bath, Car, SquareIcon } from 'lucide-react';
 
 interface PropertyCardProps {
   id: string;
@@ -20,13 +12,39 @@ interface PropertyCardProps {
   city: string;
   state: string;
   type: string;
-  status: PropertyStatus;
+  status: string;
   value: number;
   area?: number;
-  square_meter_value?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  garage_spots?: number;
   imageUrl?: string;
-  onSelect?: (id: string) => void;
+  onSelect: () => void;
 }
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  apartment: 'Apartamento',
+  house: 'Casa',
+  commercial: 'Comercial',
+  land: 'Terreno',
+  rural: 'Rural',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  available: 'Disponível',
+  rented: 'Alugado',
+  airbnb: 'Airbnb',
+  maintenance: 'Em manutenção',
+  sold: 'Vendido',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  available: 'bg-emerald-500',
+  rented: 'bg-blue-500',
+  airbnb: 'bg-red-500',
+  maintenance: 'bg-amber-500',
+  sold: 'bg-purple-500',
+};
 
 export function PropertyCard({
   id,
@@ -38,108 +56,99 @@ export function PropertyCard({
   status,
   value,
   area,
-  square_meter_value,
+  bedrooms,
+  bathrooms,
+  garage_spots,
   imageUrl,
-  onSelect,
+  onSelect
 }: PropertyCardProps) {
-  const statusConfig = {
-    available: {
-      label: "Disponível",
-      color: "bg-emerald-500",
-    },
-    rented: {
-      label: "Alugado",
-      color: "bg-blue-500",
-    },
-    airbnb: {
-      label: "Airbnb",
-      color: "bg-red-500",
-    },
-    maintenance: {
-      label: "Em manutenção",
-      color: "bg-amber-500",
-    },
-    sold: {
-      label: "Vendido",
-      color: "bg-purple-500",
-    },
-  };
-
   const formatCurrency = (value: number) => {
-    return value.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
     });
   };
 
   return (
-    <Card variant="glass" className="overflow-hidden group">
-      <div className="h-40 bg-muted relative">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={onSelect}>
+      <div className="aspect-video relative overflow-hidden bg-muted">
         {imageUrl ? (
-          <>
-            <img
-              src={imageUrl}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-            <div className="image-overlay-glass opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </>
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-dark-blue-100 to-dark-blue-200">
-            <Home className="h-10 w-10 text-white/50" />
+          <div className="w-full h-full flex items-center justify-center">
+            <Building className="h-16 w-16 text-muted-foreground opacity-20" />
           </div>
         )}
-        <div
-          className={cn(
-            "absolute top-3 right-3 px-2.5 py-1 text-xs font-medium text-white rounded-full backdrop-blur-sm",
-            statusConfig[status].color
-          )}
-        >
-          {statusConfig[status].label}
-        </div>
-      </div>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="line-clamp-1">{title}</CardTitle>
-            <CardDescription className="flex items-center gap-1 mt-1">
-              <MapPin className="h-3 w-3" />
-              <span className="truncate text-xs">{address}</span>
-            </CardDescription>
-            <div className="text-xs text-muted-foreground mt-1">
-              {city}, {state}
-            </div>
-          </div>
-          <Badge variant="outline" className="text-xs rounded-full">
-            {type}
+        <div className="absolute top-2 right-2">
+          <Badge 
+            className={`text-white ${STATUS_COLORS[status] || 'bg-gray-500'}`}
+          >
+            {STATUS_LABELS[status] || status}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-xl font-bold text-petroleum-500 dark:text-white">
-          {formatCurrency(value)}
+        <div className="absolute top-2 left-2">
+          <Badge variant="secondary">
+            {PROPERTY_TYPE_LABELS[type] || type}
+          </Badge>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {status === "available" ? "Valor de venda" : "Valor do aluguel"}
-        </div>
-        
-        {area && square_meter_value && (
-          <div className="flex items-center mt-2 text-xs text-muted-foreground gap-1">
-            <Square className="h-3 w-3" />
-            <span>{area} m² ({formatCurrency(square_meter_value)}/m²)</span>
+      </div>
+      
+      <CardContent className="p-4">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg leading-tight line-clamp-2">{title}</h3>
+          
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="line-clamp-1">{address}, {city}, {state}</span>
           </div>
-        )}
+          
+          <div className="text-xl font-bold text-primary">
+            {formatCurrency(value)}
+          </div>
+          
+          {/* Property details */}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {area && (
+              <div className="flex items-center gap-1">
+                <SquareIcon className="h-4 w-4" />
+                <span>{area} m²</span>
+              </div>
+            )}
+            {bedrooms && bedrooms > 0 && (
+              <div className="flex items-center gap-1">
+                <Bed className="h-4 w-4" />
+                <span>{bedrooms}</span>
+              </div>
+            )}
+            {bathrooms && bathrooms > 0 && (
+              <div className="flex items-center gap-1">
+                <Bath className="h-4 w-4" />
+                <span>{bathrooms}</span>
+              </div>
+            )}
+            {garage_spots && garage_spots > 0 && (
+              <div className="flex items-center gap-1">
+                <Car className="h-4 w-4" />
+                <span>{garage_spots}</span>
+              </div>
+            )}
+          </div>
+          
+          <Button 
+            className="w-full mt-4" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+          >
+            Ver Detalhes
+          </Button>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full rounded-full backdrop-blur-sm bg-white/10 border border-white/20 hover:bg-white/20"
-          onClick={() => onSelect && onSelect(id)}
-        >
-          Ver detalhes
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

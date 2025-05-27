@@ -71,7 +71,7 @@ export default function Properties() {
       
       if (id) {
         // If there's an ID in the URL, redirect to the detail page
-        navigate(`/properties/detail?id=${id}`, { replace: true });
+        navigate(`/properties/${id}`, { replace: true });
       }
     }
   }, [location.search, navigate, isRedirecting]);
@@ -111,7 +111,8 @@ export default function Properties() {
   }, [properties, isLoading]);
 
   const handleSelectProperty = (id: string) => {
-    navigate(`/properties/detail?id=${id}`);
+    console.log('Navigating to property detail:', id);
+    navigate(`/properties/${id}`);
   };
 
   const handleAddNewProperty = () => {
