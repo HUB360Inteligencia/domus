@@ -179,7 +179,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     }
   }, [formData.address, formData.city, formData.state]);
 
-  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
+  const handleInputChange = <K extends keyof PropertyFormData>(field: K, value: PropertyFormData[K]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -198,10 +198,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
       return acc;
     }, {} as Record<string, boolean>);
     
-    setFormData(prev => ({
-      ...prev,
-      features: featuresObject
-    }));
+    handleInputChange('features', featuresObject);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
