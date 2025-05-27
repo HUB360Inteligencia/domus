@@ -1,235 +1,296 @@
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, BarChart3, PieChart, Target } from 'lucide-react';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { addDays } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { useRealRentalData } from '@/hooks/use-real-rental-data';
-
-// Paleta de cores em escala de cinza
-const COLORS = ['#000000', '#404040', '#808080', '#A0A0A0', '#C0C0C0'];
+import { TrendingUp, TrendingDown, Minus, Target, DollarSign, Home, Percent } from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { useAdvancedReports } from '@/hooks/use-advanced-reports';
 
 export function AdvancedAnalytics() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -180),
-    to: new Date(),
-  });
-  const [analysisType, setAnalysisType] = useState<'trend' | 'comparison' | 'projection'>('trend');
-  const [metric, setMetric] = useState<'revenue' | 'profit' | 'occupancy' | 'activeContracts'>('revenue');
+  const { metrics, isLoadingMetrics } = useAdvancedReports();
 
-  const { 
-    analyticsData, 
-    kpiData, 
-    isLoading 
-  } = useRealRentalData();
+  // Dados exemplo para os gráficos (em uma implementação real, viriam da API)
+  const monthlyTrends = [
+    { mes: 'Jan', receita: 15000, despesas: 8000, roi: 87.5 },
+    { mes: 'Fev', receita: 18000, despesas: 9200, roi: 95.7 },
+    { mes: 'Mar', receita: 16500, despesas: 8800, roi: 87.5 },
+    { mes: 'Abr', receita: 19200, despesas: 9500, roi: 102.1 },
+    { mes: 'Mai', receita: 20100, despesas: 9800, roi: 105.2 },
+    { mes: 'Jun', receita: 22500, despesas: 10200, roi: 120.6 }
+  ];
 
-  const chartData = useMemo(() => {
-    return analyticsData.map(item => ({
-      ...item,
-      netProfit: item.profit,
-      profitMargin: item.revenue > 0 ? ((item.profit / item.revenue) * 100).toFixed(1) : '0'
-    }));
-  }, [analyticsData]);
+  const propertyTypeData = [
+    { tipo: 'Apartamentos', quantidade: 12, receita: 45000 },
+    { tipo: 'Casas', quantidade: 8, receita: 32000 },
+    { tipo: 'Comercial', quantidade: 3, receita: 18000 },
+    { tipo: 'Terrenos', quantidade: 2, receita: 5000 }
+  ];
 
-  const currentMetricValue = chartData[chartData.length - 1]?.[metric] || 0;
-  const previousMetricValue = chartData[chartData.length - 2]?.[metric] || 0;
-  const metricChange = previousMetricValue > 0 ? ((currentMetricValue - previousMetricValue) / previousMetricValue * 100).toFixed(1) : '0';
+  const occupancyData = [
+    { name: 'Ocupado', value: 85, color: '#10b981' },
+    { name: 'Vago', value: 15, color: '#ef4444' }
+  ];
 
-  const getMetricLabel = (metric: string) => {
-    const labels = {
-      revenue: 'Receita de Locações',
-      profit: 'Lucro Líquido',
-      occupancy: 'Taxa de Ocupação',
-      activeContracts: 'Contratos Ativos'
-    };
-    return labels[metric as keyof typeof labels] || metric;
+  const regionAnalysis = [
+    { regiao: 'Centro', propriedades: 8, valorMedio: 450000, ocupacao: 92 },
+    { regiao: 'Zona Sul', propriedades: 6, valorMedio: 680000, ocupacao: 88 },
+    { regiao: 'Zona Norte', propriedades: 7, valorMedio: 320000, ocupacao: 85 },
+    { regiao: 'Zona Oeste', propriedades: 4, valorMedio: 280000, ocupacao: 90 }
+  ];
+
+  const getTrendIcon = (changeType: string) => {
+    switch (changeType) {
+      case 'increase':
+        return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case 'decrease':
+        return <TrendingDown className="h-4 w-4 text-red-600" />;
+      default:
+        return <Minus className="h-4 w-4 text-gray-600" />;
+    }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return value.toLocaleString('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+      currency: 'BRL',
+    });
   };
 
-  const renderTrendAnalysis = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* KPIs baseados em dados reais */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Receita Total de Locações</p>
-                <p className="text-2xl font-bold text-black">
-                  {formatCurrency(chartData.reduce((sum, item) => sum + item.revenue, 0))}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-black" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {Number(metricChange) >= 0 ? '+' : ''}{metricChange}% vs mês anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Lucro Líquido Médio</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {formatCurrency(chartData.reduce((sum, item) => sum + item.profit, 0) / Math.max(chartData.length, 1))}
-                </p>
-              </div>
-              <Target className="h-8 w-8 text-gray-800" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Margem de {chartData.length > 0 && chartData.reduce((sum, item) => sum + item.revenue, 0) > 0 
-                ? ((chartData.reduce((sum, item) => sum + item.profit, 0) / chartData.reduce((sum, item) => sum + item.revenue, 0)) * 100).toFixed(1) 
-                : '0'}%
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Taxa de Ocupação Média</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {chartData.length > 0 ? (chartData.reduce((sum, item) => sum + item.occupancy, 0) / chartData.length).toFixed(1) : '0'}%
-                </p>
-              </div>
-              <PieChart className="h-8 w-8 text-gray-600" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Baseado em contratos ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Contratos Ativos</p>
-                <p className="text-2xl font-bold text-gray-400">
-                  {chartData[chartData.length - 1]?.activeContracts || 0}
-                </p>
-              </div>
-              <BarChart3 className="h-8 w-8 text-gray-400" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Contratos de locação vigentes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Gráfico Principal */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Análise de Tendências - {getMetricLabel(metric)}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Select value={metric} onValueChange={(value: any) => setMetric(value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="revenue">Receita de Locações</SelectItem>
-                <SelectItem value="profit">Lucro Líquido</SelectItem>
-                <SelectItem value="occupancy">Taxa de Ocupação</SelectItem>
-                <SelectItem value="activeContracts">Contratos Ativos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="month" stroke="#666" />
-              <YAxis stroke="#666" />
-              <Tooltip 
-                formatter={(value) => 
-                  metric === 'occupancy' || metric === 'activeContracts' 
-                    ? `${value}${metric === 'occupancy' ? '%' : ''}`
-                    : formatCurrency(Number(value))
-                }
-                contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey={metric} 
-                stroke="#000000" 
-                fill="#404040" 
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  if (isLoading) {
+  if (isLoadingMetrics) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando dados analíticos...</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <h2 className="text-2xl font-bold">Análises Avançadas</h2>
-        <div className="flex gap-2">
-          <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-          <Select value={analysisType} onValueChange={(value: any) => setAnalysisType(value)}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="trend">Análise de Tendências</SelectItem>
-              <SelectItem value="comparison">Comparativo de Mercado</SelectItem>
-              <SelectItem value="projection">Projeções</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {metrics.map((metric, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{metric.name}</p>
+                  <p className="text-2xl font-bold">
+                    {metric.name.includes('Receita') ? formatCurrency(metric.value) : 
+                     metric.name.includes('Taxa') ? `${metric.value.toFixed(1)}%` : 
+                     `${metric.value.toFixed(1)}%`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {getTrendIcon(metric.changeType)}
+                  <span className={`text-sm ${
+                    metric.changeType === 'increase' ? 'text-green-600' : 
+                    metric.changeType === 'decrease' ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {metric.change > 0 ? '+' : ''}{metric.change}%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {analysisType === 'trend' && renderTrendAnalysis()}
-      {analysisType === 'comparison' && (
+      {/* Gráficos de Tendências */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardContent className="p-8">
-            <div className="text-center text-muted-foreground">
-              <BarChart3 className="h-12 w-12 mx-auto mb-4" />
-              <p>Análise comparativa de mercado será implementada em breve</p>
-            </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Tendência de Receitas vs Despesas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), '']}
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Legend />
+                <Area 
+                  type="monotone" 
+                  dataKey="receita" 
+                  stackId="1" 
+                  stroke="#10b981" 
+                  fill="#10b981" 
+                  fillOpacity={0.6}
+                  name="Receita"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="despesas" 
+                  stackId="2" 
+                  stroke="#ef4444" 
+                  fill="#ef4444" 
+                  fillOpacity={0.6}
+                  name="Despesas"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
-      {analysisType === 'projection' && (
+
         <Card>
-          <CardContent className="p-8">
-            <div className="text-center text-muted-foreground">
-              <TrendingUp className="h-12 w-12 mx-auto mb-4" />
-              <p>Projeções financeiras serão implementadas em breve</p>
-            </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Percent className="h-5 w-5" />
+              ROI Mensal
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis tickFormatter={(value) => `${value}%`} />
+                <Tooltip 
+                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'ROI']}
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="roi" 
+                  stroke="#3b82f6" 
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
+      </div>
+
+      {/* Análise por Tipo de Propriedade */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5" />
+              Receita por Tipo de Propriedade
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={propertyTypeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="tipo" />
+                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'Receita']}
+                />
+                <Bar dataKey="receita" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Taxa de Ocupação
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={occupancyData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {occupancyData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => `${value}%`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Análise Regional */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Análise por Região
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-4">Região</th>
+                  <th className="text-left p-4">Propriedades</th>
+                  <th className="text-left p-4">Valor Médio</th>
+                  <th className="text-left p-4">Taxa de Ocupação</th>
+                  <th className="text-left p-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regionAnalysis.map((region, index) => (
+                  <tr key={index} className="border-b hover:bg-muted/50">
+                    <td className="p-4 font-medium">{region.regiao}</td>
+                    <td className="p-4">{region.propriedades}</td>
+                    <td className="p-4">{formatCurrency(region.valorMedio)}</td>
+                    <td className="p-4">{region.ocupacao}%</td>
+                    <td className="p-4">
+                      <Badge variant={region.ocupacao >= 90 ? "default" : region.ocupacao >= 80 ? "secondary" : "destructive"}>
+                        {region.ocupacao >= 90 ? "Excelente" : region.ocupacao >= 80 ? "Bom" : "Atenção"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Insights e Recomendações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Insights e Recomendações</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800 mb-2">🎯 Oportunidade</h4>
+            <p className="text-green-700">
+              A Zona Sul apresenta o maior valor médio por propriedade. Considere investir mais nesta região para maximizar retornos.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <h4 className="font-semibold text-amber-800 mb-2">⚠️ Atenção</h4>
+            <p className="text-amber-700">
+              A taxa de ocupação da Zona Norte está abaixo da média. Revise preços ou estratégias de marketing para esta região.
+            </p>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-semibold text-blue-800 mb-2">💡 Dica</h4>
+            <p className="text-blue-700">
+              Seu ROI está crescendo consistentemente. Continue monitorando para identificar padrões sazonais.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

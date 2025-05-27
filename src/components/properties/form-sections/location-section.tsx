@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Locate, Loader2 } from 'lucide-react';
 import { PropertyFormData } from '@/types/property';
 import { PropertyMap } from '../property-map';
 import { CEPLookup } from '../cep-lookup';
+import { geocodeAddress } from '@/api/properties';
+import { toast } from 'sonner';
 
 interface LocationSectionProps {
   formData: PropertyFormData;
@@ -29,6 +32,47 @@ export function LocationSection({
   onAddressFound, 
   onCoordsChange 
 }: LocationSectionProps) {
+  const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
+
+  const handleGeocodeAddress = async () => {
+    if (!formData.address || !formData.city || !formData.state) {
+      toast.error('Preencha pelo menos o endereço, cidade e estado para buscar coordenadas');
+      return;
+    }
+
+    setIsGeocodingLocation(true);
+    try {
+      console.log('Geocoding address:', {
+        address: formData.address,
+        property_number: formData.property_number,
+        city: formData.city,
+        state: formData.state
+      });
+
+      const coords = await geocodeAddress(
+        formData.address,
+        formData.property_number,
+        formData.city,
+        formData.state
+      );
+
+      if (coords) {
+        console.log('Coordinates found:', coords);
+        onInputChange('latitude', coords.lat);
+        onInputChange('longitude', coords.lng);
+        onCoordsChange(coords);
+        toast.success('Coordenadas encontradas com sucesso!');
+      } else {
+        toast.error('Não foi possível encontrar coordenadas para este endereço');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error('Erro ao buscar coordenadas do endereço');
+    } finally {
+      setIsGeocodingLocation(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -113,8 +157,33 @@ export function LocationSection({
           </div>
         </div>
 
+        {/* Botão para buscar coordenadas automaticamente */}
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGeocodeAddress}
+            disabled={isGeocodingLocation || !formData.address || !formData.city || !formData.state}
+            className="flex items-center gap-2"
+          >
+            {isGeocodingLocation ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Locate className="h-4 w-4" />
+            )}
+            {isGeocodingLocation ? 'Buscando...' : 'Buscar Coordenadas'}
+          </Button>
+
+          {formData.latitude && formData.longitude && (
+            <Badge variant="secondary" className="text-xs">
+              <MapPin className="h-3 w-3 mr-1" />
+              {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+            </Badge>
+          )}
+        </div>
+
         {/* Mapa de Confirmação */}
-        {showMap && (
+        {showMap && formData.latitude && formData.longitude && (
           <div className="space-y-2">
             <Label>Confirmar Localização</Label>
             <PropertyMap
@@ -130,11 +199,6 @@ export function LocationSection({
               onCoordsChange={onCoordsChange}
               className="w-full"
             />
-            {formData.latitude && formData.longitude && (
-              <Badge variant="secondary" className="text-xs">
-                Coordenadas: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-              </Badge>
-            )}
           </div>
         )}
       </CardContent>
