@@ -12,6 +12,9 @@ import { PropertyContractOccupancySection } from './PropertyContractOccupancySec
 import { PropertyImageGallery } from './PropertyImageGallery';
 import { PropertyHeroHeader } from './property-hero-header';
 import { PropertyStatusCard } from './PropertyStatusCard';
+import { PropertyFinancialDetailsCard } from './PropertyFinancialDetailsCard';
+import { PropertyQuickActions } from './PropertyQuickActions';
+import { PropertyContractSection } from './PropertyContractSection';
 import { Home } from 'lucide-react';
 
 interface PropertyDetailProps {
@@ -92,7 +95,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Key Property Details */}
+            {/* Row 1: Property Details + Financial Details + Status + Quick Actions */}
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="text-lg">Detalhes do Imóvel</CardTitle>
@@ -162,12 +165,24 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               </CardContent>
             </Card>
 
-            {/* Property Status Card */}
-            <Card className="lg:col-span-1">
-              <PropertyStatusCard property={property} isLoading={isLoading} />
-            </Card>
+            {/* Financial Details Card */}
+            <div className="lg:col-span-1">
+              <PropertyFinancialDetailsCard property={property} isLoading={isLoading} />
+            </div>
 
-            {/* Property Map */}
+            {/* Property Status Card */}
+            <div className="lg:col-span-1">
+              <PropertyStatusCard property={property} isLoading={isLoading} />
+            </div>
+
+            {/* Quick Actions Card */}
+            <div className="lg:col-span-1">
+              <PropertyQuickActions property={property} isLoading={isLoading} />
+            </div>
+          </div>
+
+          {/* Row 2: Property Map spanning 2 columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">Localização</CardTitle>
@@ -184,29 +199,12 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                 )}
               </CardContent>
             </Card>
-          </div>
 
-          {/* Property Image */}
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-lg">Imagem Principal</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : property?.image_url ? (
-                <img 
-                  src={property.image_url} 
-                  alt={property.title}
-                  className="w-full h-[300px] object-cover"
-                />
-              ) : (
-                <div className="w-full h-[300px] bg-muted flex items-center justify-center">
-                  <Home className="h-16 w-16 text-muted-foreground opacity-20" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {/* Placeholder for future expansion */}
+            <div className="lg:col-span-1">
+              {/* This space is reserved for future widgets */}
+            </div>
+          </div>
 
           {/* Description */}
           <Card>
@@ -272,7 +270,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 
         {/* Contract/Occupancy Tab */}
         <TabsContent value="contracts">
-          <PropertyContractOccupancySection property={property} isLoading={isLoading} />
+          <PropertyContractSection property={property} isLoading={isLoading} />
         </TabsContent>
 
         {/* Photos Tab */}
