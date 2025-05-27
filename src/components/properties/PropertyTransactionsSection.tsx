@@ -214,7 +214,6 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
             <DatePicker
               date={periodStartDate}
               onSelect={setPeriodStartDate}
-              placeholder="Selecione data início"
             />
           </div>
           <div className="space-y-2">
@@ -222,7 +221,6 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
             <DatePicker
               date={periodEndDate}
               onSelect={setPeriodEndDate}
-              placeholder="Selecione data fim"
             />
           </div>
         </div>
