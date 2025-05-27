@@ -20,7 +20,7 @@ export function PropertyOccupancyWidget() {
         </div>
         
         <div className="flex-1 space-y-4">
-          {/* Status Principal - Layout melhorado */}
+          {/* Status Principal */}
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900">
               {metrics.rentedProperties}
@@ -45,24 +45,24 @@ export function PropertyOccupancyWidget() {
           </div>
         </div>
 
-        {/* Botões de Ação - Em linhas separadas para melhor responsividade */}
+        {/* Botões de Ação - Em linhas separadas para mobile */}
         <div className="mt-6 space-y-2">
           <Button
             size="sm"
             onClick={() => navigate('/properties/new')}
-            className="w-full h-9 text-sm"
+            className="w-full h-9 text-xs sm:text-sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Propriedade
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="truncate">Adicionar Propriedade</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate('/properties')}
-            className="w-full h-9 text-sm"
+            className="w-full h-9 text-xs sm:text-sm"
           >
-            <Eye className="h-4 w-4 mr-2" />
-            Ver Todas as Propriedades
+            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="truncate">Ver Todas</span>
           </Button>
         </div>
       </div>

@@ -2,31 +2,27 @@
 import React, { useState } from 'react';
 import { MinimalCard } from '@/components/finances/dashboard/MinimalCard';
 import { SimpleToggle } from '@/components/finances/dashboard/SimpleToggle';
-import { Home, TrendingUp } from 'lucide-react';
+import { useFinancialDashboard } from '@/hooks/use-financial-dashboard';
 import { formatCurrency } from '@/utils/currency';
-import { usePropertyRankings } from '@/hooks/use-property-rankings';
+import { TrendingUp, MapPin } from 'lucide-react';
 
 export function TopPropertiesWidget() {
-  const [rankingType, setRankingType] = useState<'revenue' | 'roi'>('revenue');
-  const { propertyRankings, isLoading } = usePropertyRankings();
+  const [viewMode, setViewMode] = useState<'revenue' | 'roi'>('roi');
+  const { topPropertiesData, isLoading } = useFinancialDashboard();
 
-  const rankingOptions = [
+  const viewOptions = [
     { value: 'revenue', label: 'Receita' },
     { value: 'roi', label: 'ROI' }
   ];
 
-  const sortedProperties = [...propertyRankings]
-    .sort((a, b) => rankingType === 'revenue' ? b.revenue - a.revenue : b.roi - a.roi)
-    .slice(0, 5);
-
   if (isLoading) {
     return (
-      <MinimalCard cols={3}>
+      <MinimalCard className="h-full">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top 5 Propriedades</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Top Propriedades</h3>
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-100 h-12 rounded-lg" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-100 h-16 rounded-lg" />
             ))}
           </div>
         </div>
@@ -34,60 +30,57 @@ export function TopPropertiesWidget() {
     );
   }
 
-  if (sortedProperties.length === 0) {
-    return (
-      <MinimalCard cols={3}>
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top 5 Propriedades</h3>
-          <div className="text-center py-8 text-gray-500">
-            <Home className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Nenhuma propriedade encontrada</p>
-          </div>
-        </div>
-      </MinimalCard>
-    );
-  }
-
   return (
-    <MinimalCard cols={3}>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Top 5 Propriedades</h3>
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Top Propriedades</h3>
           <SimpleToggle 
-            value={rankingType}
-            onValueChange={(value) => setRankingType(value as 'revenue' | 'roi')}
-            options={rankingOptions}
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as 'revenue' | 'roi')}
+            options={viewOptions}
           />
         </div>
-        
-        <div className="space-y-3">
-          {sortedProperties.map((property, index) => (
-            <div key={property.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-bold">
-                  {index + 1}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 truncate">{property.name}</div>
-                  <div className="text-xs text-gray-500 flex items-center space-x-1">
-                    <span>{property.type}</span>
-                    <span>•</span>
-                    <span className="truncate">{property.location}</span>
+
+        <div className="flex-1 min-h-0">
+          {topPropertiesData.length > 0 ? (
+            <div className="space-y-3">
+              {topPropertiesData.slice(0, 5).map((property, index) => (
+                <div key={property.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="flex items-center justify-center w-6 h-6 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900 truncate">{property.name}</div>
+                      <div className="text-xs text-gray-500 flex items-center space-x-1">
+                        <MapPin className="h-3 w-3" />
+                        <span className="truncate">{property.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-bold text-gray-900">
+                      {viewMode === 'revenue' 
+                        ? formatCurrency(property.return) 
+                        : `${property.percentage.toFixed(1)}%`
+                      }
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center space-x-1">
+                      <TrendingUp className="h-3 w-3" />
+                      <span>{viewMode === 'revenue' ? 'receita' : 'ROI'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                {rankingType === 'revenue' ? (
-                  <div className="text-sm font-bold text-gray-900">{formatCurrency(property.revenue)}</div>
-                ) : (
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className="h-3 w-3 text-green-600" />
-                    <span className="text-sm font-bold text-gray-900">{property.roi.toFixed(1)}%</span>
-                  </div>
-                )}
+              ))}
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <div className="text-sm">Nenhuma propriedade encontrada</div>
               </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </MinimalCard>
