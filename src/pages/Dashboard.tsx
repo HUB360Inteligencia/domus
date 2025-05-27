@@ -2,13 +2,13 @@
 import React from 'react';
 import { PropertyOccupancyWidget } from '@/components/finances/dashboard/PropertyOccupancyWidget';
 import { AssetValueWidget } from '@/components/dashboard/AssetValueWidget';
-import { PropertyTypesChartWidget } from '@/components/finances/dashboard/PropertyTypesChartWidget';
+import { PropertyTypesROIWidget } from '@/components/dashboard/PropertyTypesROIWidget';
 import { FinancialPerformanceWidget } from '@/components/dashboard/FinancialPerformanceWidget';
-import { ROIByTypeWidget } from '@/components/dashboard/ROIByTypeWidget';
 import { MonthlyROIWidget } from '@/components/finances/dashboard/MonthlyROIWidget';
 import { AssetGrowthChartWidget } from '@/components/dashboard/AssetGrowthChartWidget';
 import { TopPropertiesWidget } from '@/components/dashboard/TopPropertiesWidget';
 import { TopNeighborhoodsWidget } from '@/components/dashboard/TopNeighborhoodsWidget';
+import { ActivitiesWidget } from '@/components/dashboard/ActivitiesWidget';
 
 export default function Dashboard() {
   return (
@@ -24,7 +24,7 @@ export default function Dashboard() {
           <AssetValueWidget />
         </div>
         <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
-          <PropertyTypesChartWidget />
+          <ActivitiesWidget />
         </div>
         
         {/* LINHA 2 - Performance e ROI */}
@@ -32,7 +32,7 @@ export default function Dashboard() {
           <FinancialPerformanceWidget />
         </div>
         <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
-          <ROIByTypeWidget />
+          <PropertyTypesROIWidget />
         </div>
         
         {/* LINHA 3 - ROI Mensal e Valorização */}
