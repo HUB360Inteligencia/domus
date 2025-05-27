@@ -82,7 +82,8 @@ export function CustomReportBuilder() {
         name: reportConfig.name,
         fields: reportConfig.fields,
         filters: reportConfig.filters,
-        groupBy: reportConfig.groupBy
+        groupBy: reportConfig.groupBy,
+        isDefault: false
       });
       toast.success('Template salvo com sucesso!');
     } catch (error) {
