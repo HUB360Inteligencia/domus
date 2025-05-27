@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,8 @@ import { PropertyFormData, PropertyStatus, PropertyType, FurnishedStatus, Proper
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X, Upload, MapPin, DollarSign, Home, FileText, Users, Wrench } from 'lucide-react';
-import { geocodeAddress } from '@/api/properties';
+import { PropertyMap } from './property-map';
+import { CEPLookup } from './cep-lookup';
 import { toast } from 'sonner';
 import { PropertyFormEnhanced } from './property-form-enhanced';
 
@@ -23,7 +25,6 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 
 const PROPERTY_STATUSES: { value: PropertyStatus; label: string }[] = [
   { value: 'available', label: 'Disponível' },
-  { value: 'rented', label: 'Alugado' },
   { value: 'airbnb', label: 'Airbnb' },
   { value: 'maintenance', label: 'Manutenção' },
   { value: 'sold', label: 'Vendido' },
@@ -88,7 +89,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoadingCoordinates, setIsLoadingCoordinates] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -164,8 +165,20 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
       if (initialData.image_url) {
         setImagePreview(initialData.image_url);
       }
+
+      // Show map if coordinates exist
+      if (initialData.latitude && initialData.longitude) {
+        setShowMap(true);
+      }
     }
   }, [initialData]);
+
+  // Show map when we have enough address info
+  useEffect(() => {
+    if (formData.address && formData.city && formData.state) {
+      setShowMap(true);
+    }
+  }, [formData.address, formData.city, formData.state]);
 
   const handleInputChange = (field: keyof PropertyFormData, value: any) => {
     setFormData(prev => ({
@@ -201,37 +214,27 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
     }
   };
 
-  const handleGetCoordinates = async () => {
-    if (!formData.address || !formData.city || !formData.state) {
-      toast.error('Preencha o endereço, cidade e estado para obter as coordenadas');
-      return;
-    }
+  const handleAddressFound = (addressData: {
+    address: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      address: addressData.address,
+      neighborhood: addressData.neighborhood,
+      city: addressData.city,
+      state: addressData.state,
+    }));
+  };
 
-    setIsLoadingCoordinates(true);
-    try {
-      const coordinates = await geocodeAddress(
-        formData.address,
-        formData.property_number,
-        formData.city,
-        formData.state
-      );
-
-      if (coordinates) {
-        setFormData(prev => ({
-          ...prev,
-          latitude: coordinates.lat,
-          longitude: coordinates.lng
-        }));
-        toast.success('Coordenadas obtidas com sucesso!');
-      } else {
-        toast.warning('Não foi possível obter as coordenadas para este endereço');
-      }
-    } catch (error) {
-      console.error('Error getting coordinates:', error);
-      toast.error('Erro ao obter coordenadas');
-    } finally {
-      setIsLoadingCoordinates(false);
-    }
+  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: coords.lat,
+      longitude: coords.lng
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -285,6 +288,24 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROPERTY_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="description">Descrição</Label>
             <Textarea
@@ -307,6 +328,12 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <CEPLookup
+            value={formData.zip_code}
+            onChange={(value) => handleInputChange('zip_code', value)}
+            onAddressFound={handleAddressFound}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <Label htmlFor="address">Endereço *</Label>
@@ -350,16 +377,6 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
                 placeholder="Centro, Copacabana..."
               />
             </div>
-            
-            <div>
-              <Label htmlFor="zip_code">CEP</Label>
-              <Input
-                id="zip_code"
-                value={formData.zip_code}
-                onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                placeholder="00000-000"
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -386,24 +403,30 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGetCoordinates}
-              disabled={isLoadingCoordinates}
-              className="flex items-center gap-2"
-            >
-              <MapPin className="h-4 w-4" />
-              {isLoadingCoordinates ? 'Obtendo...' : 'Obter Coordenadas'}
-            </Button>
-            
-            {formData.latitude && formData.longitude && (
-              <Badge variant="secondary">
-                {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-              </Badge>
-            )}
-          </div>
+          {/* Mapa de Confirmação */}
+          {showMap && (
+            <div className="space-y-2">
+              <Label>Confirmar Localização</Label>
+              <PropertyMap
+                address={formData.address}
+                city={formData.city}
+                state={formData.state}
+                property_number={formData.property_number}
+                complement={formData.complement}
+                neighborhood={formData.neighborhood}
+                initialCoords={formData.latitude && formData.longitude ? 
+                  { lat: formData.latitude, lng: formData.longitude } : null}
+                editable={true}
+                onCoordsChange={handleCoordsChange}
+                className="w-full"
+              />
+              {formData.latitude && formData.longitude && (
+                <Badge variant="secondary" className="text-xs">
+                  Coordenadas: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -470,32 +493,17 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="condo_fee">Taxa de Condomínio</Label>
-              <Input
-                id="condo_fee"
-                type="number"
-                value={formData.condo_fee}
-                onChange={(e) => handleInputChange('condo_fee', Number(e.target.value))}
-                placeholder="300"
-                min="0"
-                step="50"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="square_meter_value">Valor por m²</Label>
-              <Input
-                id="square_meter_value"
-                type="number"
-                value={formData.square_meter_value}
-                onChange={(e) => handleInputChange('square_meter_value', Number(e.target.value))}
-                placeholder="5000"
-                min="0"
-                step="100"
-              />
-            </div>
+          <div>
+            <Label htmlFor="condo_fee">Taxa de Condomínio</Label>
+            <Input
+              id="condo_fee"
+              type="number"
+              value={formData.condo_fee}
+              onChange={(e) => handleInputChange('condo_fee', Number(e.target.value))}
+              placeholder="300"
+              min="0"
+              step="50"
+            />
           </div>
         </CardContent>
       </Card>
@@ -559,7 +567,7 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="floor_number">Andar</Label>
               <Input
@@ -582,22 +590,6 @@ export function PropertyForm({ initialData, onSubmit, onCancel, isLoading = fals
                   {FURNISHED_OPTIONS.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
