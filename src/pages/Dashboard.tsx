@@ -13,42 +13,40 @@ import { ActivitiesWidget } from '@/components/dashboard/ActivitiesWidget';
 export default function Dashboard() {
   return (
     <div className="container py-6">
-      {/* Grid Layout - Responsivo: 1 coluna no mobile, 3 no tablet, 6 no desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+      {/* Grid Layout otimizado - sem gaps desnecessários */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        {/* LINHA 1 - Cards principais */}
-        <div className="sm:col-span-2 md:col-span-1 lg:col-span-1">
+        {/* LINHA 1 - Propriedades, Patrimônio e Atividades (mesma altura e largura) */}
+        <div className="lg:col-span-4">
           <PropertyOccupancyWidget />
         </div>
-        <div className="sm:col-span-2 md:col-span-2 lg:col-span-2">
+        <div className="lg:col-span-4">
           <AssetValueWidget />
         </div>
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+        <div className="lg:col-span-4">
           <ActivitiesWidget />
         </div>
         
-        {/* LINHA 2 - Performance e ROI */}
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+        {/* LINHA 2 - Performance Financeira, Tipos & ROI e ROI Mensal (mesmas proporções) */}
+        <div className="lg:col-span-4">
           <FinancialPerformanceWidget />
         </div>
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+        <div className="lg:col-span-4">
           <PropertyTypesROIWidget />
         </div>
-        
-        {/* LINHA 3 - ROI Mensal e Valorização */}
-        <div className="sm:col-span-2 md:col-span-2 lg:col-span-2">
+        <div className="lg:col-span-4">
           <MonthlyROIWidget />
         </div>
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-4">
-          <AssetGrowthChartWidget />
-        </div>
         
-        {/* LINHA 4 - Rankings */}
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+        {/* LINHA 3 - Top Propriedades, Top Bairros e Valorização Patrimonial */}
+        <div className="lg:col-span-4">
           <TopPropertiesWidget />
         </div>
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-3">
+        <div className="lg:col-span-4">
           <TopNeighborhoodsWidget />
+        </div>
+        <div className="lg:col-span-4">
+          <AssetGrowthChartWidget />
         </div>
         
       </div>

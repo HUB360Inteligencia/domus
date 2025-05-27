@@ -18,9 +18,9 @@ export function FinancialPerformanceWidget() {
   ];
 
   return (
-    <MinimalCard cols={3}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Performance Financeira</h3>
           <SimpleToggle 
             value={period}
@@ -29,7 +29,7 @@ export function FinancialPerformanceWidget() {
           />
         </div>
         
-        <div className="grid grid-cols-1 gap-4">
+        <div className="flex-1 space-y-4">
           <MetricWidget
             title="Receitas"
             value={formatCurrency(metrics.monthlyRevenue)}

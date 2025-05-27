@@ -10,11 +10,11 @@ export function AssetValueWidget() {
   const metrics = useDashboardMetrics();
 
   return (
-    <MinimalCard cols={2}>
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">Patrimônio</h3>
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Patrimônio</h3>
         
-        <div className="space-y-4">
+        <div className="flex-1 space-y-6">
           <MetricWidget
             title="Valor de Compra"
             value={formatCurrency(metrics.totalPurchaseValue)}

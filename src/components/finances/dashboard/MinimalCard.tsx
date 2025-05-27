@@ -10,22 +10,12 @@ interface MinimalCardProps {
 }
 
 export function MinimalCard({ children, className, cols = 1 }: MinimalCardProps) {
-  const colSpanClass = {
-    1: 'col-span-1',
-    2: 'col-span-2 lg:col-span-2',
-    3: 'col-span-3 lg:col-span-3',
-    4: 'col-span-4 lg:col-span-4',
-    5: 'col-span-5 lg:col-span-5',
-    6: 'col-span-6 lg:col-span-6'
-  };
-
   return (
     <Card className={cn(
-      'border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white',
-      colSpanClass[cols],
+      'border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white h-full min-h-[300px]',
       className
     )}>
-      <CardContent className="p-6">
+      <CardContent className="p-6 h-full">
         {children}
       </CardContent>
     </Card>

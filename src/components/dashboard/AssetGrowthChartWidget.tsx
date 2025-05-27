@@ -25,9 +25,9 @@ export function AssetGrowthChartWidget() {
   ];
 
   return (
-    <MinimalCard cols={4}>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Valorização Patrimonial</h3>
           <SimpleToggle 
             value={viewMode}
@@ -36,11 +36,13 @@ export function AssetGrowthChartWidget() {
           />
         </div>
         
-        <PatrimonyChart 
-          data={chartData}
-          viewMode={viewMode}
-          isLoading={false}
-        />
+        <div className="flex-1 min-h-0">
+          <PatrimonyChart 
+            data={chartData}
+            viewMode={viewMode}
+            isLoading={false}
+          />
+        </div>
       </div>
     </MinimalCard>
   );

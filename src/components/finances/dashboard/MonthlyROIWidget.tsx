@@ -9,11 +9,11 @@ export function MonthlyROIWidget() {
   const metrics = useDashboardMetrics();
 
   return (
-    <MinimalCard cols={2}>
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">ROI Mensal</h3>
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">ROI Mensal</h3>
         
-        <div className="space-y-4">
+        <div className="flex-1 space-y-6">
           <MetricWidget
             title="Sobre Valor Investido"
             value={`${metrics.roiOnInvestment.toFixed(2)}%`}

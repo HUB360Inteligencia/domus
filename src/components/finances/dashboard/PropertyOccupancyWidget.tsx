@@ -12,15 +12,15 @@ export function PropertyOccupancyWidget() {
   const navigate = useNavigate();
 
   return (
-    <MinimalCard cols={1}>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Propriedades</h3>
           <Home className="h-5 w-5 text-gray-400" />
         </div>
         
-        <div className="space-y-3">
-          {/* Status Principal */}
+        <div className="flex-1 space-y-4">
+          {/* Status Principal - Layout melhorado */}
           <div className="text-center">
             <div className="text-3xl font-bold text-gray-900">
               {metrics.rentedProperties}
@@ -43,27 +43,27 @@ export function PropertyOccupancyWidget() {
             </div>
             <Progress value={metrics.occupancyRate} className="h-2" />
           </div>
+        </div>
 
-          {/* Botões de Ação */}
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <Button
-              size="sm"
-              onClick={() => navigate('/properties/new')}
-              className="h-8 text-xs"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Adicionar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/properties')}
-              className="h-8 text-xs"
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              Ver Todas
-            </Button>
-          </div>
+        {/* Botões de Ação - Em linhas separadas para melhor responsividade */}
+        <div className="mt-6 space-y-2">
+          <Button
+            size="sm"
+            onClick={() => navigate('/properties/new')}
+            className="w-full h-9 text-sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Propriedade
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/properties')}
+            className="w-full h-9 text-sm"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Ver Todas as Propriedades
+          </Button>
         </div>
       </div>
     </MinimalCard>

@@ -33,7 +33,7 @@ export function ActivitiesWidget() {
         return dueDate >= now && dueDate <= nextWeek && activity.status !== 'completed';
       })
       .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
-      .slice(0, 5);
+      .slice(0, 3);
   }, [activities]);
 
   // Filtrar atividades pendentes
@@ -48,7 +48,7 @@ export function ActivitiesWidget() {
         if (!b.due_date) return -1;
         return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
       })
-      .slice(0, 5);
+      .slice(0, 3);
   }, [activities]);
 
   const displayActivities = viewMode === 'upcoming' ? upcomingActivities : pendingActivities;
@@ -64,12 +64,12 @@ export function ActivitiesWidget() {
 
   if (isLoadingActivities) {
     return (
-      <MinimalCard cols={3}>
+      <MinimalCard className="h-full">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Atividades</h3>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-100 h-16 rounded-lg" />
+              <div key={i} className="animate-pulse bg-gray-100 h-12 rounded-lg" />
             ))}
           </div>
         </div>
@@ -78,9 +78,9 @@ export function ActivitiesWidget() {
   }
 
   return (
-    <MinimalCard cols={3}>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <MinimalCard className="h-full">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Atividades</h3>
           <div className="flex items-center space-x-2">
             <SimpleToggle 
@@ -98,63 +98,63 @@ export function ActivitiesWidget() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="flex-1 space-y-2 min-h-0">
           {displayActivities.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <Calendar className="h-8 w-8 mb-2 opacity-50" />
+              <p className="text-sm text-center">
                 {viewMode === 'upcoming' ? 'Nenhuma atividade próxima' : 'Nenhuma atividade pendente'}
               </p>
             </div>
           ) : (
-            displayActivities.map((activity) => (
-              <div 
-                key={activity.id} 
-                className="flex items-center justify-between py-3 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                onClick={() => navigate(`/activities/${activity.id}`)}
-              >
-                <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${getPriorityColor(activity.priority)}`}>
-                    {activity.priority === 'high' ? '!' : activity.priority === 'medium' ? '•' : '·'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-gray-900 truncate">{activity.title}</div>
-                    <div className="text-xs text-gray-500 flex items-center space-x-2">
-                      {activity.due_date && (
-                        <span className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {formatDistanceToNow(new Date(activity.due_date), { 
-                              addSuffix: true, 
-                              locale: ptBR 
-                            })}
+            <div className="space-y-2">
+              {displayActivities.map((activity) => (
+                <div 
+                  key={activity.id} 
+                  className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/activities/${activity.id}`)}
+                >
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${getPriorityColor(activity.priority)}`}>
+                      {activity.priority === 'high' ? '!' : activity.priority === 'medium' ? '•' : '·'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900 truncate">{activity.title}</div>
+                      <div className="text-xs text-gray-500 flex items-center space-x-2">
+                        {activity.due_date && (
+                          <span className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {formatDistanceToNow(new Date(activity.due_date), { 
+                                addSuffix: true, 
+                                locale: ptBR 
+                              })}
+                            </span>
                           </span>
-                        </span>
-                      )}
-                      <span className="text-gray-400">•</span>
-                      <span>{activity.activity_type}</span>
+                        )}
+                        <span className="text-gray-400">•</span>
+                        <span>{activity.activity_type}</span>
+                      </div>
                     </div>
                   </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 </div>
-                <ArrowRight className="h-4 w-4 text-gray-400" />
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-        {displayActivities.length > 0 && (
-          <div className="pt-2 border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/activities')}
-              className="w-full h-8 text-xs"
-            >
-              Ver todas as atividades
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
-        )}
+        <div className="mt-4 pt-3 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/activities')}
+            className="w-full h-8 text-xs"
+          >
+            Ver todas as atividades
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
       </div>
     </MinimalCard>
   );
