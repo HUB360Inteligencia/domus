@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useReactTable, getCoreRowModel, flexRender, createColumnHelper, getSortedRowModel, SortingState } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -15,7 +16,7 @@ interface TransactionTableProps {
   transactions: FinancialTransaction[];
   isLoading: boolean;
   onEdit?: (transaction: FinancialTransaction) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (transaction: FinancialTransaction) => void;
   onViewReceipt?: (transaction: FinancialTransaction) => void;
 }
 
@@ -51,9 +52,9 @@ export function TransactionTable({
       header: 'Descrição',
       cell: info => info.getValue() || '-',
     }),
-    columnHelper.accessor('category', {
+    columnHelper.accessor('category_name', {
       header: 'Categoria',
-      cell: info => info.getValue(),
+      cell: info => info.getValue() || 'Sem categoria',
     }),
     columnHelper.accessor('property_title', {
       header: 'Propriedade',
@@ -121,7 +122,7 @@ export function TransactionTable({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" onClick={() => onDelete(info.row.original.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(info.row.original)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </TooltipTrigger>

@@ -1,19 +1,20 @@
 
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { useFinancialTransactions, FinancialTransaction } from '@/hooks/use-financial-transactions';
+import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { TransactionModal } from '@/components/finances/transaction-modal';
 import { TransactionTable } from '@/components/finances/transaction-table';
+import { FinancialSummaryCards } from '@/components/finances/financial-summary-cards';
+import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 import { formatCurrency } from '@/utils/currency';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -27,11 +28,27 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
   isLoading = false 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
-  const [startDate, setStartDate] = useState<Date>(startOfMonth(subMonths(new Date(), 1)));
-  const [endDate, setEndDate] = useState<Date>(endOfMonth(subMonths(new Date(), 1)));
+  const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<FinancialTransaction | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'last12months'>('monthly');
   const [periodStartDate, setPeriodStartDate] = useState<Date | undefined>();
   const [periodEndDate, setPeriodEndDate] = useState<Date | undefined>();
+
+  // Initialize financial categories
+  const { 
+    categories, 
+    categoryOptions,
+    isLoadingCategories,
+    initializeDefaultCategories 
+  } = useFinancialCategories();
+
+  // Initialize categories if none exist
+  React.useEffect(() => {
+    if (!isLoadingCategories && categories.length === 0) {
+      initializeDefaultCategories();
+    }
+  }, [isLoadingCategories, categories.length, initializeDefaultCategories]);
 
   // Filter transactions by property
   const filters = {
@@ -51,9 +68,34 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
     isDeleting,
   } = useFinancialTransactions(filters);
 
-  // Calculate summary data
-  const summaryStartDate = viewMode === 'monthly' ? startDate : startOfYear(new Date());
-  const summaryEndDate = viewMode === 'monthly' ? endDate : endOfYear(new Date());
+  // Calculate summary data based on view mode
+  const getSummaryDates = () => {
+    const now = new Date();
+    switch (viewMode) {
+      case 'monthly':
+        return {
+          start: startOfMonth(subMonths(now, 1)),
+          end: endOfMonth(subMonths(now, 1))
+        };
+      case 'yearly':
+        return {
+          start: startOfYear(now),
+          end: endOfYear(now)
+        };
+      case 'last12months':
+        return {
+          start: subYears(now, 1),
+          end: now
+        };
+      default:
+        return {
+          start: startOfMonth(subMonths(now, 1)),
+          end: endOfMonth(subMonths(now, 1))
+        };
+    }
+  };
+
+  const { start: summaryStartDate, end: summaryEndDate } = getSummaryDates();
 
   const summaryTransactions = transactions.filter(t => {
     const transactionDate = new Date(t.transaction_date);
@@ -87,7 +129,26 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
   const periodBalance = periodIncome - periodExpenses;
 
   const handleNewTransaction = () => {
+    setEditingTransaction(null);
     setIsModalOpen(true);
+  };
+
+  const handleEditTransaction = (transaction: FinancialTransaction) => {
+    setEditingTransaction(transaction);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteTransaction = (transaction: FinancialTransaction) => {
+    setDeletingTransaction(transaction);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deletingTransaction) {
+      await deleteTransaction(deletingTransaction.id);
+      setIsDeleteModalOpen(false);
+      setDeletingTransaction(null);
+    }
   };
 
   const handleCreateTransaction = async (data: any) => {
@@ -96,6 +157,26 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
       property_id: property?.id || null,
     });
     setIsModalOpen(false);
+  };
+
+  const handleUpdateTransaction = async (data: any) => {
+    if (editingTransaction) {
+      await updateTransaction({
+        ...data,
+        id: editingTransaction.id,
+        property_id: property?.id || null,
+      });
+      setIsModalOpen(false);
+      setEditingTransaction(null);
+    }
+  };
+
+  const handleSubmitTransaction = async (data: any) => {
+    if (editingTransaction) {
+      await handleUpdateTransaction(data);
+    } else {
+      await handleCreateTransaction(data);
+    }
   };
 
   if (isLoading) {
@@ -129,78 +210,13 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
       </div>
 
       {/* Summary Cards */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-lg font-medium">Resumo Financeiro</h4>
-          <Select value={viewMode} onValueChange={(value: 'monthly' | 'yearly') => setViewMode(value)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="monthly">Mês Anterior</SelectItem>
-              <SelectItem value="yearly">Ano Atual</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Total Income Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Receitas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(totalIncome)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {viewMode === 'monthly' 
-                  ? format(startDate, 'MMMM yyyy', { locale: ptBR })
-                  : format(new Date(), 'yyyy')
-                }
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Total Expenses Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Despesas</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(totalExpenses)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {viewMode === 'monthly' 
-                  ? format(startDate, 'MMMM yyyy', { locale: ptBR })
-                  : format(new Date(), 'yyyy')
-                }
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Balance Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saldo</CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(Math.abs(balance))}
-              </div>
-              <div className="flex items-center gap-1">
-                <Badge variant={balance >= 0 ? 'default' : 'destructive'}>
-                  {balance >= 0 ? 'Positivo' : 'Negativo'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <FinancialSummaryCards
+        totalIncome={totalIncome}
+        totalExpenses={totalExpenses}
+        balance={balance}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
       <Separator />
 
@@ -271,37 +287,54 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
         <TransactionTable
           transactions={transactions}
           isLoading={isLoadingTransactions}
-          onEdit={(transaction) => {
-            // Handle edit transaction
-            console.log('Edit transaction:', transaction);
+          onEdit={handleEditTransaction}
+          onDelete={handleDeleteTransaction}
+          onViewReceipt={(transaction) => {
+            if (transaction.receipt_url) {
+              window.open(transaction.receipt_url, '_blank');
+            }
           }}
-          onDelete={deleteTransaction}
         />
       </div>
 
       {/* Transaction Modal */}
       <TransactionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateTransaction}
-        isSubmitting={isCreating}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        onSubmit={handleSubmitTransaction}
+        isSubmitting={isCreating || isUpdating}
         properties={property ? [{ value: property.id, label: property.title }] : []}
-        categories={[]}
-        initialData={{
+        categories={categoryOptions}
+        initialData={editingTransaction || {
           name: '',
           amount: 0,
           transaction_type: 'expense' as const,
           category: '',
-          transaction_date: format(new Date(), 'yyyy-MM-dd'),
-          property_id: property?.id || null,
           subcategory: null,
           description: '',
+          transaction_date: format(new Date(), 'yyyy-MM-dd'),
+          property_id: property?.id || null,
           payment_method: null,
           recurring: false,
           recurring_frequency: null,
           recurring_end_date: null,
           receipt_url: null,
         }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteTransactionModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletingTransaction(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        transactionName={deletingTransaction?.name}
+        isDeleting={isDeleting}
       />
     </div>
   );

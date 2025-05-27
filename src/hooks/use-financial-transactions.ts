@@ -64,7 +64,8 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         .from('financial_transactions')
         .select(`
           *,
-          properties:property_id (id, title)
+          properties:property_id (id, title),
+          financial_categories:category (id, name)
         `);
 
       // Apply filters
@@ -118,6 +119,8 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     transaction_type: tx.transaction_type === 'income' ? 'income' : 'expense',
     // Use category as is since it's now just a string/ID reference
     category: tx.category,
+    // Add category name from the join
+    category_name: tx.financial_categories?.name || 'Categoria não encontrada',
     // Ensure property_title is properly set if properties data exists
     property_title: tx.properties?.title || undefined,
     // Ensure numbers are properly typed
@@ -278,7 +281,6 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    uploadReceipt,
     isCreating,
     isUpdating,
     isDeleting,
