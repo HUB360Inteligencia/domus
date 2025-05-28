@@ -39,7 +39,7 @@ export const useContractMutations = () => {
       await createActivity({
         title: `Ativar Contrato: ${contract.title}`,
         description: `Contrato de aluguel pendente para ativação. Locatário: ${contract.tenant_name}`,
-        activity_type: 'contract_activation',
+        activity_type: 'documentation',
         status: 'pending',
         priority: 'high',
         property_id: contract.property_id,

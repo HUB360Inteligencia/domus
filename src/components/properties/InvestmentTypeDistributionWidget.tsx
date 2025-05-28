@@ -12,7 +12,7 @@ interface InvestmentTypeDistributionWidgetProps {
 export const InvestmentTypeDistributionWidget: React.FC<InvestmentTypeDistributionWidgetProps> = ({
   propertyId
 }) => {
-  const { investments, isLoading } = usePropertyInvestments(propertyId);
+  const { investments, isLoadingInvestments } = usePropertyInvestments(propertyId);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -56,7 +56,7 @@ export const InvestmentTypeDistributionWidget: React.FC<InvestmentTypeDistributi
       .sort((a, b) => b.amount - a.amount);
   }, [investments]);
 
-  if (isLoading) {
+  if (isLoadingInvestments) {
     return (
       <Card className="h-full">
         <CardHeader>

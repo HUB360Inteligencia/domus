@@ -9,11 +9,13 @@ import { DollarSign, TrendingUp, PieChart } from 'lucide-react';
 interface PropertyInvestmentOverviewProps {
   property: Property | null | undefined;
   blackAndWhite?: boolean;
+  isLoading?: boolean;
 }
 
 export const PropertyInvestmentOverview: React.FC<PropertyInvestmentOverviewProps> = ({ 
   property,
-  blackAndWhite = false 
+  blackAndWhite = false,
+  isLoading = false
 }) => {
   const { investments, totalInvestment, isLoadingInvestments } = usePropertyInvestments(property?.id || null);
 
@@ -53,7 +55,7 @@ export const PropertyInvestmentOverview: React.FC<PropertyInvestmentOverviewProp
     return baseColor;
   };
 
-  if (isLoadingInvestments) {
+  if (isLoading || isLoadingInvestments) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (

@@ -17,12 +17,12 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
   return (
     <div className="space-y-6">
       {/* Investment Overview */}
-      <PropertyInvestmentOverview propertyId={property?.id || null} isLoading={isLoading} />
+      <PropertyInvestmentOverview property={property} isLoading={isLoading} />
       
       {/* Investment Distribution and List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InvestmentTypeDistributionWidget propertyId={property?.id || null} />
-        <InvestmentsList propertyId={property?.id || null} />
+        <InvestmentsList property={property} />
       </div>
     </div>
   );
