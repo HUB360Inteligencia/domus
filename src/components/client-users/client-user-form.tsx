@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useCreateClientUser, useResetUserPassword, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUser } from "@/api/client-users";
@@ -31,7 +31,9 @@ import { ClientUser } from "@/api/client-users";
 // Schema for creating a new user
 const createUserSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
   confirmPassword: z.string(),
   first_name: z.string().min(1, "Nome é obrigatório"),
   last_name: z.string().min(1, "Sobrenome é obrigatório"),
@@ -43,7 +45,9 @@ const createUserSchema = z.object({
 
 // Schema for resetting password
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não conferem",
@@ -67,6 +71,7 @@ export function ClientUserForm({
   onCancel 
 }: ClientUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const isEditMode = !!existingUser;
   
   const { data: currentUserClientId } = useCurrentUserClientId();
@@ -115,7 +120,19 @@ export function ClientUserForm({
         is_primary: data.is_primary,
       });
       
-      if (onSuccess) onSuccess();
+      setIsSuccess(true);
+      toast.success("Usuário criado com sucesso");
+      
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Erro ao criar usuário:", error);
+      if (error.message?.includes("email")) {
+        toast.error("Este email já está cadastrado");
+      } else {
+        toast.error("Erro ao criar usuário. Tente novamente.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -132,7 +149,15 @@ export function ClientUserForm({
         password: data.password,
       });
       
-      if (onSuccess) onSuccess();
+      setIsSuccess(true);
+      toast.success("Senha redefinida com sucesso");
+      
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Erro ao redefinir senha:", error);
+      toast.error("Erro ao redefinir senha. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,6 +175,25 @@ export function ClientUserForm({
         <CardFooter>
           <Button onClick={onCancel}>Voltar</Button>
         </CardFooter>
+      </Card>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span>{isEditMode ? "Senha atualizada!" : "Usuário criado!"}</span>
+          </CardTitle>
+          <CardDescription>
+            {isEditMode 
+              ? "A senha foi redefinida com sucesso."
+              : "O usuário foi criado e pode fazer login no sistema."
+            }
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }
@@ -175,7 +219,9 @@ export function ClientUserForm({
                     <FormControl>
                       <Input type="password" placeholder="Digite uma nova senha" {...field} />
                     </FormControl>
-                    <FormDescription>No mínimo 8 caracteres</FormDescription>
+                    <FormDescription>
+                      Mínimo 8 caracteres, com pelo menos 1 maiúscula e 1 número
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -276,7 +322,9 @@ export function ClientUserForm({
                   <FormControl>
                     <Input type="password" placeholder="Digite uma senha" {...field} />
                   </FormControl>
-                  <FormDescription>No mínimo 8 caracteres</FormDescription>
+                  <FormDescription>
+                    Mínimo 8 caracteres, com pelo menos 1 maiúscula e 1 número
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -6,6 +6,7 @@ import {
   MoreVertical,
   Shield,
   Key,
+  AlertCircle,
 } from "lucide-react";
 import {
   Card,
@@ -31,6 +32,7 @@ import { ClientUser } from "@/api/client-users";
 import { useClientUsers, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUserForm } from "./client-user-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface ClientUsersListProps {
   clientId?: string;
@@ -46,12 +48,12 @@ export function ClientUsersList({
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   
   // If clientId is not provided, fetch the current user's client ID
-  const { data: currentUserClientId, isLoading: isLoadingClientId } = useCurrentUserClientId();
+  const { data: currentUserClientId, isLoading: isLoadingClientId, error: clientIdError } = useCurrentUserClientId();
   
   // Use the provided clientId or the current user's clientId
   const effectiveClientId = clientId || currentUserClientId;
   
-  const { data: clientUsers, isLoading: isLoadingUsers, refetch } = useClientUsers(effectiveClientId);
+  const { data: clientUsers, isLoading: isLoadingUsers, refetch, error: usersError } = useClientUsers(effectiveClientId);
   
   const isLoading = isLoadingClientId || isLoadingUsers;
 
@@ -64,11 +66,13 @@ export function ClientUsersList({
     setIsResetPasswordOpen(false);
     setSelectedUser(null);
     refetch();
+    toast.success("Senha redefinida com sucesso");
   };
 
   const handleAddUserSuccess = () => {
     setIsAddUserOpen(false);
     refetch();
+    toast.success("Usuário criado com sucesso");
   };
 
   const handleAddUserClick = () => {
@@ -102,6 +106,27 @@ export function ClientUsersList({
               <Skeleton className="h-8 w-8" />
             </div>
           ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (clientIdError || usersError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span>Erro ao carregar usuários</span>
+          </CardTitle>
+          <CardDescription>
+            {clientIdError ? "Erro ao carregar cliente" : "Erro ao carregar usuários do cliente"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
         </CardContent>
       </Card>
     );

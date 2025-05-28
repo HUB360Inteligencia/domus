@@ -31,10 +31,10 @@ import { ClientUsersList } from "@/components/client-users/client-users-list";
 import { ClientUserForm } from "@/components/client-users/client-user-form";
 
 export default function ClientDetailPage() {
-  const { clientId } = useParams<{ clientId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: client, isLoading: isClientLoading } = useClient(clientId);
-  const { data: subscriptions, isLoading: isSubscriptionsLoading } = useClientSubscriptions(clientId);
+  const { data: client, isLoading: isClientLoading, error: clientError } = useClient(id);
+  const { data: subscriptions, isLoading: isSubscriptionsLoading } = useClientSubscriptions(id);
   
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
 
@@ -67,12 +67,14 @@ export default function ClientDetailPage() {
     );
   }
 
-  if (!client) {
+  if (clientError || !client) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
         <h2 className="text-2xl font-semibold mb-2">Cliente não encontrado</h2>
-        <p className="text-muted-foreground mb-4">O cliente solicitado não existe ou foi removido.</p>
+        <p className="text-muted-foreground mb-4">
+          {clientError ? "Erro ao carregar cliente" : "O cliente solicitado não existe ou foi removido."}
+        </p>
         <Button variant="outline" onClick={() => navigate("/admin/clients")}>
           Voltar para listagem
         </Button>
@@ -213,14 +215,14 @@ export default function ClientDetailPage() {
 
       <div className="mt-8">
         <ClientUsersList 
-          clientId={clientId!} 
+          clientId={id!} 
           onAddUserClick={handleAddUserClick} 
         />
 
         <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
           <DialogContent className="sm:max-w-md md:max-w-lg">
             <ClientUserForm 
-              clientId={clientId!}
+              clientId={id!}
               onSuccess={handleUserAddSuccess}
               onCancel={() => setIsAddUserDialogOpen(false)}
             />
