@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
@@ -35,8 +34,33 @@ export const useContractMutations = () => {
   // Contract mutations
   const { mutateAsync: createContractMutation, isPending: isCreatingContract } = useMutation({
     mutationFn: createContract,
-    onSuccess: () => {
+    onSuccess: async (newContract) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contracts', 'property', newContract.property_id] });
+      
+      // Se o contrato foi criado como pendente, criar uma atividade
+      if (newContract.status === 'pending' && newContract.property_id) {
+        try {
+          const { createActivity } = await import('@/api/activities');
+          await createActivity({
+            title: `Finalizar contrato: ${newContract.title}`,
+            description: `Contrato com ${newContract.tenant_name} precisa ser finalizado e assinado`,
+            activity_type: 'legal',
+            priority: 'high',
+            status: 'pending',
+            property_id: newContract.property_id,
+            contract_id: newContract.id,
+            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias
+            user_id: newContract.user_id
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ['activities'] });
+          queryClient.invalidateQueries({ queryKey: ['activities', 'property', newContract.property_id] });
+        } catch (error) {
+          console.error('Error creating activity for pending contract:', error);
+        }
+      }
+      
       toast.success('Contrato criado com sucesso!');
     },
     onError: (error: any) => {
@@ -81,9 +105,30 @@ export const useContractMutations = () => {
 
   const { mutateAsync: updateContractStatusMutation, isPending: isUpdatingContractStatus } = useMutation({
     mutationFn: ({ id, status }: { id: string; status: any }) => updateContractStatus(id, status),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['contracts', 'property', data.property_id] });
+      
+      // Se o contrato mudou para ativo, completar atividade relacionada
+      if (data.status === 'active' && data.contract_id) {
+        try {
+          const { data: activities } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('contract_id', data.id)
+            .eq('status', 'pending');
+            
+          if (activities && activities.length > 0) {
+            const { updateActivityStatus } = await import('@/api/activities');
+            await updateActivityStatus(activities[0].id, 'completed');
+            queryClient.invalidateQueries({ queryKey: ['activities'] });
+          }
+        } catch (error) {
+          console.error('Error completing related activity:', error);
+        }
+      }
+      
       toast.success(`Status do contrato alterado para: ${data.status}`);
     },
     onError: (error: any) => {

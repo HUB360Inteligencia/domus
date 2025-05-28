@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
+import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
+import { ContractForm } from '@/components/contracts/contract-form';
+import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -18,8 +22,9 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   isLoading = false 
 }) => {
   const [showNewContractModal, setShowNewContractModal] = useState(false);
+  const { contracts, activeContract, isLoading: isLoadingContracts } = useContractsByProperty(property?.id || null);
 
-  if (isLoading) {
+  if (isLoading || isLoadingContracts) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -65,13 +70,13 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
 
   const hasContractInfo = property?.tenant_name || property?.tenant_contact || 
                          property?.agency_name || property?.agency_responsible || 
-                         property?.agency_contact;
+                         property?.agency_contact || contracts.length > 0;
 
   return (
     <>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold">Contrato</h3>
+          <h3 className="text-xl font-semibold">Contratos</h3>
           <div className="flex items-center gap-3">
             {property?.status && (
               <Badge variant={property.status === 'rented' ? 'default' : property.status === 'available' ? 'outline' : 'secondary'}>
@@ -84,22 +89,68 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
             )}
             <Button onClick={() => setShowNewContractModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Contrato
+              Novo Contrato
             </Button>
           </div>
         </div>
 
-        {!hasContractInfo ? (
+        {/* Lista de Contratos */}
+        {contracts.length > 0 ? (
+          <div className="space-y-4">
+            {contracts.map((contract) => (
+              <Card key={contract.id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{contract.title}</CardTitle>
+                      <CardDescription>Locatário: {contract.tenant_name}</CardDescription>
+                    </div>
+                    <ContractStatusSelect contract={contract} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Valor</p>
+                      <p className="font-medium">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.value)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Início</p>
+                      <p className="font-medium">
+                        {new Date(contract.start_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Fim</p>
+                      <p className="font-medium">
+                        {new Date(contract.end_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {contract.tenant_contact && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Contato do Locatário</p>
+                      <p className="font-medium">{contract.tenant_contact}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : !hasContractInfo ? (
           <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
-              <CardTitle>Informações do Contrato</CardTitle>
-              <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
+              <CardTitle>Contratos</CardTitle>
+              <CardDescription>Gerencie os contratos de locação desta propriedade</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center py-10">
               <div className="text-center text-muted-foreground space-y-3">
-                <p>Nenhuma informação de contrato cadastrada.</p>
+                <p>Nenhum contrato cadastrado.</p>
                 <p className="text-sm">
-                  Edite o imóvel para adicionar informações do locatário e/ou imobiliária.
+                  Crie um novo contrato para esta propriedade.
                 </p>
                 <Button 
                   variant="outline" 
@@ -115,8 +166,8 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
         ) : (
           <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
-              <CardTitle>Informações do Contrato</CardTitle>
-              <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
+              <CardTitle>Informações Herdadas da Propriedade</CardTitle>
+              <CardDescription>Dados do locatário e imobiliária cadastrados na propriedade</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -201,21 +252,18 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
         )}
       </div>
 
-      {/* New Contract Modal */}
+      {/* Modal de Novo Contrato */}
       <Dialog open={showNewContractModal} onOpenChange={setShowNewContractModal}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Contrato de Locação</DialogTitle>
           </DialogHeader>
-          <div className="p-4">
-            <p className="text-muted-foreground">
-              Formulário completo de contrato será implementado aqui.
-              Propriedade: {property?.title}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Incluirá campos para: dados do locatário, valor do aluguel, período do contrato, 
-              condições especiais, documentos anexos, etc.
-            </p>
+          <div className="p-2">
+            <ContractForm
+              propertyId={property?.id}
+              onSuccess={() => setShowNewContractModal(false)}
+              onCancel={() => setShowNewContractModal(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>

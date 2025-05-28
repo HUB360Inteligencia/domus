@@ -52,10 +52,6 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-20" />
             </div>
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
-            </div>
           </>
         ) : (
           <>
@@ -89,13 +85,6 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Valor do Aluguel</span>
                 <span className="font-medium">{formatCurrency(property.rental_value)}</span>
-              </div>
-            )}
-            
-            {property?.condo_fee && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Taxa de Condomínio</span>
-                <span className="font-medium">{formatCurrency(property.condo_fee)}</span>
               </div>
             )}
             

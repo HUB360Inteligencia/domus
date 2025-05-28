@@ -9,6 +9,7 @@ import {
   updateActivityStatus,
   convertActivityToExpense
 } from "@/api/activities";
+import { supabase } from '@/integrations/supabase/client';
 
 export const useActivityMutations = () => {
   const queryClient = useQueryClient();
@@ -38,8 +39,37 @@ export const useActivityMutations = () => {
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: ActivityStatus }) => 
       updateActivityStatus(id, status),
-    onSuccess: () => {
+    onSuccess: async (updatedActivity, { id, status }) => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      
+      // Se a atividade foi concluída e está relacionada a um contrato, ativar o contrato
+      if (status === 'completed') {
+        try {
+          const { data: activity } = await supabase
+            .from('activities')
+            .select('contract_id')
+            .eq('id', id)
+            .single();
+            
+          if (activity?.contract_id) {
+            const { data: contract } = await supabase
+              .from('contracts')
+              .select('status')
+              .eq('id', activity.contract_id)
+              .single();
+              
+            if (contract?.status === 'pending') {
+              const { updateContractStatus } = await import('@/api/contracts');
+              await updateContractStatus(activity.contract_id, 'active');
+              queryClient.invalidateQueries({ queryKey: ['contracts'] });
+              toast.success('Contrato ativado automaticamente!');
+            }
+          }
+        } catch (error) {
+          console.error('Error activating related contract:', error);
+        }
+      }
+      
       toast.success('Status atualizado com sucesso!');
     },
     onError: (error: Error) => {

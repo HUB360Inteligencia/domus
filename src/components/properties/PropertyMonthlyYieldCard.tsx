@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 
 interface PropertyMonthlyYieldCardProps {
   property: Property | null | undefined;
@@ -14,6 +15,8 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
   property,
   isLoading,
 }) => {
+  const { activeContract, isLoading: isLoadingContracts } = useContractsByProperty(property?.id || null);
+
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined) return 'N/A';
     return new Intl.NumberFormat('pt-BR', {
@@ -23,19 +26,27 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
   };
 
   const calculateMonthlyYield = () => {
-    if (!property?.rental_value) return null;
-    return property.rental_value;
+    // Priorizar valor do contrato ativo sobre rental_value da propriedade
+    if (activeContract?.value) {
+      return activeContract.value;
+    }
+    if (property?.rental_value) {
+      return property.rental_value;
+    }
+    return null;
   };
 
   const calculateROIOnMarketValue = () => {
-    if (!property?.rental_value || !property?.value) return null;
-    const annualRental = property.rental_value * 12;
+    const monthlyRent = calculateMonthlyYield();
+    if (!monthlyRent || !property?.value) return null;
+    const annualRental = monthlyRent * 12;
     return (annualRental / property.value) * 100;
   };
 
   const calculateROIOnPurchaseValue = () => {
-    if (!property?.rental_value || !property?.purchase_value) return null;
-    const annualRental = property.rental_value * 12;
+    const monthlyRent = calculateMonthlyYield();
+    if (!monthlyRent || !property?.purchase_value) return null;
+    const annualRental = monthlyRent * 12;
     return (annualRental / property.purchase_value) * 100;
   };
 
@@ -58,7 +69,7 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
     };
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingContracts) {
     return (
       <Card>
         <CardHeader>
@@ -93,7 +104,9 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Aluguel Mensal</span>
+          <span className="text-sm text-muted-foreground">
+            {activeContract ? 'Valor do Contrato' : 'Aluguel Mensal'}
+          </span>
           <span className="font-medium text-lg">
             {formatCurrency(monthlyYield)}
           </span>
@@ -123,12 +136,17 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
           </div>
         </div>
 
-        {property?.rental_value && (
+        {monthlyYield && (
           <div className="pt-2 border-t">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
               <span>Receita Anual Estimada</span>
-              <span>{formatCurrency(property.rental_value * 12)}</span>
+              <span>{formatCurrency(monthlyYield * 12)}</span>
             </div>
+            {activeContract && (
+              <div className="flex justify-between items-center text-xs text-green-600 mt-1">
+                <span>Baseado em contrato ativo</span>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
