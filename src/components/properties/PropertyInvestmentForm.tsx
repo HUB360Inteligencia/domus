@@ -58,6 +58,11 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
   ];
 
   const onSubmit = async (data: InvestmentFormData) => {
+    // Ensure all required fields are present
+    if (!data.investment_type) {
+      return;
+    }
+    
     const success = await registerInvestment(data, receiptFile || undefined);
     if (success) {
       onSuccess();
@@ -158,7 +163,7 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
         <Button type="button" variant="outline" onClick={onSuccess}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={isCreating}>
+        <Button type="submit" disabled={isCreating || !watchedType}>
           {isCreating ? 'Salvando...' : 'Salvar Investimento'}
         </Button>
       </div>
