@@ -17,8 +17,8 @@ export default function UsersPage() {
   const { hasPermission } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Verificar permissões
-  const canInviteUsers = hasPermission("users.invite");
+  // Verificar permissões - agora usando users.manage para system_admin
+  const canInviteUsers = hasPermission("users.invite") || hasPermission("users.manage");
   
   // Buscar usuários usando o hook correto
   const { data: users, isLoading, error } = useUsers();

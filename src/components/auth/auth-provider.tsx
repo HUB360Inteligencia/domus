@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext, AuthUser, fetchUserProfile, fetchUserRole } from '@/lib/auth';
@@ -41,9 +40,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         'contracts.create', 
         'users.view', 
         'users.invite',
+        'users.manage', // Adicionado users.manage
         'settings.view', 
         'settings.edit',
-        'clients.view', // Added clients.view to pre-fetched permissions
+        'clients.view',
+        'admin_access', // Adicionado admin_access
       ];
       
       const permissionResults = {};
@@ -295,9 +296,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return permissions[permission];
     }
     
-    // Super admin bypass - FIXED: now checks for both 'admin' and 'system_admin' roles
+    // Super admin bypass - now checks for 'admin' and 'system_admin' roles
     if (user?.role === 'admin' || user?.role === 'system_admin') {
       console.log(`User has admin/system_admin role, granting permission ${permission}`);
+      setPermissions(prev => ({
+        ...prev,
+        [permission]: true
+      }));
       return true;
     }
     
