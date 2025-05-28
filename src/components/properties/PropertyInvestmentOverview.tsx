@@ -1,62 +1,37 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/utils/currency';
 import { Property } from '@/types/property';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, TrendingDown, DollarSign, Calculator } from 'lucide-react';
+import { DollarSign, TrendingUp, PieChart } from 'lucide-react';
 
 interface PropertyInvestmentOverviewProps {
   property: Property | null | undefined;
+  blackAndWhite?: boolean;
 }
 
-export const PropertyInvestmentOverview = ({ property }: PropertyInvestmentOverviewProps) => {
-  const {
-    investments,
-    totalInvestment,
-    isLoadingInvestments,
-  } = usePropertyInvestments(property?.id || null);
+export const PropertyInvestmentOverview: React.FC<PropertyInvestmentOverviewProps> = ({ 
+  property,
+  blackAndWhite = false 
+}) => {
+  const { investments, totalInvestment, isLoadingInvestments } = usePropertyInvestments(property?.id || null);
 
-  if (isLoadingInvestments) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo dos Investimentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-6 w-3/4" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-  if (!property) {
-    return null;
-  }
-
-  // Calculate metrics
-  const purchaseValue = property.purchase_value || 0;
-  const additionalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalPropertyInvestment = purchaseValue + additionalInvestments;
-  const currentValue = property.value || 0;
-  const totalGain = currentValue - totalPropertyInvestment;
-  const roiPercentage = totalPropertyInvestment > 0 ? (totalGain / totalPropertyInvestment) * 100 : 0;
-
-  // Investment breakdown by type
-  const investmentsByType = investments.reduce((acc, inv) => {
-    acc[inv.investment_type] = (acc[inv.investment_type] || 0) + inv.amount;
+  // Calculate distribution by type
+  const distributionByType = investments.reduce((acc, investment) => {
+    const type = investment.investment_type;
+    acc[type] = (acc[type] || 0) + investment.amount;
     return acc;
   }, {} as Record<string, number>);
 
-  const investmentTypeLabels: Record<string, string> = {
+  const typeLabels: Record<string, string> = {
     purchase: 'Compra',
     improvement: 'Melhorias',
     renovation: 'Reformas',
@@ -64,103 +39,129 @@ export const PropertyInvestmentOverview = ({ property }: PropertyInvestmentOverv
     other: 'Outros'
   };
 
+  const getCardStyle = (baseColor: string) => {
+    if (blackAndWhite) {
+      return 'border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white';
+    }
+    return `border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${baseColor}`;
+  };
+
+  const getIconColor = (baseColor: string) => {
+    if (blackAndWhite) {
+      return 'text-gray-600';
+    }
+    return baseColor;
+  };
+
+  if (isLoadingInvestments) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+            <CardHeader className="pb-3">
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-24 mb-2" />
+              <Skeleton className="h-4 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Main Investment Metrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Resumo dos Investimentos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-blue-600" />
-                <span className="text-sm text-blue-600 font-medium">Valor de Compra</span>
-              </div>
-              <div className="text-lg font-bold text-blue-900">
-                {formatCurrency(purchaseValue)}
-              </div>
-            </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className={getCardStyle('bg-white')}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <DollarSign className={`h-4 w-4 ${getIconColor('text-blue-500')}`} />
+              Total Investido
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalInvestment)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {investments.length} investimento{investments.length !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
 
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-600 font-medium">Investimentos Adicionais</span>
-              </div>
-              <div className="text-lg font-bold text-green-900">
-                {formatCurrency(additionalInvestments)}
-              </div>
-              <div className="text-xs text-green-700 mt-1">
-                {investments.length} investimento{investments.length !== 1 ? 's' : ''}
-              </div>
+        <Card className={getCardStyle('bg-white')}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className={`h-4 w-4 ${getIconColor('text-green-500')}`} />
+              Maior Investimento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {investments.length > 0 
+                ? formatCurrency(Math.max(...investments.map(i => i.amount)))
+                : formatCurrency(0)
+              }
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {investments.length > 0 
+                ? typeLabels[investments.find(i => i.amount === Math.max(...investments.map(inv => inv.amount)))?.investment_type || ''] || 'N/A'
+                : 'Nenhum investimento'
+              }
+            </p>
+          </CardContent>
+        </Card>
 
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Calculator className="h-4 w-4 text-purple-600" />
-                <span className="text-sm text-purple-600 font-medium">Total Investido</span>
-              </div>
-              <div className="text-lg font-bold text-purple-900">
-                {formatCurrency(totalPropertyInvestment)}
-              </div>
+        <Card className={getCardStyle('bg-white')}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <PieChart className={`h-4 w-4 ${getIconColor('text-purple-500')}`} />
+              Tipo Principal
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Object.keys(distributionByType).length > 0 
+                ? typeLabels[Object.entries(distributionByType).sort(([,a], [,b]) => b - a)[0]?.[0] || ''] || 'N/A'
+                : 'N/A'
+              }
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {Object.keys(distributionByType).length > 0 
+                ? formatCurrency(Object.entries(distributionByType).sort(([,a], [,b]) => b - a)[0]?.[1] || 0)
+                : 'Sem investimentos'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-            <div className={`p-4 rounded-lg ${roiPercentage >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                {roiPercentage >= 0 ? (
-                  <TrendingUp className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-600" />
-                )}
-                <span className={`text-sm font-medium ${roiPercentage >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  ROI Atual
-                </span>
-              </div>
-              <div className={`text-lg font-bold ${roiPercentage >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
-                {roiPercentage.toFixed(2)}%
-              </div>
-              <div className={`text-xs mt-1 ${roiPercentage >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {formatCurrency(totalGain)}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Investment Breakdown */}
-      {Object.keys(investmentsByType).length > 0 && (
-        <Card>
+      {/* Distribution by Type */}
+      {Object.keys(distributionByType).length > 0 && (
+        <Card className={getCardStyle('bg-white')}>
           <CardHeader>
-            <CardTitle>Distribuição por Tipo de Investimento</CardTitle>
+            <CardTitle className="text-lg">Distribuição por Tipo de Investimento</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {Object.entries(investmentsByType).map(([type, amount]) => {
-                const percentage = totalPropertyInvestment > 0 ? (amount / totalPropertyInvestment) * 100 : 0;
-                return (
-                  <div key={type} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        {investmentTypeLabels[type] || type}
-                      </span>
+              {Object.entries(distributionByType)
+                .sort(([,a], [,b]) => b - a)
+                .map(([type, amount]) => {
+                  const percentage = totalInvestment > 0 ? (amount / totalInvestment) * 100 : 0;
+                  return (
+                    <div key={type} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${blackAndWhite ? 'bg-gray-400' : 'bg-blue-500'}`} />
+                        <span className="text-sm font-medium">{typeLabels[type] || type}</span>
+                      </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold">{formatCurrency(amount)}</div>
                         <div className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</div>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </CardContent>
         </Card>

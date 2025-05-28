@@ -9,6 +9,7 @@ import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionForm } from '@/components/finances/transaction-form';
 import { ActivityForm } from '@/components/activities/activity-form';
+import { PropertyValuationForm } from './PropertyValuationForm';
 
 interface PropertyHeroHeaderProps {
   property: Property | null | undefined;
@@ -91,7 +92,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
     return (
       <div className="relative h-48 md:h-64 bg-gradient-to-b from-muted/20 to-muted rounded-3xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="relative z-10 h-full flex flex-col justify-between p-4 md:p-6">
+        <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8">
           {/* Top Navigation */}
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-white/20" />
@@ -100,8 +101,6 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               <Skeleton className="h-8 w-16 md:h-10 md:w-20 rounded-lg bg-white/20" />
             </div>
           </div>
-
-          {/* Bottom Content */}
           <div className="space-y-2 md:space-y-4">
             <div className="flex gap-2">
               <Skeleton className="h-5 w-20 md:h-6 md:w-24 rounded-full bg-white/20" />
@@ -137,17 +136,46 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent backdrop-blur-[1px]" />
         
         {/* Content Overlay */}
-        <div className="relative z-10 h-full flex flex-col justify-between p-4 md:p-6 text-white">
-          {/* Top Navigation */}
+        <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8 text-white">
+          {/* Top Navigation with Badges */}
           <div className="flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              size={window.innerWidth < 768 ? "sm" : "icon"} 
-              onClick={onBack}
-              className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/20 text-white"
-            >
-              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size={window.innerWidth < 768 ? "sm" : "icon"} 
+                onClick={onBack}
+                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/20 text-white"
+              >
+                <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+
+              {/* Badges moved to top line */}
+              <div className="flex flex-wrap gap-1 md:gap-2">
+                <Badge 
+                  variant="outline" 
+                  className="bg-white/15 border-white/30 text-white backdrop-blur-sm text-xs"
+                >
+                  {getTypeLabel(property?.type || '')}
+                </Badge>
+                <Badge 
+                  variant={getStatusBadgeVariant(property?.status || '')}
+                  className="bg-white/15 border-white/30 text-white backdrop-blur-sm text-xs"
+                >
+                  {getStatusLabel(property?.status || '')}
+                </Badge>
+                {property?.tags && property.tags.length > 0 && (
+                  property.tags.slice(0, 1).map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="bg-blue-500/20 border-blue-300/30 text-blue-100 backdrop-blur-sm text-xs"
+                    >
+                      {tag}
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center gap-2 md:gap-3">
               <Button 
@@ -193,35 +221,8 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
             </div>
           </div>
 
-          {/* Property Information */}
+          {/* Property Information with Status Info */}
           <div className="space-y-3 md:space-y-4">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-1 md:gap-2">
-              <Badge 
-                variant="outline" 
-                className="bg-white/15 border-white/30 text-white backdrop-blur-sm text-xs"
-              >
-                {getTypeLabel(property?.type || '')}
-              </Badge>
-              <Badge 
-                variant={getStatusBadgeVariant(property?.status || '')}
-                className="bg-white/15 border-white/30 text-white backdrop-blur-sm text-xs"
-              >
-                {getStatusLabel(property?.status || '')}
-              </Badge>
-              {property?.tags && property.tags.length > 0 && (
-                property.tags.slice(0, 1).map((tag, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="bg-blue-500/20 border-blue-300/30 text-blue-100 backdrop-blur-sm text-xs"
-                  >
-                    {tag}
-                  </Badge>
-                ))
-              )}
-            </div>
-
             {/* Property Title */}
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg line-clamp-2">
               {property?.title}
@@ -237,10 +238,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               </span>
             </div>
 
-            {/* Property Details - Responsive */}
-            <div className="flex flex-wrap items-center gap-3 md:gap-4 text-white/90 text-sm md:text-base">
+            {/* Property Details - Responsive with smaller icons */}
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 text-white/90 text-xs md:text-sm">
               <div className="flex items-center gap-1 md:gap-2">
-                <Square className="h-4 w-4 md:h-5 md:w-5" />
+                <Square className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="font-medium">
                   {property?.area ? `${property.area} m²` : 'N/A'}
                 </span>
@@ -248,57 +249,69 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               
               {property?.bedrooms && (
                 <div className="flex items-center gap-1 md:gap-2">
-                  <Bed className="h-4 w-4 md:h-5 md:w-5" />
+                  <Bed className="h-3 w-3 md:h-4 md:w-4" />
                   <span className="font-medium">{property.bedrooms}</span>
                 </div>
               )}
               
               {property?.bathrooms && (
                 <div className="flex items-center gap-1 md:gap-2">
-                  <Bath className="h-4 w-4 md:h-5 md:w-5" />
+                  <Bath className="h-3 w-3 md:h-4 md:w-4" />
                   <span className="font-medium">{property.bathrooms}</span>
                 </div>
               )}
               
               {property?.garage_spots && (
                 <div className="flex items-center gap-1 md:gap-2">
-                  <Car className="h-4 w-4 md:h-5 md:w-5" />
+                  <Car className="h-3 w-3 md:h-4 md:w-4" />
                   <span className="font-medium">{property.garage_spots}</span>
                 </div>
               )}
             </div>
 
-            {/* Price and Quick Actions */}
+            {/* Bottom Row: Price + Status Info + Quick Actions */}
             <div className="flex justify-between items-end">
               <div className="text-lg md:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">
                 {formatCurrency(property?.value)}
               </div>
 
-              {/* Quick Actions - Horizontal Layout */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => setActiveModal('transaction')}
-                  className="bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/30 border border-blue-300/30 text-white text-xs px-2 py-1"
-                >
-                  + Transação
-                </Button>
-                
-                <Button
-                  size="sm"
-                  onClick={() => setActiveModal('activity')}
-                  className="bg-green-500/20 backdrop-blur-sm hover:bg-green-500/30 border border-green-300/30 text-white text-xs px-2 py-1"
-                >
-                  + Atividade
-                </Button>
-                
-                <Button
-                  size="sm"
-                  onClick={() => setActiveModal('valuation')}
-                  className="bg-purple-500/20 backdrop-blur-sm hover:bg-purple-500/30 border border-purple-300/30 text-white text-xs px-2 py-1"
-                >
-                  + Avaliação
-                </Button>
+              {/* Status and Rental Info */}
+              <div className="text-right space-y-1">
+                {property?.status === 'rented' && property?.rental_value && (
+                  <div className="text-sm text-white/90">
+                    Aluguel: {formatCurrency(property.rental_value)}
+                  </div>
+                )}
+                <div className="text-xs text-white/80">
+                  Status: {getStatusLabel(property?.status || '')}
+                </div>
+
+                {/* Quick Actions - Horizontal Layout */}
+                <div className="flex items-center gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveModal('transaction')}
+                    className="bg-blue-500/20 backdrop-blur-sm hover:bg-blue-500/30 border border-blue-300/30 text-white text-xs px-2 py-1"
+                  >
+                    + Transação
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveModal('activity')}
+                    className="bg-green-500/20 backdrop-blur-sm hover:bg-green-500/30 border border-green-300/30 text-white text-xs px-2 py-1"
+                  >
+                    + Atividade
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveModal('valuation')}
+                    className="bg-purple-500/20 backdrop-blur-sm hover:bg-purple-500/30 border border-purple-300/30 text-white text-xs px-2 py-1"
+                  >
+                    + Avaliação
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -311,12 +324,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Transação Financeira</DialogTitle>
           </DialogHeader>
-          <div className="p-4">
-            <p className="text-muted-foreground">
-              Formulário de transação será implementado aqui.
-              Propriedade: {property?.title}
-            </p>
-          </div>
+          <TransactionForm 
+            onSuccess={() => setActiveModal(null)}
+            propertyId={property?.id}
+          />
         </DialogContent>
       </Dialog>
 
@@ -326,12 +337,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Atividade</DialogTitle>
           </DialogHeader>
-          <div className="p-4">
-            <p className="text-muted-foreground">
-              Formulário de atividade será implementado aqui.
-              Propriedade: {property?.title}
-            </p>
-          </div>
+          <ActivityForm 
+            onSuccess={() => setActiveModal(null)}
+            propertyId={property?.id}
+          />
         </DialogContent>
       </Dialog>
 
@@ -341,12 +350,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Atualizar Avaliação de Mercado</DialogTitle>
           </DialogHeader>
-          <div className="p-4">
-            <p className="text-muted-foreground">
-              Formulário de avaliação será implementado aqui.
-              Valor atual: {formatCurrency(property?.value)}
-            </p>
-          </div>
+          <PropertyValuationForm 
+            property={property}
+            onSuccess={() => setActiveModal(null)}
+          />
         </DialogContent>
       </Dialog>
     </>
