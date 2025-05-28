@@ -39,8 +39,14 @@ export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> 
   const { data, error } = await supabase
     .from("client_users")
     .select(`
-      *,
-      profiles:user_id(
+      id,
+      user_id,
+      client_id,
+      is_primary,
+      role,
+      created_at,
+      updated_at,
+      profiles!inner(
         first_name,
         last_name,
         email,
@@ -52,7 +58,13 @@ export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> 
   if (error) throw error;
   
   return data?.map(item => ({
-    ...item,
+    id: item.id,
+    user_id: item.user_id,
+    client_id: item.client_id,
+    is_primary: item.is_primary,
+    role: item.role,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
     profile: item.profiles as ClientUser['profile']
   })) || [];
 }

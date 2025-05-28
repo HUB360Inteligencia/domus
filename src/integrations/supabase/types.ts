@@ -1853,6 +1853,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_admin_or_system_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       user_belongs_to_client: {
         Args: { user_id: string; client_id: string }
         Returns: boolean

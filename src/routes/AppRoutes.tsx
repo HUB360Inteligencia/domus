@@ -1,6 +1,8 @@
 
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AppLayout } from "@/components/layout/app-layout";
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 // Páginas principais
 import Index from "@/pages/Index";
@@ -56,45 +58,57 @@ import PropertyDetailRedirect from "@/routes/PropertyDetailRedirect";
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Páginas de autenticação */}
+      {/* Páginas de autenticação - sem layout */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       
-      {/* Página inicial */}
+      {/* Página inicial - sem layout */}
       <Route path="/" element={<Index />} />
       
-      {/* Páginas protegidas */}
+      {/* Páginas protegidas com AppLayout */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard />
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Imóveis */}
       <Route path="/properties" element={
         <ProtectedRoute>
-          <Properties />
+          <AppLayout>
+            <Properties />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/properties/map" element={
         <ProtectedRoute>
-          <PropertiesMapPage />
+          <AppLayout>
+            <PropertiesMapPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/properties/new" element={
         <ProtectedRoute>
-          <PropertyFormPage />
+          <AppLayout>
+            <PropertyFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/properties/edit/:id" element={
         <ProtectedRoute>
-          <PropertyFormPage />
+          <AppLayout>
+            <PropertyFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/properties/:id" element={
         <ProtectedRoute>
-          <PropertyDetailPage />
+          <AppLayout>
+            <PropertyDetailPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/property/:id" element={<PropertyDetailRedirect />} />
@@ -102,180 +116,244 @@ export function AppRoutes() {
       {/* Contratos */}
       <Route path="/contracts" element={
         <ProtectedRoute>
-          <ContractsPage />
+          <AppLayout>
+            <ContractsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/contracts/new" element={
         <ProtectedRoute>
-          <ContractFormPage />
+          <AppLayout>
+            <ContractFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/contracts/edit/:id" element={
         <ProtectedRoute>
-          <ContractFormPage />
+          <AppLayout>
+            <ContractFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/contracts/:id" element={
         <ProtectedRoute>
-          <ContractDetailPage />
+          <AppLayout>
+            <ContractDetailPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Atividades */}
       <Route path="/activities" element={
         <ProtectedRoute>
-          <ActivitiesPage />
+          <AppLayout>
+            <ActivitiesPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/activities/new" element={
         <ProtectedRoute>
-          <ActivityFormPage />
+          <AppLayout>
+            <ActivityFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/activities/edit/:id" element={
         <ProtectedRoute>
-          <ActivityFormPage />
+          <AppLayout>
+            <ActivityFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/activities/:id" element={
         <ProtectedRoute>
-          <ActivityDetailPage />
+          <AppLayout>
+            <ActivityDetailPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Documentos */}
       <Route path="/documents" element={
         <ProtectedRoute>
-          <DocumentsPage />
+          <AppLayout>
+            <DocumentsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/documents/new" element={
         <ProtectedRoute>
-          <DocumentFormPage />
+          <AppLayout>
+            <DocumentFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Finanças */}
       <Route path="/finances" element={
         <ProtectedRoute>
-          <FinancesPage />
+          <AppLayout>
+            <FinancesPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/finances/dashboard" element={
         <ProtectedRoute>
-          <FinanceDashboardPage />
+          <AppLayout>
+            <FinanceDashboardPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/finances/transactions" element={
         <ProtectedRoute>
-          <FinancialTransactionsPage />
+          <AppLayout>
+            <FinancialTransactionsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/finances/income" element={
         <ProtectedRoute>
-          <IncomePage />
+          <AppLayout>
+            <IncomePage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/finances/expenses" element={
         <ProtectedRoute>
-          <ExpensesPage />
+          <AppLayout>
+            <ExpensesPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/finances/reports" element={
         <ProtectedRoute>
-          <ReportsPage />
+          <AppLayout>
+            <ReportsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Empreendimentos */}
       <Route path="/developments" element={
         <ProtectedRoute>
-          <DevelopmentsPage />
+          <AppLayout>
+            <DevelopmentsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/developments/new" element={
         <ProtectedRoute>
-          <DevelopmentFormPage />
+          <AppLayout>
+            <DevelopmentFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/developments/edit/:id" element={
         <ProtectedRoute>
-          <DevelopmentFormPage />
+          <AppLayout>
+            <DevelopmentFormPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/developments/:id" element={
         <ProtectedRoute>
-          <DevelopmentDetailPage />
+          <AppLayout>
+            <DevelopmentDetailPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Relatórios */}
       <Route path="/reports" element={
         <ProtectedRoute>
-          <AdvancedReportsPage />
+          <AppLayout>
+            <AdvancedReportsPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
       {/* Usuários */}
       <Route path="/users" element={
         <ProtectedRoute requiredPermission="manage_users">
-          <UsersPage />
+          <AppLayout>
+            <UsersPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/users/invite" element={
         <ProtectedRoute requiredPermission="manage_users">
-          <UserInvitePage />
+          <AppLayout>
+            <UserInvitePage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/users/:id" element={
         <ProtectedRoute requiredPermission="manage_users">
-          <UserDetailPage />
+          <AppLayout>
+            <UserDetailPage />
+          </AppLayout>
         </ProtectedRoute>
       } />
       
-      {/* Admin */}
+      {/* Admin - usando AdminLayout */}
       <Route path="/admin" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <AdminDashboard />
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/clients" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <ClientsPage />
+          <AdminLayout>
+            <ClientsPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/clients/new" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <ClientFormPage />
+          <AdminLayout>
+            <ClientFormPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/clients/edit/:id" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <ClientFormPage />
+          <AdminLayout>
+            <ClientFormPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/clients/:id" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <ClientDetailPage />
+          <AdminLayout>
+            <ClientDetailPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/subscriptions/new" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <SubscriptionFormPage />
+          <AdminLayout>
+            <SubscriptionFormPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/subscriptions/edit/:id" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <SubscriptionFormPage />
+          <AdminLayout>
+            <SubscriptionFormPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/settings" element={
         <ProtectedRoute requiredPermission="admin_access">
-          <SettingsPage />
+          <AdminLayout>
+            <SettingsPage />
+          </AdminLayout>
         </ProtectedRoute>
       } />
       
-      {/* Páginas de erro */}
+      {/* Páginas de erro - sem layout */}
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
