@@ -6,11 +6,12 @@ import { Property } from '@/types/property';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, Calculator } from 'lucide-react';
 import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 import { ContractForm } from '@/components/contracts/contract-form';
 import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
 import { useContractMutations } from '@/hooks/use-contract-mutations';
+import { RentalManagementModal } from './rental-management/RentalManagementModal';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -22,6 +23,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   isLoading = false 
 }) => {
   const [showNewContractModal, setShowNewContractModal] = useState(false);
+  const [showRentalManagementModal, setShowRentalManagementModal] = useState(false);
   const { contracts, activeContract, isLoading: isLoadingContracts, refetch } = useContractsByProperty(property?.id || null);
   const { createContract } = useContractMutations();
 
@@ -101,6 +103,14 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                  property.status}
               </Badge>
             )}
+            <Button 
+              variant="outline"
+              onClick={() => setShowRentalManagementModal(true)}
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <Calculator className="h-4 w-4 mr-2" />
+              Gestão de Aluguéis
+            </Button>
             <Button onClick={() => setShowNewContractModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Contrato
@@ -280,6 +290,14 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Gestão de Aluguéis */}
+      <RentalManagementModal
+        isOpen={showRentalManagementModal}
+        onClose={() => setShowRentalManagementModal(false)}
+        propertyId={property?.id || ''}
+        propertyTitle={property?.title || ''}
+      />
     </>
   );
 };
