@@ -33,7 +33,6 @@ import { useClientUsers, useCurrentUserClientId } from "@/hooks/use-client-users
 import { ClientUserForm } from "./client-user-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
 
 interface ClientUsersListProps {
   clientId?: string;
@@ -47,10 +46,6 @@ export function ClientUsersList({
   const [selectedUser, setSelectedUser] = useState<ClientUser | null>(null);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const { hasPermission } = useAuth();
-  
-  // Verificar permissões
-  const canManageUsers = hasPermission("users.manage") || hasPermission("users.invite");
   
   // If clientId is not provided, fetch the current user's client ID
   const { data: currentUserClientId, isLoading: isLoadingClientId, error: clientIdError } = useCurrentUserClientId();
@@ -63,10 +58,6 @@ export function ClientUsersList({
   const isLoading = isLoadingClientId || isLoadingUsers;
 
   const handleResetPassword = (user: ClientUser) => {
-    if (!canManageUsers) {
-      toast.error("Você não tem permissão para redefinir senhas");
-      return;
-    }
     setSelectedUser(user);
     setIsResetPasswordOpen(true);
   };
@@ -85,11 +76,6 @@ export function ClientUsersList({
   };
 
   const handleAddUserClick = () => {
-    if (!canManageUsers) {
-      toast.error("Você não tem permissão para criar usuários");
-      return;
-    }
-    
     if (onAddUserClick) {
       onAddUserClick();
     } else {
@@ -170,9 +156,7 @@ export function ClientUsersList({
             <CardTitle>Usuários</CardTitle>
             <CardDescription>Gerencie os usuários deste cliente</CardDescription>
           </div>
-          {canManageUsers && (
-            <Button onClick={handleAddUserClick}>Adicionar usuário</Button>
-          )}
+          <Button onClick={handleAddUserClick}>Adicionar usuário</Button>
         </CardHeader>
         <CardContent className="space-y-4">
           {clientUsers && clientUsers.length > 0 ? (
@@ -196,68 +180,60 @@ export function ClientUsersList({
                   </div>
                 </div>
 
-                {canManageUsers && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
-                        <Key className="h-4 w-4 mr-2" />
-                        Redefinir senha
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Alterar permissões
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
+                      <Key className="h-4 w-4 mr-2" />
+                      Redefinir senha
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Alterar permissões
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ))
           ) : (
             <div className="text-center py-4 text-muted-foreground">
               <p>Este cliente não possui usuários cadastrados</p>
-              {canManageUsers && (
-                <Button variant="link" onClick={handleAddUserClick}>
-                  Adicionar o primeiro usuário
-                </Button>
-              )}
+              <Button variant="link" onClick={handleAddUserClick}>
+                Adicionar o primeiro usuário
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Dialog para adicionar usuário */}
-      {canManageUsers && (
-        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-          <DialogContent className="sm:max-w-md">
-            <ClientUserForm 
-              clientId={effectiveClientId}
-              onSuccess={handleAddUserSuccess}
-              onCancel={() => setIsAddUserOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent className="sm:max-w-md">
+          <ClientUserForm 
+            clientId={effectiveClientId}
+            onSuccess={handleAddUserSuccess}
+            onCancel={() => setIsAddUserOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para redefinir senha */}
-      {canManageUsers && (
-        <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-          <DialogContent className="sm:max-w-md">
-            {selectedUser && (
-              <ClientUserForm 
-                clientId={effectiveClientId}
-                existingUser={selectedUser}
-                onSuccess={handleResetPasswordSuccess}
-                onCancel={() => setIsResetPasswordOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="sm:max-w-md">
+          {selectedUser && (
+            <ClientUserForm 
+              clientId={effectiveClientId}
+              existingUser={selectedUser}
+              onSuccess={handleResetPasswordSuccess}
+              onCancel={() => setIsResetPasswordOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -52,17 +52,9 @@ export function useCreateClientUser() {
       queryClient.invalidateQueries({ queryKey: ["client-users", variables.client_id] });
       queryClient.invalidateQueries({ queryKey: ["client-users"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error("Erro ao criar usuário:", error);
-      
-      // Melhor tratamento de erros
-      if (error.message?.includes("permission")) {
-        toast.error("Você não tem permissão para criar usuários");
-      } else if (error.message?.includes("email")) {
-        toast.error("Este email já está cadastrado");
-      } else {
-        toast.error("Erro ao criar usuário");
-      }
+      toast.error("Erro ao criar usuário");
     }
   });
 }
@@ -74,15 +66,9 @@ export function useResetUserPassword() {
     onSuccess: () => {
       toast.success("Senha redefinida com sucesso");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error("Erro ao redefinir senha:", error);
-      
-      // Melhor tratamento de erros
-      if (error.message?.includes("permission")) {
-        toast.error("Você não tem permissão para redefinir senhas");
-      } else {
-        toast.error("Erro ao redefinir senha");
-      }
+      toast.error("Erro ao redefinir senha");
     }
   });
 }

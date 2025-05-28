@@ -22,39 +22,6 @@ const adminAuthClient = createClient(supabaseUrl, supabaseServiceKey, {
   },
 });
 
-// Verificar se o usuário tem permissão para gerenciar usuários
-async function checkUserPermission(userId: string): Promise<boolean> {
-  console.log("Checking user permission for:", userId);
-  
-  try {
-    const { data: hasPermission, error } = await adminAuthClient.rpc('user_has_permission', {
-      user_id: userId,
-      permission_name: 'users.manage'
-    });
-
-    if (error) {
-      console.error("Error checking permission:", error);
-      return false;
-    }
-
-    // Também verificar se é admin ou system_admin
-    const { data: isAdmin, error: adminError } = await adminAuthClient.rpc('is_admin_or_system_admin', {
-      user_id: userId
-    });
-
-    if (adminError) {
-      console.error("Error checking admin status:", adminError);
-      return false;
-    }
-
-    console.log("Permission check result:", { hasPermission, isAdmin });
-    return hasPermission || isAdmin;
-  } catch (error) {
-    console.error("Error in checkUserPermission:", error);
-    return false;
-  }
-}
-
 // Service function to create a new user
 async function createUser(userData: {
   email: string;
@@ -64,15 +31,8 @@ async function createUser(userData: {
   client_id: string;
   is_primary?: boolean;
   role?: string;
-}, currentUserId: string) {
-  console.log("Creating user:", userData.email, "by user:", currentUserId);
-
-  // Verificar permissões antes de criar o usuário
-  const hasPermission = await checkUserPermission(currentUserId);
-  if (!hasPermission) {
-    console.error("User does not have permission to create users");
-    return { error: { message: "Você não tem permissão para criar usuários" } };
-  }
+}) {
+  console.log("Creating user:", userData.email);
 
   try {
     // Step 1: Create the user in auth.users
@@ -131,15 +91,8 @@ async function createUser(userData: {
 }
 
 // Service function to reset user password
-async function resetPassword(data: { user_id: string; password: string }, currentUserId: string) {
-  console.log("Resetting password for user:", data.user_id, "by user:", currentUserId);
-
-  // Verificar permissões antes de redefinir senha
-  const hasPermission = await checkUserPermission(currentUserId);
-  if (!hasPermission) {
-    console.error("User does not have permission to reset passwords");
-    return { error: { message: "Você não tem permissão para redefinir senhas" } };
-  }
+async function resetPassword(data: { user_id: string; password: string }) {
+  console.log("Resetting password for user:", data.user_id);
 
   try {
     const { error } = await adminAuthClient.auth.admin.updateUserById(
@@ -160,15 +113,8 @@ async function resetPassword(data: { user_id: string; password: string }, curren
 }
 
 // Service function to generate activation token
-async function generateToken(userId: string, currentUserId: string) {
-  console.log("Generating activation token for user:", userId, "by user:", currentUserId);
-
-  // Verificar permissões antes de gerar token
-  const hasPermission = await checkUserPermission(currentUserId);
-  if (!hasPermission) {
-    console.error("User does not have permission to generate tokens");
-    return { error: { message: "Você não tem permissão para gerar tokens" } };
-  }
+async function generateToken(userId: string) {
+  console.log("Generating activation token for user:", userId);
 
   try {
     const token = crypto.randomUUID();
@@ -216,37 +162,6 @@ serve(async (req) => {
     );
   }
 
-  // Extract user ID from JWT token
-  let currentUserId: string;
-  try {
-    // Create a regular Supabase client to get the user
-    const regularClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") as string);
-    const { data: { user }, error: userError } = await regularClient.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authorization token" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-    
-    currentUserId = user.id;
-  } catch (error) {
-    console.error("Error extracting user from token:", error);
-    return new Response(
-      JSON.stringify({ error: "Invalid authorization token" }),
-      {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
-
   // Get action and request body
   try {
     const requestData = await req.json();
@@ -256,13 +171,13 @@ serve(async (req) => {
     
     switch (action) {
       case "createUser":
-        result = await createUser(requestData.userData, currentUserId);
+        result = await createUser(requestData.userData);
         break;
       case "resetPassword":
-        result = await resetPassword(requestData.data, currentUserId);
+        result = await resetPassword(requestData.data);
         break;
       case "generateToken":
-        result = await generateToken(requestData.userId, currentUserId);
+        result = await generateToken(requestData.userId);
         break;
       default:
         return new Response(
