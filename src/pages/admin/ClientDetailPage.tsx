@@ -16,7 +16,6 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useClient } from "@/hooks/use-clients";
-import { useClientSubscriptions } from "@/hooks/use-client-subscriptions";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -29,12 +28,12 @@ import {
 } from "@/components/ui/dialog";
 import { ClientUsersList } from "@/components/client-users/client-users-list";
 import { ClientUserForm } from "@/components/client-users/client-user-form";
+import { SubscriptionManagement } from "@/components/subscriptions/subscription-management";
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: client, isLoading: isClientLoading, error: clientError } = useClient(id);
-  const { data: subscriptions, isLoading: isSubscriptionsLoading } = useClientSubscriptions(id);
   
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
 
@@ -157,59 +156,7 @@ export default function ClientDetailPage() {
         </Card>
         
         <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Assinaturas</CardTitle>
-            <CardDescription>Planos contratados pelo cliente</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isSubscriptionsLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : subscriptions && subscriptions.length > 0 ? (
-              <div className="space-y-4">
-                {subscriptions.map((subscription) => (
-                  <div key={subscription.id} className="border rounded-md p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{subscription.plan?.name || "Plano"}</h3>
-                        <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>
-                            Desde {format(new Date(subscription.starts_at), "dd/MM/yyyy")}
-                            {subscription.ends_at && ` até ${format(new Date(subscription.ends_at), "dd/MM/yyyy")}`}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={subscription.status === "active" ? "default" : 
-                                  subscription.status === "pending" ? "secondary" : "destructive"}
-                        >
-                          {subscription.status === "active" ? "Ativa" : 
-                           subscription.status === "pending" ? "Pendente" : "Cancelada"}
-                        </Badge>
-                        <Badge variant="outline">
-                          R$ {subscription.plan?.price.toFixed(2)}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full" onClick={() => navigate(`/admin/subscriptions/new?clientId=${client.id}`)}>
-                  Adicionar nova assinatura
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-32 border rounded-md border-dashed">
-                <p className="text-muted-foreground mb-2">Este cliente não possui assinaturas</p>
-                <Button variant="outline" onClick={() => navigate(`/admin/subscriptions/new?clientId=${client.id}`)}>
-                  Adicionar assinatura
-                </Button>
-              </div>
-            )}
-          </CardContent>
+          <SubscriptionManagement clientId={id!} />
         </Card>
       </div>
 

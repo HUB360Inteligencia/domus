@@ -1,402 +1,282 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/lib/auth';
-import { AppLayout } from '@/components/layout/app-layout';
-import { AdminLayout } from '@/components/layout/admin-layout';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
-// Import pages
-import Index from '@/pages/Index';
-import Dashboard from '@/pages/Dashboard';
-import Properties from '@/pages/Properties';
-import PropertyFormPage from '@/pages/PropertyFormPage';
-import PropertyDetailPage from '@/pages/PropertyDetailPage';
-import PropertiesMapPage from '@/pages/PropertiesMapPage';
-import FinancesPage from '@/pages/FinancesPage';
-import FinanceDashboardPage from '@/pages/finances/FinanceDashboardPage';
-import FinancialTransactionsPage from '@/pages/finances/FinancialTransactionsPage';
-import IncomePage from '@/pages/finances/IncomePage';
-import ExpensesPage from '@/pages/finances/ExpensesPage';
-import ReportsPage from '@/pages/finances/ReportsPage';
-import ContractsPage from '@/pages/ContractsPage';
-import ContractFormPage from '@/pages/ContractFormPage';
-import ContractDetailPage from '@/pages/ContractDetailPage';
-import DocumentsPage from '@/pages/DocumentsPage';
-import DocumentFormPage from '@/pages/DocumentFormPage';
-import ActivitiesPage from '@/pages/ActivitiesPage';
-import ActivityFormPage from '@/pages/ActivityFormPage';
-import ActivityDetailPage from '@/pages/ActivityDetailPage';
-import DevelopmentsPage from '@/pages/DevelopmentsPage';
-import DevelopmentFormPage from '@/pages/DevelopmentFormPage';
-import DevelopmentDetailPage from '@/pages/DevelopmentDetailPage';
-import AdvancedReportsPage from '@/pages/AdvancedReportsPage';
+import { Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
-// Auth pages
-import Login from '@/pages/auth/Login';
-import Register from '@/pages/auth/Register';
-import AuthCallback from '@/pages/auth/AuthCallback';
+// Páginas principais
+import Index from "@/pages/Index";
+import Dashboard from "@/pages/Dashboard";
+import Properties from "@/pages/Properties";
+import PropertyDetailPage from "@/pages/PropertyDetailPage";
+import PropertyFormPage from "@/pages/PropertyFormPage";
+import PropertiesMapPage from "@/pages/PropertiesMapPage";
+import ContractsPage from "@/pages/ContractsPage";
+import ContractDetailPage from "@/pages/ContractDetailPage";
+import ContractFormPage from "@/pages/ContractFormPage";
+import ActivitiesPage from "@/pages/ActivitiesPage";
+import ActivityDetailPage from "@/pages/ActivityDetailPage";
+import ActivityFormPage from "@/pages/ActivityFormPage";
+import DocumentsPage from "@/pages/DocumentsPage";
+import DocumentFormPage from "@/pages/DocumentFormPage";
+import FinancesPage from "@/pages/FinancesPage";
+import DevelopmentsPage from "@/pages/DevelopmentsPage";
+import DevelopmentDetailPage from "@/pages/DevelopmentDetailPage";
+import DevelopmentFormPage from "@/pages/DevelopmentFormPage";
+import AdvancedReportsPage from "@/pages/AdvancedReportsPage";
+import NotFound from "@/pages/NotFound";
+import Unauthorized from "@/pages/Unauthorized";
 
-// Admin pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import ClientsPage from '@/pages/admin/ClientsPage';
-import ClientFormPage from '@/pages/admin/ClientFormPage';
-import ClientDetailPage from '@/pages/admin/ClientDetailPage';
-import UsersPage from '@/pages/users/UsersPage';
-import UserDetailPage from '@/pages/users/UserDetailPage';
-import UserInvitePage from '@/pages/users/UserInvitePage';
-import SettingsPage from '@/pages/admin/SettingsPage';
+// Páginas de autenticação
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import AuthCallback from "@/pages/auth/AuthCallback";
 
-// Error pages
-import NotFound from '@/pages/NotFound';
-import Unauthorized from '@/pages/Unauthorized';
+// Páginas de finanças
+import FinanceDashboardPage from "@/pages/finances/FinanceDashboardPage";
+import FinancialTransactionsPage from "@/pages/finances/FinancialTransactionsPage";
+import IncomePage from "@/pages/finances/IncomePage";
+import ExpensesPage from "@/pages/finances/ExpensesPage";
+import ReportsPage from "@/pages/finances/ReportsPage";
 
-// Redirect component
-import { PropertyDetailRedirect } from './PropertyDetailRedirect';
+// Páginas de usuários
+import UsersPage from "@/pages/users/UsersPage";
+import UserDetailPage from "@/pages/users/UserDetailPage";
+import UserInvitePage from "@/pages/users/UserInvitePage";
 
-export default function AppRoutes() {
-  const { session } = useAuth();
+// Páginas de admin
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import ClientsPage from "@/pages/admin/ClientsPage";
+import ClientFormPage from "@/pages/admin/ClientFormPage";
+import ClientDetailPage from "@/pages/admin/ClientDetailPage";
+import SubscriptionFormPage from "@/pages/admin/SubscriptionFormPage";
+import SettingsPage from "@/pages/admin/SettingsPage";
 
+// Redirecionamento
+import PropertyDetailRedirect from "@/routes/PropertyDetailRedirect";
+
+export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-      <Route path="/register" element={!session ? <Register /> : <Navigate to="/" />} />
+      {/* Páginas de autenticação */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-
-      {/* Protected routes */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <Index />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
+      
+      {/* Página inicial */}
+      <Route path="/" element={<Index />} />
+      
+      {/* Páginas protegidas */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <AppLayout>
-            <Dashboard />
-          </AppLayout>
+          <Dashboard />
         </ProtectedRoute>
       } />
-
-      {/* Properties routes */}
+      
+      {/* Imóveis */}
       <Route path="/properties" element={
         <ProtectedRoute>
-          <AppLayout>
-            <Properties />
-          </AppLayout>
+          <Properties />
         </ProtectedRoute>
       } />
-      
-      <Route path="/properties/new" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <PropertyFormPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/properties/:id/edit" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <PropertyFormPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/properties/:id" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <PropertyDetailPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
       <Route path="/properties/map" element={
         <ProtectedRoute>
-          <AppLayout>
-            <PropertiesMapPage />
-          </AppLayout>
+          <PropertiesMapPage />
         </ProtectedRoute>
       } />
-
-      {/* Finance routes */}
-      <Route path="/finances" element={
+      <Route path="/properties/new" element={
         <ProtectedRoute>
-          <AppLayout>
-            <FinancesPage />
-          </AppLayout>
+          <PropertyFormPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/finances/dashboard" element={
+      <Route path="/properties/edit/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <FinanceDashboardPage />
-          </AppLayout>
+          <PropertyFormPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/finances/transactions" element={
+      <Route path="/properties/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <FinancialTransactionsPage />
-          </AppLayout>
+          <PropertyDetailPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/finances/income" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <IncomePage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
-      <Route path="/finances/expenses" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ExpensesPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
-      <Route path="/finances/reports" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <ReportsPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
-      {/* Contracts routes */}
+      <Route path="/property/:id" element={<PropertyDetailRedirect />} />
+      
+      {/* Contratos */}
       <Route path="/contracts" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ContractsPage />
-          </AppLayout>
+          <ContractsPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/contracts/new" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ContractFormPage />
-          </AppLayout>
+          <ContractFormPage />
         </ProtectedRoute>
       } />
-      
-      <Route path="/contracts/:id/edit" element={
+      <Route path="/contracts/edit/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ContractFormPage />
-          </AppLayout>
+          <ContractFormPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/contracts/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ContractDetailPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
-      {/* Documents routes */}
-      <Route path="/documents" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <DocumentsPage />
-          </AppLayout>
+          <ContractDetailPage />
         </ProtectedRoute>
       } />
       
-      <Route path="/documents/new" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <DocumentFormPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
-      {/* Activities routes */}
+      {/* Atividades */}
       <Route path="/activities" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ActivitiesPage />
-          </AppLayout>
+          <ActivitiesPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/activities/new" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ActivityFormPage />
-          </AppLayout>
+          <ActivityFormPage />
         </ProtectedRoute>
       } />
-      
-      <Route path="/activities/:id/edit" element={
+      <Route path="/activities/edit/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ActivityFormPage />
-          </AppLayout>
+          <ActivityFormPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/activities/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <ActivityDetailPage />
-          </AppLayout>
+          <ActivityDetailPage />
         </ProtectedRoute>
       } />
-
-      {/* Developments routes */}
+      
+      {/* Documentos */}
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <DocumentsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/documents/new" element={
+        <ProtectedRoute>
+          <DocumentFormPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* Finanças */}
+      <Route path="/finances" element={
+        <ProtectedRoute>
+          <FinancesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/finances/dashboard" element={
+        <ProtectedRoute>
+          <FinanceDashboardPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/finances/transactions" element={
+        <ProtectedRoute>
+          <FinancialTransactionsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/finances/income" element={
+        <ProtectedRoute>
+          <IncomePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/finances/expenses" element={
+        <ProtectedRoute>
+          <ExpensesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/finances/reports" element={
+        <ProtectedRoute>
+          <ReportsPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* Empreendimentos */}
       <Route path="/developments" element={
         <ProtectedRoute>
-          <AppLayout>
-            <DevelopmentsPage />
-          </AppLayout>
+          <DevelopmentsPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/developments/new" element={
         <ProtectedRoute>
-          <AppLayout>
-            <DevelopmentFormPage />
-          </AppLayout>
+          <DevelopmentFormPage />
         </ProtectedRoute>
       } />
-      
-      <Route path="/developments/:id/edit" element={
+      <Route path="/developments/edit/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <DevelopmentFormPage />
-          </AppLayout>
+          <DevelopmentFormPage />
         </ProtectedRoute>
       } />
-      
       <Route path="/developments/:id" element={
         <ProtectedRoute>
-          <AppLayout>
-            <DevelopmentDetailPage />
-          </AppLayout>
+          <DevelopmentDetailPage />
         </ProtectedRoute>
       } />
-
-      {/* Reports routes */}
+      
+      {/* Relatórios */}
       <Route path="/reports" element={
         <ProtectedRoute>
-          <AppLayout>
-            <AdvancedReportsPage />
-          </AppLayout>
+          <AdvancedReportsPage />
         </ProtectedRoute>
       } />
-
-      {/* User management routes */}
+      
+      {/* Usuários */}
       <Route path="/users" element={
-        <ProtectedRoute requiredPermission="users.edit">
-          <AppLayout>
-            <UsersPage />
-          </AppLayout>
+        <ProtectedRoute requiredPermission="manage_users">
+          <UsersPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/users/:id" element={
-        <ProtectedRoute requiredPermission="users.edit">
-          <AppLayout>
-            <UserDetailPage />
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-
       <Route path="/users/invite" element={
-        <ProtectedRoute requiredPermission="users.invite">
-          <AppLayout>
-            <UserInvitePage />
-          </AppLayout>
+        <ProtectedRoute requiredPermission="manage_users">
+          <UserInvitePage />
         </ProtectedRoute>
       } />
-
-      {/* Admin routes */}
+      <Route path="/users/:id" element={
+        <ProtectedRoute requiredPermission="manage_users">
+          <UserDetailPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* Admin */}
       <Route path="/admin" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <AdminDashboard />
-          </AdminLayout>
+        <ProtectedRoute requiredPermission="admin_access">
+          <AdminDashboard />
         </ProtectedRoute>
       } />
-
       <Route path="/admin/clients" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <ClientsPage />
-          </AdminLayout>
+        <ProtectedRoute requiredPermission="admin_access">
+          <ClientsPage />
         </ProtectedRoute>
       } />
-
       <Route path="/admin/clients/new" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <ClientFormPage />
-          </AdminLayout>
+        <ProtectedRoute requiredPermission="admin_access">
+          <ClientFormPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/admin/clients/:id" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <ClientDetailPage />
-          </AdminLayout>
-        </ProtectedRoute>
-      } />
-
       <Route path="/admin/clients/edit/:id" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <ClientFormPage />
-          </AdminLayout>
+        <ProtectedRoute requiredPermission="admin_access">
+          <ClientFormPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/admin/users" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <UsersPage />
-          </AdminLayout>
+      <Route path="/admin/clients/:id" element={
+        <ProtectedRoute requiredPermission="admin_access">
+          <ClientDetailPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/admin/users/:id" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <UserDetailPage />
-          </AdminLayout>
+      <Route path="/admin/subscriptions/new" element={
+        <ProtectedRoute requiredPermission="admin_access">
+          <SubscriptionFormPage />
         </ProtectedRoute>
       } />
-
-      <Route path="/admin/users/invite" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <UserInvitePage />
-          </AdminLayout>
+      <Route path="/admin/subscriptions/edit/:id" element={
+        <ProtectedRoute requiredPermission="admin_access">
+          <SubscriptionFormPage />
         </ProtectedRoute>
       } />
-
       <Route path="/admin/settings" element={
-        <ProtectedRoute requiredPermission="admin.view">
-          <AdminLayout>
-            <SettingsPage />
-          </AdminLayout>
+        <ProtectedRoute requiredPermission="admin_access">
+          <SettingsPage />
         </ProtectedRoute>
       } />
-
-      {/* Legacy redirect for property details */}
-      <Route path="/property/:id" element={<PropertyDetailRedirect />} />
-
-      {/* 404 route */}
+      
+      {/* Páginas de erro */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
