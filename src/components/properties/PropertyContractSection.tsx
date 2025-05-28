@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 import { ContractForm } from '@/components/contracts/contract-form';
 import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
 import { useContractMutations } from '@/hooks/use-contract-mutations';
-import { RentalManagementModal } from './rental-management/RentalManagementModal';
+import { RentalManagementModal, RentalHistoryTable, MonthlyAverageCard } from './rental-management';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -117,6 +118,18 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
             </Button>
           </div>
         </div>
+
+        {/* Histórico de Aluguéis e Card de Média */}
+        {property?.id && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <RentalHistoryTable propertyId={property.id} />
+            </div>
+            <div className="lg:col-span-1">
+              <MonthlyAverageCard propertyId={property.id} />
+            </div>
+          </div>
+        )}
 
         {/* Lista de Contratos */}
         {contracts.length > 0 ? (

@@ -108,7 +108,12 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         return [];
       }
 
-      return data || [];
+      // Filter out rental management transactions to avoid duplication
+      const filteredData = (data || []).filter(tx => 
+        tx.subcategory !== 'rental-management'
+      );
+
+      return filteredData;
     }
   });
 
