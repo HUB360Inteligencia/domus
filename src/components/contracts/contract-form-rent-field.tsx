@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from 'react-hook-form';
 import { ContractFormData } from '@/types/contract';
-import { formatCurrency, parseCurrencyInput } from '@/utils/currency';
+import { formatCurrency, parseCurrencyToNumber } from '@/lib/format';
 
 interface ContractFormRentFieldProps {
   form: UseFormReturn<ContractFormData>;
@@ -13,12 +13,19 @@ interface ContractFormRentFieldProps {
 export function ContractFormRentField({ form }: ContractFormRentFieldProps) {
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const numericValue = parseCurrencyInput(value);
+    // Allow typing numbers and common currency symbols
+    const sanitizedValue = value.replace(/[^\d,.]/g, '');
+    e.target.value = sanitizedValue;
+  };
+
+  const handleValueBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = parseCurrencyToNumber(value);
     form.setValue('value', numericValue);
+    e.target.value = formatCurrency(numericValue);
   };
 
   const currentValue = form.watch('value');
-  const displayValue = currentValue ? formatCurrency(currentValue) : '';
 
   return (
     <FormField
@@ -31,13 +38,9 @@ export function ContractFormRentField({ form }: ContractFormRentFieldProps) {
             <Input
               type="text"
               placeholder="R$ 0,00"
-              value={displayValue}
+              defaultValue={currentValue ? formatCurrency(currentValue) : ''}
               onChange={handleValueChange}
-              onBlur={(e) => {
-                const numericValue = parseCurrencyInput(e.target.value);
-                form.setValue('value', numericValue);
-                field.onBlur();
-              }}
+              onBlur={handleValueBlur}
             />
           </FormControl>
           <FormMessage />

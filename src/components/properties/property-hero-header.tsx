@@ -13,7 +13,7 @@ import { ContractForm } from '@/components/contracts/contract-form';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useActivityMutations } from '@/hooks/use-activity-mutations';
-import { useContracts } from '@/hooks/use-contracts';
+import { useContractMutations } from '@/hooks/use-contract-mutations';
 import { useProperties } from '@/hooks/use-properties';
 import { toast } from 'sonner';
 
@@ -40,7 +40,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   const { categoryOptions } = useFinancialCategories();
   const { createTransaction, isCreating: isCreatingTransaction } = useFinancialTransactions();
   const { createActivity, isCreating: isCreatingActivity } = useActivityMutations();
-  const { createContract, isCreatingContract } = useContracts();
+  const { createContract, isCreatingContract } = useContractMutations();
   const { properties } = useProperties();
 
   // Helper function to format currency
@@ -138,10 +138,13 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
   const handleContractSubmit = async (data: any, documentFile?: File) => {
     try {
+      console.log('Creating contract with data:', data);
+      
       await createContract({
         ...data,
         property_id: property?.id || ''
       });
+      
       setActiveModal(null);
       toast.success('Contrato criado com sucesso!');
     } catch (error) {

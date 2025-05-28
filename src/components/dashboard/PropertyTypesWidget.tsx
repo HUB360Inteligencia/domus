@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { MinimalCard } from '@/components/finances/dashboard/MinimalCard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useProperties } from '@/hooks/use-properties';
+import { Progress } from '@/components/ui/progress';
 
 export function PropertyTypesWidget() {
   const { properties, isLoading } = useProperties();
@@ -18,7 +18,7 @@ export function PropertyTypesWidget() {
 
   // Calcular dados dos tipos de propriedades
   const propertyTypesData = React.useMemo(() => {
-    if (!properties) return [];
+    if (!properties || properties.length === 0) return [];
     
     const typeCounts = properties.reduce((acc, property) => {
       const type = property.type || 'others';
@@ -29,12 +29,14 @@ export function PropertyTypesWidget() {
 
     const colors = ['#0A5B6C', '#0E7A8A', '#1299A8', '#16B8C6', '#1AD7E4'];
     
-    return Object.entries(typeCounts).map(([type, count], index) => ({
-      name: type,
-      value: count,
-      color: colors[index % colors.length],
-      percentage: ((count / properties.length) * 100).toFixed(1)
-    }));
+    return Object.entries(typeCounts)
+      .map(([type, count], index) => ({
+        name: type,
+        value: count,
+        color: colors[index % colors.length],
+        percentage: ((count / properties.length) * 100)
+      }))
+      .sort((a, b) => b.value - a.value); // Ordenar por quantidade
   }, [properties]);
 
   if (isLoading) {
@@ -53,52 +55,36 @@ export function PropertyTypesWidget() {
   return (
     <MinimalCard className="h-full">
       <div className="flex flex-col h-full">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tipos de Imóveis</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Distribuição por Tipo</h3>
         
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 space-y-4">
           {propertyTypesData.length > 0 ? (
-            <div className="h-full flex flex-col">
-              <div className="flex-1 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={propertyTypesData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={30}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {propertyTypesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number, name: string) => [`${value} propriedades`, name]}
+            propertyTypesData.map((item, index) => (
+              <div key={item.name} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
                     />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="mt-4 space-y-2">
-                {propertyTypesData.map((item, index) => (
-                  <div key={item.name} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-gray-700">{item.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-medium text-gray-900">{item.value}</span>
-                      <span className="text-xs text-gray-500 ml-1">({item.percentage}%)</span>
-                    </div>
+                    <span className="text-sm font-medium text-gray-700">{item.name}</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-gray-900">{item.value}</span>
+                    <span className="text-gray-500">({item.percentage.toFixed(1)}%)</span>
+                  </div>
+                </div>
+                <div className="ml-7">
+                  <Progress 
+                    value={item.percentage} 
+                    className="h-2"
+                    style={{
+                      '--progress-foreground': item.color
+                    } as React.CSSProperties}
+                  />
+                </div>
               </div>
-            </div>
+            ))
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
               <div className="text-center">

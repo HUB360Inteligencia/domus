@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -154,6 +153,16 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
     }
   };
 
+  // Simple currency input handler
+  const handleCurrencyInput = (value: string, onChange: (val: number) => void) => {
+    // Remove all non-numeric characters except comma and dot
+    const cleanValue = value.replace(/[^\d,.]/g, '');
+    
+    // Convert to number and update form
+    const numericValue = parseCurrencyToNumber(cleanValue);
+    onChange(numericValue);
+  };
+
   // Format currency on blur
   const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
     const value = parseCurrencyToNumber(e.target.value);
@@ -193,7 +202,37 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(async (data) => {
+        const formattedData: ContractFormData = {
+          title: data.title,
+          property_id: data.property_id,
+          tenant_name: data.tenant_name,
+          tenant_document: data.tenant_document,
+          tenant_contact: data.tenant_contact,
+          start_date: parseDate(data.start_date),
+          end_date: parseDate(data.end_date),
+          value: data.value,
+          payment_day: data.payment_day,
+          payment_due_day: data.payment_due_day,
+          deposit_value: data.deposit_value,
+          status: data.status as ContractStatus,
+          terms: data.terms,
+          has_renewal_option: data.has_renewal_option,
+          renewal_terms: data.renewal_terms,
+          special_conditions: data.special_conditions,
+          has_variable_rent: data.has_variable_rent,
+          variable_rent_values: data.has_variable_rent ? variableRentValues : [],
+          on_time_discount_percentage: data.on_time_discount_percentage,
+          late_fee_percentage: data.late_fee_percentage,
+          is_discount_not_fee: data.is_discount_not_fee,
+          late_interest_percentage: data.late_interest_percentage,
+          late_daily_interest: data.late_daily_interest,
+          fine_percentage: data.fine_percentage,
+          payment_terms: data.payment_terms,
+        };
+
+        await onSubmit(formattedData, documentFile || undefined);
+      })} className="space-y-6">
         {/* Basic Contract Information */}
         <Card>
           <CardContent className="pt-6">
@@ -384,14 +423,15 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading }: Con
                       <FormLabel>Valor do Aluguel (R$)</FormLabel>
                       <FormControl>
                         <Input 
-                          {...field}
-                          value={typeof field.value === 'number' ? formatCurrency(field.value) : ''} 
-                          onChange={(e) => {
-                            // Allow typing, will format on blur
-                            const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                            e.target.value = rawValue;
+                          type="text"
+                          placeholder="R$ 0,00"
+                          defaultValue={field.value ? formatCurrency(field.value) : ''}
+                          onChange={(e) => handleCurrencyInput(e.target.value, field.onChange)}
+                          onBlur={(e) => {
+                            const numericValue = parseCurrencyToNumber(e.target.value);
+                            field.onChange(numericValue);
+                            e.target.value = formatCurrency(numericValue);
                           }}
-                          onBlur={(e) => handleCurrencyBlur(e, field)}
                         />
                       </FormControl>
                       <FormMessage />
