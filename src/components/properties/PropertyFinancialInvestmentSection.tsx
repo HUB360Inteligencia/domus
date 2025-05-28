@@ -127,7 +127,7 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
 
         {renderFinancialCard(
           'Aquisição + Investimentos',
-          formatCurrency((purchaseValue || 0) + (totalInvestment || 0)),
+          formatCurrency((purchaseValue || 0) + (additionalInvestments || 0)),
           `Investimentos: ${formatCurrency(totalInvestment || 0)}`
         )}
         
