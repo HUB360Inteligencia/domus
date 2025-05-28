@@ -7,7 +7,6 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -18,14 +17,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   property, 
   isLoading = false 
 }) => {
-  const navigate = useNavigate();
   const [showNewContractModal, setShowNewContractModal] = useState(false);
-
-  const handleAddContract = () => {
-    if (property?.id) {
-      navigate(`/contracts/new?property=${property.id}`);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -34,7 +26,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-10 w-32" />
         </div>
-        <Card>
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
           <CardHeader>
             <Skeleton className="h-6 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
@@ -90,7 +82,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                  property.status}
               </Badge>
             )}
-            <Button onClick={handleAddContract}>
+            <Button onClick={() => setShowNewContractModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Contrato
             </Button>
@@ -98,7 +90,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
         </div>
 
         {!hasContractInfo ? (
-          <Card>
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
               <CardTitle>Informações do Contrato</CardTitle>
               <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
@@ -111,7 +103,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                 </p>
                 <Button 
                   variant="outline" 
-                  onClick={handleAddContract}
+                  onClick={() => setShowNewContractModal(true)}
                   className="mt-4"
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -121,7 +113,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
               <CardTitle>Informações do Contrato</CardTitle>
               <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
