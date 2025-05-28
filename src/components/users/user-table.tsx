@@ -36,24 +36,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth";
-import { AuthUser } from "@/lib/auth";
-import { toast } from "sonner";
-
-interface User extends Omit<AuthUser, 'role'> {
-  email?: string;
-  role?: string;
-  created_at?: string;
-}
+import { UserWithRole } from "@/api/users";
+import { useDeleteUser } from "@/hooks/use-users";
 
 interface UserTableProps {
-  users: User[];
+  users: UserWithRole[];
   isLoading: boolean;
 }
 
 export function UserTable({ users, isLoading }: UserTableProps) {
   const navigate = useNavigate();
   const { hasPermission, user: currentUser } = useAuth();
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
+  const deleteUserMutation = useDeleteUser();
 
   const canEditUsers = hasPermission("users.edit");
   const canDeleteUsers = hasPermission("users.delete");
@@ -66,13 +61,10 @@ export function UserTable({ users, isLoading }: UserTableProps) {
     if (!userToDelete) return;
 
     try {
-      // Lógica de exclusão do usuário
-      toast.success("Usuário excluído com sucesso");
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      setUserToDelete(null);
     } catch (error) {
       console.error("Erro ao excluir usuário:", error);
-      toast.error("Erro ao excluir usuário");
-    } finally {
-      setUserToDelete(null);
     }
   };
 
@@ -148,7 +140,9 @@ export function UserTable({ users, isLoading }: UserTableProps) {
                       <DropdownMenuItem
                         onClick={() => setUserToDelete(user)}
                         disabled={
-                          !canDeleteUsers || currentUser?.id === user.id
+                          !canDeleteUsers || 
+                          currentUser?.id === user.id ||
+                          deleteUserMutation.isPending
                         }
                         className="text-destructive focus:text-destructive"
                       >
@@ -182,8 +176,11 @@ export function UserTable({ users, isLoading }: UserTableProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
-              Excluir
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

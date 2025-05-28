@@ -43,6 +43,7 @@ export function ClientUsersList({
 }: ClientUsersListProps) {
   const [selectedUser, setSelectedUser] = useState<ClientUser | null>(null);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   
   // If clientId is not provided, fetch the current user's client ID
   const { data: currentUserClientId, isLoading: isLoadingClientId } = useCurrentUserClientId();
@@ -50,7 +51,7 @@ export function ClientUsersList({
   // Use the provided clientId or the current user's clientId
   const effectiveClientId = clientId || currentUserClientId;
   
-  const { data: clientUsers, isLoading: isLoadingUsers } = useClientUsers(effectiveClientId);
+  const { data: clientUsers, isLoading: isLoadingUsers, refetch } = useClientUsers(effectiveClientId);
   
   const isLoading = isLoadingClientId || isLoadingUsers;
 
@@ -62,6 +63,20 @@ export function ClientUsersList({
   const handleResetPasswordSuccess = () => {
     setIsResetPasswordOpen(false);
     setSelectedUser(null);
+    refetch();
+  };
+
+  const handleAddUserSuccess = () => {
+    setIsAddUserOpen(false);
+    refetch();
+  };
+
+  const handleAddUserClick = () => {
+    if (onAddUserClick) {
+      onAddUserClick();
+    } else {
+      setIsAddUserOpen(true);
+    }
   };
 
   if (isLoading) {
@@ -109,65 +124,79 @@ export function ClientUsersList({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Usuários</CardTitle>
-          <CardDescription>Gerencie os usuários deste cliente</CardDescription>
-        </div>
-        <Button onClick={onAddUserClick}>Adicionar usuário</Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {clientUsers && clientUsers.length > 0 ? (
-          clientUsers.map((user) => (
-            <div key={user.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {user.profile?.first_name} {user.profile?.last_name}
-                    {user.is_primary && (
-                      <Badge variant="outline" className="ml-2">Principal</Badge>
-                    )}
-                  </p>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Mail className="h-3.5 w-3.5 mr-1" />
-                    <span>{user.profile?.email}</span>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Usuários</CardTitle>
+            <CardDescription>Gerencie os usuários deste cliente</CardDescription>
+          </div>
+          <Button onClick={handleAddUserClick}>Adicionar usuário</Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {clientUsers && clientUsers.length > 0 ? (
+            clientUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {user.profile?.first_name} {user.profile?.last_name}
+                      {user.is_primary && (
+                        <Badge variant="outline" className="ml-2">Principal</Badge>
+                      )}
+                    </p>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5 mr-1" />
+                      <span>{user.profile?.email}</span>
+                    </div>
                   </div>
                 </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
+                      <Key className="h-4 w-4 mr-2" />
+                      Redefinir senha
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Alterar permissões
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
-                    <Key className="h-4 w-4 mr-2" />
-                    Redefinir senha
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Alterar permissões
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            ))
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              <p>Este cliente não possui usuários cadastrados</p>
+              <Button variant="link" onClick={handleAddUserClick}>
+                Adicionar o primeiro usuário
+              </Button>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            <p>Este cliente não possui usuários cadastrados</p>
-            <Button variant="link" onClick={onAddUserClick}>
-              Adicionar o primeiro usuário
-            </Button>
-          </div>
-        )}
-      </CardContent>
+          )}
+        </CardContent>
+      </Card>
 
+      {/* Dialog para adicionar usuário */}
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent className="sm:max-w-md">
+          <ClientUserForm 
+            clientId={effectiveClientId}
+            onSuccess={handleAddUserSuccess}
+            onCancel={() => setIsAddUserOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para redefinir senha */}
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
         <DialogContent className="sm:max-w-md">
           {selectedUser && (
@@ -180,6 +209,6 @@ export function ClientUsersList({
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
 }

@@ -1,6 +1,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchClientUsers, getCurrentUserClientId, userBelongsToClient } from "@/api/client-users";
+import { toast } from "sonner";
+import { 
+  fetchClientUsers, 
+  getCurrentUserClientId, 
+  userBelongsToClient,
+  createClientUser,
+  resetUserPassword,
+  CreateClientUserData,
+  ResetPasswordData
+} from "@/api/client-users";
 
 // Hook to get client users for a specific client
 export function useClientUsers(clientId?: string) {
@@ -36,14 +45,16 @@ export function useCreateClientUser() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (userData: any) => {
-      // This is a placeholder - implement the actual API call to create a client user
-      console.log("Creating client user:", userData);
-      return Promise.resolve(userData);
-    },
-    onSuccess: () => {
+    mutationFn: (userData: CreateClientUserData) => createClientUser(userData),
+    onSuccess: (_, variables) => {
+      toast.success("Usuário criado com sucesso");
       // Invalidate queries to refetch client users
+      queryClient.invalidateQueries({ queryKey: ["client-users", variables.client_id] });
       queryClient.invalidateQueries({ queryKey: ["client-users"] });
+    },
+    onError: (error) => {
+      console.error("Erro ao criar usuário:", error);
+      toast.error("Erro ao criar usuário");
     }
   });
 }
@@ -51,10 +62,13 @@ export function useCreateClientUser() {
 // Hook to reset a user's password
 export function useResetUserPassword() {
   return useMutation({
-    mutationFn: (resetData: { user_id: string; password: string }) => {
-      // This is a placeholder - implement the actual API call to reset a password
-      console.log("Resetting password for user:", resetData.user_id);
-      return Promise.resolve(resetData);
+    mutationFn: (resetData: ResetPasswordData) => resetUserPassword(resetData),
+    onSuccess: () => {
+      toast.success("Senha redefinida com sucesso");
+    },
+    onError: (error) => {
+      console.error("Erro ao redefinir senha:", error);
+      toast.error("Erro ao redefinir senha");
     }
   });
 }

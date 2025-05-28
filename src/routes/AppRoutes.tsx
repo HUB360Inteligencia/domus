@@ -295,6 +295,31 @@ export default function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      {/* User management routes */}
+      <Route path="/users" element={
+        <ProtectedRoute requiredPermission="users.edit">
+          <AppLayout>
+            <UsersPage />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/users/:id" element={
+        <ProtectedRoute requiredPermission="users.edit">
+          <AppLayout>
+            <UserDetailPage />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/users/invite" element={
+        <ProtectedRoute requiredPermission="users.invite">
+          <AppLayout>
+            <UserInvitePage />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+
       {/* Admin routes */}
       <Route path="/admin" element={
         <ProtectedRoute requiredPermission="admin.view">
@@ -324,6 +349,14 @@ export default function AppRoutes() {
         <ProtectedRoute requiredPermission="admin.view">
           <AdminLayout>
             <ClientDetailPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/clients/edit/:id" element={
+        <ProtectedRoute requiredPermission="admin.view">
+          <AdminLayout>
+            <ClientFormPage />
           </AdminLayout>
         </ProtectedRoute>
       } />

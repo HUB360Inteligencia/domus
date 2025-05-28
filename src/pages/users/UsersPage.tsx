@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { UserTable } from "@/components/users/user-table";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useUsers } from "@/hooks/use-users";
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -20,19 +20,12 @@ export default function UsersPage() {
   // Verificar permissões
   const canInviteUsers = hasPermission("users.invite");
   
-  // Buscar usuários
-  const { data: users, isLoading, error } = useQuery({
-    queryKey: ["users"],
-    queryFn: async () => {
-      const response = await fetch("/api/users");
-      if (!response.ok) throw new Error("Failed to fetch users");
-      return response.json();
-    },
-  });
+  // Buscar usuários usando o hook correto
+  const { data: users, isLoading, error } = useUsers();
 
   // Filtrar usuários baseado na busca
   const filteredUsers = users?.filter(user => 
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.profile?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.profile?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.profile?.last_name?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
@@ -40,6 +33,22 @@ export default function UsersPage() {
   const handleInviteUser = () => {
     navigate("/users/invite");
   };
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <PageHeader
+          title="Erro ao carregar usuários"
+          description="Não foi possível carregar a lista de usuários."
+        />
+        <div className="mt-4">
+          <Button onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-4">
