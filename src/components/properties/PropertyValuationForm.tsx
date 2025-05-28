@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Property } from '@/types/property';
 import { usePropertyValuations } from '@/hooks/use-property-valuations';
-import { formatCurrency, parseCurrencyInput } from '@/utils/currency';
+import { formatCurrency, parseCurrencyToNumber } from '@/lib/format';
 import { toast } from 'sonner';
 
 const valuationSchema = z.object({
@@ -55,10 +55,9 @@ export const PropertyValuationForm: React.FC<PropertyValuationFormProps> = ({
 
     try {
       await createValuation({
-        property_id: property.id,
         value: data.value,
-        valuation_date: data.valuation_date,
-        notes: data.notes || null,
+        date: data.valuation_date,
+        notes: data.notes || undefined,
       });
       
       toast.success('Avaliação criada com sucesso!');
@@ -71,7 +70,7 @@ export const PropertyValuationForm: React.FC<PropertyValuationFormProps> = ({
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const numericValue = parseCurrencyInput(value);
+    const numericValue = parseCurrencyToNumber(value);
     setValue('value', numericValue);
   };
 

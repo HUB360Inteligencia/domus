@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Edit, Trash2, MapPin, Home, Bed, Bath, Car, Square, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   const { categoryOptions } = useFinancialCategories();
   const { createTransaction, isCreating: isCreatingTransaction } = useFinancialTransactions();
   const { createActivity, isCreating: isCreatingActivity } = useActivityMutations();
-  const { createContract, isCreatingContract } = useContracts();
+  const { createContract, isCreating: isCreatingContract } = useContracts();
   const { properties } = useProperties();
 
   // Helper function to format currency
@@ -450,7 +449,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               initialData={{ property_id: property?.id || '' }}
               onSubmit={handleContractSubmit}
               onCancel={handleContractCancel}
-              isSubmitting={isCreatingContract}
+              isLoading={isCreatingContract}
             />
           </div>
         </DialogContent>
