@@ -94,14 +94,14 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Linha 1: Property Details + Financial Details + Status Cards */}
+          {/* Linha 1: Property Details + Financial Details + Status Cards - Altura Uniforme */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Property Details Card (sem linha "Valor") */}
-            <Card>
+            <Card className="h-full min-h-[280px] border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
               <CardHeader>
                 <CardTitle className="text-lg">Detalhes do Imóvel</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex-1">
                 {isLoading ? (
                   // ... keep existing code (loading skeletons)
                   <>
@@ -163,12 +163,12 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             </Card>
 
             {/* Financial Details Card */}
-            <div>
+            <div className="h-full min-h-[280px]">
               <PropertyFinancialDetailsCard property={property} isLoading={isLoading} />
             </div>
 
             {/* Status Card com Rendimento abaixo */}
-            <div className="space-y-6">
+            <div className="space-y-6 h-full">
               <PropertyStatusCard property={property} isLoading={isLoading} />
               <PropertyMonthlyYieldCard property={property} isLoading={isLoading} />
             </div>
@@ -177,7 +177,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           {/* Linha 2: Map (1,5 cols) + Description + Features (1,5 cols) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Map */}
-            <Card>
+            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
               <CardHeader>
                 <CardTitle className="text-lg">Localização</CardTitle>
               </CardHeader>
@@ -197,7 +197,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             {/* Description + Features */}
             <div className="space-y-6">
               {/* Description */}
-              <Card>
+              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
                 <CardHeader>
                   <CardTitle className="text-lg">Descrição</CardTitle>
                 </CardHeader>
@@ -217,7 +217,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               </Card>
 
               {/* Features */}
-              <Card>
+              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
                 <CardHeader>
                   <CardTitle className="text-lg">Características</CardTitle>
                 </CardHeader>

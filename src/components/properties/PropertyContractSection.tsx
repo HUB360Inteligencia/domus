@@ -7,7 +7,6 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -18,13 +17,10 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   property, 
   isLoading = false 
 }) => {
-  const navigate = useNavigate();
   const [showNewContractModal, setShowNewContractModal] = useState(false);
 
   const handleAddContract = () => {
-    if (property?.id) {
-      navigate(`/contracts/new?property=${property.id}`);
-    }
+    setShowNewContractModal(true);
   };
 
   if (isLoading) {
@@ -98,7 +94,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
         </div>
 
         {!hasContractInfo ? (
-          <Card>
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
               <CardTitle>Informações do Contrato</CardTitle>
               <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
@@ -121,7 +117,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
               <CardTitle>Informações do Contrato</CardTitle>
               <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
