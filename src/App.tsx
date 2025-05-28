@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { MapboxProvider } from '@/contexts/MapboxContext';
-import AppRoutes from '@/routes/AppRoutes';
+import { AppRoutes } from '@/routes/AppRoutes';
 
 function App() {
   return (

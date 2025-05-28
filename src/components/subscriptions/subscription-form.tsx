@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,9 +93,13 @@ export function SubscriptionForm({
     setIsSubmitting(true);
     try {
       const subscriptionData = {
-        ...data,
+        client_id: data.client_id,
+        plan_id: data.plan_id,
         starts_at: data.starts_at.toISOString(),
         ends_at: data.ends_at?.toISOString(),
+        status: data.status,
+        payment_status: data.payment_status,
+        is_auto_renewal: data.is_auto_renewal,
       };
 
       if (subscriptionId) {
