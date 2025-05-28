@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Info, User, Building, Banknote, Ticket, ImageIcon, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,6 @@ import { PropertyTransactionsSection } from './PropertyTransactionsSection';
 import { PropertyContractOccupancySection } from './PropertyContractOccupancySection';
 import { PropertyImageGallery } from './PropertyImageGallery';
 import { PropertyHeroHeader } from './property-hero-header';
-import { PropertyStatusCard } from './PropertyStatusCard';
 import { PropertyFinancialDetailsCard } from './PropertyFinancialDetailsCard';
 import { PropertyContractSection } from './PropertyContractSection';
 import { PropertyMonthlyYieldCard } from './PropertyMonthlyYieldCard';
@@ -43,6 +43,38 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'rented':
+        return 'Alugado';
+      case 'available':
+        return 'Disponível';
+      case 'airbnb':
+        return 'Airbnb';
+      case 'maintenance':
+        return 'Em manutenção';
+      case 'sold':
+        return 'Vendido';
+      default:
+        return status || 'N/A';
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'rented':
+        return 'default';
+      case 'available':
+        return 'outline';
+      case 'airbnb':
+        return 'secondary';
+      case 'maintenance':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
   };
 
   return (
@@ -96,14 +128,13 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         <TabsContent value="overview" className="space-y-6">
           {/* Linha 1: Property Details + Financial Details + Status Cards - Altura Uniforme */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Property Details Card (sem linha "Valor") */}
+            {/* Property Details Card - Incluindo Status */}
             <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white h-full min-h-[280px]">
               <CardHeader>
                 <CardTitle className="text-lg">Detalhes do Imóvel</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 flex-1">
                 {isLoading ? (
-                  // ... keep existing code (loading skeletons)
                   <>
                     <div className="flex justify-between">
                       <Skeleton className="h-4 w-20" />
@@ -127,8 +158,15 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                     </div>
                   </>
                 ) : (
-                  // Detalhes do imóvel SEM a linha "Valor"
                   <>
+                    {/* Status do Imóvel com destaque */}
+                    <div className="flex justify-between items-center pb-2 border-b">
+                      <span className="text-muted-foreground">Status</span>
+                      <Badge variant={getStatusBadgeVariant(property?.status || '')}>
+                        {getStatusLabel(property?.status || '')}
+                      </Badge>
+                    </div>
+                    
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Área</span>
                       <span className="font-medium">{property?.area ? `${property.area} m²` : 'N/A'}</span>
@@ -162,16 +200,13 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               </CardContent>
             </Card>
 
-            {/* Financial Details Card */}
+            {/* Financial Details Card - Incluindo Investimentos Extras */}
             <div className="h-full min-h-[280px]">
               <PropertyFinancialDetailsCard property={property} isLoading={isLoading} />
             </div>
 
-            {/* Status Card com Rendimento abaixo */}
-            <div className="space-y-6 h-full min-h-[280px] flex flex-col">
-              <div className="flex-1">
-                <PropertyStatusCard property={property} isLoading={isLoading} />
-              </div>
+            {/* Monthly Yield Card - Único card na terceira coluna */}
+            <div className="h-full min-h-[280px]">
               <PropertyMonthlyYieldCard property={property} isLoading={isLoading} />
             </div>
           </div>

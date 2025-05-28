@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Edit, Trash2, MapPin, Home, Bed, Bath, Car, Square } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, MapPin, Home, Bed, Bath, Car, Square, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionForm } from '@/components/finances/transaction-form';
 import { ActivityForm } from '@/components/activities/activity-form';
 import { PropertyValuationForm } from './PropertyValuationForm';
+import { ContractForm } from '@/components/contracts/contract-form';
 
 interface PropertyHeroHeaderProps {
   property: Property | null | undefined;
@@ -28,7 +29,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   onDelete,
   isDeleting,
 }) => {
-  const [activeModal, setActiveModal] = useState<'transaction' | 'activity' | 'valuation' | null>(null);
+  const [activeModal, setActiveModal] = useState<'transaction' | 'activity' | 'valuation' | 'contract' | null>(null);
 
   // Helper function to format currency
   const formatCurrency = (value: number | undefined) => {
@@ -314,6 +315,14 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                   >
                     + Avaliação
                   </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveModal('contract')}
+                    className="bg-yellow-500/20 backdrop-blur-sm hover:bg-yellow-500/30 border border-yellow-300/30 text-white text-xs px-2 py-1"
+                  >
+                    + Contrato
+                  </Button>
                 </div>
               </div>
             </div>
@@ -323,31 +332,27 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
       {/* Transaction Modal */}
       <Dialog open={activeModal === 'transaction'} onOpenChange={() => setActiveModal(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Transação Financeira</DialogTitle>
           </DialogHeader>
-          <TransactionForm 
-            propertyId={property?.id}
-          />
+          <TransactionForm />
         </DialogContent>
       </Dialog>
 
       {/* Activity Modal */}
       <Dialog open={activeModal === 'activity'} onOpenChange={() => setActiveModal(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Atividade</DialogTitle>
           </DialogHeader>
-          <ActivityForm 
-            propertyId={property?.id}
-          />
+          <ActivityForm />
         </DialogContent>
       </Dialog>
 
       {/* Valuation Modal */}
       <Dialog open={activeModal === 'valuation'} onOpenChange={() => setActiveModal(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Atualizar Avaliação de Mercado</DialogTitle>
           </DialogHeader>
@@ -355,6 +360,21 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
             property={property}
             onSuccess={() => setActiveModal(null)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract Modal */}
+      <Dialog open={activeModal === 'contract'} onOpenChange={() => setActiveModal(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Contrato</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto">
+            <ContractForm 
+              initialData={{ property_id: property?.id || '' }}
+              onSuccess={() => setActiveModal(null)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>

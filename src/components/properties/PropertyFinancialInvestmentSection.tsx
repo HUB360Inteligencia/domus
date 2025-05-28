@@ -1,13 +1,10 @@
 
 import React, { useState } from 'react';
 import { Property } from '@/types/property';
-import { PropertyFinancialSection } from './PropertyFinancialSection';
-import { PropertyInvestmentOverview } from './PropertyInvestmentOverview';
-import { InvestmentsList } from './InvestmentsList';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PropertyValuationChart } from './PropertyValuationChart';
 import { usePropertyValuations } from '@/hooks/use-property-valuations';
@@ -19,6 +16,7 @@ import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PropertyInvestmentForm } from './PropertyInvestmentForm';
+import { InvestmentHistoryTable } from './InvestmentHistoryTable';
 
 interface PropertyFinancialInvestmentSectionProps {
   property: Property | null | undefined;
@@ -58,6 +56,22 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
   
   const currentMarketValue = latestValuation?.value || property?.value || 0;
   const purchaseValue = property?.purchase_value || 0;
+  const additionalInvestments = totalInvestment - purchaseValue;
+
+  // Calculate distribution by type
+  const distributionByType = investments.reduce((acc, investment) => {
+    const type = investment.investment_type;
+    acc[type] = (acc[type] || 0) + investment.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const typeLabels: Record<string, string> = {
+    purchase: 'Compra',
+    improvement: 'Melhorias',
+    renovation: 'Reformas',
+    maintenance: 'Manutenção',
+    other: 'Outros'
+  };
 
   const renderFinancialCard = (
     title: string, 
@@ -182,7 +196,7 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
 
       <Separator />
 
-      {/* Seção Unificada de Investimentos */}
+      {/* Seção Unificada de Investimentos - Nova Estrutura */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Gestão de Investimentos</h3>
@@ -192,18 +206,71 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
           </Button>
         </div>
 
-        {/* Resumo dos Investimentos - Versão P&B */}
-        <div>
-          <h4 className="text-lg font-medium mb-4">Resumo dos Investimentos</h4>
-          <PropertyInvestmentOverview property={property} blackAndWhite={true} />
+        {/* Cards de Investimentos - 3 + 3 colunas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Primeira linha: 3 cards principais */}
+          {renderFinancialCard(
+            'Valor de Aquisição',
+            formatCurrency(purchaseValue),
+            property?.purchase_date 
+              ? `Adquirido em ${format(new Date(property.purchase_date), 'dd/MM/yyyy', { locale: ptBR })}` 
+              : 'Valor original de aquisição'
+          )}
+          
+          {renderFinancialCard(
+            'Investimentos Adicionais',
+            formatCurrency(additionalInvestments),
+            `${investments.length} investimento${investments.length !== 1 ? 's' : ''} registrado${investments.length !== 1 ? 's' : ''}`
+          )}
+          
+          {renderFinancialCard(
+            'Total Investido',
+            formatCurrency(totalInvestment),
+            'Aquisição + investimentos adicionais'
+          )}
+        </div>
+
+        {/* Segunda linha: Distribuição por tipo - tabela minimalista */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-3">
+            <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+              <CardHeader>
+                <CardTitle className="text-lg">Distribuição por Tipo de Investimento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(distributionByType).length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    {Object.entries(distributionByType)
+                      .sort(([,a], [,b]) => b - a)
+                      .map(([type, amount]) => {
+                        const percentage = totalInvestment > 0 ? (amount / totalInvestment) * 100 : 0;
+                        return (
+                          <div key={type} className="text-center p-4 border rounded-lg">
+                            <div className="text-sm font-medium text-muted-foreground mb-1">
+                              {typeLabels[type] || type}
+                            </div>
+                            <div className="text-lg font-bold">{formatCurrency(amount)}</div>
+                            <div className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Nenhum investimento adicional registrado</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <Separator />
 
-        {/* Histórico de Investimentos Melhorado */}
+        {/* Histórico de Investimentos com Filtros e Ordenação */}
         <div>
           <h4 className="text-lg font-medium mb-4">Histórico de Investimentos</h4>
-          <InvestmentsList 
+          <InvestmentHistoryTable 
             property={property}
             investments={investments}
             isLoading={isLoading || isLoadingInvestments}
@@ -213,7 +280,7 @@ export const PropertyFinancialInvestmentSection: React.FC<PropertyFinancialInves
 
       {/* Modal de Novo Investimento */}
       <Dialog open={showNewInvestmentModal} onOpenChange={setShowNewInvestmentModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Adicionar Novo Investimento</DialogTitle>
           </DialogHeader>

@@ -63,7 +63,15 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
       return;
     }
     
-    const success = await registerInvestment(data, receiptFile || undefined);
+    // Cast the data to ensure it matches the expected type
+    const investmentData = {
+      investment_type: data.investment_type as InvestmentType,
+      amount: data.amount,
+      investment_date: data.investment_date,
+      description: data.description,
+    };
+    
+    const success = await registerInvestment(investmentData, receiptFile || undefined);
     if (success) {
       onSuccess();
     }
@@ -77,96 +85,98 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="investment_type">Tipo de Investimento</Label>
-          <Select onValueChange={(value) => setValue('investment_type', value as InvestmentType)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              {investmentTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.investment_type && (
-            <p className="text-sm text-red-500 mt-1">{errors.investment_type.message}</p>
-          )}
-        </div>
+    <div className="max-h-[80vh] overflow-y-auto">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="investment_type">Tipo de Investimento</Label>
+            <Select onValueChange={(value) => setValue('investment_type', value as InvestmentType)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {investmentTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.investment_type && (
+              <p className="text-sm text-red-500 mt-1">{errors.investment_type.message}</p>
+            )}
+          </div>
 
-        <div>
-          <Label htmlFor="amount">Valor (R$)</Label>
-          <Input
-            id="amount"
-            type="number"
-            step="0.01"
-            placeholder="0,00"
-            {...register('amount', { valueAsNumber: true })}
-          />
-          {errors.amount && (
-            <p className="text-sm text-red-500 mt-1">{errors.amount.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="investment_date">Data do Investimento</Label>
-        <Input
-          id="investment_date"
-          type="date"
-          {...register('investment_date')}
-        />
-        {errors.investment_date && (
-          <p className="text-sm text-red-500 mt-1">{errors.investment_date.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="description">Descrição (opcional)</Label>
-        <Textarea
-          id="description"
-          placeholder="Descreva o investimento..."
-          rows={3}
-          {...register('description')}
-        />
-        {errors.description && (
-          <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="receipt">Comprovante (opcional)</Label>
-        <div className="mt-1">
-          <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-            <div className="space-y-1 text-center">
-              <Upload className="mx-auto h-8 w-8 text-gray-400" />
-              <div className="text-sm text-gray-600">
-                {receiptFile ? receiptFile.name : 'Clique para fazer upload do comprovante'}
-              </div>
-            </div>
-            <input
-              id="receipt"
-              type="file"
-              className="hidden"
-              accept="image/*,.pdf"
-              onChange={handleFileChange}
+          <div>
+            <Label htmlFor="amount">Valor (R$)</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              {...register('amount', { valueAsNumber: true })}
             />
-          </label>
+            {errors.amount && (
+              <p className="text-sm text-red-500 mt-1">{errors.amount.message}</p>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={onSuccess}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isCreating || !watchedType}>
-          {isCreating ? 'Salvando...' : 'Salvar Investimento'}
-        </Button>
-      </div>
-    </form>
+        <div>
+          <Label htmlFor="investment_date">Data do Investimento</Label>
+          <Input
+            id="investment_date"
+            type="date"
+            {...register('investment_date')}
+          />
+          {errors.investment_date && (
+            <p className="text-sm text-red-500 mt-1">{errors.investment_date.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="description">Descrição (opcional)</Label>
+          <Textarea
+            id="description"
+            placeholder="Descreva o investimento..."
+            rows={3}
+            {...register('description')}
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="receipt">Comprovante (opcional)</Label>
+          <div className="mt-1">
+            <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+              <div className="space-y-1 text-center">
+                <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                <div className="text-sm text-gray-600">
+                  {receiptFile ? receiptFile.name : 'Clique para fazer upload do comprovante'}
+                </div>
+              </div>
+              <input
+                id="receipt"
+                type="file"
+                className="hidden"
+                accept="image/*,.pdf"
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onSuccess}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={isCreating || !watchedType}>
+            {isCreating ? 'Salvando...' : 'Salvar Investimento'}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
