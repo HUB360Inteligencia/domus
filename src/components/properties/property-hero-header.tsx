@@ -89,6 +89,29 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
     }
   };
 
+  // Handler functions for form submissions
+  const handleTransactionSubmit = (data: any) => {
+    console.log('Transaction submitted:', data);
+    // TODO: Implement transaction creation logic
+    setActiveModal(null);
+  };
+
+  const handleActivitySubmit = (data: any) => {
+    console.log('Activity submitted:', data);
+    // TODO: Implement activity creation logic
+    setActiveModal(null);
+  };
+
+  const handleContractSubmit = async (data: any, documentFile?: File) => {
+    console.log('Contract submitted:', data, documentFile);
+    // TODO: Implement contract creation logic
+    setActiveModal(null);
+  };
+
+  const handleContractCancel = () => {
+    setActiveModal(null);
+  };
+
   if (isLoading) {
     return (
       <div className="relative h-48 md:h-64 bg-gradient-to-b from-muted/20 to-muted rounded-3xl overflow-hidden">
@@ -336,7 +359,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Transação Financeira</DialogTitle>
           </DialogHeader>
-          <TransactionForm />
+          <TransactionForm 
+            onSubmit={handleTransactionSubmit}
+            onCancel={() => setActiveModal(null)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -346,7 +372,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Atividade</DialogTitle>
           </DialogHeader>
-          <ActivityForm />
+          <ActivityForm onSubmit={handleActivitySubmit} />
         </DialogContent>
       </Dialog>
 
@@ -372,7 +398,8 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <div className="max-h-[70vh] overflow-y-auto">
             <ContractForm 
               initialData={{ property_id: property?.id || '' }}
-              onSuccess={() => setActiveModal(null)}
+              onSubmit={handleContractSubmit}
+              onCancel={handleContractCancel}
             />
           </div>
         </DialogContent>
