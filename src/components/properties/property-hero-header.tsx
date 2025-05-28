@@ -11,6 +11,12 @@ import { TransactionForm } from '@/components/finances/transaction-form';
 import { ActivityForm } from '@/components/activities/activity-form';
 import { PropertyValuationForm } from './PropertyValuationForm';
 import { ContractForm } from '@/components/contracts/contract-form';
+import { useFinancialCategories } from '@/hooks/use-financial-categories';
+import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { useActivityMutations } from '@/hooks/use-activity-mutations';
+import { useContracts } from '@/hooks/use-contracts';
+import { useProperties } from '@/hooks/use-properties';
+import { toast } from 'sonner';
 
 interface PropertyHeroHeaderProps {
   property: Property | null | undefined;
@@ -30,6 +36,13 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   isDeleting,
 }) => {
   const [activeModal, setActiveModal] = useState<'transaction' | 'activity' | 'valuation' | 'contract' | null>(null);
+
+  // Hooks for form integrations
+  const { categoryOptions } = useFinancialCategories();
+  const { createTransaction, isCreating: isCreatingTransaction } = useFinancialTransactions();
+  const { createActivity, isCreating: isCreatingActivity } = useActivityMutations();
+  const { createContract, isCreatingContract } = useContracts();
+  const { properties } = useProperties();
 
   // Helper function to format currency
   const formatCurrency = (value: number | undefined) => {
@@ -89,23 +102,53 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
     }
   };
 
+  // Property options for forms
+  const propertyOptions = properties.map(prop => ({
+    value: prop.id,
+    label: prop.title
+  }));
+
   // Handler functions for form submissions
-  const handleTransactionSubmit = (data: any) => {
-    console.log('Transaction submitted:', data);
-    // TODO: Implement transaction creation logic
-    setActiveModal(null);
+  const handleTransactionSubmit = async (data: any) => {
+    try {
+      await createTransaction({
+        ...data,
+        property_id: property?.id || null
+      });
+      setActiveModal(null);
+      toast.success('Transação criada com sucesso!');
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      toast.error('Erro ao criar transação');
+    }
   };
 
-  const handleActivitySubmit = (data: any) => {
-    console.log('Activity submitted:', data);
-    // TODO: Implement activity creation logic
-    setActiveModal(null);
+  const handleActivitySubmit = async (data: any) => {
+    try {
+      await createActivity({
+        ...data,
+        property_id: property?.id || null
+      });
+      setActiveModal(null);
+      toast.success('Atividade criada com sucesso!');
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      toast.error('Erro ao criar atividade');
+    }
   };
 
   const handleContractSubmit = async (data: any, documentFile?: File) => {
-    console.log('Contract submitted:', data, documentFile);
-    // TODO: Implement contract creation logic
-    setActiveModal(null);
+    try {
+      await createContract({
+        ...data,
+        property_id: property?.id || ''
+      });
+      setActiveModal(null);
+      toast.success('Contrato criado com sucesso!');
+    } catch (error) {
+      console.error('Error creating contract:', error);
+      toast.error('Erro ao criar contrato');
+    }
   };
 
   const handleContractCancel = () => {
@@ -362,6 +405,9 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <TransactionForm 
             onSubmit={handleTransactionSubmit}
             onCancel={() => setActiveModal(null)}
+            isSubmitting={isCreatingTransaction}
+            properties={propertyOptions}
+            categories={categoryOptions}
           />
         </DialogContent>
       </Dialog>
@@ -372,7 +418,11 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Atividade</DialogTitle>
           </DialogHeader>
-          <ActivityForm onSubmit={handleActivitySubmit} />
+          <ActivityForm 
+            onSubmit={handleActivitySubmit}
+            isSubmitting={isCreatingActivity}
+            initialData={{ property_id: property?.id || '' }}
+          />
         </DialogContent>
       </Dialog>
 
@@ -400,6 +450,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               initialData={{ property_id: property?.id || '' }}
               onSubmit={handleContractSubmit}
               onCancel={handleContractCancel}
+              isSubmitting={isCreatingContract}
             />
           </div>
         </DialogContent>

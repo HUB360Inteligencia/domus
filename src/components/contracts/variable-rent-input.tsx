@@ -44,20 +44,20 @@ export function VariableRentInput({ values, onChange }: VariableRentInputProps) 
   
   const handleInputChange = (index: number, field: string, value: string) => {
     if (field === 'value') {
-      // Parse the currency value
+      // Parse the currency value using the fixed function
       const numValue = parseCurrencyToNumber(value);
-      updateValueAtIndex(index, field, numValue);
+      updateValueAtIndex(index, 'value', numValue);
     } else if (field === 'month') {
       // Ensure month is between 1-12
       const numValue = parseInt(value);
       if (numValue >= 1 && numValue <= 12) {
-        updateValueAtIndex(index, field, numValue);
+        updateValueAtIndex(index, 'month', numValue);
       }
     } else if (field === 'year') {
       // Basic year validation
       const numValue = parseInt(value);
       if (numValue >= 2000 && numValue <= 2100) {
-        updateValueAtIndex(index, field, numValue);
+        updateValueAtIndex(index, 'year', numValue);
       }
     }
   };
@@ -135,6 +135,7 @@ export function VariableRentInput({ values, onChange }: VariableRentInputProps) 
                     value={formatCurrency(item.value)}
                     onChange={(e) => handleInputChange(index, 'value', e.target.value)}
                     className="mt-1"
+                    placeholder="R$ 0,00"
                   />
                 </div>
                 
