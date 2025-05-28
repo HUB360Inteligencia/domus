@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Plus } from 'lucide-react';
 import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 import { ContractForm } from '@/components/contracts/contract-form';
 import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
+import { useContractMutations } from '@/hooks/use-contract-mutations';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -22,7 +22,21 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   isLoading = false 
 }) => {
   const [showNewContractModal, setShowNewContractModal] = useState(false);
-  const { contracts, activeContract, isLoading: isLoadingContracts } = useContractsByProperty(property?.id || null);
+  const { contracts, activeContract, isLoading: isLoadingContracts, refetch } = useContractsByProperty(property?.id || null);
+  const { createContract } = useContractMutations();
+
+  const handleCreateContract = async (contractData: any, documentFile?: File) => {
+    try {
+      await createContract({
+        ...contractData,
+        property_id: property?.id
+      });
+      setShowNewContractModal(false);
+      refetch();
+    } catch (error) {
+      console.error('Error creating contract:', error);
+    }
+  };
 
   if (isLoading || isLoadingContracts) {
     return (
@@ -260,8 +274,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
           </DialogHeader>
           <div className="p-2">
             <ContractForm
-              propertyId={property?.id}
-              onSuccess={() => setShowNewContractModal(false)}
+              onSubmit={handleCreateContract}
               onCancel={() => setShowNewContractModal(false)}
             />
           </div>

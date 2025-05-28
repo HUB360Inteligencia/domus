@@ -1,5 +1,7 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   createContract, 
   updateContract, 
@@ -111,7 +113,7 @@ export const useContractMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['contracts', 'property', data.property_id] });
       
       // Se o contrato mudou para ativo, completar atividade relacionada
-      if (data.status === 'active' && data.contract_id) {
+      if (data.status === 'active' && data.id) {
         try {
           const { data: activities } = await supabase
             .from('activities')
