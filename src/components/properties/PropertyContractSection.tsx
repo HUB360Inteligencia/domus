@@ -1,235 +1,221 @@
-
 import React, { useState } from 'react';
-import { Property } from '@/types/property';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, FileText, Calendar, DollarSign, User } from 'lucide-react';
+import { Property } from '@/types/property';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
-import { ContractForm } from '@/components/contracts/contract-form';
-import { ContractStatusSelect } from '@/components/contracts/contract-status-select';
-import { useContractMutations } from '@/hooks/use-contract-mutations';
-import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-export const PropertyContractSection: React.FC<PropertyContractSectionProps> = ({
-  property,
-  isLoading,
+export const PropertyContractSection: React.FC<PropertyContractSectionProps> = ({ 
+  property, 
+  isLoading = false 
 }) => {
-  const [showContractModal, setShowContractModal] = useState(false);
-  const { contracts, isLoading: isLoadingContracts, refetch } = useContractsByProperty(property?.id || null);
-  const { createContract, isCreatingContract } = useContractMutations();
+  const [showNewContractModal, setShowNewContractModal] = useState(false);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Ativo';
-      case 'pending':
-        return 'Pendente';
-      case 'expired':
-        return 'Expirado';
-      case 'canceled':
-        return 'Cancelado';
-      case 'draft':
-        return 'Rascunho';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'default';
-      case 'pending':
-        return 'outline';
-      case 'expired':
-      case 'canceled':
-        return 'destructive';
-      case 'draft':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
-  };
-
-  const handleContractSubmit = async (data: any) => {
-    try {
-      await createContract({
-        ...data,
-        property_id: property?.id || ''
-      });
-      setShowContractModal(false);
-      refetch();
-      toast.success('Contrato criado com sucesso!');
-    } catch (error) {
-      console.error('Error creating contract:', error);
-      toast.error('Erro ao criar contrato');
-    }
-  };
-
-  if (isLoading || isLoadingContracts) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <Card>
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Contratos da Propriedade
-            </CardTitle>
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="border rounded-lg p-4 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/4" />
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32 mb-2" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-40" />
               </div>
-            ))}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32 mb-2" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+            <Separator />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32 mb-2" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32 mb-2" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  const hasContractInfo = property?.tenant_name || property?.tenant_contact || 
+                         property?.agency_name || property?.agency_responsible || 
+                         property?.agency_contact;
+
   return (
     <>
       <div className="space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Contratos da Propriedade
-            </CardTitle>
-            <Button onClick={() => setShowContractModal(true)}>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold">Contrato</h3>
+          <div className="flex items-center gap-3">
+            {property?.status && (
+              <Badge variant={property.status === 'rented' ? 'default' : property.status === 'available' ? 'outline' : 'secondary'}>
+                {property.status === 'rented' ? 'Alugado' : 
+                 property.status === 'available' ? 'Disponível' : 
+                 property.status === 'airbnb' ? 'Airbnb' : 
+                 property.status === 'maintenance' ? 'Em manutenção' : 
+                 property.status}
+              </Badge>
+            )}
+            <Button onClick={() => setShowNewContractModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Novo Contrato
+              Adicionar Contrato
             </Button>
-          </CardHeader>
-          <CardContent>
-            {contracts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum contrato cadastrado para esta propriedade.</p>
+          </div>
+        </div>
+
+        {!hasContractInfo ? (
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+            <CardHeader>
+              <CardTitle>Informações do Contrato</CardTitle>
+              <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-10">
+              <div className="text-center text-muted-foreground space-y-3">
+                <p>Nenhuma informação de contrato cadastrada.</p>
+                <p className="text-sm">
+                  Edite o imóvel para adicionar informações do locatário e/ou imobiliária.
+                </p>
                 <Button 
                   variant="outline" 
+                  onClick={() => setShowNewContractModal(true)}
                   className="mt-4"
-                  onClick={() => setShowContractModal(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeiro Contrato
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {contracts.map((contract) => (
-                  <div 
-                    key={contract.id} 
-                    className="border rounded-lg p-4 hover:shadow-sm transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-3">
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+            <CardHeader>
+              <CardTitle>Informações do Contrato</CardTitle>
+              <CardDescription>Detalhes sobre o contrato de locação atual</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Locatário */}
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Informações do Locatário</h4>
+                  <div className="space-y-2">
+                    {property?.tenant_name ? (
                       <div>
-                        <h3 className="font-semibold text-lg">{contract.title}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <ContractStatusSelect
-                            contractId={contract.id}
-                            currentStatus={contract.status}
-                            onStatusChange={() => refetch()}
-                          />
-                        </div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="font-medium">{property.tenant_name}</p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600">
-                          {formatCurrency(contract.value)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          /mês
-                        </div>
+                    ) : null}
+                    
+                    {property?.tenant_contact ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Contato</p>
+                        <p className="font-medium">{property.tenant_contact}</p>
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{contract.tenant_name}</div>
-                          {contract.tenant_contact && (
-                            <div className="text-muted-foreground">{contract.tenant_contact}</div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">Início: {formatDate(contract.start_date)}</div>
-                          <div className="text-muted-foreground">Fim: {formatDate(contract.end_date)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">Dia {contract.payment_day}</div>
-                          <div className="text-muted-foreground">Vencimento</div>
-                        </div>
-                      </div>
-
-                      {contract.deposit_value && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium">{formatCurrency(contract.deposit_value)}</div>
-                            <div className="text-muted-foreground">Depósito</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {contract.terms && (
-                      <div className="mt-4 pt-4 border-t">
-                        <h4 className="font-medium text-sm mb-2">Observações:</h4>
-                        <p className="text-sm text-muted-foreground">{contract.terms}</p>
-                      </div>
-                    )}
+                    ) : null}
+                    
+                    {!property?.tenant_name && !property?.tenant_contact ? (
+                      <p className="text-sm text-muted-foreground">Nenhuma informação do locatário cadastrada</p>
+                    ) : null}
                   </div>
-                ))}
+                </div>
+                
+                {/* Imobiliária */}
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Informações da Imobiliária</h4>
+                  <div className="space-y-2">
+                    {property?.agency_name ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome da Imobiliária</p>
+                        <p className="font-medium">{property.agency_name}</p>
+                      </div>
+                    ) : null}
+                    
+                    {property?.agency_responsible ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Responsável</p>
+                        <p className="font-medium">{property.agency_responsible}</p>
+                      </div>
+                    ) : null}
+                    
+                    {property?.agency_contact ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Contato</p>
+                        <p className="font-medium">{property.agency_contact}</p>
+                      </div>
+                    ) : null}
+                    
+                    {!property?.agency_name && !property?.agency_responsible && !property?.agency_contact ? (
+                      <p className="text-sm text-muted-foreground">Nenhuma informação da imobiliária cadastrada</p>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              
+              <Separator />
+              
+              {/* Termos do Contrato - Placeholder para futuras implementações */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Termos do Contrato</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>Os detalhes completos do contrato serão implementados em breve.</p>
+                    <p>Você poderá registrar datas de início e fim, valor, condições especiais e muito mais.</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Documentos</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>Armazenamento de documentos relacionados ao contrato será implementado em breve.</p>
+                    <p>Guarde contratos, vistorias e outros documentos importantes.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Contract Modal */}
-      <Dialog open={showContractModal} onOpenChange={setShowContractModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* New Contract Modal */}
+      <Dialog open={showNewContractModal} onOpenChange={setShowNewContractModal}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Adicionar Novo Contrato</DialogTitle>
+            <DialogTitle>Novo Contrato de Locação</DialogTitle>
           </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto">
-            <ContractForm 
-              initialData={{ property_id: property?.id || '' }}
-              onSubmit={handleContractSubmit}
-              onCancel={() => setShowContractModal(false)}
-              isLoading={isCreatingContract}
-            />
+          <div className="p-4">
+            <p className="text-muted-foreground">
+              Formulário completo de contrato será implementado aqui.
+              Propriedade: {property?.title}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Incluirá campos para: dados do locatário, valor do aluguel, período do contrato, 
+              condições especiais, documentos anexos, etc.
+            </p>
           </div>
         </DialogContent>
       </Dialog>

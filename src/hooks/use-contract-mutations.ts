@@ -27,44 +27,16 @@ import {
   markAllNotificationsAsRead,
   deleteNotification
 } from '@/api/notifications';
-import { createActivity } from '@/api/activities';
 import { Contract, ContractFormData } from '@/types/contract';
 
 export const useContractMutations = () => {
   const queryClient = useQueryClient();
 
-  // Helper function to create activity for pending contracts
-  const createContractActivity = async (contract: Contract) => {
-    try {
-      await createActivity({
-        title: `Ativar Contrato: ${contract.title}`,
-        description: `Contrato de aluguel pendente para ativação. Locatário: ${contract.tenant_name}`,
-        activity_type: 'contract_activation',
-        status: 'pending',
-        priority: 'high',
-        property_id: contract.property_id,
-        contract_id: contract.id,
-        due_date: new Date().toISOString(),
-        user_id: contract.user_id
-      });
-      console.log('Contract activity created successfully');
-    } catch (error) {
-      console.error('Error creating contract activity:', error);
-    }
-  };
-
   // Contract mutations
   const { mutateAsync: createContractMutation, isPending: isCreatingContract } = useMutation({
     mutationFn: createContract,
-    onSuccess: async (contract) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      
-      // If contract is pending, create an activity
-      if (contract.status === 'pending') {
-        await createContractActivity(contract);
-        queryClient.invalidateQueries({ queryKey: ['activities'] });
-      }
-      
       toast.success('Contrato criado com sucesso!');
     },
     onError: (error: any) => {
@@ -109,16 +81,9 @@ export const useContractMutations = () => {
 
   const { mutateAsync: updateContractStatusMutation, isPending: isUpdatingContractStatus } = useMutation({
     mutationFn: ({ id, status }: { id: string; status: any }) => updateContractStatus(id, status),
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract', data.id] });
-      
-      // If status changed to pending, create activity
-      if (data.status === 'pending') {
-        await createContractActivity(data);
-        queryClient.invalidateQueries({ queryKey: ['activities'] });
-      }
-      
       toast.success(`Status do contrato alterado para: ${data.status}`);
     },
     onError: (error: any) => {
