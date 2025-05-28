@@ -40,7 +40,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   const { categoryOptions } = useFinancialCategories();
   const { createTransaction, isCreating: isCreatingTransaction } = useFinancialTransactions();
   const { createActivity, isCreating: isCreatingActivity } = useActivityMutations();
-  const { createContract, isCreating: isCreatingContract } = useContracts();
+  const { createContract, isCreatingContract } = useContracts();
   const { properties } = useProperties();
 
   // Helper function to format currency
