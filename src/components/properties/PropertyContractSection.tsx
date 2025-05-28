@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
@@ -18,7 +18,14 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   property, 
   isLoading = false 
 }) => {
+  const navigate = useNavigate();
   const [showNewContractModal, setShowNewContractModal] = useState(false);
+
+  const handleAddContract = () => {
+    if (property?.id) {
+      navigate(`/contracts/new?property=${property.id}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -83,7 +90,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                  property.status}
               </Badge>
             )}
-            <Button onClick={() => setShowNewContractModal(true)}>
+            <Button onClick={handleAddContract}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Contrato
             </Button>
@@ -104,7 +111,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                 </p>
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowNewContractModal(true)}
+                  onClick={handleAddContract}
                   className="mt-4"
                 >
                   <Plus className="h-4 w-4 mr-2" />

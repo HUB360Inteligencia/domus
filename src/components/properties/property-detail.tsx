@@ -13,8 +13,8 @@ import { PropertyImageGallery } from './PropertyImageGallery';
 import { PropertyHeroHeader } from './property-hero-header';
 import { PropertyStatusCard } from './PropertyStatusCard';
 import { PropertyFinancialDetailsCard } from './PropertyFinancialDetailsCard';
-import { PropertyQuickActions } from './PropertyQuickActions';
 import { PropertyContractSection } from './PropertyContractSection';
+import { PropertyMonthlyYieldCard } from './PropertyMonthlyYieldCard';
 import { Home } from 'lucide-react';
 
 interface PropertyDetailProps {
@@ -94,9 +94,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Row 1: Property Details + Financial Details + Status + Quick Actions */}
-            <Card className="lg:col-span-1">
+          {/* Linha 1: Property Details + Financial Details + Status Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Property Details Card (sem linha "Valor") */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Detalhes do Imóvel</CardTitle>
               </CardHeader>
@@ -126,12 +127,8 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                     </div>
                   </>
                 ) : (
-                  // ... keep existing code (property details display)
+                  // Detalhes do imóvel SEM a linha "Valor"
                   <>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor</span>
-                      <span className="font-medium">{formatCurrency(property?.value)}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Área</span>
                       <span className="font-medium">{property?.area ? `${property.area} m²` : 'N/A'}</span>
@@ -166,24 +163,21 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             </Card>
 
             {/* Financial Details Card */}
-            <div className="lg:col-span-1">
+            <div>
               <PropertyFinancialDetailsCard property={property} isLoading={isLoading} />
             </div>
 
-            {/* Property Status Card */}
-            <div className="lg:col-span-1">
+            {/* Status Card com Rendimento abaixo */}
+            <div className="space-y-6">
               <PropertyStatusCard property={property} isLoading={isLoading} />
-            </div>
-
-            {/* Quick Actions Card */}
-            <div className="lg:col-span-1">
-              <PropertyQuickActions property={property} isLoading={isLoading} />
+              <PropertyMonthlyYieldCard property={property} isLoading={isLoading} />
             </div>
           </div>
 
-          {/* Row 2: Property Map spanning 2 columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
+          {/* Linha 2: Map (1,5 cols) + Description + Features (1,5 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Map */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Localização</CardTitle>
               </CardHeader>
@@ -200,62 +194,60 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               </CardContent>
             </Card>
 
-            {/* Placeholder for future expansion */}
-            <div className="lg:col-span-1">
-              {/* This space is reserved for future widgets */}
+            {/* Description + Features */}
+            <div className="space-y-6">
+              {/* Description */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Descrição</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ) : property?.description ? (
+                    <p className="text-muted-foreground whitespace-pre-line">{property.description}</p>
+                  ) : (
+                    <p className="text-muted-foreground italic">Nenhuma descrição disponível.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Features */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Características</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {[...Array(6)].map((_, i) => (
+                        <Skeleton key={i} className="h-6 w-full" />
+                      ))}
+                    </div>
+                  ) : property?.features && Object.keys(property.features).length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                      {Object.entries(property.features as Record<string, any>)
+                        .filter(([_, value]) => value === true)
+                        .map(([key]) => (
+                          <div key={key} className="flex items-center">
+                            <div className="h-2 w-2 rounded-full bg-primary mr-2" />
+                            <span className="text-sm">
+                              {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground italic">Nenhuma característica adicionada.</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
-
-          {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Descrição</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ) : property?.description ? (
-                <p className="text-muted-foreground whitespace-pre-line">{property.description}</p>
-              ) : (
-                <p className="text-muted-foreground italic">Nenhuma descrição disponível.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Additional Features */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Características</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {[...Array(6)].map((_, i) => (
-                    <Skeleton key={i} className="h-6 w-full" />
-                  ))}
-                </div>
-              ) : property?.features && Object.keys(property.features).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                  {Object.entries(property.features as Record<string, any>)
-                    .filter(([_, value]) => value === true)
-                    .map(([key]) => (
-                      <div key={key} className="flex items-center">
-                        <div className="h-2 w-2 rounded-full bg-primary mr-2" />
-                        <span className="text-sm">
-                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground italic">Nenhuma característica adicionada.</p>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Financial/Investment Tab */}
