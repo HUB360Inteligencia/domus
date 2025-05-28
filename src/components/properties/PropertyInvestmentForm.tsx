@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { Property } from '@/types/property';
+import { InvestmentType } from '@/types/property-investment';
 import { Upload } from 'lucide-react';
 
 const investmentSchema = z.object({
-  investment_type: z.string().min(1, 'Tipo é obrigatório'),
+  investment_type: z.enum(['purchase', 'improvement', 'renovation', 'maintenance', 'other'] as const),
   amount: z.number().min(0, 'Valor deve ser positivo'),
   investment_date: z.string().min(1, 'Data é obrigatória'),
   description: z.string().optional(),
@@ -49,11 +50,11 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
   const watchedType = watch('investment_type');
 
   const investmentTypes = [
-    { value: 'purchase', label: 'Compra' },
-    { value: 'improvement', label: 'Melhorias' },
-    { value: 'renovation', label: 'Reformas' },
-    { value: 'maintenance', label: 'Manutenção' },
-    { value: 'other', label: 'Outros' },
+    { value: 'purchase' as const, label: 'Compra' },
+    { value: 'improvement' as const, label: 'Melhorias' },
+    { value: 'renovation' as const, label: 'Reformas' },
+    { value: 'maintenance' as const, label: 'Manutenção' },
+    { value: 'other' as const, label: 'Outros' },
   ];
 
   const onSubmit = async (data: InvestmentFormData) => {
@@ -75,7 +76,7 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="investment_type">Tipo de Investimento</Label>
-          <Select onValueChange={(value) => setValue('investment_type', value)}>
+          <Select onValueChange={(value) => setValue('investment_type', value as InvestmentType)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>

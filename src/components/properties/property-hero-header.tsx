@@ -135,21 +135,21 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
         {/* Progressive Blur Effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent backdrop-blur-[1px]" />
         
-        {/* Content Overlay */}
-        <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8 text-white">
-          {/* Top Navigation with Badges */}
+        {/* Content Overlay with margin for safety */}
+        <div className="relative z-10 h-full flex flex-col justify-between p-4 md:p-6 text-white">
+          {/* Top Navigation with Badges on same line as back button */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <Button 
                 variant="ghost" 
                 size={window.innerWidth < 768 ? "sm" : "icon"} 
                 onClick={onBack}
-                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/20 text-white"
+                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/20 text-white flex-shrink-0"
               >
                 <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
 
-              {/* Badges moved to top line */}
+              {/* Badges on same line as back button */}
               <div className="flex flex-wrap gap-1 md:gap-2">
                 <Badge 
                   variant="outline" 
@@ -221,8 +221,8 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
             </div>
           </div>
 
-          {/* Property Information with Status Info */}
-          <div className="space-y-3 md:space-y-4">
+          {/* Property Information */}
+          <div className="space-y-2 md:space-y-3">
             {/* Property Title */}
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg line-clamp-2">
               {property?.title}
@@ -238,32 +238,32 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
               </span>
             </div>
 
-            {/* Property Details - Responsive with smaller icons */}
-            <div className="flex flex-wrap items-center gap-3 md:gap-4 text-white/90 text-xs md:text-sm">
-              <div className="flex items-center gap-1 md:gap-2">
-                <Square className="h-3 w-3 md:h-4 md:w-4" />
+            {/* Property Details - Smaller font size */}
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 text-white/90 text-xs">
+              <div className="flex items-center gap-1">
+                <Square className="h-3 w-3" />
                 <span className="font-medium">
                   {property?.area ? `${property.area} m²` : 'N/A'}
                 </span>
               </div>
               
               {property?.bedrooms && (
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Bed className="h-3 w-3 md:h-4 md:w-4" />
+                <div className="flex items-center gap-1">
+                  <Bed className="h-3 w-3" />
                   <span className="font-medium">{property.bedrooms}</span>
                 </div>
               )}
               
               {property?.bathrooms && (
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Bath className="h-3 w-3 md:h-4 md:w-4" />
+                <div className="flex items-center gap-1">
+                  <Bath className="h-3 w-3" />
                   <span className="font-medium">{property.bathrooms}</span>
                 </div>
               )}
               
               {property?.garage_spots && (
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Car className="h-3 w-3 md:h-4 md:w-4" />
+                <div className="flex items-center gap-1">
+                  <Car className="h-3 w-3" />
                   <span className="font-medium">{property.garage_spots}</span>
                 </div>
               )}
@@ -275,15 +275,18 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                 {formatCurrency(property?.value)}
               </div>
 
-              {/* Status and Rental Info */}
+              {/* Status and Rental Info + Quick Actions */}
               <div className="text-right space-y-1">
-                {property?.status === 'rented' && property?.rental_value && (
-                  <div className="text-sm text-white/90">
-                    Aluguel: {formatCurrency(property.rental_value)}
+                {/* Status and Rental Value above buttons */}
+                <div className="space-y-1">
+                  {property?.status === 'rented' && property?.rental_value && (
+                    <div className="text-sm text-white/90">
+                      Aluguel: {formatCurrency(property.rental_value)}
+                    </div>
+                  )}
+                  <div className="text-xs text-white/80">
+                    Status: {getStatusLabel(property?.status || '')}
                   </div>
-                )}
-                <div className="text-xs text-white/80">
-                  Status: {getStatusLabel(property?.status || '')}
                 </div>
 
                 {/* Quick Actions - Horizontal Layout */}
@@ -325,7 +328,6 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
             <DialogTitle>Adicionar Transação Financeira</DialogTitle>
           </DialogHeader>
           <TransactionForm 
-            onSuccess={() => setActiveModal(null)}
             propertyId={property?.id}
           />
         </DialogContent>
@@ -338,7 +340,6 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
             <DialogTitle>Adicionar Atividade</DialogTitle>
           </DialogHeader>
           <ActivityForm 
-            onSuccess={() => setActiveModal(null)}
             propertyId={property?.id}
           />
         </DialogContent>
