@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
+import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 
 interface PropertyFinancialDetailsCardProps {
   property: Property | null | undefined;
@@ -15,6 +16,7 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
   isLoading
 }) => {
   const { totalInvestment, isLoadingInvestments } = usePropertyInvestments(property?.id || null);
+  const { getCurrentRentalValue, isLoading: isLoadingContracts } = useContractsByProperty(property?.id || null);
 
   // Helper function to format currency
   const formatCurrency = (value: number | undefined) => {
@@ -34,12 +36,8 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
         <CardTitle className="text-lg">Detalhes Financeiros</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading || isLoadingInvestments ? (
+        {isLoading || isLoadingInvestments || isLoadingContracts ? (
           <>
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
-            </div>
             <div className="flex justify-between">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-20" />
@@ -85,19 +83,10 @@ export const PropertyFinancialDetailsCard: React.FC<PropertyFinancialDetailsCard
               </div>
             )}
             
-            {property?.rental_value && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Valor do Aluguel</span>
-                <span className="font-medium">{formatCurrency(property.rental_value)}</span>
-              </div>
-            )}
-            
-            {property?.condo_fee && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Taxa de Condomínio</span>
-                <span className="font-medium">{formatCurrency(property.condo_fee)}</span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Valor do Aluguel</span>
+              <span className="font-medium">{formatCurrency(getCurrentRentalValue(property?.rental_value))}</span>
+            </div>
             
             {property?.area && property?.value && (
               <div className="flex justify-between">
