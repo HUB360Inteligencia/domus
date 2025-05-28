@@ -39,7 +39,7 @@ export const useContractMutations = () => {
       await createActivity({
         title: `Ativar Contrato: ${contract.title}`,
         description: `Contrato de aluguel pendente para ativação. Locatário: ${contract.tenant_name}`,
-        activity_type: 'legal',
+        activity_type: 'contract_activation',
         status: 'pending',
         priority: 'high',
         property_id: contract.property_id,
@@ -344,4 +344,3 @@ export const useContractMutations = () => {
       isMarkingAllNotifications || isDeletingNotification
   };
 };
-
