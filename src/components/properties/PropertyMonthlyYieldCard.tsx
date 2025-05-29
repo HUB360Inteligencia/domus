@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
+import { usePropertyTransactions } from '@/hooks/use-property-transactions';
 
 interface PropertyMonthlyYieldCardProps {
   property: Property | null | undefined;
@@ -16,6 +17,7 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
   isLoading,
 }) => {
   const { activeContract, isLoading: isLoadingContracts } = useContractsByProperty(property?.id || null);
+  const { averageMonthlyRevenue, isLoading: isLoadingTransactions, transactionCount } = usePropertyTransactions(property?.id || null, 12);
 
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined) return 'N/A';
@@ -69,14 +71,14 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
     };
   };
 
-  if (isLoading || isLoadingContracts) {
+  if (isLoading || isLoadingContracts || isLoadingTransactions) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Rendimento Mensal</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex justify-between">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-4 w-24" />
@@ -110,6 +112,24 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
           <span className="font-medium text-lg">
             {formatCurrency(monthlyYield)}
           </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <BarChart className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-muted-foreground">Rendimento Médio Mensal</span>
+          </div>
+          <div className="text-right">
+            <span className="font-medium text-blue-600">
+              {formatCurrency(averageMonthlyRevenue)}
+            </span>
+            <div className="text-xs text-muted-foreground">
+              {transactionCount > 0 
+                ? `últimos 12 meses ${transactionCount < 12 ? `(${transactionCount} meses)` : ''}`
+                : 'sem dados'
+              }
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-between items-center">

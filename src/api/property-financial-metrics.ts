@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { subMonths } from 'date-fns';
 
 export interface PropertyFinancialMetrics {
   monthlyProfitability: number;
@@ -43,14 +44,15 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
 
     if (investmentsError) throw investmentsError;
 
-    // Get occupancy periods to calculate vacancy
-    const { data: occupancyPeriods, error: occupancyError } = await supabase
-      .from('property_occupancy_periods')
-      .select('start_date, end_date')
+    // Get contracts for vacancy calculation (last 12 months)
+    const oneYearAgo = subMonths(new Date(), 12);
+    const { data: contracts, error: contractsError } = await supabase
+      .from('contracts')
+      .select('start_date, end_date, status')
       .eq('property_id', propertyId)
       .order('start_date', { ascending: true });
 
-    if (occupancyError) throw occupancyError;
+    if (contractsError) throw contractsError;
 
     // Calculate metrics
     const totalRevenue = transactions?.filter(t => t.transaction_type === 'income')
@@ -65,9 +67,6 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
     const totalInvestment = (property?.purchase_value || property?.total_investment || 0) + additionalInvestments;
 
     // Calculate monthly profitability (last 12 months average)
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    
     const recentTransactions = transactions?.filter(t => 
       new Date(t.transaction_date) >= oneYearAgo
     ) || [];
@@ -83,19 +82,19 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
     // Calculate accumulated ROI
     const accumulatedROI = totalInvestment > 0 ? (netIncome / totalInvestment) * 100 : 0;
 
-    // Calculate vacancy rate
+    // Calculate vacancy rate based on contracts (last 12 months)
     let vacancyRate = 0;
-    if (occupancyPeriods && occupancyPeriods.length > 0) {
+    if (contracts && contracts.length > 0) {
       const now = new Date();
-      const oneYearAgoDate = new Date();
-      oneYearAgoDate.setFullYear(oneYearAgoDate.getFullYear() - 1);
+      const oneYearAgoDate = subMonths(now, 12);
 
       let totalDays = 365;
       let occupiedDays = 0;
 
-      for (const period of occupancyPeriods) {
-        const startDate = new Date(period.start_date);
-        const endDate = period.end_date ? new Date(period.end_date) : now;
+      for (const contract of contracts) {
+        const startDate = new Date(contract.start_date);
+        const endDate = contract.end_date ? new Date(contract.end_date) : 
+          (contract.status === 'active' ? now : startDate); // Se ativo e sem data fim, considera até hoje
         
         // Only consider periods within the last year
         const periodStart = startDate > oneYearAgoDate ? startDate : oneYearAgoDate;
@@ -107,9 +106,11 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
         }
       }
 
+      // Limit occupied days to total days to avoid over 100% occupancy
+      occupiedDays = Math.min(occupiedDays, totalDays);
       vacancyRate = Math.max(0, Math.min(100, ((totalDays - occupiedDays) / totalDays) * 100));
     } else {
-      vacancyRate = 100; // No occupancy data means 100% vacancy
+      vacancyRate = 100; // No contracts means 100% vacancy
     }
 
     return {
