@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,12 +107,8 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         return [];
       }
 
-      // Filter out rental management transactions to avoid duplication
-      const filteredData = (data || []).filter(tx => 
-        tx.subcategory !== 'rental-management'
-      );
-
-      return filteredData;
+      // Incluir todas as transações - removido o filtro que excluía rental-management
+      return data || [];
     }
   });
 

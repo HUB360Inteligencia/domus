@@ -113,15 +113,26 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     setIsSubmitting(true);
     try {
       const monthYear = format(selectedMonth, 'MM/yyyy');
+      const transactionDate = format(selectedMonth, 'yyyy-MM-dd');
       
-      // Criar apenas uma transação resumo (sem duplicação no histórico)
-      const incomeItems = transactions.filter(t => t.type === 'income');
-      const expenseItems = transactions.filter(t => t.type === 'expense');
-      
-      const detailsDescription = [
-        ...incomeItems.map(item => `${item.name}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}`),
-        ...expenseItems.map(item => `${item.name}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}`)
-      ].join(' | ');
+      // Salvar cada transação individual no sistema financeiro geral
+      for (const transaction of transactions) {
+        await createTransaction({
+          name: `${transaction.name} - ${propertyTitle} (${monthYear})`,
+          amount: transaction.amount,
+          transaction_type: transaction.type,
+          category: transaction.category,
+          description: `Gestão de Aluguéis - ${propertyTitle} - ${monthYear}`,
+          transaction_date: transactionDate,
+          property_id: propertyId,
+          subcategory: 'rental-item'
+        });
+      }
+
+      // Criar também uma transação resumo para visualização agrupada no histórico do imóvel
+      const detailsDescription = transactions.map(item => 
+        `${item.name}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}`
+      ).join(' | ');
 
       const summaryDescription = `Gestão de Aluguéis - ${propertyTitle} (${monthYear}) - ${detailsDescription}`;
 
@@ -133,9 +144,9 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
           categories.find(c => c.type === 'income')?.id || '' : 
           categories.find(c => c.type === 'expense')?.id || '',
         description: summaryDescription,
-        transaction_date: format(selectedMonth, 'yyyy-MM-dd'),
+        transaction_date: transactionDate,
         property_id: propertyId,
-        subcategory: `rental-management`
+        subcategory: 'rental-management'
       });
 
       toast.success('Gestão de aluguéis salva com sucesso!');
