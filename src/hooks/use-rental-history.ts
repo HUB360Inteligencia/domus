@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export interface RentalHistoryItem {
   month: string;
@@ -21,6 +22,15 @@ export interface RentalItem {
   type: 'income' | 'expense';
   categoryName: string;
   description?: string;
+}
+
+interface GroupedRentalData {
+  month: string;
+  monthYear: string;
+  totalIncome: number;
+  totalExpense: number;
+  transactionDate: string;
+  individualItems: RentalItem[];
 }
 
 export const useRentalHistory = (propertyId: string | null) => {
@@ -50,7 +60,7 @@ export const useRentalHistory = (propertyId: string | null) => {
         const date = new Date(transaction.transaction_date);
         const monthKey = format(date, 'yyyy-MM');
         const monthYear = format(date, 'MM/yyyy');
-        const monthName = format(date, 'MMMM yyyy', { locale: { months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] } });
+        const monthName = format(date, 'MMMM yyyy', { locale: ptBR });
 
         if (!acc[monthKey]) {
           acc[monthKey] = {
@@ -81,7 +91,7 @@ export const useRentalHistory = (propertyId: string | null) => {
         }
 
         return acc;
-      }, {} as Record<string, Omit<RentalHistoryItem, 'description' | 'balance'>>) || {};
+      }, {} as Record<string, GroupedRentalData>) || {};
 
       // Converter para array e calcular saldos e descrições
       const historyItems: RentalHistoryItem[] = Object.values(groupedByMonth).map(group => {
@@ -91,8 +101,13 @@ export const useRentalHistory = (propertyId: string | null) => {
           .join(' | ');
 
         return {
-          ...group,
+          month: group.month,
+          monthYear: group.monthYear,
+          totalIncome: group.totalIncome,
+          totalExpense: group.totalExpense,
           balance,
+          transactionDate: group.transactionDate,
+          individualItems: group.individualItems,
           description: description || 'Gestão de aluguéis'
         };
       });
