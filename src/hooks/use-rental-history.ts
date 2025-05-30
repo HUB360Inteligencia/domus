@@ -94,7 +94,7 @@ export const useRentalHistory = (propertyId: string | null) => {
       }, {} as Record<string, GroupedRentalData>) || {};
 
       // Converter para array e calcular saldos e descrições
-      const historyItems: RentalHistoryItem[] = Object.values(groupedByMonth).map(group => {
+      const historyItems: RentalHistoryItem[] = Object.values(groupedByMonth).map((group: GroupedRentalData) => {
         const balance = group.totalIncome - group.totalExpense;
         const description = group.individualItems
           .map(item => `${item.name}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}`)
