@@ -24,13 +24,17 @@ export interface RentalItem {
   description?: string;
 }
 
-interface GroupedRentalData {
-  month: string;
-  monthYear: string;
+interface RentalDetails {
+  items: Array<{
+    name: string;
+    amount: number;
+    type: 'income' | 'expense';
+    categoryName: string;
+  }>;
+  summary: string;
   totalIncome: number;
   totalExpense: number;
-  transactionDate: string;
-  individualItems: RentalItem[];
+  balance: number;
 }
 
 export const useRentalHistory = (propertyId: string | null) => {
@@ -39,15 +43,15 @@ export const useRentalHistory = (propertyId: string | null) => {
     queryFn: async () => {
       if (!propertyId) return [];
 
-      // Buscar todas as transações individuais (rental-item) para este imóvel
-      const { data: individualTransactions, error } = await supabase
+      // Buscar transações de gestão de aluguéis (apenas as transações resumo)
+      const { data: rentalTransactions, error } = await supabase
         .from('financial_transactions')
         .select(`
           *,
           financial_categories:category (name)
         `)
         .eq('property_id', propertyId)
-        .eq('subcategory', 'rental-item')
+        .eq('subcategory', 'rental-management')
         .order('transaction_date', { ascending: false });
 
       if (error) {
@@ -55,64 +59,52 @@ export const useRentalHistory = (propertyId: string | null) => {
         return [];
       }
 
-      // Agrupar transações por mês/ano
-      const groupedByMonth = individualTransactions?.reduce((acc, transaction) => {
+      // Processar transações para extrair detalhes
+      const historyItems: RentalHistoryItem[] = rentalTransactions?.map(transaction => {
         const date = new Date(transaction.transaction_date);
-        const monthKey = format(date, 'yyyy-MM');
-        const monthYear = format(date, 'MM/yyyy');
         const monthName = format(date, 'MMMM yyyy', { locale: ptBR });
+        const monthYear = format(date, 'MM/yyyy');
 
-        if (!acc[monthKey]) {
-          acc[monthKey] = {
-            month: monthName,
-            monthYear,
-            totalIncome: 0,
-            totalExpense: 0,
-            transactionDate: transaction.transaction_date,
-            individualItems: []
-          };
+        let rentalDetails: RentalDetails | null = null;
+        let individualItems: RentalItem[] = [];
+
+        // Tentar parsear o JSON da description para extrair detalhes
+        try {
+          if (transaction.description) {
+            rentalDetails = JSON.parse(transaction.description) as RentalDetails;
+            individualItems = rentalDetails.items.map((item, index) => ({
+              id: `${transaction.id}-${index}`,
+              name: item.name,
+              amount: item.amount,
+              type: item.type,
+              categoryName: item.categoryName
+            }));
+          }
+        } catch (error) {
+          console.log('Não foi possível parsear detalhes do aluguel:', error);
         }
 
-        const item: RentalItem = {
-          id: transaction.id,
-          name: transaction.name,
-          amount: transaction.amount,
-          type: transaction.transaction_type as 'income' | 'expense',
-          categoryName: transaction.financial_categories?.name || 'Categoria não encontrada',
-          description: transaction.description
-        };
-
-        acc[monthKey].individualItems.push(item);
-
-        if (transaction.transaction_type === 'income') {
-          acc[monthKey].totalIncome += transaction.amount;
-        } else {
-          acc[monthKey].totalExpense += transaction.amount;
-        }
-
-        return acc;
-      }, {} as Record<string, GroupedRentalData>) || {};
-
-      // Converter para array e calcular saldos e descrições
-      const historyItems: RentalHistoryItem[] = Object.values(groupedByMonth).map((group: GroupedRentalData) => {
-        const balance = group.totalIncome - group.totalExpense;
-        const description = group.individualItems
-          .map(item => `${item.name}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}`)
-          .join(' | ');
+        // Se não conseguiu parsear ou não tem detalhes, usar dados da transação
+        const totalIncome = rentalDetails?.totalIncome || 
+          (transaction.transaction_type === 'income' ? transaction.amount : 0);
+        const totalExpense = rentalDetails?.totalExpense || 
+          (transaction.transaction_type === 'expense' ? transaction.amount : 0);
+        const balance = rentalDetails?.balance || 
+          (transaction.transaction_type === 'income' ? transaction.amount : -transaction.amount);
 
         return {
-          month: group.month,
-          monthYear: group.monthYear,
-          totalIncome: group.totalIncome,
-          totalExpense: group.totalExpense,
+          month: monthName,
+          monthYear,
+          totalIncome,
+          totalExpense,
           balance,
-          transactionDate: group.transactionDate,
-          individualItems: group.individualItems,
-          description: description || 'Gestão de aluguéis'
+          transactionDate: transaction.transaction_date,
+          individualItems,
+          description: transaction.name || 'Gestão de aluguéis'
         };
-      });
+      }) || [];
 
-      return historyItems.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+      return historyItems;
     },
     enabled: !!propertyId
   });

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Calendar, Eye } from 'lucide-react';
+import { Calendar, Eye, BarChart3 } from 'lucide-react';
 import { useRentalHistory } from '@/hooks/use-rental-history';
 import { RentalItemsViewer } from './RentalItemsViewer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,17 +33,17 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="h-4 w-4" />
             Histórico de Aluguéis
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+              <Skeleton key={i} className="h-8 w-full" />
             ))}
           </div>
         </CardContent>
@@ -53,15 +53,15 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
 
   if (rentalHistory.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="h-4 w-4" />
             Histórico de Aluguéis
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
+        <CardContent className="pt-0">
+          <p className="text-muted-foreground text-center py-6 text-sm">
             Nenhum registro de gestão de aluguéis encontrado.
           </p>
         </CardContent>
@@ -71,44 +71,44 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="h-4 w-4" />
             Histórico de Aluguéis
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Mês/Ano</TableHead>
-                <TableHead className="text-right">Receitas</TableHead>
-                <TableHead className="text-right">Despesas</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead className="text-center">Itens</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
+              <TableRow className="h-8">
+                <TableHead className="text-xs">Período</TableHead>
+                <TableHead className="text-right text-xs">Receitas</TableHead>
+                <TableHead className="text-right text-xs">Despesas</TableHead>
+                <TableHead className="text-right text-xs">Saldo</TableHead>
+                <TableHead className="text-center text-xs">Itens</TableHead>
+                <TableHead className="text-center text-xs w-16">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rentalHistory.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
+                <TableRow key={index} className="h-10">
+                  <TableCell className="font-medium text-sm">
                     {item.monthYear}
                   </TableCell>
-                  <TableCell className="text-right text-green-600">
+                  <TableCell className="text-right text-green-600 text-sm">
                     {item.totalIncome > 0 ? formatCurrency(item.totalIncome) : '-'}
                   </TableCell>
-                  <TableCell className="text-right text-red-600">
+                  <TableCell className="text-right text-red-600 text-sm">
                     {item.totalExpense > 0 ? formatCurrency(item.totalExpense) : '-'}
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${
+                  <TableCell className={`text-right font-medium text-sm ${
                     item.balance >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {formatCurrency(item.balance)}
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {item.individualItems.length} item{item.individualItems.length !== 1 ? 's' : ''}
                     </span>
                   </TableCell>
@@ -117,10 +117,10 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
                       size="sm"
                       variant="outline"
                       onClick={() => handleViewDetails(item)}
-                      className="h-8 w-8 p-0"
-                      title="Ver detalhes"
+                      className="h-7 w-7 p-0"
+                      title="Ver extrato detalhado"
                     >
-                      <Eye className="h-4 w-4" />
+                      <BarChart3 className="h-3 w-3" />
                     </Button>
                   </TableCell>
                 </TableRow>
