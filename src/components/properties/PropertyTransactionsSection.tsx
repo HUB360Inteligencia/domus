@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { useFinancialTransactions, FinancialTransaction } from '@/hooks/use-financial-transactions';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { TransactionModal } from '@/components/finances/transaction-modal';
-import { TransactionTable } from '@/components/finances/transaction-table';
+import { ResizableTransactionTable } from '@/components/finances/resizable-transaction-table';
+import { TransactionViewer } from '@/components/finances/transaction-viewer';
 import { FinancialSummaryCards } from '@/components/finances/financial-summary-cards';
 import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 import { formatCurrency } from '@/utils/currency';
@@ -34,6 +35,8 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'last12months'>('monthly');
   const [periodStartDate, setPeriodStartDate] = useState<Date | undefined>();
   const [periodEndDate, setPeriodEndDate] = useState<Date | undefined>();
+  const [selectedTransaction, setSelectedTransaction] = useState<FinancialTransaction | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Initialize financial categories
   const { 
@@ -143,6 +146,11 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
     setIsDeleteModalOpen(true);
   };
 
+  const handleViewDetails = (transaction: FinancialTransaction) => {
+    setSelectedTransaction(transaction);
+    setIsViewerOpen(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (deletingTransaction) {
       await deleteTransaction(deletingTransaction.id);
@@ -181,15 +189,15 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[...Array(3)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-5 w-32" />
+            <Card key={i} className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-24" />
+              <CardContent className="pt-0">
+                <Skeleton className="h-6 w-20" />
               </CardContent>
             </Card>
           ))}
@@ -199,12 +207,12 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with New Transaction Button */}
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold">Transações Financeiras</h3>
-        <Button onClick={handleNewTransaction} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
+        <h3 className="text-lg font-semibold">Transações Financeiras</h3>
+        <Button onClick={handleNewTransaction} className="flex items-center gap-2 h-8 text-xs">
+          <Plus className="h-3 w-3" />
           Nova Transação
         </Button>
       </div>
@@ -221,19 +229,19 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
       <Separator />
 
       {/* Period Analysis Widget */}
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium">Análise por Período</h4>
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium">Análise por Período</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Data Início</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Data Início</Label>
             <DatePicker
               date={periodStartDate}
               onSelect={setPeriodStartDate}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Data Fim</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Data Fim</Label>
             <DatePicker
               date={periodEndDate}
               onSelect={setPeriodEndDate}
@@ -242,35 +250,35 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
         </div>
 
         {periodStartDate && periodEndDate && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Receitas do Período</CardTitle>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs">Receitas do Período</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-xl font-bold text-green-600">
+              <CardContent className="pt-0">
+                <div className="text-sm font-bold text-green-600">
                   {formatCurrency(periodIncome)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Despesas do Período</CardTitle>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs">Despesas do Período</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-xl font-bold text-red-600">
+              <CardContent className="pt-0">
+                <div className="text-sm font-bold text-red-600">
                   {formatCurrency(periodExpenses)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Saldo do Período</CardTitle>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs">Saldo do Período</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className={`text-xl font-bold ${periodBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <CardContent className="pt-0">
+                <div className={`text-sm font-bold ${periodBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(Math.abs(periodBalance))}
                 </div>
               </CardContent>
@@ -282,9 +290,9 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
       <Separator />
 
       {/* Transactions Table */}
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium">Histórico de Transações</h4>
-        <TransactionTable
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium">Histórico de Transações</h4>
+        <ResizableTransactionTable
           transactions={transactions}
           isLoading={isLoadingTransactions}
           onEdit={handleEditTransaction}
@@ -294,6 +302,7 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
               window.open(transaction.receipt_url, '_blank');
             }
           }}
+          onViewDetails={handleViewDetails}
         />
       </div>
 
@@ -323,6 +332,16 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
           recurring_end_date: null,
           receipt_url: null,
         }}
+      />
+
+      {/* Transaction Viewer */}
+      <TransactionViewer
+        isOpen={isViewerOpen}
+        onClose={() => {
+          setIsViewerOpen(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
       />
 
       {/* Delete Confirmation Modal */}

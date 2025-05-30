@@ -146,8 +146,9 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         balance
       };
 
+      // Usar nome mais amigável e JSON em description
       await createTransaction({
-        name: `Gestão de Aluguéis - ${propertyTitle} (${monthYear})`,
+        name: `Gestão de Aluguéis - ${monthYear}`,
         amount: Math.abs(balance),
         transaction_type: balance >= 0 ? 'income' : 'expense',
         category: balance >= 0 ? 
@@ -189,7 +190,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Calendar className="h-4 w-4" />
             Gestão de Aluguéis - {propertyTitle}
           </DialogTitle>
@@ -201,7 +202,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
             <label className="text-sm font-medium">Período:</label>
             
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -233,7 +234,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
               </Button>
             </div>
 
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {format(new Date(selectedYear, selectedMonth), 'MMMM yyyy', { locale: ptBR })}
             </span>
           </div>
@@ -246,7 +247,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
                 placeholder="Nome da receita"
                 value={incomeName}
                 onChange={(e) => setIncomeName(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
               />
               <Input
                 type="number"
@@ -254,7 +255,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
                 placeholder="Valor"
                 value={incomeAmount}
                 onChange={(e) => setIncomeAmount(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
               />
               <Select value={incomeCategory} onValueChange={setIncomeCategory}>
                 <SelectTrigger className="h-8">
@@ -270,7 +271,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
               </Select>
               <Button 
                 onClick={addIncome}
-                className="bg-green-600 hover:bg-green-700 h-8"
+                className="bg-green-600 hover:bg-green-700 h-8 text-xs"
                 disabled={!incomeName || !incomeAmount || !incomeCategory}
               >
                 <Plus className="h-3 w-3" />
@@ -286,7 +287,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
                 placeholder="Nome da despesa"
                 value={expenseName}
                 onChange={(e) => setExpenseName(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
               />
               <Input
                 type="number"
@@ -294,7 +295,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
                 placeholder="Valor"
                 value={expenseAmount}
                 onChange={(e) => setExpenseAmount(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
               />
               <Select value={expenseCategory} onValueChange={setExpenseCategory}>
                 <SelectTrigger className="h-8">
@@ -310,7 +311,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
               </Select>
               <Button 
                 onClick={addExpense}
-                className="bg-red-600 hover:bg-red-700 h-8"
+                className="bg-red-600 hover:bg-red-700 h-8 text-xs"
                 disabled={!expenseName || !expenseAmount || !expenseCategory}
               >
                 <Plus className="h-3 w-3" />
@@ -324,7 +325,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
               <h4 className="text-sm font-medium">Itens Adicionados:</h4>
               <div className="max-h-28 overflow-y-auto space-y-1">
                 {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
+                  <div key={transaction.id} className="flex items-center justify-between bg-gray-50 p-2 rounded text-xs">
                     <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
                       {transaction.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
                     </span>
@@ -351,13 +352,13 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} className="h-8">
+          <Button variant="outline" onClick={handleClose} className="h-8 text-xs">
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={transactions.length === 0 || isSubmitting}
-            className="h-8"
+            className="h-8 text-xs"
           >
             {isSubmitting ? 'Salvando...' : 'Salvar Gestão'}
           </Button>

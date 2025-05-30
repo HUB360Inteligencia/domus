@@ -4,8 +4,9 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TransactionTable } from '@/components/finances/transaction-table';
+import { ResizableTransactionTable } from '@/components/finances/resizable-transaction-table';
 import { TransactionModal } from '@/components/finances/transaction-modal';
+import { TransactionViewer } from '@/components/finances/transaction-viewer';
 import { TransactionFilters } from '@/components/finances/transaction-filters';
 import { CategoryManagement } from '@/components/finances/category-management';
 import { useFinancialTransactions, TransactionFormData, FinancialTransaction } from '@/hooks/use-financial-transactions';
@@ -19,6 +20,8 @@ export default function FinancesPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<(TransactionFormData & { id: string }) | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<FinancialTransaction | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [transactionToView, setTransactionToView] = useState<FinancialTransaction | null>(null);
   const isMobile = useIsMobile();
   
   const { 
@@ -75,6 +78,11 @@ export default function FinancesPage() {
     setDeleteModalOpen(true);
   };
 
+  const handleViewDetails = (transaction: FinancialTransaction) => {
+    setTransactionToView(transaction);
+    setViewerOpen(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (transactionToDelete) {
       try {
@@ -100,9 +108,6 @@ export default function FinancesPage() {
   };
 
   const handleViewReceipt = (transaction: any) => {
-    // Placeholder for receipt viewing functionality
-    // In a real app, this would open a modal or redirect to a receipt view
-    console.log("View receipt for transaction:", transaction);
     if (transaction.receipt_url) {
       window.open(transaction.receipt_url, '_blank');
     }
@@ -120,46 +125,46 @@ export default function FinancesPage() {
   const balance = incomeTotal - expenseTotal;
 
   return (
-    <div className="container py-6">
-      <PageHeader title="Financial Management" description="Track and manage your income and expenses">
-        <Button onClick={() => handleOpenModal()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Transaction
+    <div className="container py-4">
+      <PageHeader title="Gestão Financeira" description="Controle suas receitas e despesas">
+        <Button onClick={() => handleOpenModal()} className="h-8 text-xs">
+          <Plus className="mr-2 h-3 w-3" />
+          Adicionar Transação
         </Button>
       </PageHeader>
 
       {/* Financial Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4 border">
-          <h3 className="text-sm font-medium text-gray-500">Income</h3>
-          <p className="text-2xl font-bold text-green-600">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className="bg-white rounded-lg shadow-sm p-3 border">
+          <h3 className="text-xs font-medium text-gray-500">Receitas</h3>
+          <p className="text-lg font-bold text-black">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(incomeTotal)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border">
-          <h3 className="text-sm font-medium text-gray-500">Expenses</h3>
-          <p className="text-2xl font-bold text-red-600">
+        <div className="bg-white rounded-lg shadow-sm p-3 border">
+          <h3 className="text-xs font-medium text-gray-500">Despesas</h3>
+          <p className="text-lg font-bold text-black">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(expenseTotal)}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 border">
-          <h3 className="text-sm font-medium text-gray-500">Balance</h3>
-          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="bg-black rounded-lg shadow-sm p-3 border">
+          <h3 className="text-xs font-medium text-white">Saldo</h3>
+          <p className="text-lg font-bold text-white">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)}
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="transactions" className="space-y-4">
+      <Tabs defaultValue="transactions" className="space-y-3">
         <TabsList>
-          <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="transactions" className="text-xs">Transações</TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs">Categorias</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="transactions" className="space-y-4">
+        <TabsContent value="transactions" className="space-y-3">
           {/* Filters */}
-          <div className="mb-6">
-            <h2 className="text-lg font-medium mb-2">Filters</h2>
+          <div className="mb-4">
+            <h2 className="text-sm font-medium mb-2">Filtros</h2>
             <TransactionFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -170,14 +175,14 @@ export default function FinancesPage() {
           </div>
 
           {/* Transactions Table */}
-          <div className="bg-white rounded-lg shadow border">
-            <h2 className="text-lg font-medium p-4 border-b">Transactions</h2>
-            <TransactionTable 
+          <div className="bg-white rounded-lg shadow-sm border">
+            <ResizableTransactionTable 
               transactions={transactions}
               isLoading={isLoadingTransactions}
               onEdit={handleOpenModal}
               onDelete={handleDeleteClick}
               onViewReceipt={handleViewReceipt}
+              onViewDetails={handleViewDetails}
             />
           </div>
         </TabsContent>
@@ -196,6 +201,16 @@ export default function FinancesPage() {
         isSubmitting={isCreating || isUpdating}
         properties={propertyOptions}
         categories={categoryOptions}
+      />
+
+      {/* Transaction Viewer */}
+      <TransactionViewer
+        isOpen={viewerOpen}
+        onClose={() => {
+          setViewerOpen(false);
+          setTransactionToView(null);
+        }}
+        transaction={transactionToView}
       />
 
       {/* Delete Confirmation Modal */}

@@ -33,7 +33,7 @@ export function FinancialSummaryCards({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-center">
         <ToggleGroup
           type="single"
@@ -41,53 +41,56 @@ export function FinancialSummaryCards({
           onValueChange={(value) => value && onViewModeChange(value as any)}
           className="bg-muted p-1 rounded-md"
         >
-          <ToggleGroupItem value="monthly" className="text-sm">
+          <ToggleGroupItem value="monthly" className="text-xs px-2 py-1">
             Mês Anterior
           </ToggleGroupItem>
-          <ToggleGroupItem value="yearly" className="text-sm">
+          <ToggleGroupItem value="yearly" className="text-xs px-2 py-1">
             Ano Corrente
           </ToggleGroupItem>
-          <ToggleGroupItem value="last12months" className="text-sm">
+          <ToggleGroupItem value="last12months" className="text-xs px-2 py-1">
             Últimos 12 Meses
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Receitas Card - White background, black text */}
+        <Card className="border border-green-200 bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-black">
               Receitas - {getViewModeLabel()}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-lg font-bold text-black">
               {formatCurrency(totalIncome)}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        {/* Despesas Card - White background, black text */}
+        <Card className="border border-red-200 bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-black">
               Despesas - {getViewModeLabel()}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-lg font-bold text-black">
               {formatCurrency(totalExpenses)}
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`border-l-4 ${balance >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        {/* Saldo Card - Black background, white text */}
+        <Card className="border border-gray-800 bg-black">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-white">
               Saldo - {getViewModeLabel()}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+            <div className="text-lg font-bold text-white">
               {formatCurrency(balance)}
             </div>
           </CardContent>
