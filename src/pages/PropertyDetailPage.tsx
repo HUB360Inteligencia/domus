@@ -5,11 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PropertyHeroHeader } from '@/components/properties/property-hero-header';
-import { PropertyOverviewSection } from '@/components/properties/PropertyOverviewSection';
 import { PropertyTransactionsSection } from '@/components/properties/PropertyTransactionsSection';
-import { PropertyActivitiesSection } from '@/components/properties/PropertyActivitiesSection';
-import { PropertyDocumentsSection } from '@/components/properties/PropertyDocumentsSection';
-import { PropertyContractsSection } from '@/components/properties/PropertyContractsSection';
 import { useProperties } from '@/hooks/use-properties';
 import { toast } from 'sonner';
 
@@ -111,33 +107,40 @@ export default function PropertyDetailPage() {
         isDeleting={isDeleting}
       />
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+      <Tabs defaultValue="finances" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="finances">Financeiro</TabsTrigger>
-          <TabsTrigger value="activities">Atividades</TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="contracts">Contratos</TabsTrigger>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview">
-          <PropertyOverviewSection property={selectedProperty} />
-        </TabsContent>
 
         <TabsContent value="finances">
           <PropertyTransactionsSection property={selectedProperty} />
         </TabsContent>
 
-        <TabsContent value="activities">
-          <PropertyActivitiesSection property={selectedProperty} />
-        </TabsContent>
-
-        <TabsContent value="documents">
-          <PropertyDocumentsSection property={selectedProperty} />
-        </TabsContent>
-
-        <TabsContent value="contracts">
-          <PropertyContractsSection property={selectedProperty} />
+        <TabsContent value="overview">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Informações do Imóvel</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p><strong>Endereço:</strong> {selectedProperty.address}</p>
+                <p><strong>Cidade:</strong> {selectedProperty.city} - {selectedProperty.state}</p>
+                <p><strong>Tipo:</strong> {selectedProperty.type}</p>
+                <p><strong>Status:</strong> {selectedProperty.status}</p>
+              </div>
+              <div className="space-y-2">
+                {selectedProperty.area && <p><strong>Área:</strong> {selectedProperty.area}m²</p>}
+                {selectedProperty.bedrooms && <p><strong>Quartos:</strong> {selectedProperty.bedrooms}</p>}
+                {selectedProperty.bathrooms && <p><strong>Banheiros:</strong> {selectedProperty.bathrooms}</p>}
+                {selectedProperty.garage_spots && <p><strong>Vagas:</strong> {selectedProperty.garage_spots}</p>}
+              </div>
+            </div>
+            {selectedProperty.description && (
+              <div>
+                <h4 className="font-medium mb-2">Descrição</h4>
+                <p className="text-muted-foreground">{selectedProperty.description}</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

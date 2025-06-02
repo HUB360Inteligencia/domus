@@ -8,6 +8,7 @@ import { TransactionSummary } from './TransactionSummary';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { toast } from 'sonner';
+import { RentalItem, RentalHistoryItem } from '@/hooks/use-rental-history';
 import {
   Select,
   SelectContent,
@@ -15,23 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-interface RentalItem {
-  id?: string;
-  name: string;
-  amount: number;
-  type: 'income' | 'expense';
-  categoryName: string;
-}
-
-interface RentalHistoryItem {
-  monthYear: string;
-  totalIncome: number;
-  totalExpense: number;
-  balance: number;
-  individualItems: RentalItem[];
-  transactionId?: string;
-}
 
 interface EditRentalModalProps {
   isOpen: boolean;
@@ -83,7 +67,6 @@ export const EditRentalModal: React.FC<EditRentalModalProps> = ({
     const category = categoryList.find(c => c.id === newItemCategory);
 
     const newItem: RentalItem = {
-      id: Math.random().toString(36).substr(2, 9),
       name: newItemName,
       amount: parseFloat(newItemAmount),
       type: newItemType,
@@ -128,11 +111,16 @@ export const EditRentalModal: React.FC<EditRentalModalProps> = ({
         balance
       };
 
+      // Find a default category for the transaction update
+      const defaultCategory = categories.find(c => c.type === (balance >= 0 ? 'income' : 'expense'));
+      
       await updateTransaction({
         id: rentalData.transactionId,
         name: `Gestão de Aluguéis - ${rentalData.monthYear}`,
         amount: Math.abs(balance),
         transaction_type: balance >= 0 ? 'income' : 'expense',
+        category: defaultCategory?.id || '',
+        transaction_date: new Date().toISOString().split('T')[0],
         description: JSON.stringify(updatedRentalDetails),
       });
 

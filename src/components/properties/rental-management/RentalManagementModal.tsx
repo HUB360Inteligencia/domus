@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Calendar, Plus, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, Plus, X } from 'lucide-react';
+import { MonthlyTransactionForm } from './MonthlyTransactionForm';
 import { TransactionSummary } from './TransactionSummary';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
@@ -16,153 +16,118 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface MonthlyTransaction {
+interface RentalItem {
   id: string;
   name: string;
   amount: number;
   type: 'income' | 'expense';
-  category: string;
+  categoryId: string;
   categoryName: string;
 }
 
 interface RentalManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  propertyId: string;
-  propertyTitle: string;
+  property: {
+    id: string;
+    title: string;
+  };
+  onSuccess?: () => void;
 }
-
-const months = [
-  { value: 0, label: 'Janeiro' },
-  { value: 1, label: 'Fevereiro' },
-  { value: 2, label: 'Março' },
-  { value: 3, label: 'Abril' },
-  { value: 4, label: 'Maio' },
-  { value: 5, label: 'Junho' },
-  { value: 6, label: 'Julho' },
-  { value: 7, label: 'Agosto' },
-  { value: 8, label: 'Setembro' },
-  { value: 9, label: 'Outubro' },
-  { value: 10, label: 'Novembro' },
-  { value: 11, label: 'Dezembro' },
-];
 
 export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   isOpen,
   onClose,
-  propertyId,
-  propertyTitle
+  property,
+  onSuccess
 }) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [transactions, setTransactions] = useState<MonthlyTransaction[]>([]);
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth()); // 0-based month
+  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  const [items, setItems] = useState<RentalItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form states for quick entry
-  const [incomeName, setIncomeName] = useState('');
-  const [incomeAmount, setIncomeAmount] = useState('');
-  const [incomeCategory, setIncomeCategory] = useState('');
-  const [expenseName, setExpenseName] = useState('');
-  const [expenseAmount, setExpenseAmount] = useState('');
-  const [expenseCategory, setExpenseCategory] = useState('');
-
-  const { categories } = useFinancialCategories();
+  const { categories, categoryOptions } = useFinancialCategories();
   const { createTransaction } = useFinancialTransactions();
 
-  const incomeCategories = categories.filter(cat => cat.type === 'income');
-  const expenseCategories = categories.filter(cat => cat.type === 'expense');
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setItems([]);
+      setSelectedMonth(currentDate.getMonth());
+      setSelectedYear(currentDate.getFullYear());
+    }
+  }, [isOpen]);
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const addItem = (item: Omit<RentalItem, 'id'>) => {
+    const newItem: RentalItem = {
+      ...item,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+    setItems(prev => [...prev, newItem]);
+  };
+
+  const removeItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const updateItem = (id: string, updatedItem: Partial<RentalItem>) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, ...updatedItem } : item
+    ));
+  };
+
+  const totalIncome = items.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
+  const totalExpense = items.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
   const balance = totalIncome - totalExpense;
 
-  const addIncome = () => {
-    if (!incomeName || !incomeAmount || !incomeCategory) return;
-    
-    const category = incomeCategories.find(c => c.id === incomeCategory);
-    const newTransaction: MonthlyTransaction = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: incomeName,
-      amount: parseFloat(incomeAmount),
-      type: 'income',
-      category: incomeCategory,
-      categoryName: category?.name || 'Categoria não encontrada'
-    };
-    
-    setTransactions(prev => [...prev, newTransaction]);
-    setIncomeName('');
-    setIncomeAmount('');
-    setIncomeCategory('');
-  };
-
-  const addExpense = () => {
-    if (!expenseName || !expenseAmount || !expenseCategory) return;
-    
-    const category = expenseCategories.find(c => c.id === expenseCategory);
-    const newTransaction: MonthlyTransaction = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: expenseName,
-      amount: parseFloat(expenseAmount),
-      type: 'expense',
-      category: expenseCategory,
-      categoryName: category?.name || 'Categoria não encontrada'
-    };
-    
-    setTransactions(prev => [...prev, newTransaction]);
-    setExpenseName('');
-    setExpenseAmount('');
-    setExpenseCategory('');
-  };
-
-  const removeTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-  };
-
   const handleSave = async () => {
-    if (transactions.length === 0) {
-      toast.error('Adicione pelo menos uma receita ou despesa');
+    if (items.length === 0) {
+      toast.error('Adicione pelo menos um item antes de salvar');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Corrigir construção da data para usar o mês e ano corretos
-      const monthYear = `${(selectedMonth + 1).toString().padStart(2, '0')}/${selectedYear}`;
-      
-      // Usar o dia 15 do mês selecionado para evitar problemas de timezone
-      const transactionDate = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-15`;
-      
-      // Criar apenas uma transação resumo com os detalhes em JSON
+      // Create the correct date for the selected month/year (first day of the month)
+      const transactionDate = new Date(selectedYear, selectedMonth, 1);
+      const formattedDate = transactionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
       const rentalDetails = {
-        items: transactions.map(t => ({
-          name: t.name,
-          amount: t.amount,
-          type: t.type,
-          categoryName: t.categoryName
+        items: items.map(item => ({
+          name: item.name,
+          amount: item.amount,
+          type: item.type,
+          categoryName: item.categoryName
         })),
-        summary: `Gestão de Aluguéis - ${propertyTitle} (${monthYear})`,
+        summary: `Gestão de Aluguéis - ${property.title} (${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear})`,
         totalIncome,
         totalExpense,
         balance
       };
 
-      // Usar nome mais amigável e JSON em description
+      // Find a default category
+      const defaultCategory = categories.find(c => c.type === (balance >= 0 ? 'income' : 'expense'));
+
       await createTransaction({
-        name: `Gestão de Aluguéis - ${monthYear}`,
+        name: `Gestão de Aluguéis - ${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear}`,
         amount: Math.abs(balance),
         transaction_type: balance >= 0 ? 'income' : 'expense',
-        category: balance >= 0 ? 
-          categories.find(c => c.type === 'income')?.id || '' : 
-          categories.find(c => c.type === 'expense')?.id || '',
+        category: defaultCategory?.id || categoryOptions[0]?.value || '',
+        subcategory: 'rental-management',
         description: JSON.stringify(rentalDetails),
-        transaction_date: transactionDate,
-        property_id: propertyId,
-        subcategory: 'rental-management'
+        transaction_date: formattedDate,
+        property_id: property.id,
+        payment_method: null,
+        recurring: false,
+        recurring_frequency: null,
+        recurring_end_date: null,
+        receipt_url: null,
       });
 
       toast.success('Gestão de aluguéis salva com sucesso!');
+      onSuccess?.();
       onClose();
-      setTransactions([]);
     } catch (error) {
       console.error('Erro ao salvar gestão de aluguéis:', error);
       toast.error('Erro ao salvar gestão de aluguéis');
@@ -171,183 +136,94 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     }
   };
 
-  const handleClose = () => {
-    setTransactions([]);
-    setIncomeName('');
-    setIncomeAmount('');
-    setIncomeCategory('');
-    setExpenseName('');
-    setExpenseAmount('');
-    setExpenseCategory('');
-    onClose();
-  };
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
 
-  const handleYearChange = (direction: 'up' | 'down') => {
-    setSelectedYear(prev => direction === 'up' ? prev + 1 : prev - 1);
-  };
-
-  const getSelectedMonthDisplay = () => {
-    return `${months[selectedMonth].label} ${selectedYear}`;
-  };
+  const years = Array.from({ length: 10 }, (_, i) => currentDate.getFullYear() - 5 + i);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Calendar className="h-4 w-4" />
-            Gestão de Aluguéis - {propertyTitle}
+            Gestão de Aluguéis - {property.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          {/* Seletor de Mês/Ano */}
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <label className="text-sm font-medium">Período:</label>
-            
-            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="w-32 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value.toString()}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleYearChange('down')}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-              <span className="text-sm font-medium w-16 text-center">{selectedYear}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleYearChange('up')}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronUp className="h-3 w-3" />
-              </Button>
-            </div>
-
-            <span className="text-xs text-muted-foreground">
-              Selecionado: {getSelectedMonthDisplay()}
-            </span>
-          </div>
-
-          {/* Formulários Inline - Receitas */}
-          <div className="border rounded-lg p-3 bg-green-50">
-            <h4 className="text-sm font-medium text-green-700 mb-2">Adicionar Receita</h4>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-              <Input
-                placeholder="Nome da receita"
-                value={incomeName}
-                onChange={(e) => setIncomeName(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Valor"
-                value={incomeAmount}
-                onChange={(e) => setIncomeAmount(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Select value={incomeCategory} onValueChange={setIncomeCategory}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {incomeCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                onClick={addIncome}
-                className="bg-green-600 hover:bg-green-700 h-8 text-xs"
-                disabled={!incomeName || !incomeAmount || !incomeCategory}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Formulários Inline - Despesas */}
-          <div className="border rounded-lg p-3 bg-red-50">
-            <h4 className="text-sm font-medium text-red-700 mb-2">Adicionar Despesa</h4>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-              <Input
-                placeholder="Nome da despesa"
-                value={expenseName}
-                onChange={(e) => setExpenseName(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Valor"
-                value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {expenseCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                onClick={addExpense}
-                className="bg-red-600 hover:bg-red-700 h-8 text-xs"
-                disabled={!expenseName || !expenseAmount || !expenseCategory}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Lista de Transações Adicionadas */}
-          {transactions.length > 0 && (
+        <div className="space-y-4">
+          {/* Month/Year Selection */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Itens Adicionados:</h4>
-              <div className="max-h-28 overflow-y-auto space-y-1">
-                {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between bg-gray-50 p-2 rounded text-xs">
-                    <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeTransaction(transaction.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <label className="text-sm font-medium">Mês</label>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-          {/* Resumo */}
+          {/* Transaction Form */}
+          <MonthlyTransactionForm
+            categories={categories}
+            onAddItem={addItem}
+          />
+
+          {/* Items List */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Itens Adicionados:</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {items.map((item) => (
+                <div key={item.id} className={`flex items-center gap-3 p-3 rounded border ${
+                  item.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground">{item.categoryName}</div>
+                  </div>
+                  <div className="text-sm font-medium">
+                    R$ {item.amount.toFixed(2)}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => removeItem(item.id)}
+                    className="h-8 w-8 p-0 text-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary */}
           <TransactionSummary
             totalIncome={totalIncome}
             totalExpense={totalExpense}
@@ -356,12 +232,12 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} className="h-8 text-xs">
+          <Button variant="outline" onClick={onClose} className="h-8 text-xs">
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            disabled={transactions.length === 0 || isSubmitting}
+            disabled={isSubmitting || items.length === 0}
             className="h-8 text-xs"
           >
             {isSubmitting ? 'Salvando...' : 'Salvar Gestão'}

@@ -2,14 +2,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface RentalItem {
+export interface RentalItem {
   name: string;
   amount: number;
   type: 'income' | 'expense';
   categoryName: string;
 }
 
-interface RentalHistoryItem {
+export interface RentalHistoryItem {
   monthYear: string;
   totalIncome: number;
   totalExpense: number;
