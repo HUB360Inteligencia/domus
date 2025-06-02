@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface RentalItem {
+  id?: string;
   name: string;
   amount: number;
   type: 'income' | 'expense';
@@ -59,9 +60,15 @@ export const useRentalHistory = (propertyId: string) => {
     enabled: !!propertyId
   });
 
+  // Calculate average monthly revenue
+  const averageMonthlyRevenue = rentalHistory.length > 0 
+    ? rentalHistory.reduce((sum, item) => sum + item.totalIncome, 0) / rentalHistory.length
+    : 0;
+
   return {
     rentalHistory,
     isLoading,
-    refetch
+    refetch,
+    averageMonthlyRevenue
   };
 };

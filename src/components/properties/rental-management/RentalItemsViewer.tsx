@@ -69,8 +69,8 @@ export const RentalItemsViewer: React.FC<RentalItemsViewerProps> = ({
                 Receitas ({incomeItems.length})
               </h4>
               <div className="space-y-2">
-                {incomeItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 bg-green-50 rounded border-l-3 border-green-500">
+                {incomeItems.map((item, index) => (
+                  <div key={item.id || index} className="flex items-center justify-between p-2 bg-green-50 rounded border-l-3 border-green-500">
                     <div className="flex-1">
                       <div className="text-sm font-medium">{item.name}</div>
                       <div className="text-xs text-muted-foreground">
@@ -95,8 +95,8 @@ export const RentalItemsViewer: React.FC<RentalItemsViewerProps> = ({
                 Despesas ({expenseItems.length})
               </h4>
               <div className="space-y-2">
-                {expenseItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 bg-red-50 rounded border-l-3 border-red-500">
+                {expenseItems.map((item, index) => (
+                  <div key={item.id || index} className="flex items-center justify-between p-2 bg-red-50 rounded border-l-3 border-red-500">
                     <div className="flex-1">
                       <div className="text-sm font-medium">{item.name}</div>
                       <div className="text-xs text-muted-foreground">

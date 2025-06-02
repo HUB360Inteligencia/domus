@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +28,7 @@ const contractSchema = z.object({
   value: z.number({ invalid_type_error: 'O valor deve ser um número.' }).gt(0, { message: 'O valor deve ser maior que zero.' }),
   payment_day: z.number({ invalid_type_error: 'O dia do pagamento deve ser um número.' }).min(1).max(31, { message: 'O dia do pagamento deve estar entre 1 e 31.' }),
   status: z.enum(['active', 'inactive', 'finished']),
-  description: z.string().optional(),
+  terms: z.string().optional(),
 });
 
 interface ContractFormProps {
@@ -245,7 +246,6 @@ export const ContractForm: React.FC<ContractFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="start_date">Data de Início *</Label>
               <DatePicker
-                id="start_date"
                 date={form.watch('start_date') ? new Date(form.watch('start_date')) : undefined}
                 onSelect={(date) => form.setValue('start_date', date ? format(date, 'yyyy-MM-dd') : '')}
               />
@@ -257,7 +257,6 @@ export const ContractForm: React.FC<ContractFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="end_date">Data de Término *</Label>
               <DatePicker
-                id="end_date"
                 date={form.watch('end_date') ? new Date(form.watch('end_date')) : undefined}
                 onSelect={(date) => form.setValue('end_date', date ? format(date, 'yyyy-MM-dd') : '')}
               />
@@ -316,10 +315,10 @@ export const ContractForm: React.FC<ContractFormProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
+              <Label htmlFor="terms">Termos e Condições</Label>
               <Textarea
-                id="description"
-                {...form.register('description')}
+                id="terms"
+                {...form.register('terms')}
                 placeholder="Observações sobre o contrato"
               />
             </div>
@@ -349,7 +348,7 @@ export const ContractForm: React.FC<ContractFormProps> = ({
               <Label htmlFor="status">Status do Contrato</Label>
               <Select
                 value={form.watch('status')}
-                onValueChange={(value) => form.setValue('status', value)}
+                onValueChange={(value: 'active' | 'inactive' | 'finished') => form.setValue('status', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />

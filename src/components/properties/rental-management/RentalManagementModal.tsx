@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -191,7 +190,6 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
 
           {/* Transaction Form */}
           <MonthlyTransactionForm
-            categories={categories}
             onAddItem={addItem}
           />
 

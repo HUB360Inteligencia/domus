@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -308,8 +307,10 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
       <RentalManagementModal
         isOpen={showRentalManagementModal}
         onClose={() => setShowRentalManagementModal(false)}
-        propertyId={property?.id || ''}
-        propertyTitle={property?.title || ''}
+        property={{
+          id: property?.id || '',
+          title: property?.title || ''
+        }}
       />
     </>
   );
