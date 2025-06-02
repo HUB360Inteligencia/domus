@@ -27,7 +27,7 @@ const contractSchema = z.object({
   end_date: z.string().min(1, { message: 'Selecione a data de término.' }),
   value: z.number({ invalid_type_error: 'O valor deve ser um número.' }).gt(0, { message: 'O valor deve ser maior que zero.' }),
   payment_day: z.number({ invalid_type_error: 'O dia do pagamento deve ser um número.' }).min(1).max(31, { message: 'O dia do pagamento deve estar entre 1 e 31.' }),
-  status: z.enum(['active', 'inactive', 'finished']),
+  status: z.enum(['active', 'pending', 'expired', 'canceled', 'draft']),
   terms: z.string().optional(),
 });
 
@@ -348,15 +348,17 @@ export const ContractForm: React.FC<ContractFormProps> = ({
               <Label htmlFor="status">Status do Contrato</Label>
               <Select
                 value={form.watch('status')}
-                onValueChange={(value: 'active' | 'inactive' | 'finished') => form.setValue('status', value)}
+                onValueChange={(value: 'active' | 'pending' | 'expired' | 'canceled' | 'draft') => form.setValue('status', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="inactive">Inativo</SelectItem>
-                  <SelectItem value="finished">Finalizado</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="expired">Expirado</SelectItem>
+                  <SelectItem value="canceled">Cancelado</SelectItem>
+                  <SelectItem value="draft">Rascunho</SelectItem>
                 </SelectContent>
               </Select>
               {form.formState.errors.status && (
