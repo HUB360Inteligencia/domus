@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -58,22 +59,27 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     }
   }, [isOpen]);
 
-  const addItem = (item: Omit<RentalItem, 'id'>) => {
+  const addItem = (data: {
+    name: string;
+    amount: number;
+    type: 'income' | 'expense';
+    category: string;
+    categoryName: string;
+    description?: string;
+  }) => {
     const newItem: RentalItem = {
-      ...item,
-      id: Math.random().toString(36).substr(2, 9)
+      id: Math.random().toString(36).substr(2, 9),
+      name: data.name,
+      amount: data.amount,
+      type: data.type,
+      categoryId: data.category,
+      categoryName: data.categoryName
     };
     setItems(prev => [...prev, newItem]);
   };
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const updateItem = (id: string, updatedItem: Partial<RentalItem>) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, ...updatedItem } : item
-    ));
   };
 
   const totalIncome = items.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
