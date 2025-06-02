@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Calendar, Eye, BarChart3 } from 'lucide-react';
+import { Calendar, Eye, BarChart3, Edit } from 'lucide-react';
 import { useRentalHistory } from '@/hooks/use-rental-history';
 import { RentalItemsViewer } from './RentalItemsViewer';
+import { EditRentalModal } from './EditRentalModal';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface RentalHistoryTableProps {
@@ -15,9 +16,11 @@ interface RentalHistoryTableProps {
 export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
   propertyId
 }) => {
-  const { rentalHistory, isLoading } = useRentalHistory(propertyId);
+  const { rentalHistory, isLoading, refetch } = useRentalHistory(propertyId);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<typeof rentalHistory[0] | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [editingHistoryItem, setEditingHistoryItem] = useState<typeof rentalHistory[0] | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -29,6 +32,17 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
   const handleViewDetails = (item: typeof rentalHistory[0]) => {
     setSelectedHistoryItem(item);
     setIsViewerOpen(true);
+  };
+
+  const handleEdit = (item: typeof rentalHistory[0]) => {
+    setEditingHistoryItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSave = () => {
+    refetch();
+    setIsEditModalOpen(false);
+    setEditingHistoryItem(null);
   };
 
   if (isLoading) {
@@ -87,7 +101,7 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
                 <TableHead className="text-right text-xs">Despesas</TableHead>
                 <TableHead className="text-right text-xs">Saldo</TableHead>
                 <TableHead className="text-center text-xs">Itens</TableHead>
-                <TableHead className="text-center text-xs w-16">Ações</TableHead>
+                <TableHead className="text-center text-xs w-24">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -113,15 +127,26 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewDetails(item)}
-                      className="h-7 w-7 p-0"
-                      title="Ver extrato detalhado"
-                    >
-                      <BarChart3 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDetails(item)}
+                        className="h-7 w-7 p-0"
+                        title="Ver extrato detalhado"
+                      >
+                        <BarChart3 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(item)}
+                        className="h-7 w-7 p-0"
+                        title="Editar aluguel"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -130,6 +155,7 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
         </CardContent>
       </Card>
 
+      {/* Viewer Modal */}
       {selectedHistoryItem && (
         <RentalItemsViewer
           isOpen={isViewerOpen}
@@ -139,6 +165,20 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
           }}
           items={selectedHistoryItem.individualItems}
           monthYear={selectedHistoryItem.monthYear}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {editingHistoryItem && (
+        <EditRentalModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingHistoryItem(null);
+          }}
+          rentalData={editingHistoryItem}
+          propertyTitle="Propriedade" // Pode ser passado como prop se necessário
+          onSave={handleEditSave}
         />
       )}
     </>

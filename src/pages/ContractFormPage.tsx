@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractFormData } from '@/types/contract';
 import { Loader2 } from 'lucide-react';
@@ -10,8 +10,10 @@ import { ContractForm } from '@/components/contracts/contract-form';
 export default function ContractFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [isEditMode, setIsEditMode] = useState(false);
+  const [preloadedPropertyId, setPreloadedPropertyId] = useState<string | null>(null);
   
   const { 
     createContract, 
@@ -23,6 +25,15 @@ export default function ContractFormPage() {
     isUpdatingContract,
     uploadContractDocument
   } = useContracts();
+
+  // Check for property preload from URL params
+  useEffect(() => {
+    const propertyId = searchParams.get('propertyId');
+    if (propertyId) {
+      setPreloadedPropertyId(propertyId);
+      console.log('Preloading property ID:', propertyId);
+    }
+  }, [searchParams]);
 
   // Use useCallback to stabilize this function reference
   const loadContractData = useCallback((contractId: string) => {
@@ -106,15 +117,42 @@ export default function ContractFormPage() {
     );
   }
 
+  // Prepare initial data with preloaded property if available
+  const getInitialData = () => {
+    if (isEditMode && selectedContract) {
+      return selectedContract;
+    }
+    
+    if (preloadedPropertyId) {
+      return {
+        property_id: preloadedPropertyId,
+        title: '',
+        tenant_name: '',
+        start_date: '',
+        end_date: '',
+        value: 0,
+        payment_day: 5,
+        status: 'active' as const,
+      };
+    }
+    
+    return undefined;
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">
         {isEditMode ? 'Editar Contrato' : 'Novo Contrato'}
+        {preloadedPropertyId && !isEditMode && (
+          <span className="text-sm text-muted-foreground ml-2">
+            (Propriedade pré-selecionada)
+          </span>
+        )}
       </h1>
       
       <ContractForm
-        key={selectedContract?.id || 'new'} // Add key to force re-render when changing contract
-        initialData={isEditMode ? selectedContract : undefined}
+        key={`${selectedContract?.id || 'new'}-${preloadedPropertyId}`} // Force re-render when changing contract or preloaded property
+        initialData={getInitialData()}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isLoading={isCreatingContract || isUpdatingContract}

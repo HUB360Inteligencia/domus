@@ -4,8 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Plus, X, ChevronUp, ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { TransactionSummary } from './TransactionSummary';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
@@ -128,9 +126,11 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const selectedDate = new Date(selectedYear, selectedMonth, 1);
-      const monthYear = format(selectedDate, 'MM/yyyy');
-      const transactionDate = format(selectedDate, 'yyyy-MM-dd');
+      // Corrigir construção da data para usar o mês e ano corretos
+      const monthYear = `${(selectedMonth + 1).toString().padStart(2, '0')}/${selectedYear}`;
+      
+      // Usar o dia 15 do mês selecionado para evitar problemas de timezone
+      const transactionDate = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-15`;
       
       // Criar apenas uma transação resumo com os detalhes em JSON
       const rentalDetails = {
@@ -186,6 +186,10 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     setSelectedYear(prev => direction === 'up' ? prev + 1 : prev - 1);
   };
 
+  const getSelectedMonthDisplay = () => {
+    return `${months[selectedMonth].label} ${selectedYear}`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
@@ -235,7 +239,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
             </div>
 
             <span className="text-xs text-muted-foreground">
-              {format(new Date(selectedYear, selectedMonth), 'MMMM yyyy', { locale: ptBR })}
+              Selecionado: {getSelectedMonthDisplay()}
             </span>
           </div>
 

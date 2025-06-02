@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Edit, Trash2, MapPin, Home, Bed, Bath, Car, Square, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +9,7 @@ import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionForm } from '@/components/finances/transaction-form';
 import { ActivityForm } from '@/components/activities/activity-form';
-import { PropertyValuationForm } from './PropertyValuationForm';
+import { PropertyValuationManager } from './PropertyValuationManager';
 import { ContractForm } from '@/components/contracts/contract-form';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
@@ -34,6 +35,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   onDelete,
   isDeleting,
 }) => {
+  const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState<'transaction' | 'activity' | 'valuation' | 'contract' | null>(null);
 
   // Hooks for form integrations
@@ -155,6 +157,12 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
   const handleContractCancel = () => {
     setActiveModal(null);
+  };
+
+  const handleNavigateToCreateContract = () => {
+    if (property?.id) {
+      navigate(`/contracts/new?propertyId=${property.id}`);
+    }
   };
 
   if (isLoading) {
@@ -386,7 +394,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
                   <Button
                     size="sm"
-                    onClick={() => setActiveModal('contract')}
+                    onClick={handleNavigateToCreateContract}
                     className="bg-yellow-500/20 backdrop-blur-sm hover:bg-yellow-500/30 border border-yellow-300/30 text-white text-xs px-2 py-1"
                   >
                     + Contrato
@@ -430,11 +438,11 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
       {/* Valuation Modal */}
       <Dialog open={activeModal === 'valuation'} onOpenChange={() => setActiveModal(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Atualizar Avaliação de Mercado</DialogTitle>
+            <DialogTitle>Gerenciar Avaliações de Mercado</DialogTitle>
           </DialogHeader>
-          <PropertyValuationForm 
+          <PropertyValuationManager 
             property={property}
             onSuccess={() => setActiveModal(null)}
           />
