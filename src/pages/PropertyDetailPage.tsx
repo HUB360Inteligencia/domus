@@ -3,9 +3,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PropertyHeroHeader } from '@/components/properties/property-hero-header';
-import { PropertyTransactionsSection } from '@/components/properties/PropertyTransactionsSection';
+import { PropertyDetail } from '@/components/properties/property-detail';
 import { useProperties } from '@/hooks/use-properties';
 import { toast } from 'sonner';
 
@@ -98,7 +96,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="container py-4 space-y-6">
-      <PropertyHeroHeader
+      <PropertyDetail
         property={selectedProperty}
         isLoading={false}
         onBack={handleBack}
@@ -106,43 +104,6 @@ export default function PropertyDetailPage() {
         onDelete={handleDelete}
         isDeleting={isDeleting}
       />
-
-      <Tabs defaultValue="finances" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="finances">Financeiro</TabsTrigger>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="finances">
-          <PropertyTransactionsSection property={selectedProperty} />
-        </TabsContent>
-
-        <TabsContent value="overview">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Informações do Imóvel</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p><strong>Endereço:</strong> {selectedProperty.address}</p>
-                <p><strong>Cidade:</strong> {selectedProperty.city} - {selectedProperty.state}</p>
-                <p><strong>Tipo:</strong> {selectedProperty.type}</p>
-                <p><strong>Status:</strong> {selectedProperty.status}</p>
-              </div>
-              <div className="space-y-2">
-                {selectedProperty.area && <p><strong>Área:</strong> {selectedProperty.area}m²</p>}
-                {selectedProperty.bedrooms && <p><strong>Quartos:</strong> {selectedProperty.bedrooms}</p>}
-                {selectedProperty.bathrooms && <p><strong>Banheiros:</strong> {selectedProperty.bathrooms}</p>}
-                {selectedProperty.garage_spots && <p><strong>Vagas:</strong> {selectedProperty.garage_spots}</p>}
-              </div>
-            </div>
-            {selectedProperty.description && (
-              <div>
-                <h4 className="font-medium mb-2">Descrição</h4>
-                <p className="text-muted-foreground">{selectedProperty.description}</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
