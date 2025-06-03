@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useProperties } from '@/hooks/use-properties';
 import { useContracts } from '@/hooks/use-contracts';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { useRentalAnalytics } from './use-rental-analytics';
 
 export interface DashboardMetrics {
   // Portfólio de Imóveis
@@ -15,14 +16,27 @@ export interface DashboardMetrics {
   totalMarketValue: number;
   assetGrowthPercentage: number;
   
-  // Performance Financeira Mensal
-  monthlyRevenue: number;
-  monthlyExpenses: number;
-  monthlyProfit: number;
+  // Performance Financeira - CORRIGIDO
+  totalRevenue: number;
+  totalExpenses: number;
+  netBalance: number;
   
-  // Rentabilidade
-  roiOnInvestment: number; // Retorno sobre valor investido
-  currentYield: number; // Retorno sobre valor de mercado
+  // Rentabilidade - CORRIGIDO
+  monthlyROI: {
+    lastMonth: number;
+    average12Months: number;
+    onInvestment: number;
+    onMarketValue: number;
+    trend: 'up' | 'down' | 'neutral';
+  };
+  
+  // ROI por tipo - CORRIGIDO
+  roiByPropertyType: Record<string, {
+    lastMonth: number;
+    average12Months: number;
+    totalInvestment: number;
+    totalMarketValue: number;
+  }>;
   
   // Tendências
   revenueTrend: 'up' | 'down' | 'neutral';
@@ -34,6 +48,7 @@ export const useDashboardMetrics = (): DashboardMetrics => {
   const { properties } = useProperties();
   const { contracts } = useContracts();
   const { transactions } = useFinancialTransactions();
+  const rentalAnalytics = useRentalAnalytics();
 
   return useMemo(() => {
     // Calcular métricas do portfólio
@@ -51,10 +66,23 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       ? ((totalMarketValue - totalPurchaseValue) / totalPurchaseValue) * 100 
       : 0;
 
-    // Calcular performance financeira do mês atual
+    // Calcular performance financeira - TOTAIS (não apenas mês atual)
+    const totalRevenue = transactions
+      .filter(t => t.transaction_type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const totalExpenses = transactions
+      .filter(t => t.transaction_type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const netBalance = totalRevenue - totalExpenses;
+
+    // Calcular tendências (comparando com mês anterior)
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     
     const currentMonthTransactions = transactions.filter(t => {
       const transactionDate = new Date(t.transaction_date);
@@ -62,34 +90,19 @@ export const useDashboardMetrics = (): DashboardMetrics => {
              transactionDate.getFullYear() === currentYear;
     });
 
-    const monthlyRevenue = currentMonthTransactions
-      .filter(t => t.transaction_type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-
-    const monthlyExpenses = currentMonthTransactions
-      .filter(t => t.transaction_type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-
-    const monthlyProfit = monthlyRevenue - monthlyExpenses;
-
-    // Calcular rentabilidade
-    const roiOnInvestment = totalPurchaseValue > 0 
-      ? (monthlyRevenue / totalPurchaseValue) * 100 * 12 // Anualizado
-      : 0;
-
-    const currentYield = totalMarketValue > 0 
-      ? (monthlyRevenue / totalMarketValue) * 100 * 12 // Anualizado
-      : 0;
-
-    // Calcular tendências (comparando com mês anterior)
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    
     const previousMonthTransactions = transactions.filter(t => {
       const transactionDate = new Date(t.transaction_date);
       return transactionDate.getMonth() === previousMonth && 
              transactionDate.getFullYear() === previousYear;
     });
+
+    const currentMonthRevenue = currentMonthTransactions
+      .filter(t => t.transaction_type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const currentMonthExpenses = currentMonthTransactions
+      .filter(t => t.transaction_type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const previousMonthRevenue = previousMonthTransactions
       .filter(t => t.transaction_type === 'income')
@@ -99,16 +112,17 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       .filter(t => t.transaction_type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
+    const currentMonthProfit = currentMonthRevenue - currentMonthExpenses;
     const previousMonthProfit = previousMonthRevenue - previousMonthExpenses;
 
-    const revenueTrend = monthlyRevenue > previousMonthRevenue ? 'up' : 
-                        monthlyRevenue < previousMonthRevenue ? 'down' : 'neutral';
+    const revenueTrend = currentMonthRevenue > previousMonthRevenue ? 'up' : 
+                        currentMonthRevenue < previousMonthRevenue ? 'down' : 'neutral';
     
-    const expensesTrend = monthlyExpenses > previousMonthExpenses ? 'up' : 
-                         monthlyExpenses < previousMonthExpenses ? 'down' : 'neutral';
+    const expensesTrend = currentMonthExpenses > previousMonthExpenses ? 'up' : 
+                         currentMonthExpenses < previousMonthExpenses ? 'down' : 'neutral';
     
-    const profitTrend = monthlyProfit > previousMonthProfit ? 'up' : 
-                       monthlyProfit < previousMonthProfit ? 'down' : 'neutral';
+    const profitTrend = currentMonthProfit > previousMonthProfit ? 'up' : 
+                       currentMonthProfit < previousMonthProfit ? 'down' : 'neutral';
 
     return {
       totalProperties,
@@ -117,14 +131,14 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       totalPurchaseValue,
       totalMarketValue,
       assetGrowthPercentage,
-      monthlyRevenue,
-      monthlyExpenses,
-      monthlyProfit,
-      roiOnInvestment,
-      currentYield,
+      totalRevenue,
+      totalExpenses,
+      netBalance,
+      monthlyROI: rentalAnalytics.monthlyROI,
+      roiByPropertyType: rentalAnalytics.roiByPropertyType,
       revenueTrend,
       expensesTrend,
       profitTrend
     };
-  }, [properties, contracts, transactions]);
+  }, [properties, contracts, transactions, rentalAnalytics]);
 };

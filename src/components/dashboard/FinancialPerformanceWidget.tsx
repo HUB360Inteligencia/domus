@@ -16,30 +16,31 @@ export function FinancialPerformanceWidget() {
         
         <div className="flex-1 space-y-4">
           <MetricWidget
-            title="Receitas"
-            value={formatCurrency(metrics.monthlyRevenue)}
-            subtitle="mês atual"
+            title="Receitas Totais"
+            value={formatCurrency(metrics.totalRevenue)}
+            subtitle="todas as receitas"
             icon={<DollarSign />}
             trend={metrics.revenueTrend}
             trendValue={metrics.revenueTrend !== 'neutral' ? '+12%' : '0%'}
           />
           
           <MetricWidget
-            title="Despesas"
-            value={formatCurrency(metrics.monthlyExpenses)}
-            subtitle="mês atual"
+            title="Despesas Totais"
+            value={formatCurrency(metrics.totalExpenses)}
+            subtitle="todas as despesas"
             icon={<TrendingUp />}
             trend={metrics.expensesTrend === 'up' ? 'down' : metrics.expensesTrend === 'down' ? 'up' : 'neutral'}
             trendValue={metrics.expensesTrend !== 'neutral' ? '-5%' : '0%'}
           />
           
           <MetricWidget
-            title="Lucro Líquido"
-            value={formatCurrency(metrics.monthlyProfit)}
+            title="Saldo Líquido"
+            value={formatCurrency(metrics.netBalance)}
             subtitle="receitas - despesas"
             icon={<Target />}
-            trend={metrics.profitTrend}
+            trend={metrics.netBalance >= 0 ? 'up' : 'down'}
             trendValue={metrics.profitTrend !== 'neutral' ? '+18%' : '0%'}
+            className="bg-gray-50 p-3 rounded-lg"
           />
         </div>
       </div>

@@ -9,7 +9,7 @@ import { TopPropertiesWidget } from '@/components/dashboard/TopPropertiesWidget'
 import { TopNeighborhoodsWidget } from '@/components/dashboard/TopNeighborhoodsWidget';
 import { ActivitiesWidget } from '@/components/dashboard/ActivitiesWidget';
 import { PropertyTypesWidget } from '@/components/dashboard/PropertyTypesWidget';
-import { PropertyROIWidget } from '@/components/dashboard/PropertyROIWidget';
+import { ROIByPropertyTypeWidget } from '@/components/dashboard/ROIByPropertyTypeWidget';
 
 export default function Dashboard() {
   return (
@@ -52,7 +52,7 @@ export default function Dashboard() {
           <TopNeighborhoodsWidget />
         </div>
         <div className="md:col-span-1">
-          <PropertyROIWidget />
+          <ROIByPropertyTypeWidget />
         </div>
         
       </div>
