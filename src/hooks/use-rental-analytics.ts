@@ -19,7 +19,7 @@ export interface RentalAnalytics {
   }>;
 }
 
-export const useRentalAnalytics = () => {
+export const useRentalAnalytics = (): RentalAnalytics => {
   const { properties } = useProperties();
 
   return useMemo(() => {
@@ -72,8 +72,9 @@ export const useRentalAnalytics = () => {
     const lastMonthROIOnMarketValue = totalMarketValue > 0 ? (totalLastMonthRevenue / totalMarketValue) * 100 : 0;
     const average12MonthsROI = lastMonthROIOnInvestment * 0.95; // Simulando média
 
-    const trend = lastMonthROIOnInvestment > average12MonthsROI ? 'up' : 
-                 lastMonthROIOnInvestment < average12MonthsROI ? 'down' : 'neutral';
+    // Corrigir o tipo de trend para garantir que seja 'up' | 'down' | 'neutral'
+    const trend: 'up' | 'down' | 'neutral' = lastMonthROIOnInvestment > average12MonthsROI ? 'up' : 
+                                            lastMonthROIOnInvestment < average12MonthsROI ? 'down' : 'neutral';
 
     return {
       monthlyROI: {
