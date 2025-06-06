@@ -1310,6 +1310,7 @@ export type Database = {
           garage_spots: number | null
           id: string
           image_url: string | null
+          land_area: number | null
           last_valuation_date: string | null
           latitude: number | null
           longitude: number | null
@@ -1355,6 +1356,7 @@ export type Database = {
           garage_spots?: number | null
           id?: string
           image_url?: string | null
+          land_area?: number | null
           last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null
@@ -1400,6 +1402,7 @@ export type Database = {
           garage_spots?: number | null
           id?: string
           image_url?: string | null
+          land_area?: number | null
           last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null

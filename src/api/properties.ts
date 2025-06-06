@@ -37,7 +37,8 @@ export const fetchProperties = async (): Promise<Property[]> => {
       status: item.status as PropertyStatus,
       furnished: item.furnished as FurnishedStatus,
       tags: item.tags || [],
-      rental_value: item.rental_value || 0
+      rental_value: item.rental_value || 0,
+      land_area: item.land_area || 0
     }));
   } catch (err) {
     console.error('Failed to fetch properties:', err);
@@ -82,7 +83,8 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
       tags: data.tags || [],
-      rental_value: data.rental_value || 0
+      rental_value: data.rental_value || 0,
+      land_area: data.land_area || 0
     } : null;
   } catch (err) {
     console.error(`Failed to fetch property ${id}:`, err);
@@ -124,7 +126,8 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
       tags: data.tags || [],
-      rental_value: data.rental_value || 0
+      rental_value: data.rental_value || 0,
+      land_area: data.land_area || 0
     };
   } catch (err) {
     console.error('Failed to create property:', err);
@@ -161,7 +164,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       status: updatedData.status as PropertyStatus,
       furnished: updatedData.furnished as FurnishedStatus,
       tags: updatedData.tags || [],
-      rental_value: updatedData.rental_value || 0
+      rental_value: updatedData.rental_value || 0,
+      land_area: updatedData.land_area || 0
     };
   } catch (err) {
     console.error('Failed to update property:', err);

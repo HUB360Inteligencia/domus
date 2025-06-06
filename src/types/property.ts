@@ -21,6 +21,16 @@ export interface PropertyDocument {
   file?: File;
 }
 
+export interface PropertyImage {
+  id?: string;
+  name: string;
+  description: string;
+  file?: File;
+  url?: string;
+  is_primary?: boolean;
+  display_order?: number;
+}
+
 export interface Property {
   id: string;
   title: string;
@@ -36,7 +46,8 @@ export interface Property {
   status: PropertyStatus;
   value: number; // Valor de mercado
   rental_value?: number; // Valor de aluguel
-  area?: number;
+  area?: number; // Área construída
+  land_area?: number; // Área do terreno
   bedrooms?: number;
   bathrooms?: number;
   garage_spots?: number;
@@ -52,11 +63,6 @@ export interface Property {
   longitude?: number | null;
   purchase_date?: string | null;
   purchase_value?: number | null;
-  tenant_name?: string | null;
-  tenant_contact?: string | null;
-  agency_name?: string | null;
-  agency_responsible?: string | null;
-  agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
   last_valuation_date?: string | null;
@@ -80,7 +86,8 @@ export interface PropertyFormData {
   status: PropertyStatus;
   value: number; // Valor de mercado
   rental_value?: number; // Valor de aluguel
-  area?: number;
+  area?: number; // Área construída
+  land_area?: number; // Área do terreno
   bedrooms?: number;
   bathrooms?: number;
   garage_spots?: number;
@@ -92,13 +99,9 @@ export interface PropertyFormData {
   longitude?: number | null;
   purchase_date?: string | null;
   purchase_value?: number | null;
-  tenant_name?: string | null;
-  tenant_contact?: string | null;
-  agency_name?: string | null;
-  agency_responsible?: string | null;
-  agency_contact?: string | null;
   square_meter_value?: number | null;
   tags?: string[] | null;
+  images?: PropertyImage[];
 }
 
 export interface PropertyValuation {

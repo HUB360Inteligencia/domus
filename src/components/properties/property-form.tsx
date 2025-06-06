@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { PropertyFormData, Property } from '@/types/property';
+import { PropertyFormData, Property, PropertyImage } from '@/types/property';
 import { BasicInfoSection } from './form-sections/basic-info-section';
-import { LocationSection } from './form-sections/location-section';
+import { EnhancedLocationSection } from './form-sections/enhanced-location-section';
 import { FinancialSection } from './form-sections/financial-section';
-import { CharacteristicsSection } from './form-sections/characteristics-section';
-import { TenantInfoSection } from './form-sections/tenant-info-section';
-import { ImageUploadSection } from './form-sections/image-upload-section';
+import { DynamicCharacteristicsSection } from './form-sections/dynamic-characteristics-section';
+import { PropertyGallerySection } from './form-sections/property-gallery-section';
 
 interface PropertyFormProps {
   initialData?: Property | null;
@@ -38,6 +37,7 @@ export function PropertyForm({
     value: 0,
     rental_value: 0,
     area: 0,
+    land_area: 0,
     bedrooms: 0,
     bathrooms: 0,
     garage_spots: 0,
@@ -49,19 +49,12 @@ export function PropertyForm({
     longitude: null,
     purchase_date: null,
     purchase_value: null,
-    tenant_name: null,
-    tenant_contact: null,
-    agency_name: null,
-    agency_responsible: null,
-    agency_contact: null,
     square_meter_value: null,
     tags: null,
+    images: [],
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [showMap, setShowMap] = useState(false);
 
   // Initialize form data with initial data
   useEffect(() => {
@@ -82,6 +75,7 @@ export function PropertyForm({
         value: initialData.value || 0,
         rental_value: initialData.rental_value || 0,
         area: initialData.area || 0,
+        land_area: initialData.land_area || 0,
         bedrooms: initialData.bedrooms || 0,
         bathrooms: initialData.bathrooms || 0,
         garage_spots: initialData.garage_spots || 0,
@@ -95,18 +89,10 @@ export function PropertyForm({
         longitude: initialData.longitude || null,
         purchase_date: initialData.purchase_date || null,
         purchase_value: initialData.purchase_value || null,
-        tenant_name: initialData.tenant_name || null,
-        tenant_contact: initialData.tenant_contact || null,
-        agency_name: initialData.agency_name || null,
-        agency_responsible: initialData.agency_responsible || null,
-        agency_contact: initialData.agency_contact || null,
         square_meter_value: initialData.square_meter_value || null,
         tags: initialData.tags || null,
+        images: [],
       });
-      
-      if (initialData.image_url) {
-        setImagePreview(initialData.image_url);
-      }
 
       // Extract features from initialData
       if (initialData.features && typeof initialData.features === 'object') {
@@ -160,27 +146,17 @@ export function PropertyForm({
     handleInputChange('longitude', coords.lng);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageRemove = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  const handleImagesChange = (images: PropertyImage[]) => {
+    handleInputChange('images', images);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Submitting form data:', formData);
-    onSubmit(formData, imageFile || undefined);
+    
+    // Para manter compatibilidade, se há uma imagem principal, passa como imageFile
+    const primaryImage = formData.images?.find(img => img.is_primary);
+    onSubmit(formData, primaryImage?.file);
   };
 
   return (
@@ -190,10 +166,9 @@ export function PropertyForm({
         onInputChange={handleInputChange}
       />
       
-      <LocationSection
+      <EnhancedLocationSection
         formData={formData}
         onInputChange={handleInputChange}
-        showMap={showMap}
         onAddressFound={handleAddressFound}
         onCoordsChange={handleCoordsChange}
       />
@@ -203,22 +178,16 @@ export function PropertyForm({
         onInputChange={handleInputChange}
       />
       
-      <CharacteristicsSection
+      <DynamicCharacteristicsSection
         formData={formData}
         onInputChange={handleInputChange}
         selectedFeatures={selectedFeatures}
         onFeatureToggle={handleFeatureToggle}
       />
       
-      <TenantInfoSection
-        formData={formData}
-        onInputChange={handleInputChange}
-      />
-      
-      <ImageUploadSection
-        imagePreview={imagePreview}
-        onImageChange={handleImageChange}
-        onImageRemove={handleImageRemove}
+      <PropertyGallerySection
+        images={formData.images || []}
+        onImagesChange={handleImagesChange}
       />
 
       <div className="flex justify-end space-x-4">
