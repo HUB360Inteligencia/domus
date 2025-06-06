@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useContracts } from '@/hooks/use-contracts';
-import { ContractList } from '@/components/contracts/contract-list';
+import { ContractList } from '@/components/contract-list';
 import { ContractFilters } from '@/components/contracts/contract-filters';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -9,11 +9,17 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function ContractsPage() {
-  const { contracts, isLoading, deleteContract, isDeleting } = useContracts();
-  const [filters, setFilters] = useState({
-    status: '',
-    property: '',
-    tenant: ''
+  const { contracts, isLoading, deleteContract } = useContracts();
+  const [filterOptions, setFilterOptions] = useState({
+    searchTerm: "",
+    status: [],
+    city: "",
+    neighborhood: "",
+    propertyType: "",
+    minValue: null,
+    maxValue: null,
+    dateRange: undefined,
+    tags: [],
   });
 
   const handleDeleteContract = async (id: string) => {
@@ -30,9 +36,67 @@ export default function ContractsPage() {
     }
   };
 
+  // Apply filters to contracts
   const filteredContracts = contracts.filter(contract => {
-    if (filters.status && contract.status !== filters.status) return false;
-    if (filters.tenant && !contract.tenant_name.toLowerCase().includes(filters.tenant.toLowerCase())) return false;
+    // Search term filter
+    if (filterOptions.searchTerm) {
+      const searchLower = filterOptions.searchTerm.toLowerCase();
+      const matchesSearch = 
+        contract.title.toLowerCase().includes(searchLower) ||
+        contract.tenant_name.toLowerCase().includes(searchLower) ||
+        (contract.property?.title && contract.property.title.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (filterOptions.status.length > 0 && !filterOptions.status.includes(contract.status)) {
+      return false;
+    }
+
+    // City filter
+    if (filterOptions.city && contract.property?.city !== filterOptions.city) {
+      return false;
+    }
+
+    // Neighborhood filter
+    if (filterOptions.neighborhood && contract.property?.neighborhood !== filterOptions.neighborhood) {
+      return false;
+    }
+
+    // Property type filter
+    if (filterOptions.propertyType && contract.property?.type !== filterOptions.propertyType) {
+      return false;
+    }
+
+    // Value range filter
+    if (filterOptions.minValue !== null && contract.value < filterOptions.minValue) {
+      return false;
+    }
+    if (filterOptions.maxValue !== null && contract.value > filterOptions.maxValue) {
+      return false;
+    }
+
+    // Date range filter
+    if (filterOptions.dateRange?.from) {
+      const contractStart = new Date(contract.start_date);
+      const contractEnd = new Date(contract.end_date);
+      const filterStart = filterOptions.dateRange.from;
+      const filterEnd = filterOptions.dateRange.to || filterStart;
+      
+      // Check if contract period overlaps with filter range
+      if (contractEnd < filterStart || contractStart > filterEnd) {
+        return false;
+      }
+    }
+
+    // Tags filter
+    if (filterOptions.tags.length > 0 && contract.property?.tags) {
+      const hasMatchingTag = filterOptions.tags.some(tag => 
+        contract.property?.tags?.includes(tag)
+      );
+      if (!hasMatchingTag) return false;
+    }
+
     return true;
   });
 
@@ -53,13 +117,15 @@ export default function ContractsPage() {
         </Link>
       </div>
 
-      <ContractFilters filters={filters} onFiltersChange={setFilters} />
+      <ContractFilters 
+        onFilterChange={setFilterOptions}
+        contracts={contracts}
+      />
       
       <ContractList 
         contracts={filteredContracts}
         isLoading={isLoading}
         onDelete={handleDeleteContract}
-        isDeleting={isDeleting}
       />
     </div>
   );
