@@ -62,7 +62,9 @@ export default function PropertyFormPage() {
         type: data.type,
         status: data.status,
         value: data.value,
+        rental_value: data.rental_value,
         area: data.area,
+        land_area: data.land_area,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
         garage_spots: data.garage_spots,
@@ -74,13 +76,9 @@ export default function PropertyFormPage() {
         longitude: data.longitude,
         purchase_date: data.purchase_date,
         purchase_value: data.purchase_value,
-        tenant_name: data.tenant_name,
-        tenant_contact: data.tenant_contact,
-        agency_name: data.agency_name,
-        agency_responsible: data.agency_responsible,
-        agency_contact: data.agency_contact,
         square_meter_value: data.square_meter_value,
         tags: data.tags,
+        images: data.images,
       };
 
       if (isEditMode && id) {

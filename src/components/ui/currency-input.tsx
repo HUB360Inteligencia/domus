@@ -1,22 +1,27 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 
 interface CurrencyInputProps {
   value: string | number;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
+  onValueChange?: (value: number) => void;
   placeholder?: string;
   className?: string;
   id?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   value,
   onChange,
+  onValueChange,
   placeholder = "R$ 0,00",
   className,
   id,
-  disabled = false
+  disabled = false,
+  required = false
 }) => {
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -26,7 +31,6 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
       if (typeof value === 'number') {
         setDisplayValue(formatCurrencyDisplay(value));
       } else if (value) {
-        // Parse the value and format it properly
         const numericValue = parseCurrencyToNumber(value);
         setDisplayValue(formatCurrencyDisplay(numericValue));
       } else {
@@ -93,24 +97,27 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
     const inputValue = e.target.value;
     
     if (isFocused) {
-      // During typing, allow more flexible input
       setDisplayValue(inputValue);
       
-      // Extract numeric value and pass it back as string
       const numericValue = parseCurrencyToNumber(inputValue);
-      onChange(numericValue.toString());
+      
+      // Call both callbacks for backward compatibility
+      if (onChange) {
+        onChange(numericValue.toString());
+      }
+      if (onValueChange) {
+        onValueChange(numericValue);
+      }
     }
   };
 
   const handleFocus = () => {
     setIsFocused(true);
-    // Convert to a more editable format when focused
     if (displayValue) {
       const numericValue = parseCurrencyToNumber(displayValue);
       if (numericValue === 0) {
         setDisplayValue('');
       } else {
-        // Keep the formatted value but make it editable
         setDisplayValue(displayValue);
       }
     }
@@ -118,11 +125,17 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 
   const handleBlur = () => {
     setIsFocused(false);
-    // Format the value properly when losing focus
     const numericValue = parseCurrencyToNumber(displayValue);
     const formattedValue = formatCurrencyDisplay(numericValue);
     setDisplayValue(formattedValue);
-    onChange(numericValue.toString());
+    
+    // Call both callbacks for backward compatibility
+    if (onChange) {
+      onChange(numericValue.toString());
+    }
+    if (onValueChange) {
+      onValueChange(numericValue);
+    }
   };
 
   return (
@@ -136,6 +149,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
       placeholder={placeholder}
       className={className}
       disabled={disabled}
+      required={required}
     />
   );
 };

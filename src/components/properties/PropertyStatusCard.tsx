@@ -124,34 +124,6 @@ export const PropertyStatusCard: React.FC<PropertyStatusCardProps> = ({
             </Badge>
           </div>
 
-          {property?.status === 'rented' && (
-            <>
-              {property?.tenant_name && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Inquilino</span>
-                  <span className="font-medium">{property.tenant_name}</span>
-                </div>
-              )}
-              
-              {property?.tenant_contact && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Contato</span>
-                  <span className="font-medium">{property.tenant_contact}</span>
-                </div>
-              )}
-
-              {contractEndDate && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Contrato até</span>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{contractEndDate}</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
           {property?.status === 'available' && (
             <div className="text-sm text-muted-foreground">
               Imóvel disponível para locação ou venda.
@@ -170,20 +142,21 @@ export const PropertyStatusCard: React.FC<PropertyStatusCardProps> = ({
             </div>
           )}
 
-          {property?.agency_name && (
-            <div className="pt-2 border-t">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Imobiliária</span>
-                <span className="font-medium">{property.agency_name}</span>
+          {property?.status === 'rented' && contractEndDate && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Contrato até</span>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{contractEndDate}</span>
               </div>
-              {property?.agency_responsible && (
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-sm text-muted-foreground">Responsável</span>
-                  <span className="font-medium">{property.agency_responsible}</span>
-                </div>
-              )}
             </div>
           )}
+
+          <div className="pt-2 border-t">
+            <div className="text-sm text-muted-foreground">
+              Para gerenciar informações de locatários e contratos, utilize a seção de Contratos do imóvel.
+            </div>
+          </div>
         </CardContent>
       </Card>
 

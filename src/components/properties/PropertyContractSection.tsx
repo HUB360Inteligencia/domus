@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,9 +85,8 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
     );
   }
 
-  const hasContractInfo = property?.tenant_name || property?.tenant_contact || 
-                         property?.agency_name || property?.agency_responsible || 
-                         property?.agency_contact || contracts.length > 0;
+  // Verificar se há contratos em vez de campos legados da propriedade
+  const hasContractInfo = contracts.length > 0;
 
   return (
     <>
@@ -176,7 +176,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
               </Card>
             ))}
           </div>
-        ) : !hasContractInfo ? (
+        ) : (
           <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardHeader>
               <CardTitle>Contratos</CardTitle>
@@ -196,92 +196,6 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeiro Contrato
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white">
-            <CardHeader>
-              <CardTitle>Informações Herdadas da Propriedade</CardTitle>
-              <CardDescription>Dados do locatário e imobiliária cadastrados na propriedade</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Locatário */}
-                <div>
-                  <h4 className="text-sm font-medium mb-4">Informações do Locatário</h4>
-                  <div className="space-y-2">
-                    {property?.tenant_name ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nome</p>
-                        <p className="font-medium">{property.tenant_name}</p>
-                      </div>
-                    ) : null}
-                    
-                    {property?.tenant_contact ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Contato</p>
-                        <p className="font-medium">{property.tenant_contact}</p>
-                      </div>
-                    ) : null}
-                    
-                    {!property?.tenant_name && !property?.tenant_contact ? (
-                      <p className="text-sm text-muted-foreground">Nenhuma informação do locatário cadastrada</p>
-                    ) : null}
-                  </div>
-                </div>
-                
-                {/* Imobiliária */}
-                <div>
-                  <h4 className="text-sm font-medium mb-4">Informações da Imobiliária</h4>
-                  <div className="space-y-2">
-                    {property?.agency_name ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nome da Imobiliária</p>
-                        <p className="font-medium">{property.agency_name}</p>
-                      </div>
-                    ) : null}
-                    
-                    {property?.agency_responsible ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Responsável</p>
-                        <p className="font-medium">{property.agency_responsible}</p>
-                      </div>
-                    ) : null}
-                    
-                    {property?.agency_contact ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Contato</p>
-                        <p className="font-medium">{property.agency_contact}</p>
-                      </div>
-                    ) : null}
-                    
-                    {!property?.agency_name && !property?.agency_responsible && !property?.agency_contact ? (
-                      <p className="text-sm text-muted-foreground">Nenhuma informação da imobiliária cadastrada</p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              {/* Termos do Contrato - Placeholder para futuras implementações */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-sm font-medium mb-4">Termos do Contrato</h4>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>Os detalhes completos do contrato serão implementados em breve.</p>
-                    <p>Você poderá registrar datas de início e fim, valor, condições especiais e muito mais.</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-4">Documentos</h4>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>Armazenamento de documentos relacionados ao contrato será implementado em breve.</p>
-                    <p>Guarde contratos, vistorias e outros documentos importantes.</p>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
