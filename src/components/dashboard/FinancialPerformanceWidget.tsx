@@ -21,7 +21,6 @@ export function FinancialPerformanceWidget() {
             subtitle="todas as receitas"
             icon={<DollarSign />}
             trend={metrics.revenueTrend}
-            trendValue={metrics.revenueTrend !== 'neutral' ? '+12%' : '0%'}
           />
           
           <MetricWidget
@@ -30,7 +29,6 @@ export function FinancialPerformanceWidget() {
             subtitle="todas as despesas"
             icon={<TrendingUp />}
             trend={metrics.expensesTrend === 'up' ? 'down' : metrics.expensesTrend === 'down' ? 'up' : 'neutral'}
-            trendValue={metrics.expensesTrend !== 'neutral' ? '-5%' : '0%'}
           />
           
           <MetricWidget
@@ -39,7 +37,6 @@ export function FinancialPerformanceWidget() {
             subtitle="receitas - despesas"
             icon={<Target />}
             trend={metrics.netBalance >= 0 ? 'up' : 'down'}
-            trendValue={metrics.profitTrend !== 'neutral' ? '+18%' : '0%'}
             className="bg-gray-50 p-3 rounded-lg"
           />
         </div>
