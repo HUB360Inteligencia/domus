@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, X } from 'lucide-react';
-import { MonthlyTransactionForm } from './MonthlyTransactionForm';
-import { TransactionSummary } from './TransactionSummary';
+import { Calendar } from 'lucide-react';
+import { RentalStatementTable } from './RentalStatementTable';
 import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { usePropertyActiveContract } from '@/hooks/use-property-active-contract';
 import { toast } from 'sonner';
 import {
   Select,
@@ -23,6 +23,8 @@ interface RentalItem {
   type: 'income' | 'expense';
   categoryId: string;
   categoryName: string;
+  description: string;
+  isEditable?: boolean;
 }
 
 interface RentalManagementModalProps {
@@ -42,44 +44,119 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   onSuccess
 }) => {
   const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth()); // 0-based month
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [items, setItems] = useState<RentalItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { categories, categoryOptions } = useFinancialCategories();
   const { createTransaction } = useFinancialTransactions();
+  const { activeContract } = usePropertyActiveContract(property.id);
 
-  // Reset form when modal opens
+  // Reset form when modal opens and load contract data
   useEffect(() => {
     if (isOpen) {
       setItems([]);
       setSelectedMonth(currentDate.getMonth());
       setSelectedYear(currentDate.getFullYear());
+      
+      // Load contract data after categories are loaded
+      if (activeContract && categories.length > 0) {
+        loadContractData();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, activeContract, categories]);
 
-  const addItem = (data: {
-    name: string;
-    amount: number;
-    type: 'income' | 'expense';
-    category: string;
-    categoryName: string;
-    description?: string;
-  }) => {
-    const newItem: RentalItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: data.name,
-      amount: data.amount,
-      type: data.type,
-      categoryId: data.category,
-      categoryName: data.categoryName
-    };
-    setItems(prev => [...prev, newItem]);
+  const loadContractData = () => {
+    const newItems: RentalItem[] = [];
+    
+    // Find appropriate categories
+    const incomeCategory = categories.find(c => c.type === 'income') || categoryOptions.find(c => c.label.toLowerCase().includes('receita'));
+    const expenseCategory = categories.find(c => c.type === 'expense') || categoryOptions.find(c => c.label.toLowerCase().includes('despesa'));
+
+    // Add rent income
+    if (activeContract.value && incomeCategory) {
+      newItems.push({
+        id: 'rent-income',
+        name: 'Aluguel',
+        amount: activeContract.value,
+        type: 'income',
+        categoryId: incomeCategory.id || incomeCategory.value,
+        categoryName: incomeCategory.name || incomeCategory.label,
+        description: 'Valor do aluguel conforme contrato',
+        isEditable: true
+      });
+    }
+
+    // Add IPTU expense
+    if (expenseCategory) {
+      newItems.push({
+        id: 'iptu-expense',
+        name: 'IPTU',
+        amount: 0,
+        type: 'expense',
+        categoryId: expenseCategory.id || expenseCategory.value,
+        categoryName: expenseCategory.name || expenseCategory.label,
+        description: 'Imposto Predial e Territorial Urbano',
+        isEditable: true
+      });
+    }
+
+    // Add commission expense
+    if (activeContract.commission_value && activeContract.commission_type && expenseCategory) {
+      let commissionAmount = 0;
+      
+      if (activeContract.commission_type === 'percentage') {
+        commissionAmount = (activeContract.value * activeContract.commission_value) / 100;
+      } else {
+        commissionAmount = activeContract.commission_value;
+      }
+
+      newItems.push({
+        id: 'commission-expense',
+        name: 'Taxa de Comissão',
+        amount: commissionAmount,
+        type: 'expense',
+        categoryId: expenseCategory.id || expenseCategory.value,
+        categoryName: expenseCategory.name || expenseCategory.label,
+        description: `Comissão ${activeContract.commission_type === 'percentage' ? `${activeContract.commission_value}%` : 'valor fixo'} conforme contrato`,
+        isEditable: true
+      });
+    }
+
+    setItems(newItems);
+  };
+
+  const updateItem = (id: string, field: string, value: any) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
   };
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addItem = (type: 'income' | 'expense') => {
+    const defaultCategory = categories.find(c => c.type === type) || 
+                           categoryOptions.find(c => 
+                             type === 'income' 
+                               ? c.label.toLowerCase().includes('receita')
+                               : c.label.toLowerCase().includes('despesa')
+                           );
+
+    const newItem: RentalItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: '',
+      amount: 0,
+      type,
+      categoryId: defaultCategory?.id || defaultCategory?.value || '',
+      categoryName: defaultCategory?.name || defaultCategory?.label || '',
+      description: '',
+      isEditable: true
+    };
+    
+    setItems(prev => [...prev, newItem]);
   };
 
   const totalIncome = items.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
@@ -94,16 +171,16 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Create the correct date for the selected month/year (first day of the month)
       const transactionDate = new Date(selectedYear, selectedMonth, 1);
-      const formattedDate = transactionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const formattedDate = transactionDate.toISOString().split('T')[0];
 
       const rentalDetails = {
         items: items.map(item => ({
           name: item.name,
           amount: item.amount,
           type: item.type,
-          categoryName: item.categoryName
+          categoryName: item.categoryName,
+          description: item.description
         })),
         summary: `Gestão de Aluguéis - ${property.title} (${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear})`,
         totalIncome,
@@ -111,7 +188,6 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         balance
       };
 
-      // Find a default category
       const defaultCategory = categories.find(c => c.type === (balance >= 0 ? 'income' : 'expense'));
 
       await createTransaction({
@@ -150,10 +226,10 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Calendar className="h-4 w-4" />
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5" />
             Gestão de Aluguéis - {property.title}
           </DialogTitle>
         </DialogHeader>
@@ -194,44 +270,13 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
             </div>
           </div>
 
-          {/* Transaction Form */}
-          <MonthlyTransactionForm
+          {/* Rental Statement Table */}
+          <RentalStatementTable
+            items={items}
+            categories={categoryOptions}
+            onUpdateItem={updateItem}
+            onRemoveItem={removeItem}
             onAddItem={addItem}
-          />
-
-          {/* Items List */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Itens Adicionados:</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {items.map((item) => (
-                <div key={item.id} className={`flex items-center gap-3 p-3 rounded border ${
-                  item.type === 'income' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                }`}>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.categoryName}</div>
-                  </div>
-                  <div className="text-sm font-medium">
-                    R$ {item.amount.toFixed(2)}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeItem(item.id)}
-                    className="h-8 w-8 p-0 text-red-600"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Summary */}
-          <TransactionSummary
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            balance={balance}
           />
         </div>
 
