@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { PropertyFormData, Property, PropertyImage } from '@/types/property';
+import { useProperties } from '@/hooks/use-properties';
+import { PropertyBaseSelector } from './property-base-selector';
 import { BasicInfoSection } from './form-sections/basic-info-section';
-import { EnhancedLocationSection } from './form-sections/enhanced-location-section';
+import { CEPFirstLocationSection } from './form-sections/cep-first-location-section';
 import { FinancialSection } from './form-sections/financial-section';
 import { DynamicCharacteristicsSection } from './form-sections/dynamic-characteristics-section';
 import { PropertyGallerySection } from './form-sections/property-gallery-section';
@@ -22,6 +24,9 @@ export function PropertyForm({
   onCancel, 
   isLoading = false 
 }: PropertyFormProps) {
+  const { properties } = useProperties();
+  const [selectedBasePropertyId, setSelectedBasePropertyId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
     description: '',
@@ -49,7 +54,6 @@ export function PropertyForm({
     longitude: null,
     purchase_date: null,
     purchase_value: null,
-    square_meter_value: null,
     tags: null,
     images: [],
   });
@@ -89,7 +93,6 @@ export function PropertyForm({
         longitude: initialData.longitude || null,
         purchase_date: initialData.purchase_date || null,
         purchase_value: initialData.purchase_value || null,
-        square_meter_value: initialData.square_meter_value || null,
         tags: initialData.tags || null,
         images: [],
       });
@@ -129,18 +132,6 @@ export function PropertyForm({
     });
   };
 
-  const handleAddressFound = (address: {
-    address: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-  }) => {
-    handleInputChange('address', address.address);
-    handleInputChange('neighborhood', address.neighborhood);
-    handleInputChange('city', address.city);
-    handleInputChange('state', address.state);
-  };
-
   const handleCoordsChange = (coords: { lat: number; lng: number }) => {
     handleInputChange('latitude', coords.lat);
     handleInputChange('longitude', coords.lng);
@@ -148,6 +139,58 @@ export function PropertyForm({
 
   const handleImagesChange = (images: PropertyImage[]) => {
     handleInputChange('images', images);
+  };
+
+  const handleCopyProperty = (property: Property) => {
+    console.log('Copying property data:', property);
+    
+    // Copiar todos os dados exceto ID e timestamps
+    setFormData({
+      ...formData,
+      title: `${property.title} (Cópia)`,
+      description: property.description || '',
+      type: property.type,
+      status: 'available', // Sempre começa como disponível
+      value: property.value,
+      rental_value: property.rental_value || 0,
+      area: property.area || 0,
+      land_area: property.land_area || 0,
+      bedrooms: property.bedrooms || 0,
+      bathrooms: property.bathrooms || 0,
+      garage_spots: property.garage_spots || 0,
+      condo_fee: property.condo_fee || 0,
+      floor_number: property.floor_number || 0,
+      furnished: property.furnished || 'not_furnished',
+      features: (typeof property.features === 'object' && property.features !== null) 
+        ? property.features as Record<string, any>
+        : {},
+      purchase_value: property.purchase_value || 0,
+      tags: property.tags || null,
+      // Não copiar localização específica
+      address: '',
+      property_number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zip_code: '',
+      latitude: null,
+      longitude: null,
+      purchase_date: null,
+      images: [],
+    });
+
+    // Extrair características
+    if (property.features && typeof property.features === 'object') {
+      const features = Object.keys(property.features).filter(key => 
+        property.features[key] === true
+      );
+      setSelectedFeatures(features);
+    }
+  };
+
+  const handleClearBaseProperty = () => {
+    setSelectedBasePropertyId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -161,15 +204,25 @@ export function PropertyForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Seletor de propriedade base - apenas no modo criar */}
+      {!initialData && properties.length > 0 && (
+        <PropertyBaseSelector
+          properties={properties}
+          selectedPropertyId={selectedBasePropertyId}
+          onPropertySelect={setSelectedBasePropertyId}
+          onCopyProperty={handleCopyProperty}
+          onClear={handleClearBaseProperty}
+        />
+      )}
+      
       <BasicInfoSection
         formData={formData}
         onInputChange={handleInputChange}
       />
       
-      <EnhancedLocationSection
+      <CEPFirstLocationSection
         formData={formData}
         onInputChange={handleInputChange}
-        onAddressFound={handleAddressFound}
         onCoordsChange={handleCoordsChange}
       />
       

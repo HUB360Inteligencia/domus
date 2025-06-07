@@ -65,7 +65,7 @@ export function FinancialSection({ formData, onInputChange }: FinancialSectionPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           <div>
             <Label htmlFor="purchase_date">Data de Compra</Label>
             <Input
@@ -73,16 +73,6 @@ export function FinancialSection({ formData, onInputChange }: FinancialSectionPr
               type="date"
               value={formData.purchase_date || ''}
               onChange={(e) => onInputChange('purchase_date', e.target.value || null)}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="square_meter_value">Valor por m²</Label>
-            <CurrencyInput
-              id="square_meter_value"
-              value={formData.square_meter_value || 0}
-              onValueChange={(value) => onInputChange('square_meter_value', value || 0)}
-              placeholder="R$ 0,00"
             />
           </div>
         </div>
