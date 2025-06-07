@@ -25,20 +25,6 @@ export function MaskedDateInput({
     onChange(maskedValue);
   };
 
-  // Convert dd/mm/yyyy to yyyy-mm-dd for database storage
-  const convertToISODate = (dateStr: string): string => {
-    if (!dateStr || dateStr.length !== 10) return '';
-    const [day, month, year] = dateStr.split('/');
-    return `${year}-${month}-${day}`;
-  };
-
-  // Convert yyyy-mm-dd to dd/mm/yyyy for display
-  const convertFromISODate = (isoDateStr: string): string => {
-    if (!isoDateStr) return '';
-    const [year, month, day] = isoDateStr.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
   return (
     <Input
       id={id}
@@ -52,8 +38,6 @@ export function MaskedDateInput({
     />
   );
 }
-
-export { convertToISODate, convertFromISODate } from '@/components/ui/masked-date-input';
 
 // Helper functions to be used by forms
 export const convertToISODate = (dateStr: string): string => {

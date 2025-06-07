@@ -1,51 +1,23 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { UseFormReturn } from 'react-hook-form';
-import { ContractFormData } from '@/types/contract';
-import { formatCurrency, parseCurrencyToNumber } from '@/lib/format';
+import { Label } from '@/components/ui/label';
+import { CurrencyInput } from '@/components/ui/currency-input';
 
 interface ContractFormRentFieldProps {
-  form: UseFormReturn<ContractFormData>;
+  value: number;
+  onChange: (value: number) => void;
 }
 
-export function ContractFormRentField({ form }: ContractFormRentFieldProps) {
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Allow typing numbers and common currency symbols
-    const sanitizedValue = value.replace(/[^\d,.]/g, '');
-    e.target.value = sanitizedValue;
-  };
-
-  const handleValueBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const numericValue = parseCurrencyToNumber(value);
-    form.setValue('value', numericValue);
-    e.target.value = formatCurrency(numericValue);
-  };
-
-  const currentValue = form.watch('value');
-
+export function ContractFormRentField({ value, onChange }: ContractFormRentFieldProps) {
   return (
-    <FormField
-      control={form.control}
-      name="value"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Valor do Aluguel *</FormLabel>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder="R$ 0,00"
-              defaultValue={currentValue ? formatCurrency(currentValue) : ''}
-              onChange={handleValueChange}
-              onBlur={handleValueBlur}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div>
+      <Label htmlFor="value">Valor do Aluguel *</Label>
+      <CurrencyInput
+        id="value"
+        value={value}
+        onValueChange={(val) => onChange(val || 0)}
+        placeholder="R$ 0,00"
+      />
+    </div>
   );
 }
