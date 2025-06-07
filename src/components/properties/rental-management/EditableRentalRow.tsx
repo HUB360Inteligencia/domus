@@ -19,7 +19,7 @@ interface RentalItem {
 
 interface EditableRentalRowProps {
   item: RentalItem;
-  categories: Array<{ value: string; label: string }>;
+  categories: Array<{ value: string; label: string; type: string }>;
   onUpdate: (id: string, field: string, value: any) => void;
   onRemove: (id: string) => void;
 }
@@ -30,10 +30,8 @@ export const EditableRentalRow: React.FC<EditableRentalRowProps> = ({
   onUpdate,
   onRemove
 }) => {
-  const filteredCategories = categories.filter(cat => 
-    (item.type === 'income' && cat.label.toLowerCase().includes('receita')) ||
-    (item.type === 'expense' && cat.label.toLowerCase().includes('despesa'))
-  );
+  // Filter categories based on item type
+  const filteredCategories = categories.filter(cat => cat.type === item.type);
 
   return (
     <tr className={`${item.type === 'income' ? 'bg-green-50' : 'bg-red-50'} border-b`}>

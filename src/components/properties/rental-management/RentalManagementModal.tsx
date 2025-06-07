@@ -49,9 +49,16 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   const [items, setItems] = useState<RentalItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { categories, categoryOptions } = useFinancialCategories();
+  const { categories, isLoadingCategories } = useFinancialCategories();
   const { createTransaction } = useFinancialTransactions();
   const { activeContract } = usePropertyActiveContract(property.id);
+
+  // Transform categories to the format expected by components
+  const categoryOptions = categories.map(category => ({
+    label: category.name,
+    value: category.id,
+    type: category.type
+  }));
 
   // Reset form when modal opens and load contract data
   useEffect(() => {
@@ -71,8 +78,8 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     const newItems: RentalItem[] = [];
     
     // Find appropriate categories
-    const incomeCategory = categories.find(c => c.type === 'income') || categoryOptions.find(c => c.label.toLowerCase().includes('receita'));
-    const expenseCategory = categories.find(c => c.type === 'expense') || categoryOptions.find(c => c.label.toLowerCase().includes('despesa'));
+    const incomeCategory = categories.find(c => c.type === 'income');
+    const expenseCategory = categories.find(c => c.type === 'expense');
 
     // Add rent income
     if (activeContract.value && incomeCategory) {
@@ -81,8 +88,8 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         name: 'Aluguel',
         amount: activeContract.value,
         type: 'income',
-        categoryId: incomeCategory.id || incomeCategory.value,
-        categoryName: incomeCategory.name || incomeCategory.label,
+        categoryId: incomeCategory.id,
+        categoryName: incomeCategory.name,
         description: 'Valor do aluguel conforme contrato',
         isEditable: true
       });
@@ -95,8 +102,8 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         name: 'IPTU',
         amount: 0,
         type: 'expense',
-        categoryId: expenseCategory.id || expenseCategory.value,
-        categoryName: expenseCategory.name || expenseCategory.label,
+        categoryId: expenseCategory.id,
+        categoryName: expenseCategory.name,
         description: 'Imposto Predial e Territorial Urbano',
         isEditable: true
       });
@@ -117,8 +124,8 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         name: 'Taxa de Comissão',
         amount: commissionAmount,
         type: 'expense',
-        categoryId: expenseCategory.id || expenseCategory.value,
-        categoryName: expenseCategory.name || expenseCategory.label,
+        categoryId: expenseCategory.id,
+        categoryName: expenseCategory.name,
         description: `Comissão ${activeContract.commission_type === 'percentage' ? `${activeContract.commission_value}%` : 'valor fixo'} conforme contrato`,
         isEditable: true
       });
@@ -138,20 +145,15 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   };
 
   const addItem = (type: 'income' | 'expense') => {
-    const defaultCategory = categories.find(c => c.type === type) || 
-                           categoryOptions.find(c => 
-                             type === 'income' 
-                               ? c.label.toLowerCase().includes('receita')
-                               : c.label.toLowerCase().includes('despesa')
-                           );
+    const defaultCategory = categories.find(c => c.type === type);
 
     const newItem: RentalItem = {
       id: Math.random().toString(36).substr(2, 9),
       name: '',
       amount: 0,
       type,
-      categoryId: defaultCategory?.id || defaultCategory?.value || '',
-      categoryName: defaultCategory?.name || defaultCategory?.label || '',
+      categoryId: defaultCategory?.id || '',
+      categoryName: defaultCategory?.name || '',
       description: '',
       isEditable: true
     };
@@ -194,7 +196,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         name: `Gestão de Aluguéis - ${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear}`,
         amount: Math.abs(balance),
         transaction_type: balance >= 0 ? 'income' : 'expense',
-        category: defaultCategory?.id || categoryOptions[0]?.value || '',
+        category: defaultCategory?.id || '',
         subcategory: 'rental-management',
         description: JSON.stringify(rentalDetails),
         transaction_date: formattedDate,
@@ -223,6 +225,21 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   ];
 
   const years = Array.from({ length: 10 }, (_, i) => currentDate.getFullYear() - 5 + i);
+
+  if (isLoadingCategories) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Carregando categorias...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
