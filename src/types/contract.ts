@@ -51,6 +51,16 @@ export interface Contract {
   late_daily_interest: number | null;
   fine_percentage: number | null;
   payment_terms: string | null;
+  
+  // Novos campos adicionados
+  adjustment_index: string | null;
+  adjustment_date: string | null;
+  agency_name: string | null;
+  agency_contact: string | null;
+  agency_responsible_name: string | null;
+  agency_responsible_contact: string | null;
+  commission_type: 'percentage' | 'monetary' | null;
+  commission_value: number | null;
 }
 
 export interface ContractFormData {
@@ -70,7 +80,7 @@ export interface ContractFormData {
   renewal_terms?: string | null;
   special_conditions?: string | null;
   
-  // Novos campos
+  // Campos existentes
   has_variable_rent?: boolean;
   variable_rent_values?: VariableRentValue[];
   payment_due_day?: number;
@@ -81,6 +91,16 @@ export interface ContractFormData {
   late_daily_interest?: number;
   fine_percentage?: number;
   payment_terms?: string;
+  
+  // Novos campos
+  adjustment_index?: string;
+  adjustment_date?: string;
+  agency_name?: string;
+  agency_contact?: string;
+  agency_responsible_name?: string;
+  agency_responsible_contact?: string;
+  commission_type?: 'percentage' | 'monetary';
+  commission_value?: number;
 }
 
 export interface Document {

@@ -68,6 +68,43 @@ export const convertFromISO = (isoDate: string): string => {
 };
 
 /**
+ * Formats a date string to dd/mm/yyyy format
+ */
+export const formatDateMask = (value: string): string => {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  // Apply the mask dd/mm/yyyy
+  if (digits.length <= 2) {
+    return digits;
+  } else if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  } else {
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+  }
+};
+
+/**
+ * Validates if a date string in dd/mm/yyyy format is valid
+ */
+export const isValidDateMask = (dateStr: string): boolean => {
+  if (dateStr.length !== 10) return false;
+  
+  const [day, month, year] = dateStr.split('/').map(Number);
+  
+  if (!day || !month || !year) return false;
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+  if (year < 1900 || year > 2100) return false;
+  
+  // Check if date is valid
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && 
+         date.getMonth() === month - 1 && 
+         date.getDate() === day;
+};
+
+/**
  * Applies Brazilian currency mask (R$ 0.000,00) - NEW APPROACH
  * @param value - The input value (can be string or number)
  * @returns Formatted currency string

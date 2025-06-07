@@ -1,412 +1,433 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarDays, FileText, Users, DollarSign, AlertCircle } from 'lucide-react';
-import { ContractFormData } from '@/types/contract';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { MaskedDateInput, convertToISODate, convertFromISODate } from '@/components/ui/masked-date-input';
+import { CommissionInput } from '@/components/contracts/commission-input';
+import { ContractFormRentField } from '@/components/contracts/contract-form-rent-field';
+import { ContractFormData, Contract } from '@/types/contract';
 import { useProperties } from '@/hooks/use-properties';
-import { useContracts } from '@/hooks/use-contracts';
-import { formatCurrency } from '@/utils/currency';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { format } from 'date-fns';
+import { FileUpload } from '@/components/ui/file-upload';
+
+const adjustmentIndexOptions = [
+  'IGP-DI',
+  'IGP-M', 
+  'IPCA',
+  'INPC',
+  'IVAR',
+  'IPC',
+  'IPC-DI'
+];
 
 const contractSchema = z.object({
-  title: z.string().min(3, { message: 'O título deve ter pelo menos 3 caracteres.' }),
-  property_id: z.string().min(1, { message: 'Selecione um imóvel.' }),
-  tenant_name: z.string().min(3, { message: 'O nome do inquilino deve ter pelo menos 3 caracteres.' }),
-  start_date: z.string().min(1, { message: 'Selecione a data de início.' }),
-  end_date: z.string().min(1, { message: 'Selecione a data de término.' }),
-  value: z.number({ invalid_type_error: 'O valor deve ser um número.' }).gt(0, { message: 'O valor deve ser maior que zero.' }),
-  payment_day: z.number({ invalid_type_error: 'O dia do pagamento deve ser um número.' }).min(1).max(31, { message: 'O dia do pagamento deve estar entre 1 e 31.' }),
+  title: z.string().min(1, 'Título é obrigatório'),
+  property_id: z.string().optional(),
+  tenant_name: z.string().min(1, 'Nome do inquilino é obrigatório'),
+  tenant_contact: z.string().optional(),
+  start_date: z.string().min(1, 'Data de início é obrigatória'),
+  end_date: z.string().min(1, 'Data de término é obrigatória'),
+  value: z.number().min(0, 'Valor deve ser positivo'),
+  payment_day: z.number().min(1).max(31),
+  deposit_value: z.number().optional(),
   status: z.enum(['active', 'pending', 'expired', 'canceled', 'draft']),
   terms: z.string().optional(),
+  has_renewal_option: z.boolean().optional(),
+  renewal_terms: z.string().optional(),
+  special_conditions: z.string().optional(),
+  // Novos campos
+  adjustment_index: z.string().optional(),
+  adjustment_date: z.string().optional(),
+  agency_name: z.string().optional(),
+  agency_contact: z.string().optional(),
+  agency_responsible_name: z.string().optional(),
+  agency_responsible_contact: z.string().optional(),
+  commission_type: z.enum(['percentage', 'monetary']).optional(),
+  commission_value: z.number().optional(),
 });
 
 interface ContractFormProps {
-  initialData?: Partial<ContractFormData>;
-  onSubmit: (data: ContractFormData, documentFile?: File) => Promise<void>;
+  initialData?: Partial<Contract>;
+  onSubmit: (data: ContractFormData, documentFile?: File) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export const ContractForm: React.FC<ContractFormProps> = ({
-  initialData,
-  onSubmit,
-  onCancel,
-  isLoading = false
-}) => {
+export function ContractForm({ initialData, onSubmit, onCancel, isLoading = false }: ContractFormProps) {
   const { properties } = useProperties();
-  const { contracts } = useContracts();
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-  const [conflictWarning, setConflictWarning] = useState<{
-    show: boolean;
-    message: string;
-    conflictingContracts: any[];
-  }>({
-    show: false,
-    message: '',
-    conflictingContracts: []
-  });
+  
+  // Estado para datas em formato brasileiro
+  const [startDateBR, setStartDateBR] = useState('');
+  const [endDateBR, setEndDateBR] = useState('');
+  const [adjustmentDateBR, setAdjustmentDateBR] = useState('');
 
-  const form = useForm<ContractFormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ContractFormData>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
-      title: '',
-      property_id: '',
-      tenant_name: '',
-      start_date: '',
-      end_date: '',
-      value: 0,
-      payment_day: 5,
       status: 'active',
-      ...initialData
-    }
+      payment_day: 5,
+      commission_type: 'percentage',
+      commission_value: 0,
+      ...initialData,
+    },
   });
 
-  const watchedPropertyId = form.watch('property_id');
-  const watchedStartDate = form.watch('start_date');
-  const watchedEndDate = form.watch('end_date');
-
-  // Filter properties based on availability
-  const filteredProperties = showOnlyAvailable 
-    ? properties.filter(property => property.status !== 'rented')
-    : properties;
-
-  // Check for contract conflicts
+  // Converter datas do formato ISO para brasileiro quando carregar dados iniciais
   useEffect(() => {
-    if (watchedPropertyId && watchedStartDate && watchedEndDate) {
-      const startDate = new Date(watchedStartDate);
-      const endDate = new Date(watchedEndDate);
-      
-      const conflictingContracts = contracts.filter(contract => {
-        // Skip if it's the same contract being edited
-        if (initialData && 'id' in initialData && contract.id === initialData.id) {
-          return false;
-        }
-        
-        if (contract.property_id !== watchedPropertyId) {
-          return false;
-        }
-        
-        const contractStart = new Date(contract.start_date);
-        const contractEnd = new Date(contract.end_date);
-        
-        // Check for date overlap
-        return (startDate <= contractEnd && endDate >= contractStart);
-      });
-
-      if (conflictingContracts.length > 0) {
-        setConflictWarning({
-          show: true,
-          message: `Existe${conflictingContracts.length > 1 ? 'm' : ''} ${conflictingContracts.length} contrato${conflictingContracts.length > 1 ? 's' : ''} ativo${conflictingContracts.length > 1 ? 's' : ''} com datas sobrepostas.`,
-          conflictingContracts
-        });
-      } else {
-        setConflictWarning({ show: false, message: '', conflictingContracts: [] });
-      }
+    if (initialData?.start_date) {
+      setStartDateBR(convertFromISODate(initialData.start_date));
     }
-  }, [watchedPropertyId, watchedStartDate, watchedEndDate, contracts, initialData]);
-
-  const handleSubmit = async (data: ContractFormData) => {
-    // If there are conflicts, show warning dialog first
-    if (conflictWarning.show && conflictWarning.conflictingContracts.length > 0) {
-      return; // Let user handle the conflict warning first
+    if (initialData?.end_date) {
+      setEndDateBR(convertFromISODate(initialData.end_date));
     }
-    
-    await onSubmit(data, documentFile || undefined);
-  };
+    if (initialData?.adjustment_date) {
+      setAdjustmentDateBR(convertFromISODate(initialData.adjustment_date));
+    }
+  }, [initialData]);
 
-  const handleConflictConfirm = async () => {
-    const data = form.getValues();
-    setConflictWarning({ show: false, message: '', conflictingContracts: [] });
-    await onSubmit(data, documentFile || undefined);
+  const hasRenewal = watch('has_renewal_option');
+  const commissionType = watch('commission_type') || 'percentage';
+  const commissionValue = watch('commission_value') || 0;
+
+  const handleFormSubmit = (data: ContractFormData) => {
+    // Converter as datas do formato brasileiro para ISO antes de enviar
+    const formattedData = {
+      ...data,
+      start_date: convertToISODate(startDateBR),
+      end_date: convertToISODate(endDateBR),
+      adjustment_date: adjustmentDateBR ? convertToISODate(adjustmentDateBR) : undefined,
+    };
+
+    onSubmit(formattedData, documentFile || undefined);
   };
 
   return (
-    <>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Property Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Informações do Imóvel
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
-                id="showOnlyAvailable"
-                checked={showOnlyAvailable}
-                onCheckedChange={(checked) => setShowOnlyAvailable(checked === true)}
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Informações Básicas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações Básicas</CardTitle>
+          <CardDescription>Informações gerais do contrato</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="title">Título do Contrato *</Label>
+              <Input
+                id="title"
+                {...register('title')}
+                placeholder="Ex: Contrato de Locação - Apt 101"
               />
-              <Label htmlFor="showOnlyAvailable" className="text-sm">
-                Mostrar apenas imóveis disponíveis
-              </Label>
+              {errors.title && (
+                <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="property_id">Imóvel *</Label>
+            <div>
+              <Label htmlFor="property_id">Propriedade</Label>
               <Select
-                value={form.watch('property_id')}
-                onValueChange={(value) => form.setValue('property_id', value)}
+                value={watch('property_id') || ''}
+                onValueChange={(value) => setValue('property_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um imóvel" />
+                  <SelectValue placeholder="Selecione uma propriedade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredProperties.map((property) => (
+                  {properties.map((property) => (
                     <SelectItem key={property.id} value={property.id}>
-                      {property.title} - {property.address}
-                      {property.status === 'rented' && ' (Ocupado)'}
+                      {property.title} - {property.city}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.property_id && (
-                <p className="text-red-500 text-sm">{form.formState.errors.property_id.message}</p>
-              )}
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Título do Contrato *</Label>
-              <Input
-                id="title"
-                {...form.register('title')}
-                placeholder="Ex: Contrato de Locação - Apartamento Centro"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Data de Início *</Label>
+              <MaskedDateInput
+                value={startDateBR}
+                onChange={setStartDateBR}
+                required
               />
-              {form.formState.errors.title && (
-                <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>
+              {errors.start_date && (
+                <p className="text-sm text-red-500 mt-1">{errors.start_date.message}</p>
               )}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Conflict Warning */}
-        {conflictWarning.show && (
-          <Card className="border-yellow-500 bg-yellow-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <AlertCircle className="h-4 w-4" />
-                <p className="font-medium">{conflictWarning.message}</p>
-              </div>
-              <div className="mt-2 text-sm text-yellow-700">
-                {conflictWarning.conflictingContracts.map((contract, index) => (
-                  <p key={index}>
-                    • {contract.tenant_name} ({format(new Date(contract.start_date), 'dd/MM/yyyy')} - {format(new Date(contract.end_date), 'dd/MM/yyyy')})
-                  </p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <div>
+              <Label>Data de Término *</Label>
+              <MaskedDateInput
+                value={endDateBR}
+                onChange={setEndDateBR}
+                required
+              />
+              {errors.end_date && (
+                <p className="text-sm text-red-500 mt-1">{errors.end_date.message}</p>
+              )}
+            </div>
+          </div>
 
-        {/* Tenant Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Informações do Inquilino
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={watch('status')}
+              onValueChange={(value) => setValue('status', value as any)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="draft">Rascunho</SelectItem>
+                <SelectItem value="expired">Expirado</SelectItem>
+                <SelectItem value="canceled">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Informações do Inquilino */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do Inquilino</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="tenant_name">Nome do Inquilino *</Label>
               <Input
                 id="tenant_name"
-                {...form.register('tenant_name')}
+                {...register('tenant_name')}
                 placeholder="Nome completo do inquilino"
               />
-              {form.formState.errors.tenant_name && (
-                <p className="text-red-500 text-sm">{form.formState.errors.tenant_name.message}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Contract Dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              Datas do Contrato
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_date">Data de Início *</Label>
-              <DatePicker
-                date={form.watch('start_date') ? new Date(form.watch('start_date')) : undefined}
-                onSelect={(date) => form.setValue('start_date', date ? format(date, 'yyyy-MM-dd') : '')}
-              />
-              {form.formState.errors.start_date && (
-                <p className="text-red-500 text-sm">{form.formState.errors.start_date.message}</p>
+              {errors.tenant_name && (
+                <p className="text-sm text-red-500 mt-1">{errors.tenant_name.message}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="end_date">Data de Término *</Label>
-              <DatePicker
-                date={form.watch('end_date') ? new Date(form.watch('end_date')) : undefined}
-                onSelect={(date) => form.setValue('end_date', date ? format(date, 'yyyy-MM-dd') : '')}
-              />
-              {form.formState.errors.end_date && (
-                <p className="text-red-500 text-sm">{form.formState.errors.end_date.message}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Financial Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Detalhes Financeiros
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="value">Valor do Aluguel *</Label>
+            <div>
+              <Label htmlFor="tenant_contact">Contato do Inquilino</Label>
               <Input
-                id="value"
-                type="number"
-                step="0.01"
-                {...form.register('value', { valueAsNumber: true })}
-                placeholder="Valor mensal do aluguel"
+                id="tenant_contact"
+                {...register('tenant_contact')}
+                placeholder="Telefone ou email"
               />
-              {form.formState.errors.value && (
-                <p className="text-red-500 text-sm">{form.formState.errors.value.message}</p>
-              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Informações da Imobiliária */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações da Imobiliária</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="agency_name">Nome da Imobiliária</Label>
+              <Input
+                id="agency_name"
+                {...register('agency_name')}
+                placeholder="Nome da imobiliária"
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="payment_day">Dia do Pagamento *</Label>
+            <div>
+              <Label htmlFor="agency_contact">Contato da Imobiliária</Label>
+              <Input
+                id="agency_contact"
+                {...register('agency_contact')}
+                placeholder="Telefone ou email"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="agency_responsible_name">Nome do Responsável</Label>
+              <Input
+                id="agency_responsible_name"
+                {...register('agency_responsible_name')}
+                placeholder="Nome do responsável pelo contato"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="agency_responsible_contact">Contato do Responsável</Label>
+              <Input
+                id="agency_responsible_contact"
+                {...register('agency_responsible_contact')}
+                placeholder="Telefone ou email do responsável"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Detalhes Financeiros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Detalhes Financeiros</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ContractFormRentField
+            value={watch('value')}
+            onChange={(value) => setValue('value', value)}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="payment_day">Dia do Pagamento</Label>
               <Input
                 id="payment_day"
                 type="number"
-                {...form.register('payment_day', { valueAsNumber: true })}
-                placeholder="Dia do mês para pagamento"
-              />
-              {form.formState.errors.payment_day && (
-                <p className="text-red-500 text-sm">{form.formState.errors.payment_day.message}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Additional Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Informações Adicionais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="terms">Termos e Condições</Label>
-              <Textarea
-                id="terms"
-                {...form.register('terms')}
-                placeholder="Observações sobre o contrato"
+                min="1"
+                max="31"
+                {...register('payment_day', { valueAsNumber: true })}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="document">Anexar Documento</Label>
-              <Input
-                id="document"
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    setDocumentFile(e.target.files[0]);
-                  } else {
-                    setDocumentFile(null);
-                  }
-                }}
+            <div>
+              <Label htmlFor="deposit_value">Valor do Depósito</Label>
+              <CurrencyInput
+                value={watch('deposit_value') || 0}
+                onValueChange={(value) => setValue('deposit_value', value || 0)}
+                placeholder="R$ 0,00"
               />
-              {documentFile && (
-                <p className="text-sm text-muted-foreground">
-                  Arquivo selecionado: {documentFile.name}
-                </p>
-              )}
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="status">Status do Contrato</Label>
+          <CommissionInput
+            commissionType={commissionType}
+            commissionValue={commissionValue}
+            onCommissionTypeChange={(type) => setValue('commission_type', type)}
+            onCommissionValueChange={(value) => setValue('commission_value', value)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Informações Adicionais */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações Adicionais</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="adjustment_index">Índice de Reajuste</Label>
               <Select
-                value={form.watch('status')}
-                onValueChange={(value: 'active' | 'pending' | 'expired' | 'canceled' | 'draft') => form.setValue('status', value)}
+                value={watch('adjustment_index') || ''}
+                onValueChange={(value) => setValue('adjustment_index', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o status" />
+                  <SelectValue placeholder="Selecione o índice" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="expired">Expirado</SelectItem>
-                  <SelectItem value="canceled">Cancelado</SelectItem>
-                  <SelectItem value="draft">Rascunho</SelectItem>
+                  {adjustmentIndexOptions.map((index) => (
+                    <SelectItem key={index} value={index}>
+                      {index}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.status && (
-                <p className="text-red-500 text-sm">{form.formState.errors.status.message}</p>
-              )}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Salvando...' : (initialData && 'id' in initialData ? 'Atualizar' : 'Criar') + ' Contrato'}
-          </Button>
-        </div>
-      </form>
-
-      {/* Conflict Confirmation Dialog */}
-      <Dialog open={conflictWarning.show && conflictWarning.conflictingContracts.length > 0} onOpenChange={() => setConflictWarning({ show: false, message: '', conflictingContracts: [] })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Conflito de Datas Detectado</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>{conflictWarning.message}</p>
-            <div className="text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Contratos em conflito:</p>
-              {conflictWarning.conflictingContracts.map((contract, index) => (
-                <p key={index}>
-                  • {contract.tenant_name} ({format(new Date(contract.start_date), 'dd/MM/yyyy')} - {format(new Date(contract.end_date), 'dd/MM/yyyy')})
-                </p>
-              ))}
+            <div>
+              <Label>Data de Reajuste</Label>
+              <MaskedDateInput
+                value={adjustmentDateBR}
+                onChange={setAdjustmentDateBR}
+                placeholder="dd/mm/aaaa"
+              />
             </div>
-            <p className="text-sm">Deseja criar o contrato mesmo assim?</p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConflictWarning({ show: false, message: '', conflictingContracts: [] })}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConflictConfirm}>
-              Criar Contrato
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+
+          <div>
+            <Label htmlFor="terms">Termos e Condições</Label>
+            <Textarea
+              id="terms"
+              {...register('terms')}
+              placeholder="Termos adicionais do contrato..."
+              rows={4}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="has_renewal_option"
+              checked={hasRenewal}
+              onCheckedChange={(checked) => setValue('has_renewal_option', checked as boolean)}
+            />
+            <Label htmlFor="has_renewal_option">Opção de renovação</Label>
+          </div>
+
+          {hasRenewal && (
+            <div>
+              <Label htmlFor="renewal_terms">Termos de Renovação</Label>
+              <Textarea
+                id="renewal_terms"
+                {...register('renewal_terms')}
+                placeholder="Condições para renovação do contrato..."
+                rows={3}
+              />
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="special_conditions">Condições Especiais</Label>
+            <Textarea
+              id="special_conditions"
+              {...register('special_conditions')}
+              placeholder="Condições especiais do contrato..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label>Anexar Documento</Label>
+            <FileUpload
+              onFileSelect={setDocumentFile}
+              accept=".pdf,.doc,.docx"
+              maxSizeMB={10}
+            />
+            {documentFile && (
+              <p className="text-sm text-green-600 mt-1">
+                Arquivo selecionado: {documentFile.name}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Botões de Ação */}
+      <div className="flex justify-end space-x-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Salvando...' : 'Salvar Contrato'}
+        </Button>
+      </div>
+    </form>
   );
-};
+}

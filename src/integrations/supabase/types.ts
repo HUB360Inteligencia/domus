@@ -296,7 +296,15 @@ export type Database = {
       }
       contracts: {
         Row: {
+          adjustment_date: string | null
+          adjustment_index: string | null
+          agency_contact: string | null
+          agency_name: string | null
+          agency_responsible_contact: string | null
+          agency_responsible_name: string | null
           client_id: string | null
+          commission_type: string | null
+          commission_value: number | null
           created_at: string
           deposit_value: number | null
           document_url: string | null
@@ -330,7 +338,15 @@ export type Database = {
           variable_rent_values: Json | null
         }
         Insert: {
+          adjustment_date?: string | null
+          adjustment_index?: string | null
+          agency_contact?: string | null
+          agency_name?: string | null
+          agency_responsible_contact?: string | null
+          agency_responsible_name?: string | null
           client_id?: string | null
+          commission_type?: string | null
+          commission_value?: number | null
           created_at?: string
           deposit_value?: number | null
           document_url?: string | null
@@ -364,7 +380,15 @@ export type Database = {
           variable_rent_values?: Json | null
         }
         Update: {
+          adjustment_date?: string | null
+          adjustment_index?: string | null
+          agency_contact?: string | null
+          agency_name?: string | null
+          agency_responsible_contact?: string | null
+          agency_responsible_name?: string | null
           client_id?: string | null
+          commission_type?: string | null
+          commission_value?: number | null
           created_at?: string
           deposit_value?: number | null
           document_url?: string | null

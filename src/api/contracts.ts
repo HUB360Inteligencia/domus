@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
@@ -78,7 +77,16 @@ export const fetchContracts = async (): Promise<Contract[]> => {
       late_interest_percentage: item.late_interest_percentage ?? null,
       late_daily_interest: item.late_daily_interest ?? null,
       fine_percentage: item.fine_percentage ?? null,
-      payment_terms: item.payment_terms ?? null
+      payment_terms: item.payment_terms ?? null,
+      // Novos campos com valores padrão
+      adjustment_index: item.adjustment_index ?? null,
+      adjustment_date: item.adjustment_date ?? null,
+      agency_name: item.agency_name ?? null,
+      agency_contact: item.agency_contact ?? null,
+      agency_responsible_name: item.agency_responsible_name ?? null,
+      agency_responsible_contact: item.agency_responsible_contact ?? null,
+      commission_type: item.commission_type as 'percentage' | 'monetary' | null ?? null,
+      commission_value: item.commission_value ?? null
     }));
   } catch (err) {
     console.error('Failed to fetch contracts:', err);
@@ -143,7 +151,16 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       late_interest_percentage: data.late_interest_percentage ?? null,
       late_daily_interest: data.late_daily_interest ?? null,
       fine_percentage: data.fine_percentage ?? null,
-      payment_terms: data.payment_terms ?? null
+      payment_terms: data.payment_terms ?? null,
+      // Novos campos
+      adjustment_index: data.adjustment_index ?? null,
+      adjustment_date: data.adjustment_date ?? null,
+      agency_name: data.agency_name ?? null,
+      agency_contact: data.agency_contact ?? null,
+      agency_responsible_name: data.agency_responsible_name ?? null,
+      agency_responsible_contact: data.agency_responsible_contact ?? null,
+      commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
+      commission_value: data.commission_value ?? null
     };
   } catch (err) {
     console.error(`Failed to fetch contract ${id}:`, err);
@@ -203,7 +220,16 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
     late_interest_percentage: data.late_interest_percentage ?? null,
     late_daily_interest: data.late_daily_interest ?? null,
     fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null
+    payment_terms: data.payment_terms ?? null,
+    // Novos campos
+    adjustment_index: data.adjustment_index ?? null,
+    adjustment_date: data.adjustment_date ?? null,
+    agency_name: data.agency_name ?? null,
+    agency_contact: data.agency_contact ?? null,
+    agency_responsible_name: data.agency_responsible_name ?? null,
+    agency_responsible_contact: data.agency_responsible_contact ?? null,
+    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
+    commission_value: data.commission_value ?? null
   };
 };
 
@@ -257,7 +283,16 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     late_interest_percentage: updatedData.late_interest_percentage ?? null,
     late_daily_interest: updatedData.late_daily_interest ?? null,
     fine_percentage: updatedData.fine_percentage ?? null,
-    payment_terms: updatedData.payment_terms ?? null
+    payment_terms: updatedData.payment_terms ?? null,
+    // Novos campos
+    adjustment_index: updatedData.adjustment_index ?? null,
+    adjustment_date: updatedData.adjustment_date ?? null,
+    agency_name: updatedData.agency_name ?? null,
+    agency_contact: updatedData.agency_contact ?? null,
+    agency_responsible_name: updatedData.agency_responsible_name ?? null,
+    agency_responsible_contact: updatedData.agency_responsible_contact ?? null,
+    commission_type: updatedData.commission_type as 'percentage' | 'monetary' | null ?? null,
+    commission_value: updatedData.commission_value ?? null
   };
 };
 
@@ -439,7 +474,16 @@ export const updateContractStatus = async (
     late_interest_percentage: data.late_interest_percentage ?? null,
     late_daily_interest: data.late_daily_interest ?? null,
     fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null
+    payment_terms: data.payment_terms ?? null,
+    // Novos campos
+    adjustment_index: data.adjustment_index ?? null,
+    adjustment_date: data.adjustment_date ?? null,
+    agency_name: data.agency_name ?? null,
+    agency_contact: data.agency_contact ?? null,
+    agency_responsible_name: data.agency_responsible_name ?? null,
+    agency_responsible_contact: data.agency_responsible_contact ?? null,
+    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
+    commission_value: data.commission_value ?? null
   };
 };
 
@@ -480,7 +524,16 @@ export const updateSignatureStatus = async (
     late_interest_percentage: data.late_interest_percentage ?? null,
     late_daily_interest: data.late_daily_interest ?? null,
     fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null
+    payment_terms: data.payment_terms ?? null,
+    // Novos campos
+    adjustment_index: data.adjustment_index ?? null,
+    adjustment_date: data.adjustment_date ?? null,
+    agency_name: data.agency_name ?? null,
+    agency_contact: data.agency_contact ?? null,
+    agency_responsible_name: data.agency_responsible_name ?? null,
+    agency_responsible_contact: data.agency_responsible_contact ?? null,
+    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
+    commission_value: data.commission_value ?? null
   };
 };
 
