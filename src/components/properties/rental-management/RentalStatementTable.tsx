@@ -18,7 +18,7 @@ interface RentalItem {
 
 interface RentalStatementTableProps {
   items: RentalItem[];
-  categories: Array<{ value: string; label: string }>;
+  categories: Array<{ value: string; label: string; type: string }>;
   onUpdateItem: (id: string, field: string, value: any) => void;
   onRemoveItem: (id: string) => void;
   onAddItem: (type: 'income' | 'expense') => void;
