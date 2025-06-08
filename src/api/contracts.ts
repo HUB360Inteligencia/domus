@@ -325,22 +325,61 @@ const updatePropertyTenantInfo = async (propertyId: string, tenantInfo: { tenant
 };
 
 /**
- * Deletes a contract
+ * Deletes a contract and all related data
  */
 export const deleteContract = async (id: string): Promise<void> => {
-  console.log(`Deleting contract ${id}`);
+  console.log(`Deleting contract ${id} and related data`);
   
-  const { error } = await supabase
-    .from('contracts')
-    .delete()
-    .eq('id', id);
+  try {
+    // First, delete related activities
+    const { error: activitiesError } = await supabase
+      .from('activities')
+      .delete()
+      .eq('contract_id', id);
 
-  if (error) {
-    console.error('Error deleting contract:', error);
-    throw new Error(error.message);
+    if (activitiesError) {
+      console.error('Error deleting related activities:', activitiesError);
+      throw new Error(`Erro ao excluir atividades relacionadas: ${activitiesError.message}`);
+    }
+
+    // Delete contract adjustments
+    const { error: adjustmentsError } = await supabase
+      .from('contract_value_adjustments')
+      .delete()
+      .eq('contract_id', id);
+
+    if (adjustmentsError) {
+      console.error('Error deleting contract adjustments:', adjustmentsError);
+      throw new Error(`Erro ao excluir reajustes do contrato: ${adjustmentsError.message}`);
+    }
+
+    // Delete documents related to the contract
+    const { error: documentsError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('contract_id', id);
+
+    if (documentsError) {
+      console.error('Error deleting contract documents:', documentsError);
+      throw new Error(`Erro ao excluir documentos do contrato: ${documentsError.message}`);
+    }
+
+    // Finally, delete the contract
+    const { error: contractError } = await supabase
+      .from('contracts')
+      .delete()
+      .eq('id', id);
+
+    if (contractError) {
+      console.error('Error deleting contract:', contractError);
+      throw new Error(`Erro ao excluir contrato: ${contractError.message}`);
+    }
+    
+    console.log('Contract and all related data deleted successfully');
+  } catch (err) {
+    console.error('Failed to delete contract:', err);
+    throw err;
   }
-  
-  console.log('Contract deleted successfully');
 };
 
 /**
