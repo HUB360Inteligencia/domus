@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PropertyFormEnhanced } from '@/components/properties/property-form-enhanced';
+import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -56,7 +56,7 @@ export default function PropertyFormPage() {
         {isEditMode ? 'Editar Imóvel' : 'Novo Imóvel'}
       </h1>
       
-      <PropertyFormEnhanced
+      <PropertyForm
         key={selectedProperty?.id || 'new'}
         initialData={isEditMode ? selectedProperty : null}
         onSuccess={handleSuccess}

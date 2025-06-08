@@ -1,114 +1,47 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ContractFormEnhanced } from '@/components/contracts/contract-form-enhanced';
 import { useContracts } from '@/hooks/use-contracts';
-import { ContractFormData } from '@/types/contract';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ContractForm } from '@/components/contracts/contract-form';
 
 export default function ContractFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
   const [isEditMode, setIsEditMode] = useState(false);
-  const [preloadedPropertyId, setPreloadedPropertyId] = useState<string | null>(null);
   
   const { 
-    createContract, 
-    updateContract, 
     setSelectedContractId, 
     selectedContract, 
-    isLoadingSelectedContract,
-    isCreatingContract,
-    isUpdatingContract,
-    uploadContractDocument
+    isLoadingSelectedContract 
   } = useContracts();
 
-  // Check for property preload from URL params
-  useEffect(() => {
-    const propertyId = searchParams.get('propertyId');
-    if (propertyId) {
-      setPreloadedPropertyId(propertyId);
-      console.log('Preloading property ID:', propertyId);
-    }
-  }, [searchParams]);
-
-  // Use useCallback to stabilize this function reference
-  const loadContractData = useCallback((contractId: string) => {
-    console.log('Loading contract data for ID:', contractId);
-    setSelectedContractId(contractId);
-  }, [setSelectedContractId]);
-
+  // Load contract data for editing
   useEffect(() => {
     if (id) {
       console.log('Edit mode detected for contract ID:', id);
-      loadContractData(id);
+      setSelectedContractId(id);
       setIsEditMode(true);
     } else {
       console.log('Create mode detected');
       setIsEditMode(false);
-      // Reset selected contract when in create mode
       setSelectedContractId(null);
     }
-  }, [id, loadContractData, setSelectedContractId]);
+  }, [id, setSelectedContractId]);
 
-  // Debug log to track selectedContract changes
-  useEffect(() => {
-    if (isEditMode) {
-      console.log('Selected contract updated:', selectedContract);
-    }
-  }, [selectedContract, isEditMode]);
-
-  const handleSubmit = async (data: ContractFormData, documentFile?: File) => {
-    try {
-      if (isEditMode && id) {
-        // Update existing contract
-        console.log('Updating contract with data:', { id, ...data });
-        await updateContract({ id, ...data });
-        
-        // If there's a new document, upload it
-        if (documentFile) {
-          console.log('Uploading new document for contract');
-          await uploadContractDocument({ contractId: id, file: documentFile });
-        }
-        
-        toast.success('Contrato atualizado com sucesso!');
-        navigate('/contracts');
-      } else {
-        // Create new contract with proper return handling
-        console.log('Creating new contract with data:', data);
-        const newContract = await createContract(data, {
-          onSuccess: (contract) => {
-            console.log('Contract created with ID:', contract.id);
-            // If there's a document file and the contract was created successfully
-            if (documentFile && contract && contract.id) {
-              uploadContractDocument({ 
-                contractId: contract.id, 
-                file: documentFile 
-              }).catch(err => {
-                console.error('Error uploading document:', err);
-                toast.error('Contrato criado, mas houve erro ao anexar documento.');
-              });
-            }
-          }
-        });
-        
-        toast.success('Contrato criado com sucesso!');
-        navigate('/contracts');
-      }
-    } catch (error) {
-      console.error('Error saving contract:', error);
-      toast.error('Erro ao salvar contrato: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
-    }
-  };
-
-  const handleCancel = () => {
+  const handleSuccess = useCallback((contractId: string) => {
+    console.log('Contract saved successfully:', contractId);
+    toast.success(isEditMode ? 'Contrato atualizado com sucesso!' : 'Contrato criado com sucesso!');
     navigate('/contracts');
-  };
+  }, [isEditMode, navigate]);
 
-  if (isEditMode && isLoadingSelectedContract) {
+  const handleCancel = useCallback(() => {
+    navigate('/contracts');
+  }, [navigate]);
+
+  // Show loading state only when necessary
+  if (isEditMode && isLoadingSelectedContract && !selectedContract) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="h-12 w-12 animate-spin text-petroleum mb-4" />
@@ -117,45 +50,17 @@ export default function ContractFormPage() {
     );
   }
 
-  // Prepare initial data with preloaded property if available
-  const getInitialData = () => {
-    if (isEditMode && selectedContract) {
-      return selectedContract;
-    }
-    
-    if (preloadedPropertyId) {
-      return {
-        property_id: preloadedPropertyId,
-        title: '',
-        tenant_name: '',
-        start_date: '',
-        end_date: '',
-        value: 0,
-        payment_day: 5,
-        status: 'active' as const,
-      };
-    }
-    
-    return undefined;
-  };
-
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">
         {isEditMode ? 'Editar Contrato' : 'Novo Contrato'}
-        {preloadedPropertyId && !isEditMode && (
-          <span className="text-sm text-muted-foreground ml-2">
-            (Propriedade pré-selecionada)
-          </span>
-        )}
       </h1>
       
-      <ContractForm
-        key={`${selectedContract?.id || 'new'}-${preloadedPropertyId}`} // Force re-render when changing contract or preloaded property
-        initialData={getInitialData()}
-        onSubmit={handleSubmit}
+      <ContractFormEnhanced
+        key={selectedContract?.id || 'new'}
+        initialData={isEditMode ? selectedContract : null}
+        onSuccess={handleSuccess}
         onCancel={handleCancel}
-        isLoading={isCreatingContract || isUpdatingContract}
       />
     </div>
   );

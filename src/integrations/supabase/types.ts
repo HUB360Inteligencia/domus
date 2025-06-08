@@ -294,6 +294,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_value_adjustments: {
+        Row: {
+          adjustment_date: string
+          adjustment_percentage: number | null
+          adjustment_reason: string | null
+          applied_index: string | null
+          contract_id: string
+          created_at: string
+          id: string
+          new_value: number
+          old_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adjustment_date?: string
+          adjustment_percentage?: number | null
+          adjustment_reason?: string | null
+          applied_index?: string | null
+          contract_id: string
+          created_at?: string
+          id?: string
+          new_value: number
+          old_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adjustment_date?: string
+          adjustment_percentage?: number | null
+          adjustment_reason?: string | null
+          applied_index?: string | null
+          contract_id?: string
+          created_at?: string
+          id?: string
+          new_value?: number
+          old_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           adjustment_date: string | null
