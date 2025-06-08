@@ -7,7 +7,8 @@ import { Property } from '@/types/property';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Calculator } from 'lucide-react';
+import { Plus, Calculator, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 import { ContractForm } from '@/components/contracts/contract-form';
 import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
@@ -23,6 +24,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
   property, 
   isLoading = false 
 }) => {
+  const navigate = useNavigate();
   const [showNewContractModal, setShowNewContractModal] = useState(false);
   const [showRentalManagementModal, setShowRentalManagementModal] = useState(false);
   const { contracts, activeContract, isLoading: isLoadingContracts, refetch } = useContractsByProperty(property?.id || null);
@@ -39,6 +41,10 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
     } catch (error) {
       console.error('Error creating contract:', error);
     }
+  };
+
+  const handleEditContract = (contractId: string) => {
+    navigate(`/contracts/edit/${contractId}`);
   };
 
   if (isLoading || isLoadingContracts) {
@@ -141,7 +147,18 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                       <CardTitle className="text-lg">{contract.title}</CardTitle>
                       <CardDescription>Locatário: {contract.tenant_name}</CardDescription>
                     </div>
-                    <ContractStatusSelect contract={contract} />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditContract(contract.id)}
+                        className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                      <ContractStatusSelect contract={contract} />
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">

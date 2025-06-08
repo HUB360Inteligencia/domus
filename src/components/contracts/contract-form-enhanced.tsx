@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle, Receipt } from 'lucide-react';
+import { Loader2, AlertCircle, Receipt, Plus, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Contract, ContractStatus, VariableRentValue } from '@/types/contract';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractAdjustmentForm } from './contract-adjustment-form';
 import { ContractAdjustmentHistory } from './contract-adjustment-history';
+import { CommissionInput } from './commission-input';
 import {
   Form,
   FormControl,
@@ -20,13 +20,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useProperties } from '@/hooks/use-properties';
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useState } from 'react';
+import { MaskedDateInput, convertToISODate, convertFromISODate } from '@/components/ui/masked-date-input';
 
 interface ContractFormEnhancedProps {
   initialData?: Contract | null;
@@ -34,18 +34,33 @@ interface ContractFormEnhancedProps {
   onCancel: () => void;
 }
 
+interface RecurringTransaction {
+  id: string;
+  type: 'income' | 'expense';
+  name: string;
+  amount: number;
+  category: string;
+  frequency: 'monthly' | 'quarterly' | 'annually';
+  start_date: string;
+  end_date?: string;
+}
+
+const adjustmentIndexOptions = [
+  { value: 'igp-m', label: 'IGP-M' },
+  { value: 'ipca', label: 'IPCA' },
+  { value: 'inpc', label: 'INPC' },
+  { value: 'ipc-fipe', label: 'IPC-FIPE' },
+  { value: 'custom', label: 'Personalizado' },
+];
+
 const formSchema = z.object({
-  title: z.string().min(3, {
-    message: "Título deve ter pelo menos 3 caracteres.",
-  }),
+  title: z.string().min(3, "Título deve ter pelo menos 3 caracteres."),
   property_id: z.string().nullable(),
-  tenant_name: z.string().min(3, {
-    message: "Nome do inquilino deve ter pelo menos 3 caracteres.",
-  }),
+  tenant_name: z.string().min(3, "Nome do inquilino deve ter pelo menos 3 caracteres."),
   tenant_document: z.string().nullable(),
   tenant_contact: z.string().nullable(),
-  start_date: z.date(),
-  end_date: z.date(),
+  start_date: z.string().min(10, "Data de início é obrigatória"),
+  end_date: z.string().min(10, "Data de término é obrigatória"),
   value: z.number().min(0, "Valor deve ser positivo"),
   payment_day: z.number().min(1).max(31),
   deposit_value: z.number().nullable(),
@@ -79,6 +94,18 @@ const formSchema = z.object({
   agency_responsible_contact: z.string().nullable(),
   commission_type: z.string().nullable(),
   commission_value: z.number().nullable(),
+  recurring_transactions: z.array(
+    z.object({
+      id: z.string(),
+      type: z.enum(['income', 'expense']),
+      name: z.string(),
+      amount: z.number(),
+      category: z.string(),
+      frequency: z.enum(['monthly', 'quarterly', 'annually']),
+      start_date: z.string(),
+      end_date: z.string().optional(),
+    })
+  ).nullable(),
 })
 
 export function ContractFormEnhanced({ 
@@ -89,6 +116,7 @@ export function ContractFormEnhanced({
   const { createContract, updateContract, isCreatingContract, isUpdatingContract } = useContracts();
   const { properties } = useProperties();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -98,8 +126,8 @@ export function ContractFormEnhanced({
       tenant_name: initialData?.tenant_name || '',
       tenant_document: initialData?.tenant_document || null,
       tenant_contact: initialData?.tenant_contact || null,
-      start_date: initialData?.start_date ? new Date(initialData.start_date) : new Date(),
-      end_date: initialData?.end_date ? new Date(initialData.end_date) : new Date(),
+      start_date: initialData?.start_date ? convertFromISODate(initialData.start_date) : '',
+      end_date: initialData?.end_date ? convertFromISODate(initialData.end_date) : '',
       value: initialData?.value || 0,
       payment_day: initialData?.payment_day || 1,
       deposit_value: initialData?.deposit_value || null,
@@ -124,10 +152,34 @@ export function ContractFormEnhanced({
       agency_contact: initialData?.agency_contact || null,
       agency_responsible_name: initialData?.agency_responsible_name || null,
       agency_responsible_contact: initialData?.agency_responsible_contact || null,
-      commission_type: initialData?.commission_type || null,
+      commission_type: initialData?.commission_type || 'percentage',
       commission_value: initialData?.commission_value || null,
+      recurring_transactions: null,
     },
   });
+
+  const addRecurringTransaction = (type: 'income' | 'expense') => {
+    const newTransaction: RecurringTransaction = {
+      id: Date.now().toString(),
+      type,
+      name: '',
+      amount: 0,
+      category: '',
+      frequency: 'monthly',
+      start_date: '',
+    };
+    setRecurringTransactions(prev => [...prev, newTransaction]);
+  };
+
+  const removeRecurringTransaction = (id: string) => {
+    setRecurringTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  const updateRecurringTransaction = (id: string, field: keyof RecurringTransaction, value: any) => {
+    setRecurringTransactions(prev => 
+      prev.map(t => t.id === id ? { ...t, [field]: value } : t)
+    );
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitError(null);
@@ -135,50 +187,13 @@ export function ContractFormEnhanced({
     console.log('Submitting contract form data:', values);
     
     try {
-      // Ensure variable_rent_values conforms to VariableRentValue[] type
-      const processedVariableRentValues: VariableRentValue[] | null = values.variable_rent_values 
-        ? values.variable_rent_values.filter((item): item is VariableRentValue => 
-            typeof item.month === 'number' && 
-            typeof item.year === 'number' && 
-            typeof item.value === 'number'
-          )
-        : null;
-
-      // Convert form data to the expected format
+      // Convert date strings to ISO format
       const contractData = {
-        title: values.title,
-        property_id: values.property_id,
-        tenant_name: values.tenant_name,
-        tenant_document: values.tenant_document,
-        tenant_contact: values.tenant_contact,
-        start_date: values.start_date.toISOString(),
-        end_date: values.end_date.toISOString(),
-        value: values.value,
-        payment_day: values.payment_day,
-        deposit_value: values.deposit_value,
-        status: values.status as ContractStatus,
-        terms: values.terms,
-        has_renewal_option: values.has_renewal_option,
-        renewal_terms: values.renewal_terms,
-        special_conditions: values.special_conditions,
-        has_variable_rent: values.has_variable_rent,
-        variable_rent_values: processedVariableRentValues,
-        payment_due_day: values.payment_due_day,
-        on_time_discount_percentage: values.on_time_discount_percentage,
-        late_fee_percentage: values.late_fee_percentage,
-        is_discount_not_fee: values.is_discount_not_fee,
-        late_interest_percentage: values.late_interest_percentage,
-        late_daily_interest: values.late_daily_interest,
-        fine_percentage: values.fine_percentage,
-        payment_terms: values.payment_terms,
-        adjustment_index: values.adjustment_index,
-        adjustment_date: values.adjustment_date,
-        agency_name: values.agency_name,
-        agency_contact: values.agency_contact,
-        agency_responsible_name: values.agency_responsible_name,
-        agency_responsible_contact: values.agency_responsible_contact,
+        ...values,
+        start_date: convertToISODate(values.start_date),
+        end_date: convertToISODate(values.end_date),
+        recurring_transactions: recurringTransactions.length > 0 ? recurringTransactions : null,
         commission_type: values.commission_type as 'percentage' | 'monetary' | undefined,
-        commission_value: values.commission_value,
       };
 
       if (initialData) {
@@ -309,13 +324,15 @@ export function ContractFormEnhanced({
                   control={form.control}
                   name="start_date"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>Data de Início</FormLabel>
-                      <DatePicker
-                        date={field.value}
-                        onSelect={field.onChange}
-                        disabled={false}
-                      />
+                      <FormControl>
+                        <MaskedDateInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="dd/mm/aaaa"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -325,13 +342,15 @@ export function ContractFormEnhanced({
                   control={form.control}
                   name="end_date"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>Data de Término</FormLabel>
-                      <DatePicker
-                        date={field.value}
-                        onSelect={field.onChange}
-                        disabled={false}
-                      />
+                      <FormControl>
+                        <MaskedDateInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="dd/mm/aaaa"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -378,6 +397,51 @@ export function ContractFormEnhanced({
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="adjustment_index"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Índice de Reajuste</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o índice" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {adjustmentIndexOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="adjustment_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de Reajuste</FormLabel>
+                      <FormControl>
+                        <MaskedDateInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="dd/mm/aaaa"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="deposit_value"
@@ -397,6 +461,169 @@ export function ContractFormEnhanced({
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações da Imobiliária</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="agency_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Imobiliária</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome da imobiliária" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="agency_contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contato da Imobiliária</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(XX) XXXX-XXXX" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="agency_responsible_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Responsável</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do responsável" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="agency_responsible_contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contato do Responsável</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(XX) XXXX-XXXX" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="commission_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Taxa de Comissão</FormLabel>
+                    <FormControl>
+                      <CommissionInput
+                        commissionType={field.value as 'percentage' | 'monetary'}
+                        commissionValue={form.watch('commission_value') || 0}
+                        onCommissionTypeChange={field.onChange}
+                        onCommissionValueChange={(value) => form.setValue('commission_value', value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Receitas e Despesas Recorrentes</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addRecurringTransaction('income')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Receita
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addRecurringTransaction('expense')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Despesa
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {recurringTransactions.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhuma receita ou despesa recorrente cadastrada.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {recurringTransactions.map((transaction) => (
+                    <div key={transaction.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium capitalize">
+                          {transaction.type === 'income' ? 'Receita' : 'Despesa'}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRecurringTransaction(transaction.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input
+                          placeholder="Nome"
+                          value={transaction.name}
+                          onChange={(e) => updateRecurringTransaction(transaction.id, 'name', e.target.value)}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Valor"
+                          value={transaction.amount}
+                          onChange={(e) => updateRecurringTransaction(transaction.id, 'amount', parseFloat(e.target.value) || 0)}
+                        />
+                        <Select
+                          value={transaction.frequency}
+                          onValueChange={(value) => updateRecurringTransaction(transaction.id, 'frequency', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                            <SelectItem value="quarterly">Trimestral</SelectItem>
+                            <SelectItem value="annually">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

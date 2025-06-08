@@ -8,6 +8,17 @@ export interface VariableRentValue {
   applyUntilEnd?: boolean;
 }
 
+export interface RecurringTransaction {
+  id: string;
+  type: 'income' | 'expense';
+  name: string;
+  amount: number;
+  category: string;
+  frequency: 'monthly' | 'quarterly' | 'annually';
+  start_date: string;
+  end_date?: string;
+}
+
 export interface Contract {
   id: string;
   title: string;
@@ -61,6 +72,7 @@ export interface Contract {
   agency_responsible_contact: string | null;
   commission_type: 'percentage' | 'monetary' | null;
   commission_value: number | null;
+  recurring_transactions: RecurringTransaction[] | null;
 }
 
 export interface ContractFormData {
@@ -101,6 +113,7 @@ export interface ContractFormData {
   agency_responsible_contact?: string;
   commission_type?: 'percentage' | 'monetary';
   commission_value?: number;
+  recurring_transactions?: RecurringTransaction[];
 }
 
 export interface Document {
