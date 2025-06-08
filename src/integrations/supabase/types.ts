@@ -364,6 +364,7 @@ export type Database = {
           payment_due_day: number | null
           payment_terms: string | null
           property_id: string | null
+          recurring_transactions: Json | null
           renewal_terms: string | null
           signature_status: string | null
           special_conditions: string | null
@@ -406,6 +407,7 @@ export type Database = {
           payment_due_day?: number | null
           payment_terms?: string | null
           property_id?: string | null
+          recurring_transactions?: Json | null
           renewal_terms?: string | null
           signature_status?: string | null
           special_conditions?: string | null
@@ -448,6 +450,7 @@ export type Database = {
           payment_due_day?: number | null
           payment_terms?: string | null
           property_id?: string | null
+          recurring_transactions?: Json | null
           renewal_terms?: string | null
           signature_status?: string | null
           special_conditions?: string | null
