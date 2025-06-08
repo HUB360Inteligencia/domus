@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PropertyForm } from '@/components/properties/property-form';
 import { useProperties } from '@/hooks/use-properties';
+import { usePropertyFormSubmission } from '@/hooks/use-property-form-submission';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PropertyFormData } from '@/types/property';
 
 export default function PropertyFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,8 @@ export default function PropertyFormPage() {
     selectedProperty, 
     isLoading 
   } = useProperties();
+
+  const { submitProperty, isSubmitting } = usePropertyFormSubmission();
 
   // Load property data for editing
   useEffect(() => {
@@ -30,11 +34,22 @@ export default function PropertyFormPage() {
     }
   }, [id, setSelectedPropertyId]);
 
-  const handleSubmit = useCallback((data: any) => {
+  const handleSubmit = useCallback(async (data: PropertyFormData) => {
     console.log('Property form submitted:', data);
-    toast.success(isEditMode ? 'Imóvel atualizado com sucesso!' : 'Imóvel criado com sucesso!');
-    navigate('/properties');
-  }, [isEditMode, navigate]);
+    
+    try {
+      const result = await submitProperty(data, isEditMode, id);
+      
+      if (result) {
+        // Success - navigate back to properties list
+        navigate('/properties');
+      }
+      // Error handling is done inside submitProperty hook
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast.error('Erro inesperado ao salvar propriedade');
+    }
+  }, [submitProperty, isEditMode, id, navigate]);
 
   const handleCancel = useCallback(() => {
     navigate('/properties');
@@ -61,6 +76,7 @@ export default function PropertyFormPage() {
         initialData={isEditMode ? selectedProperty : undefined}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
+        isLoading={isSubmitting}
       />
     </div>
   );

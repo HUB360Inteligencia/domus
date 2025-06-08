@@ -144,11 +144,19 @@ export function PropertyForm({
   const handleCopyProperty = (property: Property) => {
     console.log('Copying property data:', property);
     
-    // Copiar todos os dados exceto ID e timestamps
+    // Copiar todos os dados incluindo localização, exceto coordenadas específicas
     setFormData({
       ...formData,
       title: `${property.title} (Cópia)`,
       description: property.description || '',
+      // Manter informações de localização
+      address: property.address || '',
+      property_number: property.property_number || '',
+      complement: property.complement || '',
+      neighborhood: property.neighborhood || '',
+      city: property.city || '',
+      state: property.state || '',
+      zip_code: property.zip_code || '',
       type: property.type,
       status: 'available', // Sempre começa como disponível
       value: property.value,
@@ -166,14 +174,7 @@ export function PropertyForm({
         : {},
       purchase_value: property.purchase_value || 0,
       tags: property.tags || null,
-      // Não copiar localização específica
-      address: '',
-      property_number: '',
-      complement: '',
-      neighborhood: '',
-      city: '',
-      state: '',
-      zip_code: '',
+      // Limpar apenas coordenadas específicas (para evitar duplicação exata)
       latitude: null,
       longitude: null,
       purchase_date: null,
