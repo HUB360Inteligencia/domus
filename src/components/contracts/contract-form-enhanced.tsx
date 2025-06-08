@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, AlertCircle, Receipt } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Contract } from '@/types/contract';
+import { Contract, ContractStatus } from '@/types/contract';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractAdjustmentForm } from './contract-adjustment-form';
 import { ContractAdjustmentHistory } from './contract-adjustment-history';
@@ -49,7 +49,7 @@ const formSchema = z.object({
   value: z.number().min(0, "Valor deve ser positivo"),
   payment_day: z.number().min(1).max(31),
   deposit_value: z.number().nullable(),
-  status: z.string(),
+  status: z.enum(['active', 'pending', 'expired', 'canceled', 'draft']),
   terms: z.string().nullable(),
   has_renewal_option: z.boolean().nullable(),
   renewal_terms: z.string().nullable(),
@@ -103,7 +103,7 @@ export function ContractFormEnhanced({
       value: initialData?.value || 0,
       payment_day: initialData?.payment_day || 1,
       deposit_value: initialData?.deposit_value || null,
-      status: initialData?.status || 'draft',
+      status: (initialData?.status || 'draft') as ContractStatus,
       terms: initialData?.terms || null,
       has_renewal_option: initialData?.has_renewal_option || false,
       renewal_terms: initialData?.renewal_terms || null,
@@ -137,9 +137,39 @@ export function ContractFormEnhanced({
     try {
       // Convert form data to the expected format
       const contractData = {
-        ...values,
+        title: values.title,
+        property_id: values.property_id,
+        tenant_name: values.tenant_name,
+        tenant_document: values.tenant_document,
+        tenant_contact: values.tenant_contact,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date.toISOString(),
+        value: values.value,
+        payment_day: values.payment_day,
+        deposit_value: values.deposit_value,
+        status: values.status as ContractStatus,
+        terms: values.terms,
+        has_renewal_option: values.has_renewal_option,
+        renewal_terms: values.renewal_terms,
+        special_conditions: values.special_conditions,
+        has_variable_rent: values.has_variable_rent,
+        variable_rent_values: values.variable_rent_values,
+        payment_due_day: values.payment_due_day,
+        on_time_discount_percentage: values.on_time_discount_percentage,
+        late_fee_percentage: values.late_fee_percentage,
+        is_discount_not_fee: values.is_discount_not_fee,
+        late_interest_percentage: values.late_interest_percentage,
+        late_daily_interest: values.late_daily_interest,
+        fine_percentage: values.fine_percentage,
+        payment_terms: values.payment_terms,
+        adjustment_index: values.adjustment_index,
+        adjustment_date: values.adjustment_date,
+        agency_name: values.agency_name,
+        agency_contact: values.agency_contact,
+        agency_responsible_name: values.agency_responsible_name,
+        agency_responsible_contact: values.agency_responsible_contact,
+        commission_type: values.commission_type as 'percentage' | 'monetary' | undefined,
+        commission_value: values.commission_value,
       };
 
       if (initialData) {
