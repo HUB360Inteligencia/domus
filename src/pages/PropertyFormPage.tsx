@@ -30,8 +30,8 @@ export default function PropertyFormPage() {
     }
   }, [id, setSelectedPropertyId]);
 
-  const handleSuccess = useCallback((propertyId: string) => {
-    console.log('Property saved successfully:', propertyId);
+  const handleSubmit = useCallback((data: any) => {
+    console.log('Property form submitted:', data);
     toast.success(isEditMode ? 'Imóvel atualizado com sucesso!' : 'Imóvel criado com sucesso!');
     navigate('/properties');
   }, [isEditMode, navigate]);
@@ -58,8 +58,8 @@ export default function PropertyFormPage() {
       
       <PropertyForm
         key={selectedProperty?.id || 'new'}
-        initialData={isEditMode ? selectedProperty : null}
-        onSuccess={handleSuccess}
+        initialData={isEditMode ? selectedProperty : undefined}
+        onSubmit={handleSubmit}
         onCancel={handleCancel}
       />
     </div>

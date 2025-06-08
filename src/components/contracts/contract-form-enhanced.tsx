@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -345,35 +346,11 @@ export function ContractFormEnhanced({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-[240px] pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <DatePicker
-                          mode="single"
-                          locale={ptBR}
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={false}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      date={field.value}
+                      onSelect={field.onChange}
+                      disabled={false}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -385,35 +362,11 @@ export function ContractFormEnhanced({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Término</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-[240px] pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <DatePicker
-                          mode="single"
-                          locale={ptBR}
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={false}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      date={field.value}
+                      onSelect={field.onChange}
+                      disabled={false}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
