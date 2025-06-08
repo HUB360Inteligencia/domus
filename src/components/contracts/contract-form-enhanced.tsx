@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, AlertCircle, Receipt } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Contract, ContractStatus } from '@/types/contract';
+import { Contract, ContractStatus, VariableRentValue } from '@/types/contract';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractAdjustmentForm } from './contract-adjustment-form';
 import { ContractAdjustmentHistory } from './contract-adjustment-history';
@@ -135,6 +135,15 @@ export function ContractFormEnhanced({
     console.log('Submitting contract form data:', values);
     
     try {
+      // Ensure variable_rent_values conforms to VariableRentValue[] type
+      const processedVariableRentValues: VariableRentValue[] | null = values.variable_rent_values 
+        ? values.variable_rent_values.filter((item): item is VariableRentValue => 
+            typeof item.month === 'number' && 
+            typeof item.year === 'number' && 
+            typeof item.value === 'number'
+          )
+        : null;
+
       // Convert form data to the expected format
       const contractData = {
         title: values.title,
@@ -153,7 +162,7 @@ export function ContractFormEnhanced({
         renewal_terms: values.renewal_terms,
         special_conditions: values.special_conditions,
         has_variable_rent: values.has_variable_rent,
-        variable_rent_values: values.variable_rent_values,
+        variable_rent_values: processedVariableRentValues,
         payment_due_day: values.payment_due_day,
         on_time_discount_percentage: values.on_time_discount_percentage,
         late_fee_percentage: values.late_fee_percentage,
