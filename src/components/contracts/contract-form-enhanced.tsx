@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, AlertCircle, Receipt, Plus, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Contract, ContractStatus, VariableRentValue } from '@/types/contract';
+import { Contract, ContractStatus, VariableRentValue, RecurringTransaction } from '@/types/contract';
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractAdjustmentForm } from './contract-adjustment-form';
 import { ContractAdjustmentHistory } from './contract-adjustment-history';
@@ -32,17 +33,6 @@ interface ContractFormEnhancedProps {
   initialData?: Contract | null;
   onSuccess: (contractId: string) => void;
   onCancel: () => void;
-}
-
-interface RecurringTransaction {
-  id: string;
-  type: 'income' | 'expense';
-  name: string;
-  amount: number;
-  category: string;
-  frequency: 'monthly' | 'quarterly' | 'annually';
-  start_date: string;
-  end_date?: string;
 }
 
 const adjustmentIndexOptions = [
@@ -116,7 +106,9 @@ export function ContractFormEnhanced({
   const { createContract, updateContract, isCreatingContract, isUpdatingContract } = useContracts();
   const { properties } = useProperties();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>(
+    initialData?.recurring_transactions || []
+  );
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -147,7 +139,7 @@ export function ContractFormEnhanced({
       fine_percentage: initialData?.fine_percentage || null,
       payment_terms: initialData?.payment_terms || null,
       adjustment_index: initialData?.adjustment_index || null,
-      adjustment_date: initialData?.adjustment_date || null,
+      adjustment_date: initialData?.adjustment_date ? convertFromISODate(initialData.adjustment_date) : null,
       agency_name: initialData?.agency_name || null,
       agency_contact: initialData?.agency_contact || null,
       agency_responsible_name: initialData?.agency_responsible_name || null,
@@ -187,13 +179,42 @@ export function ContractFormEnhanced({
     console.log('Submitting contract form data:', values);
     
     try {
-      // Convert date strings to ISO format
+      // Convert date strings to ISO format and ensure proper types
       const contractData = {
-        ...values,
+        title: values.title,
+        property_id: values.property_id,
+        tenant_name: values.tenant_name,
+        tenant_document: values.tenant_document,
+        tenant_contact: values.tenant_contact,
         start_date: convertToISODate(values.start_date),
         end_date: convertToISODate(values.end_date),
+        value: values.value,
+        payment_day: values.payment_day,
+        deposit_value: values.deposit_value,
+        status: values.status,
+        terms: values.terms,
+        has_renewal_option: values.has_renewal_option,
+        renewal_terms: values.renewal_terms,
+        special_conditions: values.special_conditions,
+        has_variable_rent: values.has_variable_rent,
+        variable_rent_values: values.variable_rent_values as VariableRentValue[] | null,
+        payment_due_day: values.payment_due_day,
+        on_time_discount_percentage: values.on_time_discount_percentage,
+        late_fee_percentage: values.late_fee_percentage,
+        is_discount_not_fee: values.is_discount_not_fee,
+        late_interest_percentage: values.late_interest_percentage,
+        late_daily_interest: values.late_daily_interest,
+        fine_percentage: values.fine_percentage,
+        payment_terms: values.payment_terms,
+        adjustment_index: values.adjustment_index,
+        adjustment_date: values.adjustment_date ? convertToISODate(values.adjustment_date) : null,
+        agency_name: values.agency_name,
+        agency_contact: values.agency_contact,
+        agency_responsible_name: values.agency_responsible_name,
+        agency_responsible_contact: values.agency_responsible_contact,
+        commission_type: values.commission_type as 'percentage' | 'monetary' | null,
+        commission_value: values.commission_value,
         recurring_transactions: recurringTransactions.length > 0 ? recurringTransactions : null,
-        commission_type: values.commission_type as 'percentage' | 'monetary' | undefined,
       };
 
       if (initialData) {
@@ -476,7 +497,7 @@ export function ContractFormEnhanced({
                   <FormItem>
                     <FormLabel>Nome da Imobiliária</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome da imobiliária" {...field} />
+                      <Input placeholder="Nome da imobiliária" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -490,7 +511,7 @@ export function ContractFormEnhanced({
                   <FormItem>
                     <FormLabel>Contato da Imobiliária</FormLabel>
                     <FormControl>
-                      <Input placeholder="(XX) XXXX-XXXX" {...field} />
+                      <Input placeholder="(XX) XXXX-XXXX" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -504,7 +525,7 @@ export function ContractFormEnhanced({
                   <FormItem>
                     <FormLabel>Nome do Responsável</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do responsável" {...field} />
+                      <Input placeholder="Nome do responsável" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -518,7 +539,7 @@ export function ContractFormEnhanced({
                   <FormItem>
                     <FormLabel>Contato do Responsável</FormLabel>
                     <FormControl>
-                      <Input placeholder="(XX) XXXX-XXXX" {...field} />
+                      <Input placeholder="(XX) XXXX-XXXX" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -533,7 +554,7 @@ export function ContractFormEnhanced({
                     <FormLabel>Taxa de Comissão</FormLabel>
                     <FormControl>
                       <CommissionInput
-                        commissionType={field.value as 'percentage' | 'monetary'}
+                        commissionType={field.value as 'percentage' | 'monetary' | null}
                         commissionValue={form.watch('commission_value') || 0}
                         onCommissionTypeChange={field.onChange}
                         onCommissionValueChange={(value) => form.setValue('commission_value', value)}
