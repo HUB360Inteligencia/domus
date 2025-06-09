@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MinimalCard } from '@/components/finances/dashboard/MinimalCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { SimpleToggle } from '@/components/finances/dashboard/SimpleToggle';
 import { PatrimonyChart } from '@/components/dashboard/PatrimonyChart';
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
@@ -12,8 +12,8 @@ export function AssetGrowthChartWidget() {
   const { properties } = useProperties();
 
   const viewOptions = [
-    { value: 'monthly', label: 'Mês a Mês' },
-    { value: 'yearly', label: 'Ano a Ano' }
+    { value: 'monthly', label: 'Mensal' },
+    { value: 'yearly', label: 'Anual' }
   ];
 
   // Gerar dados baseados nas datas reais de compra dos imóveis
@@ -24,12 +24,11 @@ export function AssetGrowthChartWidget() {
     const data = [];
 
     if (viewMode === 'monthly') {
-      // Últimos 12 meses
-      for (let i = 11; i >= 0; i--) {
+      // Últimos 6 meses para layout compacto
+      for (let i = 5; i >= 0; i--) {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
+        const monthKey = date.toISOString().slice(0, 7);
         
-        // Calcular valor acumulado até esta data
         const propertiesAtDate = properties.filter(p => {
           if (!p.purchase_date) return false;
           return new Date(p.purchase_date) <= date;
@@ -44,14 +43,14 @@ export function AssetGrowthChartWidget() {
         );
 
         data.push({
-          month: date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+          month: date.toLocaleDateString('pt-BR', { month: 'short' }),
           marketValue: totalMarketValue,
           acquisitionValue: totalPurchaseValue
         });
       }
     } else {
-      // Últimos 5 anos
-      for (let i = 4; i >= 0; i--) {
+      // Últimos 3 anos para layout compacto
+      for (let i = 2; i >= 0; i--) {
         const year = now.getFullYear() - i;
         const yearEnd = new Date(year, 11, 31);
         
@@ -80,25 +79,26 @@ export function AssetGrowthChartWidget() {
   }, [properties, viewMode]);
 
   return (
-    <MinimalCard className="h-full">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Valorização Patrimonial</h3>
+    <Card className="shadow-sm hover:shadow-md transition-shadow bg-white border-gray-200 h-48">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Valorização Patrimonial</h3>
           <SimpleToggle 
             value={viewMode}
             onValueChange={(value) => setViewMode(value as 'monthly' | 'yearly')}
             options={viewOptions}
+            className="text-xs h-6"
           />
         </div>
         
-        <div className="flex-1 min-h-0">
+        <div className="h-32">
           <PatrimonyChart 
             data={chartData}
             viewMode={'patrimony'}
             isLoading={false}
           />
         </div>
-      </div>
-    </MinimalCard>
+      </CardContent>
+    </Card>
   );
 }
