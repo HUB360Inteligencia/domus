@@ -47,11 +47,11 @@ export function CompactActivitiesWidget() {
     <Card className="shadow-sm hover:shadow-md transition-shadow bg-white border-gray-200 h-48">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Atividades</h3>
-          <Calendar className="h-4 w-4 text-gray-400" />
+          <h3 className="text-sm font-semibold text-gray-900 truncate">Atividades</h3>
+          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
         </div>
 
-        <div className="space-y-2 mb-3">
+        <div className="space-y-2 mb-3 overflow-hidden">
           {upcomingActivities.length === 0 ? (
             <div className="text-center py-4 text-gray-500">
               <Calendar className="h-6 w-6 mx-auto mb-1 opacity-50" />
@@ -65,11 +65,13 @@ export function CompactActivitiesWidget() {
                 onClick={() => navigate(`/activities/${activity.id}`)}
               >
                 <div className="flex items-center space-x-2 min-w-0 flex-1">
-                  <div className="text-gray-900 font-medium truncate">{activity.title}</div>
+                  <div className="text-gray-900 font-medium truncate max-w-[100px]" title={activity.title}>
+                    {activity.title}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1 text-gray-500">
-                  <Clock className="h-3 w-3" />
-                  <span className="text-xs">
+                <div className="flex items-center space-x-1 text-gray-500 ml-2">
+                  <Clock className="h-3 w-3 flex-shrink-0" />
+                  <span className="text-xs whitespace-nowrap">
                     {activity.due_date && formatDistanceToNow(new Date(activity.due_date), { 
                       addSuffix: true, 
                       locale: ptBR 

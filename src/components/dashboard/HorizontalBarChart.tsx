@@ -62,18 +62,22 @@ export function HorizontalBarChart({
       getVariantClasses()
     )}>
       <CardContent className="p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
-        {subtitle && <p className="text-xs text-gray-600 mb-3">{subtitle}</p>}
+        <div className="mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate">{title}</h3>
+          {subtitle && <p className="text-xs text-gray-600 truncate">{subtitle}</p>}
+        </div>
         
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {data.slice(0, 5).map((item, index) => {
             const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
             
             return (
               <div key={item.name} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-700 truncate flex-1 mr-2">{item.name}</span>
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-gray-700 truncate flex-1 mr-2 max-w-[120px]" title={item.name}>
+                    {item.name}
+                  </span>
+                  <span className="text-gray-900 font-medium whitespace-nowrap">
                     {valueFormatter(item.value)}
                   </span>
                 </div>

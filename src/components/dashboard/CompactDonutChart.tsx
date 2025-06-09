@@ -37,7 +37,7 @@ export function CompactDonutChart({
     return (
       <Card className={`shadow-sm h-48 ${getVariantClasses()}`}>
         <CardContent className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">{title}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 truncate">{title}</h3>
           <div className="animate-pulse bg-gray-200 h-32 rounded-full mx-auto w-32" />
         </CardContent>
       </Card>
@@ -47,10 +47,10 @@ export function CompactDonutChart({
   return (
     <Card className={`shadow-sm hover:shadow-md transition-shadow h-48 ${getVariantClasses()}`}>
       <CardContent className="p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-2">{title}</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-2 truncate">{title}</h3>
         
         <div className="flex items-center justify-between">
-          <div className="w-24 h-24">
+          <div className="w-24 h-24 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -83,17 +83,19 @@ export function CompactDonutChart({
             </ResponsiveContainer>
           </div>
           
-          <div className="flex-1 ml-3 space-y-1">
+          <div className="flex-1 ml-3 space-y-1 overflow-hidden">
             {data.slice(0, 4).map((item, index) => (
               <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
                   <div 
-                    className="w-2 h-2 rounded-full"
+                    className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.color || colors[index % colors.length] }}
                   />
-                  <span className="text-gray-700 truncate max-w-20">{item.name}</span>
+                  <span className="text-gray-700 truncate max-w-[60px]" title={item.name}>
+                    {item.name}
+                  </span>
                 </div>
-                <span className="text-gray-900 font-medium">{item.value}</span>
+                <span className="text-gray-900 font-medium ml-2">{item.value}</span>
               </div>
             ))}
           </div>

@@ -8,25 +8,95 @@ import { CompactActivitiesWidget } from '@/components/dashboard/CompactActivitie
 import { AssetGrowthChartWidget } from '@/components/dashboard/AssetGrowthChartWidget';
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
 import { useProperties } from '@/hooks/use-properties';
+import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { formatCurrency } from '@/utils/currency';
 import { Home, DollarSign, Target, MapPin } from 'lucide-react';
 
 export default function Dashboard() {
   const metrics = useDashboardMetrics();
   const { properties } = useProperties();
+  const { transactions } = useFinancialTransactions();
+
+  // Tradução de tipos de imóveis
+  const translatePropertyType = (type: string) => {
+    const translations: Record<string, string> = {
+      'house': 'Casa',
+      'apartment': 'Apartamento',
+      'commercial': 'Comercial',
+      'land': 'Terreno',
+      'studio': 'Studio',
+      'office': 'Escritório',
+      'warehouse': 'Galpão',
+      'store': 'Loja'
+    };
+    return translations[type?.toLowerCase()] || type || 'Outros';
+  };
+
+  // Calcular performance do mês anterior
+  const previousMonthPerformance = React.useMemo(() => {
+    const now = new Date();
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const twoMonthsAgoEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+
+    // Transações do mês anterior
+    const previousMonthTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.transaction_date);
+      return transactionDate >= previousMonth && transactionDate <= previousMonthEnd;
+    });
+
+    // Transações de dois meses atrás
+    const twoMonthsAgoTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.transaction_date);
+      return transactionDate >= twoMonthsAgo && transactionDate <= twoMonthsAgoEnd;
+    });
+
+    const previousRevenue = previousMonthTransactions
+      .filter(t => t.transaction_type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const previousExpenses = previousMonthTransactions
+      .filter(t => t.transaction_type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const twoMonthsAgoRevenue = twoMonthsAgoTransactions
+      .filter(t => t.transaction_type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const twoMonthsAgoExpenses = twoMonthsAgoTransactions
+      .filter(t => t.transaction_type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const revenueTrend = previousRevenue > twoMonthsAgoRevenue ? 'up' : 
+                        previousRevenue < twoMonthsAgoRevenue ? 'down' : 'neutral';
+    
+    const expensesTrend = previousExpenses > twoMonthsAgoExpenses ? 'up' : 
+                         previousExpenses < twoMonthsAgoExpenses ? 'down' : 'neutral';
+
+    return {
+      revenue: previousRevenue,
+      expenses: previousExpenses,
+      balance: previousRevenue - previousExpenses,
+      revenueTrend,
+      expensesTrend,
+      revenueChange: twoMonthsAgoRevenue > 0 ? ((previousRevenue - twoMonthsAgoRevenue) / twoMonthsAgoRevenue * 100) : 0,
+      expensesChange: twoMonthsAgoExpenses > 0 ? ((previousExpenses - twoMonthsAgoExpenses) / twoMonthsAgoExpenses * 100) : 0
+    };
+  }, [transactions]);
 
   // Gerar dados para o gráfico de tipos de imóveis
   const propertyTypesData = React.useMemo(() => {
     if (!properties) return [];
     
     const typeCount = properties.reduce((acc, property) => {
-      const type = property.type || 'Outros';
+      const type = translatePropertyType(property.type);
       acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     return Object.entries(typeCount).map(([name, value]) => ({
-      name,
+      name: name,
       value
     }));
   }, [properties]);
@@ -65,11 +135,11 @@ export default function Dashboard() {
 
   return (
     <div className="container py-4">
-      {/* Grid Layout mais compacto */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Grid Layout corrigido para eliminar espaços vazios */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* LINHA 1 - KPIs Principais (3 colunas) */}
-        <div className="md:col-span-1">
+        {/* LINHA 1 - KPIs Principais + Performance (4 colunas) */}
+        <div className="lg:col-span-1">
           <DashboardKPICard
             title="Propriedades"
             value={`${metrics.rentedProperties}/${metrics.totalProperties}`}
@@ -82,7 +152,7 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
           <DashboardKPICard
             title="Patrimônio Total"
             value={formatCurrency(metrics.totalMarketValue)}
@@ -95,7 +165,7 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
           <DashboardKPICard
             title="ROI Mensal"
             value={`${metrics.monthlyROI.onInvestment.toFixed(2)}%`}
@@ -107,50 +177,30 @@ export default function Dashboard() {
             variant="white"
           />
         </div>
-        
-        {/* LINHA 2 - Performance + Mini Trends (4 colunas) */}
-        <div className="md:col-span-2">
+
+        <div className="lg:col-span-1">
           <DashboardKPICard
-            title="Performance Financeira"
-            value={formatCurrency(metrics.netBalance)}
-            subtitle={`Receitas: ${formatCurrency(metrics.totalRevenue)} | Despesas: ${formatCurrency(metrics.totalExpenses)}`}
+            title="Performance do Mês Anterior"
+            value={formatCurrency(previousMonthPerformance.balance)}
+            subtitle={`R: ${formatCurrency(previousMonthPerformance.revenue)} | D: ${formatCurrency(previousMonthPerformance.expenses)}`}
             icon={<DollarSign />}
-            trend={metrics.profitTrend}
-            trendValue={`${metrics.profitTrend === 'up' ? '+' : metrics.profitTrend === 'down' ? '-' : ''}15.3%`}
+            trend={previousMonthPerformance.balance >= 0 ? 'up' : 'down'}
+            trendValue={`${previousMonthPerformance.balance >= 0 ? '+' : ''}${((previousMonthPerformance.revenueChange - Math.abs(previousMonthPerformance.expensesChange)) / 2).toFixed(1)}%`}
             variant="gray"
-            className="h-32"
           />
         </div>
         
-        <div className="md:col-span-2">
-          <MiniTrendsWidget />
-        </div>
-        
-        {/* LINHA 3 - Gráficos Principais (4 colunas) */}
-        <div className="md:col-span-2">
+        {/* LINHA 2 - Gráficos Principais (4 colunas) */}
+        <div className="lg:col-span-2">
           <AssetGrowthChartWidget />
         </div>
         
-        <div className="md:col-span-1">
-          <CompactDonutChart
-            title="Tipos de Imóveis"
-            data={propertyTypesData}
-            variant="gray"
-          />
+        <div className="lg:col-span-2">
+          <MiniTrendsWidget />
         </div>
         
-        <div className="md:col-span-1">
-          <HorizontalBarChart
-            title="Distribuição por Bairro"
-            subtitle="propriedades por região"
-            data={neighborhoodData}
-            variant="slate"
-            valueFormatter={(value) => `${value} imóveis`}
-          />
-        </div>
-        
-        {/* LINHA 4 - Rankings e Atividades (3 colunas) */}
-        <div className="md:col-span-1">
+        {/* LINHA 3 - Rankings e Atividades (4 colunas) */}
+        <div className="lg:col-span-1">
           <HorizontalBarChart
             title="Top Propriedades"
             subtitle="por rentabilidade"
@@ -166,7 +216,7 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
           <HorizontalBarChart
             title="Bairros Rentáveis"
             subtitle="ROI médio por região"
@@ -182,7 +232,15 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
+          <CompactDonutChart
+            title="Tipos de Imóveis"
+            data={propertyTypesData}
+            variant="gray"
+          />
+        </div>
+        
+        <div className="lg:col-span-1">
           <CompactActivitiesWidget />
         </div>
         
