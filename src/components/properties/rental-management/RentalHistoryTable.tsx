@@ -3,11 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Calendar, Eye, BarChart3, Edit } from 'lucide-react';
+import { Calendar, BarChart3, Edit, Trash2 } from 'lucide-react';
 import { useRentalHistory } from '@/hooks/use-rental-history';
+import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { RentalItemsViewer } from './RentalItemsViewer';
 import { EditRentalModal } from './EditRentalModal';
+import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface RentalHistoryTableProps {
   propertyId: string;
@@ -17,10 +20,13 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
   propertyId
 }) => {
   const { rentalHistory, isLoading, refetch } = useRentalHistory(propertyId);
+  const { deleteTransaction, isDeleting } = useFinancialTransactions();
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<typeof rentalHistory[0] | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [editingHistoryItem, setEditingHistoryItem] = useState<typeof rentalHistory[0] | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<typeof rentalHistory[0] | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -43,6 +49,33 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
     refetch();
     setIsEditModalOpen(false);
     setEditingHistoryItem(null);
+  };
+
+  const handleDelete = (item: typeof rentalHistory[0]) => {
+    setDeletingItem(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingItem?.transactionId) {
+      toast.error('ID da transação não encontrado');
+      return;
+    }
+
+    try {
+      await deleteTransaction(deletingItem.transactionId);
+      setIsDeleteModalOpen(false);
+      setDeletingItem(null);
+      refetch();
+    } catch (error) {
+      console.error('Erro ao deletar histórico de aluguel:', error);
+      toast.error('Erro ao deletar histórico de aluguel');
+    }
+  };
+
+  const handleDeleteModalClose = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingItem(null);
   };
 
   if (isLoading) {
@@ -101,7 +134,7 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
                 <TableHead className="text-right text-xs">Despesas</TableHead>
                 <TableHead className="text-right text-xs">Saldo</TableHead>
                 <TableHead className="text-center text-xs">Itens</TableHead>
-                <TableHead className="text-center text-xs w-24">Ações</TableHead>
+                <TableHead className="text-center text-xs w-32">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,6 +179,15 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(item)}
+                        className="h-7 w-7 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                        title="Excluir histórico"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -177,10 +219,19 @@ export const RentalHistoryTable: React.FC<RentalHistoryTableProps> = ({
             setEditingHistoryItem(null);
           }}
           rentalData={editingHistoryItem}
-          propertyTitle="Propriedade" // Pode ser passado como prop se necessário
+          propertyTitle="Propriedade"
           onSave={handleEditSave}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteTransactionModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={confirmDelete}
+        transactionName={`Gestão de Aluguéis - ${deletingItem?.monthYear || ''}`}
+        isDeleting={isDeleting}
+      />
     </>
   );
 };

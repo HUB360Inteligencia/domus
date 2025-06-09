@@ -60,17 +60,21 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
     type: category.type
   }));
 
-  // Reset form when modal opens and load contract data
+  // Reset form when modal opens and load contract data with delay
   useEffect(() => {
     if (isOpen) {
       setItems([]);
       setSelectedMonth(currentDate.getMonth());
       setSelectedYear(currentDate.getFullYear());
       
-      // Load contract data after categories are loaded
-      if (activeContract && categories.length > 0) {
-        loadContractData();
-      }
+      // Add delay before loading contract data for better UX
+      const timeoutId = setTimeout(() => {
+        if (activeContract && categories.length > 0) {
+          loadContractData();
+        }
+      }, 500); // Increased delay to 500ms
+
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, activeContract, categories]);
 
@@ -173,6 +177,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Fixed date calculation: use selectedMonth directly (already 0-based) for correct period
       const transactionDate = new Date(selectedYear, selectedMonth, 1);
       const formattedDate = transactionDate.toISOString().split('T')[0];
 
