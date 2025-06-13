@@ -87,12 +87,20 @@ export default function Dashboard() {
       balanceChangePercentage = -100; // Se não havia saldo antes e agora há um negativo
     }
 
+    // Determinar tendência baseada na mudança percentual
+    let trend: 'up' | 'down' | 'neutral' = 'neutral';
+    if (balanceChangePercentage > 0) {
+      trend = 'up';
+    } else if (balanceChangePercentage < 0) {
+      trend = 'down';
+    }
+
     return {
       revenue: previousRevenue,
       expenses: previousExpenses,
       balance: previousBalance,
       balanceChangePercentage,
-      trend: previousBalance >= 0 ? 'up' : 'down'
+      trend
     };
   }, [transactions]);
 
