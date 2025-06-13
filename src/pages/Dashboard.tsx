@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DashboardKPICard } from '@/components/dashboard/DashboardKPICard';
 import { CompactDonutChart } from '@/components/dashboard/CompactDonutChart';
@@ -32,11 +31,15 @@ export default function Dashboard() {
     return translations[type?.toLowerCase()] || type || 'Outros';
   };
 
-  // Calcular performance do mês anterior
+  // Calcular performance do mês anterior CORRIGIDO
   const previousMonthPerformance = React.useMemo(() => {
     const now = new Date();
+    
+    // Mês anterior (que estamos analisando)
     const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    // Mês anterior ao mês anterior (para comparação)
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     const twoMonthsAgoEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0);
 
@@ -52,6 +55,7 @@ export default function Dashboard() {
       return transactionDate >= twoMonthsAgo && transactionDate <= twoMonthsAgoEnd;
     });
 
+    // Receitas e despesas do mês anterior
     const previousRevenue = previousMonthTransactions
       .filter(t => t.transaction_type === 'income')
       .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -60,6 +64,7 @@ export default function Dashboard() {
       .filter(t => t.transaction_type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
+    // Receitas e despesas de dois meses atrás
     const twoMonthsAgoRevenue = twoMonthsAgoTransactions
       .filter(t => t.transaction_type === 'income')
       .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -68,20 +73,26 @@ export default function Dashboard() {
       .filter(t => t.transaction_type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const revenueTrend = previousRevenue > twoMonthsAgoRevenue ? 'up' : 
-                        previousRevenue < twoMonthsAgoRevenue ? 'down' : 'neutral';
-    
-    const expensesTrend = previousExpenses > twoMonthsAgoExpenses ? 'up' : 
-                         previousExpenses < twoMonthsAgoExpenses ? 'down' : 'neutral';
+    // Saldos
+    const previousBalance = previousRevenue - previousExpenses;
+    const twoMonthsAgoBalance = twoMonthsAgoRevenue - twoMonthsAgoExpenses;
+
+    // Calcular porcentagem de mudança do saldo
+    let balanceChangePercentage = 0;
+    if (twoMonthsAgoBalance !== 0) {
+      balanceChangePercentage = ((previousBalance - twoMonthsAgoBalance) / Math.abs(twoMonthsAgoBalance)) * 100;
+    } else if (previousBalance > 0) {
+      balanceChangePercentage = 100; // Se não havia saldo antes e agora há um positivo
+    } else if (previousBalance < 0) {
+      balanceChangePercentage = -100; // Se não havia saldo antes e agora há um negativo
+    }
 
     return {
       revenue: previousRevenue,
       expenses: previousExpenses,
-      balance: previousRevenue - previousExpenses,
-      revenueTrend,
-      expensesTrend,
-      revenueChange: twoMonthsAgoRevenue > 0 ? ((previousRevenue - twoMonthsAgoRevenue) / twoMonthsAgoRevenue * 100) : 0,
-      expensesChange: twoMonthsAgoExpenses > 0 ? ((previousExpenses - twoMonthsAgoExpenses) / twoMonthsAgoExpenses * 100) : 0
+      balance: previousBalance,
+      balanceChangePercentage,
+      trend: previousBalance >= 0 ? 'up' : 'down'
     };
   }, [transactions]);
 
@@ -184,8 +195,8 @@ export default function Dashboard() {
             value={formatCurrency(previousMonthPerformance.balance)}
             subtitle={`R: ${formatCurrency(previousMonthPerformance.revenue)} | D: ${formatCurrency(previousMonthPerformance.expenses)}`}
             icon={<DollarSign />}
-            trend={previousMonthPerformance.balance >= 0 ? 'up' : 'down'}
-            trendValue={`${previousMonthPerformance.balance >= 0 ? '+' : ''}${((previousMonthPerformance.revenueChange - Math.abs(previousMonthPerformance.expensesChange)) / 2).toFixed(1)}%`}
+            trend={previousMonthPerformance.trend}
+            trendValue={`${previousMonthPerformance.balanceChangePercentage >= 0 ? '+' : ''}${previousMonthPerformance.balanceChangePercentage.toFixed(1)}%`}
             variant="gray"
           />
         </div>
