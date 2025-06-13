@@ -41,10 +41,10 @@ export function HorizontalBarChart({
   if (isLoading) {
     return (
       <Card className={`shadow-sm h-48 ${getVariantClasses()}`}>
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
-          {subtitle && <p className="text-xs text-gray-600 mb-3">{subtitle}</p>}
-          <div className="space-y-2">
+        <CardContent className="p-4 h-full flex flex-col">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate">{title}</h3>
+          {subtitle && <p className="text-xs text-gray-600 mb-3 truncate">{subtitle}</p>}
+          <div className="space-y-2 flex-1 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="animate-pulse bg-gray-200 h-6 rounded" />
             ))}
@@ -61,23 +61,32 @@ export function HorizontalBarChart({
       'shadow-sm hover:shadow-md transition-shadow h-48',
       getVariantClasses()
     )}>
-      <CardContent className="p-4">
-        <div className="mb-3">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate">{title}</h3>
-          {subtitle && <p className="text-xs text-gray-600 truncate">{subtitle}</p>}
+      <CardContent className="p-4 h-full flex flex-col">
+        <div className="mb-3 flex-shrink-0">
+          <h3 className="text-sm font-semibold text-gray-900 mb-1 truncate" title={title}>
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="text-xs text-gray-600 truncate" title={subtitle}>
+              {subtitle}
+            </p>
+          )}
         </div>
         
-        <div className="space-y-2 overflow-hidden">
-          {data.slice(0, 5).map((item, index) => {
+        <div className="space-y-2 flex-1 overflow-hidden min-h-0">
+          {data.slice(0, 4).map((item, index) => {
             const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
             
             return (
               <div key={item.name} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-700 truncate flex-1 mr-2 max-w-[120px]" title={item.name}>
+                <div className="flex items-center justify-between text-xs min-h-0">
+                  <span 
+                    className="text-gray-700 truncate flex-1 mr-2 max-w-[100px]" 
+                    title={item.name}
+                  >
                     {item.name}
                   </span>
-                  <span className="text-gray-900 font-medium whitespace-nowrap">
+                  <span className="text-gray-900 font-medium whitespace-nowrap flex-shrink-0">
                     {valueFormatter(item.value)}
                   </span>
                 </div>

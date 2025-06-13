@@ -3,80 +3,50 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SimpleToggle } from '@/components/finances/dashboard/SimpleToggle';
 import { PatrimonyChart } from '@/components/dashboard/PatrimonyChart';
-import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
-import { useProperties } from '@/hooks/use-properties';
+import { usePortfolioTimeline } from '@/hooks/use-portfolio-timeline';
 
 export function AssetGrowthChartWidget() {
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
-  const metrics = useDashboardMetrics();
-  const { properties } = useProperties();
+  const { timelineData, isLoading } = usePortfolioTimeline();
 
   const viewOptions = [
     { value: 'monthly', label: 'Mensal' },
     { value: 'yearly', label: 'Anual' }
   ];
 
-  // Gerar dados baseados nas datas reais de compra dos imóveis
+  // Transformar dados da timeline para o formato do gráfico
   const chartData = React.useMemo(() => {
-    if (!properties || properties.length === 0) return [];
-
-    const now = new Date();
-    const data = [];
+    if (!timelineData || timelineData.length === 0) return [];
 
     if (viewMode === 'monthly') {
-      // Últimos 6 meses para layout compacto
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = date.toISOString().slice(0, 7);
-        
-        const propertiesAtDate = properties.filter(p => {
-          if (!p.purchase_date) return false;
-          return new Date(p.purchase_date) <= date;
-        });
-
-        const totalPurchaseValue = propertiesAtDate.reduce((sum, p) => 
-          sum + (p.purchase_value || p.total_investment || 0), 0
-        );
-        
-        const totalMarketValue = propertiesAtDate.reduce((sum, p) => 
-          sum + (p.value || 0), 0
-        );
-
-        data.push({
+      // Últimos 6 meses
+      return timelineData.slice(-6).map(item => {
+        const date = new Date(item.date + '-01');
+        return {
           month: date.toLocaleDateString('pt-BR', { month: 'short' }),
-          marketValue: totalMarketValue,
-          acquisitionValue: totalPurchaseValue
-        });
-      }
+          marketValue: item.totalValue,
+          acquisitionValue: item.totalValue * 0.85 // Estimativa conservadora do valor de aquisição
+        };
+      });
     } else {
-      // Últimos 3 anos para layout compacto
-      for (let i = 2; i >= 0; i--) {
-        const year = now.getFullYear() - i;
-        const yearEnd = new Date(year, 11, 31);
-        
-        const propertiesAtYear = properties.filter(p => {
-          if (!p.purchase_date) return false;
-          return new Date(p.purchase_date).getFullYear() <= year;
-        });
+      // Agrupar por anos
+      const yearlyData = timelineData.reduce((acc, item) => {
+        const year = item.date.slice(0, 4);
+        if (!acc[year]) {
+          acc[year] = { totalValue: 0, count: 0 };
+        }
+        acc[year].totalValue = Math.max(acc[year].totalValue, item.totalValue);
+        acc[year].count++;
+        return acc;
+      }, {} as Record<string, { totalValue: number; count: number }>);
 
-        const totalPurchaseValue = propertiesAtYear.reduce((sum, p) => 
-          sum + (p.purchase_value || p.total_investment || 0), 0
-        );
-        
-        const totalMarketValue = propertiesAtYear.reduce((sum, p) => 
-          sum + (p.value || 0), 0
-        );
-
-        data.push({
-          month: year.toString(),
-          marketValue: totalMarketValue,
-          acquisitionValue: totalPurchaseValue
-        });
-      }
+      return Object.entries(yearlyData).slice(-3).map(([year, data]) => ({
+        month: year,
+        marketValue: data.totalValue,
+        acquisitionValue: data.totalValue * 0.85
+      }));
     }
-
-    return data.filter(item => item.acquisitionValue > 0 || item.marketValue > 0);
-  }, [properties, viewMode]);
+  }, [timelineData, viewMode]);
 
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow bg-white border-gray-200 h-48">
@@ -95,7 +65,7 @@ export function AssetGrowthChartWidget() {
           <PatrimonyChart 
             data={chartData}
             viewMode={'patrimony'}
-            isLoading={false}
+            isLoading={isLoading}
           />
         </div>
       </CardContent>

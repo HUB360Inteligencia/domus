@@ -8,6 +8,8 @@ import { AssetGrowthChartWidget } from '@/components/dashboard/AssetGrowthChartW
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
 import { useProperties } from '@/hooks/use-properties';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { useQuery } from '@tanstack/react-query';
+import { fetchNeighborhoodFinancialData } from '@/api/neighborhood-financial-data';
 import { formatCurrency } from '@/utils/currency';
 import { Home, DollarSign, Target, MapPin } from 'lucide-react';
 
@@ -15,6 +17,12 @@ export default function Dashboard() {
   const metrics = useDashboardMetrics();
   const { properties } = useProperties();
   const { transactions } = useFinancialTransactions();
+
+  // Buscar dados reais dos bairros
+  const { data: realNeighborhoodData = [], isLoading: isLoadingNeighborhoods } = useQuery({
+    queryKey: ['neighborhood-financial-data'],
+    queryFn: fetchNeighborhoodFinancialData
+  });
 
   // Tradução de tipos de imóveis
   const translatePropertyType = (type: string) => {
@@ -120,22 +128,6 @@ export default function Dashboard() {
     }));
   }, [properties]);
 
-  // Gerar dados para o gráfico de bairros
-  const neighborhoodData = React.useMemo(() => {
-    if (!properties) return [];
-    
-    const neighborhoodCount = properties.reduce((acc, property) => {
-      const neighborhood = property.neighborhood || 'Não informado';
-      acc[neighborhood] = (acc[neighborhood] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(neighborhoodCount)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [properties]);
-
   // Gerar dados sparkline simulados para tendências
   const generateSparklineData = (baseValue: number, trend: 'up' | 'down' | 'neutral') => {
     const data = [];
@@ -227,8 +219,7 @@ export default function Dashboard() {
               { name: 'Apt Centro', value: 2500 },
               { name: 'Casa Jardins', value: 2200 },
               { name: 'Sala Comercial', value: 1800 },
-              { name: 'Apt Novo', value: 1500 },
-              { name: 'Studio', value: 1200 }
+              { name: 'Apt Novo', value: 1500 }
             ]}
             variant="slate"
             valueFormatter={(value) => formatCurrency(value)}
@@ -238,16 +229,14 @@ export default function Dashboard() {
         <div className="lg:col-span-1">
           <HorizontalBarChart
             title="Bairros Rentáveis"
-            subtitle="ROI médio por região"
-            data={[
-              { name: 'Centro', value: 8.5 },
-              { name: 'Jardins', value: 7.2 },
-              { name: 'Vila Olímpia', value: 6.8 },
-              { name: 'Brooklin', value: 6.1 },
-              { name: 'Moema', value: 5.9 }
-            ]}
+            subtitle="ROI médio últimos 12 meses"
+            data={realNeighborhoodData.slice(0, 4).map(neighborhood => ({
+              name: neighborhood.name,
+              value: neighborhood.roi
+            }))}
             variant="gray"
-            valueFormatter={(value) => `${value}%`}
+            valueFormatter={(value) => `${value.toFixed(1)}%`}
+            isLoading={isLoadingNeighborhoods}
           />
         </div>
         

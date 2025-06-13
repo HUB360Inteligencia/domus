@@ -29,13 +29,18 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
       return [];
     }
 
-    // Fetch financial transactions for all properties
+    // Calcular data de 12 meses atrás
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+
+    // Fetch financial transactions for all properties (últimos 12 meses)
     const propertyIds = properties.map(p => p.id);
     const { data: transactions, error: transactionsError } = await supabase
       .from('financial_transactions')
-      .select('property_id, amount, transaction_type')
+      .select('property_id, amount, transaction_type, transaction_date')
       .eq('user_id', session.data.session.user.id)
-      .in('property_id', propertyIds);
+      .in('property_id', propertyIds)
+      .gte('transaction_date', twelveMonthsAgo.toISOString().split('T')[0]);
 
     if (transactionsError) throw transactionsError;
 
@@ -64,7 +69,7 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
       neighData.totalInvestment += property.purchase_value || property.total_investment || property.value || 0;
     });
 
-    // Add transaction data
+    // Add transaction data (últimos 12 meses)
     transactions?.forEach(transaction => {
       const property = properties.find(p => p.id === transaction.property_id);
       if (property && property.neighborhood) {
@@ -83,6 +88,7 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
     // Convert to final format
     const result: NeighborhoodFinancialData[] = Array.from(neighborhoodMap.entries()).map(([name, data]) => {
       const netIncome = data.revenue - data.expenses;
+      // ROI anualizado baseado nos últimos 12 meses
       const roi = data.totalInvestment > 0 ? (netIncome / data.totalInvestment) * 100 : 0;
       
       return {
@@ -94,8 +100,8 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
       };
     });
 
-    // Sort by revenue descending
-    return result.sort((a, b) => b.revenue - a.revenue);
+    // Sort by ROI descending
+    return result.sort((a, b) => b.roi - a.roi);
   } catch (error) {
     console.error('Error fetching neighborhood financial data:', error);
     throw error;
