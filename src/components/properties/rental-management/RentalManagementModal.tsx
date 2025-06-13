@@ -8,6 +8,7 @@ import { useFinancialCategories } from '@/hooks/use-financial-categories';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { usePropertyActiveContract } from '@/hooks/use-property-active-contract';
 import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [items, setItems] = useState<RentalItem[]>([]);
+  const [description, setDescription] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { categories, isLoadingCategories } = useFinancialCategories();
@@ -64,6 +66,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setItems([]);
+      setDescription('');
       setSelectedMonth(currentDate.getMonth());
       setSelectedYear(currentDate.getFullYear());
       
@@ -72,11 +75,42 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         if (activeContract && categories.length > 0) {
           loadContractData();
         }
-      }, 500); // Increased delay to 500ms
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     }
   }, [isOpen, activeContract, categories]);
+
+  // Update description when items change
+  useEffect(() => {
+    if (items.length > 0) {
+      generateDescription();
+    }
+  }, [items]);
+
+  const generateDescription = () => {
+    const incomeItems = items.filter(item => item.type === 'income');
+    const expenseItems = items.filter(item => item.type === 'expense');
+    
+    let desc = `Gestão de Aluguéis - ${property.title} (${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear})\n\n`;
+    
+    if (incomeItems.length > 0) {
+      desc += 'RECEITAS:\n';
+      incomeItems.forEach(item => {
+        desc += `• ${item.name}: R$ ${item.amount.toFixed(2).replace('.', ',')}\n`;
+      });
+      desc += '\n';
+    }
+    
+    if (expenseItems.length > 0) {
+      desc += 'DESPESAS:\n';
+      expenseItems.forEach(item => {
+        desc += `• ${item.name}: R$ ${item.amount.toFixed(2).replace('.', ',')}\n`;
+      });
+    }
+    
+    setDescription(desc);
+  };
 
   const loadContractData = () => {
     const newItems: RentalItem[] = [];
@@ -175,25 +209,17 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
       return;
     }
 
+    if (!description.trim()) {
+      toast.error('A descrição é obrigatória');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Fixed date calculation: use selectedMonth directly (already 0-based) for correct period
-      const transactionDate = new Date(selectedYear, selectedMonth, 1);
+      // Usar o dia de vencimento do contrato ou dia 1 se não houver contrato
+      const paymentDay = activeContract?.payment_day || 1;
+      const transactionDate = new Date(selectedYear, selectedMonth, paymentDay);
       const formattedDate = transactionDate.toISOString().split('T')[0];
-
-      const rentalDetails = {
-        items: items.map(item => ({
-          name: item.name,
-          amount: item.amount,
-          type: item.type,
-          categoryName: item.categoryName,
-          description: item.description
-        })),
-        summary: `Gestão de Aluguéis - ${property.title} (${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear})`,
-        totalIncome,
-        totalExpense,
-        balance
-      };
 
       const defaultCategory = categories.find(c => c.type === (balance >= 0 ? 'income' : 'expense'));
 
@@ -203,7 +229,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
         transaction_type: balance >= 0 ? 'income' : 'expense',
         category: defaultCategory?.id || '',
         subcategory: 'rental-management',
-        description: JSON.stringify(rentalDetails),
+        description: description, // Usar a descrição editável como texto simples
         transaction_date: formattedDate,
         property_id: property.id,
         payment_method: null,
@@ -260,7 +286,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
           {/* Month/Year Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Mês</label>
+              <label className="text-sm font-medium">Mês de Recebimento</label>
               <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -300,6 +326,20 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
             onRemoveItem={removeItem}
             onAddItem={addItem}
           />
+
+          {/* Description Field */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Descrição</label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descrição da gestão de aluguéis..."
+              className="min-h-[120px]"
+            />
+            <p className="text-xs text-gray-500">
+              Esta descrição será salva na transação financeira e pode ser editada conforme necessário.
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
@@ -308,7 +348,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSubmitting || items.length === 0}
+            disabled={isSubmitting || items.length === 0 || !description.trim()}
             className="h-8 text-xs"
           >
             {isSubmitting ? 'Salvando...' : 'Salvar Gestão'}

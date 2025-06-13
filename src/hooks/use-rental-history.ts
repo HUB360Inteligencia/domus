@@ -17,6 +17,7 @@ export interface RentalHistoryItem {
   balance: number;
   individualItems: RentalItem[];
   transactionId: string;
+  description: string;
 }
 
 export const useRentalHistory = (propertyId: string) => {
@@ -37,10 +38,36 @@ export const useRentalHistory = (propertyId: string) => {
 
       return data.map(transaction => {
         let parsedDescription = null;
+        let individualItems: RentalItem[] = [];
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let balance = 0;
+
+        // Tentar fazer parse da descrição se for JSON
         try {
-          parsedDescription = JSON.parse(transaction.description || '{}');
+          if (transaction.description && transaction.description.trim().startsWith('{')) {
+            parsedDescription = JSON.parse(transaction.description);
+            individualItems = parsedDescription?.items || [];
+            totalIncome = parsedDescription?.totalIncome || 0;
+            totalExpense = parsedDescription?.totalExpense || 0;
+            balance = parsedDescription?.balance || transaction.amount || 0;
+          }
         } catch (e) {
-          console.error('Error parsing transaction description:', e);
+          // Se não for JSON válido, não é problema - usamos valores padrão
+          console.log('Description is not JSON, using transaction amount as balance');
+        }
+
+        // Se não conseguimos extrair dados do JSON, usar dados da transação
+        if (!parsedDescription) {
+          balance = transaction.transaction_type === 'income' 
+            ? Number(transaction.amount) 
+            : -Number(transaction.amount);
+          
+          if (transaction.transaction_type === 'income') {
+            totalIncome = Number(transaction.amount);
+          } else {
+            totalExpense = Number(transaction.amount);
+          }
         }
 
         const monthYear = transaction.transaction_date 
@@ -49,11 +76,12 @@ export const useRentalHistory = (propertyId: string) => {
 
         return {
           monthYear,
-          totalIncome: parsedDescription?.totalIncome || 0,
-          totalExpense: parsedDescription?.totalExpense || 0,
-          balance: parsedDescription?.balance || transaction.amount || 0,
-          individualItems: parsedDescription?.items || [],
-          transactionId: transaction.id
+          totalIncome,
+          totalExpense,
+          balance,
+          individualItems,
+          transactionId: transaction.id,
+          description: transaction.description || ''
         };
       });
     },
