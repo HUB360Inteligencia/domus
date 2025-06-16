@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { PropertyOccupancyWidget } from '@/components/finances/dashboard/PropertyOccupancyWidget';
 import { PatrimonyWidget } from '@/components/finances/dashboard/PatrimonyWidget';
 import { MonthlyROIWidget } from '@/components/finances/dashboard/MonthlyROIWidget';
@@ -9,9 +10,14 @@ import { ROITypesWidget } from '@/components/finances/dashboard/ROITypesWidget';
 import { PropertyFilters } from '@/components/finances/dashboard/PropertyFilters';
 import { PropertyAnalyticsTable } from '@/components/finances/dashboard/PropertyAnalyticsTable';
 import { PropertyAnalyticsSummary } from '@/components/finances/dashboard/PropertyAnalyticsSummary';
+import { PropertyDetailModal } from '@/components/finances/dashboard/PropertyDetailModal';
 import { usePropertyAnalytics } from '@/hooks/use-property-analytics';
 import { PropertyAnalyticsData } from '@/api/property-analytics';
+
 export default function FinanceDashboardPage() {
+  const [selectedProperty, setSelectedProperty] = useState<PropertyAnalyticsData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const {
     analyticsData,
     filterOptions,
@@ -21,11 +27,19 @@ export default function FinanceDashboardPage() {
     updateFilters,
     clearFilters
   } = usePropertyAnalytics();
+
   const handlePropertyClick = (property: PropertyAnalyticsData) => {
-    // TODO: Implementar modal de detalhes da propriedade (Fase 3)
-    console.log('Clicked property:', property);
+    setSelectedProperty(property);
+    setIsModalOpen(true);
   };
-  return <div className="container py-6">
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProperty(null);
+  };
+
+  return (
+    <div className="container py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard Financeiro</h1>
         <p className="text-gray-600">Análises avançadas e insights financeiros detalhados</p>
@@ -40,14 +54,31 @@ export default function FinanceDashboardPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Análise de Propriedades</h2>
           
           {/* Filtros */}
-          <PropertyFilters filters={filters} filterOptions={filterOptions} onFiltersChange={updateFilters} onClearFilters={clearFilters} />
+          <PropertyFilters 
+            filters={filters} 
+            filterOptions={filterOptions} 
+            onFiltersChange={updateFilters} 
+            onClearFilters={clearFilters} 
+          />
           
           {/* Resumo Estatístico */}
           <PropertyAnalyticsSummary summary={summary} isLoading={isLoading} />
           
           {/* Tabela Principal */}
-          <PropertyAnalyticsTable data={analyticsData} isLoading={isLoading} onPropertyClick={handlePropertyClick} />
+          <PropertyAnalyticsTable 
+            data={analyticsData} 
+            isLoading={isLoading} 
+            onPropertyClick={handlePropertyClick} 
+          />
         </div>
       </div>
-    </div>;
+
+      {/* Modal Detalhado */}
+      <PropertyDetailModal
+        property={selectedProperty}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
+    </div>
+  );
 }
