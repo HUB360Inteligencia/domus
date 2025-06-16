@@ -54,14 +54,14 @@ export function PropertyFilters({
           <div className="space-y-2">
             <Label htmlFor="city" className="text-xs">Cidade</Label>
             <Select
-              value={filters.city || ''}
-              onValueChange={(value) => onFiltersChange({ city: value || undefined })}
+              value={filters.city || 'all'}
+              onValueChange={(value) => onFiltersChange({ city: value === 'all' ? undefined : value })}
             >
               <SelectTrigger className="h-8">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as cidades</SelectItem>
+                <SelectItem value="all">Todas as cidades</SelectItem>
                 {filterOptions.cities.map((city) => (
                   <SelectItem key={city} value={city}>
                     {city}
@@ -75,14 +75,14 @@ export function PropertyFilters({
           <div className="space-y-2">
             <Label htmlFor="neighborhood" className="text-xs">Bairro</Label>
             <Select
-              value={filters.neighborhood || ''}
-              onValueChange={(value) => onFiltersChange({ neighborhood: value || undefined })}
+              value={filters.neighborhood || 'all'}
+              onValueChange={(value) => onFiltersChange({ neighborhood: value === 'all' ? undefined : value })}
             >
               <SelectTrigger className="h-8">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os bairros</SelectItem>
+                <SelectItem value="all">Todos os bairros</SelectItem>
                 {filterOptions.neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood} value={neighborhood}>
                     {neighborhood}
@@ -96,14 +96,14 @@ export function PropertyFilters({
           <div className="space-y-2">
             <Label htmlFor="type" className="text-xs">Tipo</Label>
             <Select
-              value={filters.propertyType || ''}
-              onValueChange={(value) => onFiltersChange({ propertyType: value || undefined })}
+              value={filters.propertyType || 'all'}
+              onValueChange={(value) => onFiltersChange({ propertyType: value === 'all' ? undefined : value })}
             >
               <SelectTrigger className="h-8">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os tipos</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
                 {filterOptions.types.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -117,14 +117,14 @@ export function PropertyFilters({
           <div className="space-y-2">
             <Label htmlFor="status" className="text-xs">Status</Label>
             <Select
-              value={filters.status || ''}
-              onValueChange={(value) => onFiltersChange({ status: value || undefined })}
+              value={filters.status || 'all'}
+              onValueChange={(value) => onFiltersChange({ status: value === 'all' ? undefined : value })}
             >
               <SelectTrigger className="h-8">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 {filterOptions.statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
