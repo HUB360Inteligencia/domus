@@ -160,7 +160,7 @@ export function PropertyFinancialChartsTab({ property }: PropertyFinancialCharts
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Vacância Meta: <10%</span>
+                  <span className="text-sm text-muted-foreground">Vacância Meta: &lt;10%</span>
                   <span className={`text-sm font-medium ${property.vacancyRate < 10 ? 'text-green-600' : 'text-red-600'}`}>
                     {property.vacancyRate < 10 ? 'Alcançado' : 'Acima'}
                   </span>
