@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, BarChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart, CheckCircle, AlertCircle } from 'lucide-react';
 import { Property } from '@/types/property';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { useContractsByProperty } from '@/hooks/use-contracts-by-property';
 import { usePropertyTransactions } from '@/hooks/use-property-transactions';
 
@@ -27,29 +28,26 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
     }).format(value);
   };
 
-  const calculateMonthlyYield = () => {
-    // Priorizar valor do contrato ativo sobre rental_value da propriedade
+  const calculateMonthlyContractValue = () => {
+    // Usar APENAS o valor do contrato ativo
     if (activeContract?.value) {
       return activeContract.value;
-    }
-    if (property?.rental_value) {
-      return property.rental_value;
     }
     return null;
   };
 
-  const calculateROIOnMarketValue = () => {
-    const monthlyRent = calculateMonthlyYield();
+  const calculateMonthlyROIOnMarketValue = () => {
+    const monthlyRent = calculateMonthlyContractValue();
     if (!monthlyRent || !property?.value) return null;
-    const annualRental = monthlyRent * 12;
-    return (annualRental / property.value) * 100;
+    // ROI MENSAL (não anualizado)
+    return (monthlyRent / property.value) * 100;
   };
 
-  const calculateROIOnPurchaseValue = () => {
-    const monthlyRent = calculateMonthlyYield();
+  const calculateMonthlyROIOnPurchaseValue = () => {
+    const monthlyRent = calculateMonthlyContractValue();
     if (!monthlyRent || !property?.purchase_value) return null;
-    const annualRental = monthlyRent * 12;
-    return (annualRental / property.purchase_value) * 100;
+    // ROI MENSAL (não anualizado)
+    return (monthlyRent / property.purchase_value) * 100;
   };
 
   const formatROI = (roi: number | null) => {
@@ -57,14 +55,14 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
       return {
         value: 'N/A',
         isPositive: false,
-        icon: TrendingUp,
+        icon: AlertCircle,
         colorClass: 'text-muted-foreground'
       };
     }
     
     const isPositive = roi >= 0;
     return {
-      value: `${roi >= 0 ? '+' : ''}${roi.toFixed(2)}%`,
+      value: `${roi >= 0 ? '+' : ''}${roi.toFixed(3)}%`,
       isPositive,
       icon: isPositive ? TrendingUp : TrendingDown,
       colorClass: isPositive ? 'text-green-600' : 'text-red-600'
@@ -75,7 +73,7 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Rendimento Mensal</CardTitle>
+          <CardTitle className="text-lg">ROI Mensal do Contrato</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3, 4].map((i) => (
@@ -89,28 +87,43 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
     );
   }
 
-  const monthlyYield = calculateMonthlyYield();
-  const roiOnMarket = calculateROIOnMarketValue();
-  const roiOnPurchase = calculateROIOnPurchaseValue();
+  const monthlyContractValue = calculateMonthlyContractValue();
+  const roiOnMarket = calculateMonthlyROIOnMarketValue();
+  const roiOnPurchase = calculateMonthlyROIOnPurchaseValue();
 
   const roiMarketFormatted = formatROI(roiOnMarket);
   const roiPurchaseFormatted = formatROI(roiOnPurchase);
 
+  const hasActiveContract = !!activeContract;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
-          Rendimento Mensal
+        <CardTitle className="text-lg flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            ROI Mensal do Contrato
+          </div>
+          {hasActiveContract ? (
+            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Contrato Ativo
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Sem Contrato
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">
-            {activeContract ? 'Valor do Contrato' : 'Aluguel Mensal'}
+            Valor do Contrato Mensal
           </span>
-          <span className="font-medium text-lg">
-            {formatCurrency(monthlyYield)}
+          <span className={`font-medium text-lg ${hasActiveContract ? 'text-green-600' : 'text-muted-foreground'}`}>
+            {formatCurrency(monthlyContractValue)}
           </span>
         </div>
 
@@ -133,7 +146,7 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">ROI sobre Valor de Mercado</span>
+          <span className="text-sm text-muted-foreground">ROI Mensal do Contrato s/ Valor de Mercado</span>
           <div className="flex items-center gap-1">
             {roiMarketFormatted.value !== 'N/A' && (
               <roiMarketFormatted.icon className={`h-4 w-4 ${roiMarketFormatted.colorClass}`} />
@@ -145,7 +158,7 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">ROI sobre Valor de Compra</span>
+          <span className="text-sm text-muted-foreground">ROI Mensal do Contrato s/ Valor de Compra</span>
           <div className="flex items-center gap-1">
             {roiPurchaseFormatted.value !== 'N/A' && (
               <roiPurchaseFormatted.icon className={`h-4 w-4 ${roiPurchaseFormatted.colorClass}`} />
@@ -156,17 +169,25 @@ export const PropertyMonthlyYieldCard: React.FC<PropertyMonthlyYieldCardProps> =
           </div>
         </div>
 
-        {monthlyYield && (
+        {!hasActiveContract && (
+          <div className="pt-2 border-t bg-gray-50 -mx-6 -mb-6 p-4 rounded-b-lg">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <span>Nenhum contrato ativo encontrado. ROI baseado em contrato não disponível.</span>
+            </div>
+          </div>
+        )}
+
+        {hasActiveContract && monthlyContractValue && (
           <div className="pt-2 border-t">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Receita Anual Estimada</span>
-              <span>{formatCurrency(monthlyYield * 12)}</span>
+              <span>Receita Anual Estimada (Contrato)</span>
+              <span>{formatCurrency(monthlyContractValue * 12)}</span>
             </div>
-            {activeContract && (
-              <div className="flex justify-between items-center text-xs text-green-600 mt-1">
-                <span>Baseado em contrato ativo</span>
-              </div>
-            )}
+            <div className="flex justify-between items-center text-xs text-green-600 mt-1">
+              <span>Baseado em contrato ativo</span>
+              <CheckCircle className="h-3 w-3" />
+            </div>
           </div>
         )}
       </CardContent>
