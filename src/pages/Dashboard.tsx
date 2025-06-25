@@ -202,8 +202,8 @@ export default function Dashboard() {
           <MiniTrendsWidget />
         </div>
         
-        {/* LINHA 3 - Tipos de Imóveis Expandido + Atividades (4 colunas) */}
-        <div className="lg:col-span-3">
+        {/* LINHA 3 - Tipos de Imóveis + Atividades Expandido (4 colunas) */}
+        <div className="lg:col-span-2">
           <CompactDonutChart
             title="Tipos de Imóveis"
             data={propertyTypesData}
@@ -211,7 +211,7 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <CompactActivitiesWidget />
         </div>
         
