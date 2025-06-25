@@ -54,12 +54,12 @@ export function MiniTrendsWidget() {
 
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow bg-gray-25 border-gray-100 h-60 overflow-hidden">
-      <CardContent className="p-4 h-full flex flex-col">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex-shrink-0">Resultado Financeiro Anual</h3>
+      <CardContent className="p-3 h-full flex flex-col">
+        <h3 className="text-sm font-semibold text-gray-900 mb-2 flex-shrink-0">Resultado Financeiro Anual</h3>
         
-        <div className="flex-1 space-y-4 overflow-hidden min-h-0">
+        <div className="flex-1 space-y-2 overflow-hidden min-h-0">
           {trends.map((item, index) => (
-            <div key={index} className="flex items-center justify-between py-2">
+            <div key={index} className="flex items-center justify-between py-1">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-gray-600 mb-1">{item.label}</div>
                 <div className="text-sm font-semibold text-gray-900 truncate">{item.value}</div>
