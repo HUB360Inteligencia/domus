@@ -1,28 +1,20 @@
+
 import React from 'react';
 import { DashboardKPICard } from '@/components/dashboard/DashboardKPICard';
 import { CompactDonutChart } from '@/components/dashboard/CompactDonutChart';
-import { HorizontalBarChart } from '@/components/dashboard/HorizontalBarChart';
 import { MiniTrendsWidget } from '@/components/dashboard/MiniTrendsWidget';
 import { CompactActivitiesWidget } from '@/components/dashboard/CompactActivitiesWidget';
 import { AssetGrowthChartWidget } from '@/components/dashboard/AssetGrowthChartWidget';
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
 import { useProperties } from '@/hooks/use-properties';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
-import { useQuery } from '@tanstack/react-query';
-import { fetchNeighborhoodFinancialData } from '@/api/neighborhood-financial-data';
 import { formatCurrency } from '@/utils/currency';
-import { Home, DollarSign, Target, MapPin } from 'lucide-react';
+import { Home, DollarSign, Target } from 'lucide-react';
 
 export default function Dashboard() {
   const metrics = useDashboardMetrics();
   const { properties } = useProperties();
   const { transactions } = useFinancialTransactions();
-
-  // Buscar dados reais dos bairros
-  const { data: realNeighborhoodData = [], isLoading: isLoadingNeighborhoods } = useQuery({
-    queryKey: ['neighborhood-financial-data'],
-    queryFn: fetchNeighborhoodFinancialData
-  });
 
   // Tradução de tipos de imóveis
   const translatePropertyType = (type: string) => {
@@ -146,7 +138,7 @@ export default function Dashboard() {
 
   return (
     <div className="container py-4">
-      {/* Grid Layout corrigido para eliminar espaços vazios */}
+      {/* Grid Layout reorganizado */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* LINHA 1 - KPIs Principais + Performance (4 colunas) */}
@@ -210,37 +202,8 @@ export default function Dashboard() {
           <MiniTrendsWidget />
         </div>
         
-        {/* LINHA 3 - Rankings e Atividades (4 colunas) */}
-        <div className="lg:col-span-1">
-          <HorizontalBarChart
-            title="Top Propriedades"
-            subtitle="por rentabilidade"
-            data={[
-              { name: 'Apt Centro', value: 2500 },
-              { name: 'Casa Jardins', value: 2200 },
-              { name: 'Sala Comercial', value: 1800 },
-              { name: 'Apt Novo', value: 1500 }
-            ]}
-            variant="slate"
-            valueFormatter={(value) => formatCurrency(value)}
-          />
-        </div>
-        
-        <div className="lg:col-span-1">
-          <HorizontalBarChart
-            title="Bairros Rentáveis"
-            subtitle="ROI médio últimos 12 meses"
-            data={realNeighborhoodData.slice(0, 4).map(neighborhood => ({
-              name: neighborhood.name,
-              value: neighborhood.roi
-            }))}
-            variant="gray"
-            valueFormatter={(value) => `${value.toFixed(1)}%`}
-            isLoading={isLoadingNeighborhoods}
-          />
-        </div>
-        
-        <div className="lg:col-span-1">
+        {/* LINHA 3 - Tipos de Imóveis Expandido + Atividades (4 colunas) */}
+        <div className="lg:col-span-3">
           <CompactDonutChart
             title="Tipos de Imóveis"
             data={propertyTypesData}

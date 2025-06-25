@@ -28,7 +28,7 @@ export function PatrimonyChart({ data, viewMode, isLoading }: PatrimonyChartProp
 
   if (isLoading) {
     return (
-      <div className="h-48 flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-sm text-gray-500">Carregando...</div>
       </div>
     );
@@ -36,16 +36,16 @@ export function PatrimonyChart({ data, viewMode, isLoading }: PatrimonyChartProp
 
   if (!data || data.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-sm text-gray-500">Nenhum dado disponível</div>
       </div>
     );
   }
 
   return (
-    <MinimalChart config={chartConfig} height="h-48">
+    <MinimalChart config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
           <XAxis 
             dataKey="month" 
             axisLine={false}

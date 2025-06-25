@@ -49,16 +49,16 @@ export function CompactDonutChart({
       <CardContent className="p-4">
         <h3 className="text-sm font-semibold text-gray-900 mb-2 truncate">{title}</h3>
         
-        <div className="flex items-center justify-between">
-          <div className="w-24 h-24 flex-shrink-0">
+        <div className="flex items-center justify-between h-32">
+          <div className="w-32 h-32 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={data}
                   cx="50%"
                   cy="50%"
-                  innerRadius={20}
-                  outerRadius={40}
+                  innerRadius={30}
+                  outerRadius={60}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -83,19 +83,19 @@ export function CompactDonutChart({
             </ResponsiveContainer>
           </div>
           
-          <div className="flex-1 ml-3 space-y-1 overflow-hidden">
-            {data.slice(0, 4).map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="flex-1 ml-6 space-y-2 overflow-hidden">
+            {data.slice(0, 6).map((item, index) => (
+              <div key={item.name} className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
                   <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.color || colors[index % colors.length] }}
                   />
-                  <span className="text-gray-700 truncate max-w-[60px]" title={item.name}>
+                  <span className="text-gray-700 truncate" title={item.name}>
                     {item.name}
                   </span>
                 </div>
-                <span className="text-gray-900 font-medium ml-2">{item.value}</span>
+                <span className="text-gray-900 font-medium ml-3">{item.value}</span>
               </div>
             ))}
           </div>

@@ -14,7 +14,7 @@ export function MinimalChart({
   children, 
   config, 
   className,
-  height = "h-48"
+  height = "h-full"
 }: MinimalChartProps) {
   return (
     <div className={cn("w-full", height, className)}>
