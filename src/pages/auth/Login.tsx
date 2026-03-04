@@ -28,7 +28,7 @@ export default function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success('Login realizado com sucesso!');
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       toast.error('Erro ao fazer login');
