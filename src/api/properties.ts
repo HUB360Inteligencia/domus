@@ -83,6 +83,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
+      features: data.features as any,
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
