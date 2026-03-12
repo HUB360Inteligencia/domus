@@ -36,6 +36,7 @@ export const fetchProperties = async (): Promise<Property[]> => {
       ...item,
       status: item.status as PropertyStatus,
       furnished: item.furnished as FurnishedStatus,
+      features: item.features as any,
       tags: item.tags || [],
       rental_value: item.rental_value || 0,
       land_area: item.land_area || 0
