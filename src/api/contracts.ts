@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue } from '@/types/contract';
+import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue, RecurringTransaction } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
 
 // Helper function to ensure proper type conversion
