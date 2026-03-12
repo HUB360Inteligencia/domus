@@ -209,6 +209,7 @@ export const updatePropertyCoordinates = async ({
     ...data,
     status: data.status as PropertyStatus,
     furnished: data.furnished as FurnishedStatus,
+    features: data.features as any,
     tags: data.tags || []
   };
 };
