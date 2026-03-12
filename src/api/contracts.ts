@@ -238,31 +238,7 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
 
   console.log('Contract updated successfully:', updatedData.id);
 
-  return {
-    ...updatedData,
-    status: updatedData.status as ContractStatus,
-    signature_status: updatedData.signature_status as SignatureStatus,
-    // Add default values for new fields
-    has_variable_rent: updatedData.has_variable_rent ?? false,
-    variable_rent_values: convertJsonToVariableRentValues(updatedData.variable_rent_values),
-    payment_due_day: updatedData.payment_due_day ?? updatedData.payment_day,
-    on_time_discount_percentage: updatedData.on_time_discount_percentage ?? null,
-    late_fee_percentage: updatedData.late_fee_percentage ?? null,
-    is_discount_not_fee: updatedData.is_discount_not_fee ?? true,
-    late_interest_percentage: updatedData.late_interest_percentage ?? null,
-    late_daily_interest: updatedData.late_daily_interest ?? null,
-    fine_percentage: updatedData.fine_percentage ?? null,
-    payment_terms: updatedData.payment_terms ?? null,
-    // Novos campos
-    adjustment_index: updatedData.adjustment_index ?? null,
-    adjustment_date: updatedData.adjustment_date ?? null,
-    agency_name: updatedData.agency_name ?? null,
-    agency_contact: updatedData.agency_contact ?? null,
-    agency_responsible_name: updatedData.agency_responsible_name ?? null,
-    agency_responsible_contact: updatedData.agency_responsible_contact ?? null,
-    commission_type: updatedData.commission_type as 'percentage' | 'monetary' | null ?? null,
-    commission_value: updatedData.commission_value ?? null
-  };
+  return mapRawToContract(updatedData);
 };
 
 /**
