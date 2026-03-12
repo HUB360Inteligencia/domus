@@ -127,6 +127,7 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
+      features: data.features as any,
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
