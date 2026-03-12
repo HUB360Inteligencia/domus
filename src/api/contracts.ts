@@ -151,32 +151,7 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       return null;
     }
 
-    // Transform the data to ensure contract types are correctly cast and all fields are present
-    return {
-      ...data,
-      status: data.status as ContractStatus,
-      signature_status: data.signature_status as SignatureStatus,
-      // Add default values for new fields
-      has_variable_rent: data.has_variable_rent ?? false,
-      variable_rent_values: convertJsonToVariableRentValues(data.variable_rent_values),
-      payment_due_day: data.payment_due_day ?? data.payment_day,
-      on_time_discount_percentage: data.on_time_discount_percentage ?? null,
-      late_fee_percentage: data.late_fee_percentage ?? null,
-      is_discount_not_fee: data.is_discount_not_fee ?? true,
-      late_interest_percentage: data.late_interest_percentage ?? null,
-      late_daily_interest: data.late_daily_interest ?? null,
-      fine_percentage: data.fine_percentage ?? null,
-      payment_terms: data.payment_terms ?? null,
-      // Novos campos
-      adjustment_index: data.adjustment_index ?? null,
-      adjustment_date: data.adjustment_date ?? null,
-      agency_name: data.agency_name ?? null,
-      agency_contact: data.agency_contact ?? null,
-      agency_responsible_name: data.agency_responsible_name ?? null,
-      agency_responsible_contact: data.agency_responsible_contact ?? null,
-      commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
-      commission_value: data.commission_value ?? null
-    };
+    return mapRawToContract(data);
   } catch (err) {
     console.error(`Failed to fetch contract ${id}:`, err);
     throw err;
