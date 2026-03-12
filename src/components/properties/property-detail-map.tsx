@@ -23,7 +23,7 @@ export const PropertyDetailMap: React.FC<PropertyDetailMapProps> = ({ property }
     }
 
     // Check if Mapbox token is available
-    const mapboxToken = localStorage.getItem('mapbox_token') || process.env.MAPBOX_ACCESS_TOKEN;
+    const mapboxToken = localStorage.getItem('mapbox_token') || (import.meta.env.MAPBOX_ACCESS_TOKEN as string);
     
     if (!mapboxToken) {
       setMapError('Token do Mapbox não configurado. Configure o token nas configurações do sistema.');

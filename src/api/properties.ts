@@ -36,6 +36,7 @@ export const fetchProperties = async (): Promise<Property[]> => {
       ...item,
       status: item.status as PropertyStatus,
       furnished: item.furnished as FurnishedStatus,
+      features: item.features as any,
       tags: item.tags || [],
       rental_value: item.rental_value || 0,
       land_area: item.land_area || 0
@@ -82,6 +83,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
+      features: data.features as any,
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
@@ -125,6 +127,7 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
+      features: data.features as any,
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
@@ -163,6 +166,7 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       ...updatedData,
       status: updatedData.status as PropertyStatus,
       furnished: updatedData.furnished as FurnishedStatus,
+      features: updatedData.features as any,
       tags: updatedData.tags || [],
       rental_value: updatedData.rental_value || 0,
       land_area: updatedData.land_area || 0
@@ -205,6 +209,7 @@ export const updatePropertyCoordinates = async ({
     ...data,
     status: data.status as PropertyStatus,
     furnished: data.furnished as FurnishedStatus,
+    features: data.features as any,
     tags: data.tags || []
   };
 };

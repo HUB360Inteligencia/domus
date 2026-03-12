@@ -20,7 +20,7 @@ export const useContractsByProperty = (propertyId: string | null) => {
         throw new Error(error.message);
       }
 
-      return data as Contract[];
+      return data as unknown as Contract[];
     },
     enabled: !!propertyId,
     staleTime: 1000 * 60 * 5, // 5 minutes

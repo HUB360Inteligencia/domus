@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue } from '@/types/contract';
+import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue, RecurringTransaction } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
 
 // Helper function to ensure proper type conversion
@@ -21,6 +21,46 @@ const convertVariableRentValuesToJson = (values: VariableRentValue[] | null | un
   if (!values) return null;
   return values as unknown as Json;
 };
+
+// Helper to convert recurring_transactions from Json
+const convertJsonToRecurringTransactions = (jsonValue: Json | null): RecurringTransaction[] | null => {
+  if (!jsonValue) return null;
+  try {
+    if (typeof jsonValue === 'string') {
+      return JSON.parse(jsonValue);
+    }
+    return jsonValue as unknown as RecurringTransaction[];
+  } catch (e) {
+    console.error('Error parsing recurring_transactions:', e);
+    return null;
+  }
+};
+
+// Helper to cast a raw Supabase contract row to our Contract type
+const mapRawToContract = (item: any): Contract => ({
+  ...item,
+  status: item.status as ContractStatus,
+  signature_status: item.signature_status as SignatureStatus,
+  has_variable_rent: item.has_variable_rent ?? false,
+  variable_rent_values: convertJsonToVariableRentValues(item.variable_rent_values),
+  recurring_transactions: convertJsonToRecurringTransactions(item.recurring_transactions),
+  payment_due_day: item.payment_due_day ?? item.payment_day,
+  on_time_discount_percentage: item.on_time_discount_percentage ?? null,
+  late_fee_percentage: item.late_fee_percentage ?? null,
+  is_discount_not_fee: item.is_discount_not_fee ?? true,
+  late_interest_percentage: item.late_interest_percentage ?? null,
+  late_daily_interest: item.late_daily_interest ?? null,
+  fine_percentage: item.fine_percentage ?? null,
+  payment_terms: item.payment_terms ?? null,
+  adjustment_index: item.adjustment_index ?? null,
+  adjustment_date: item.adjustment_date ?? null,
+  agency_name: item.agency_name ?? null,
+  agency_contact: item.agency_contact ?? null,
+  agency_responsible_name: item.agency_responsible_name ?? null,
+  agency_responsible_contact: item.agency_responsible_contact ?? null,
+  commission_type: (item.commission_type as 'percentage' | 'monetary' | null) ?? null,
+  commission_value: item.commission_value ?? null,
+});
 
 /**
  * Fetches all contracts for the current user
@@ -62,32 +102,7 @@ export const fetchContracts = async (): Promise<Contract[]> => {
       return [];
     }
 
-    // Transform the data to ensure contract types are correctly cast and all fields are present
-    return data.map(item => ({
-      ...item,
-      status: item.status as ContractStatus,
-      signature_status: item.signature_status as SignatureStatus,
-      // Add default values for fields that might not exist in the database yet
-      has_variable_rent: item.has_variable_rent ?? false,
-      variable_rent_values: convertJsonToVariableRentValues(item.variable_rent_values),
-      payment_due_day: item.payment_due_day ?? item.payment_day,
-      on_time_discount_percentage: item.on_time_discount_percentage ?? null,
-      late_fee_percentage: item.late_fee_percentage ?? null,
-      is_discount_not_fee: item.is_discount_not_fee ?? true,
-      late_interest_percentage: item.late_interest_percentage ?? null,
-      late_daily_interest: item.late_daily_interest ?? null,
-      fine_percentage: item.fine_percentage ?? null,
-      payment_terms: item.payment_terms ?? null,
-      // Novos campos com valores padrão
-      adjustment_index: item.adjustment_index ?? null,
-      adjustment_date: item.adjustment_date ?? null,
-      agency_name: item.agency_name ?? null,
-      agency_contact: item.agency_contact ?? null,
-      agency_responsible_name: item.agency_responsible_name ?? null,
-      agency_responsible_contact: item.agency_responsible_contact ?? null,
-      commission_type: item.commission_type as 'percentage' | 'monetary' | null ?? null,
-      commission_value: item.commission_value ?? null
-    }));
+    return data.map(mapRawToContract);
   } catch (err) {
     console.error('Failed to fetch contracts:', err);
     throw err;
@@ -136,32 +151,7 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       return null;
     }
 
-    // Transform the data to ensure contract types are correctly cast and all fields are present
-    return {
-      ...data,
-      status: data.status as ContractStatus,
-      signature_status: data.signature_status as SignatureStatus,
-      // Add default values for new fields
-      has_variable_rent: data.has_variable_rent ?? false,
-      variable_rent_values: convertJsonToVariableRentValues(data.variable_rent_values),
-      payment_due_day: data.payment_due_day ?? data.payment_day,
-      on_time_discount_percentage: data.on_time_discount_percentage ?? null,
-      late_fee_percentage: data.late_fee_percentage ?? null,
-      is_discount_not_fee: data.is_discount_not_fee ?? true,
-      late_interest_percentage: data.late_interest_percentage ?? null,
-      late_daily_interest: data.late_daily_interest ?? null,
-      fine_percentage: data.fine_percentage ?? null,
-      payment_terms: data.payment_terms ?? null,
-      // Novos campos
-      adjustment_index: data.adjustment_index ?? null,
-      adjustment_date: data.adjustment_date ?? null,
-      agency_name: data.agency_name ?? null,
-      agency_contact: data.agency_contact ?? null,
-      agency_responsible_name: data.agency_responsible_name ?? null,
-      agency_responsible_contact: data.agency_responsible_contact ?? null,
-      commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
-      commission_value: data.commission_value ?? null
-    };
+    return mapRawToContract(data);
   } catch (err) {
     console.error(`Failed to fetch contract ${id}:`, err);
     throw err;
@@ -185,12 +175,14 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
     });
   }
 
-  // Convert variable_rent_values to JSON for Supabase
+  // Convert variable_rent_values and recurring_transactions to JSON for Supabase
+  const { recurring_transactions, ...restData } = contractData;
   const supabaseData = {
-    ...contractData,
+    ...restData,
     variable_rent_values: convertVariableRentValuesToJson(contractData.variable_rent_values),
+    recurring_transactions: recurring_transactions ? (recurring_transactions as unknown as Json) : undefined,
     user_id: user.data.user?.id,
-  };
+  } as any;
   
   const { data, error } = await supabase
     .from('contracts')
@@ -205,32 +197,7 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
 
   console.log('Contract created successfully:', data.id);
 
-  // Transform the data to ensure contract types are correctly cast
-  return {
-    ...data,
-    status: data.status as ContractStatus,
-    signature_status: data.signature_status as SignatureStatus,
-    // Add default values for new fields that might not exist in the database yet
-    has_variable_rent: data.has_variable_rent ?? false,
-    variable_rent_values: convertJsonToVariableRentValues(data.variable_rent_values),
-    payment_due_day: data.payment_due_day ?? data.payment_day,
-    on_time_discount_percentage: data.on_time_discount_percentage ?? null,
-    late_fee_percentage: data.late_fee_percentage ?? null,
-    is_discount_not_fee: data.is_discount_not_fee ?? true,
-    late_interest_percentage: data.late_interest_percentage ?? null,
-    late_daily_interest: data.late_daily_interest ?? null,
-    fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null,
-    // Novos campos
-    adjustment_index: data.adjustment_index ?? null,
-    adjustment_date: data.adjustment_date ?? null,
-    agency_name: data.agency_name ?? null,
-    agency_contact: data.agency_contact ?? null,
-    agency_responsible_name: data.agency_responsible_name ?? null,
-    agency_responsible_contact: data.agency_responsible_contact ?? null,
-    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
-    commission_value: data.commission_value ?? null
-  };
+  return mapRawToContract(data);
 };
 
 /**
@@ -249,11 +216,13 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     });
   }
   
-  // Convert variable_rent_values to JSON for Supabase
+  // Convert for Supabase - cast recurring_transactions too
+  const { recurring_transactions: rt, property, ...restUpdateData } = data;
   const supabaseData = {
-    ...data,
+    ...restUpdateData,
     variable_rent_values: data.variable_rent_values ? convertVariableRentValuesToJson(data.variable_rent_values) : undefined,
-  };
+    recurring_transactions: rt ? (rt as unknown as Json) : undefined,
+  } as any;
   
   const { data: updatedData, error } = await supabase
     .from('contracts')
@@ -269,31 +238,7 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
 
   console.log('Contract updated successfully:', updatedData.id);
 
-  return {
-    ...updatedData,
-    status: updatedData.status as ContractStatus,
-    signature_status: updatedData.signature_status as SignatureStatus,
-    // Add default values for new fields
-    has_variable_rent: updatedData.has_variable_rent ?? false,
-    variable_rent_values: convertJsonToVariableRentValues(updatedData.variable_rent_values),
-    payment_due_day: updatedData.payment_due_day ?? updatedData.payment_day,
-    on_time_discount_percentage: updatedData.on_time_discount_percentage ?? null,
-    late_fee_percentage: updatedData.late_fee_percentage ?? null,
-    is_discount_not_fee: updatedData.is_discount_not_fee ?? true,
-    late_interest_percentage: updatedData.late_interest_percentage ?? null,
-    late_daily_interest: updatedData.late_daily_interest ?? null,
-    fine_percentage: updatedData.fine_percentage ?? null,
-    payment_terms: updatedData.payment_terms ?? null,
-    // Novos campos
-    adjustment_index: updatedData.adjustment_index ?? null,
-    adjustment_date: updatedData.adjustment_date ?? null,
-    agency_name: updatedData.agency_name ?? null,
-    agency_contact: updatedData.agency_contact ?? null,
-    agency_responsible_name: updatedData.agency_responsible_name ?? null,
-    agency_responsible_contact: updatedData.agency_responsible_contact ?? null,
-    commission_type: updatedData.commission_type as 'percentage' | 'monetary' | null ?? null,
-    commission_value: updatedData.commission_value ?? null
-  };
+  return mapRawToContract(updatedData);
 };
 
 /**
@@ -499,31 +444,7 @@ export const updateContractStatus = async (
 
   console.log('Contract status updated successfully');
 
-  return {
-    ...data,
-    status: data.status as ContractStatus,
-    signature_status: data.signature_status as SignatureStatus,
-    // Add default values for new fields
-    has_variable_rent: data.has_variable_rent ?? false,
-    variable_rent_values: convertJsonToVariableRentValues(data.variable_rent_values),
-    payment_due_day: data.payment_due_day ?? data.payment_day,
-    on_time_discount_percentage: data.on_time_discount_percentage ?? null,
-    late_fee_percentage: data.late_fee_percentage ?? null,
-    is_discount_not_fee: data.is_discount_not_fee ?? true,
-    late_interest_percentage: data.late_interest_percentage ?? null,
-    late_daily_interest: data.late_daily_interest ?? null,
-    fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null,
-    // Novos campos
-    adjustment_index: data.adjustment_index ?? null,
-    adjustment_date: data.adjustment_date ?? null,
-    agency_name: data.agency_name ?? null,
-    agency_contact: data.agency_contact ?? null,
-    agency_responsible_name: data.agency_responsible_name ?? null,
-    agency_responsible_contact: data.agency_responsible_contact ?? null,
-    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
-    commission_value: data.commission_value ?? null
-  };
+  return mapRawToContract(data);
 };
 
 /**
@@ -549,31 +470,7 @@ export const updateSignatureStatus = async (
 
   console.log('Contract signature status updated successfully');
 
-  return {
-    ...data,
-    status: data.status as ContractStatus,
-    signature_status: data.signature_status as SignatureStatus,
-    // Add default values for new fields
-    has_variable_rent: data.has_variable_rent ?? false,
-    variable_rent_values: convertJsonToVariableRentValues(data.variable_rent_values),
-    payment_due_day: data.payment_due_day ?? data.payment_day,
-    on_time_discount_percentage: data.on_time_discount_percentage ?? null,
-    late_fee_percentage: data.late_fee_percentage ?? null,
-    is_discount_not_fee: data.is_discount_not_fee ?? true,
-    late_interest_percentage: data.late_interest_percentage ?? null,
-    late_daily_interest: data.late_daily_interest ?? null,
-    fine_percentage: data.fine_percentage ?? null,
-    payment_terms: data.payment_terms ?? null,
-    // Novos campos
-    adjustment_index: data.adjustment_index ?? null,
-    adjustment_date: data.adjustment_date ?? null,
-    agency_name: data.agency_name ?? null,
-    agency_contact: data.agency_contact ?? null,
-    agency_responsible_name: data.agency_responsible_name ?? null,
-    agency_responsible_contact: data.agency_responsible_contact ?? null,
-    commission_type: data.commission_type as 'percentage' | 'monetary' | null ?? null,
-    commission_value: data.commission_value ?? null
-  };
+  return mapRawToContract(data);
 };
 
 /**
