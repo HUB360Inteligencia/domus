@@ -292,7 +292,7 @@ export const fetchRecentContracts = async (): Promise<Contract[]> => {
       throw error;
     }
 
-    return data.map(item => ({
+    return data.map(item => item as unknown as Contract).map(item => ({
       ...item,
       status: item.status as ContractStatus,
       signature_status: item.signature_status as SignatureStatus,
