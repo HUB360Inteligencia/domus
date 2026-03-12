@@ -216,11 +216,13 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     });
   }
   
-  // Convert variable_rent_values to JSON for Supabase
+  // Convert for Supabase - cast recurring_transactions too
+  const { recurring_transactions: rt, property, ...restUpdateData } = data;
   const supabaseData = {
-    ...data,
+    ...restUpdateData,
     variable_rent_values: data.variable_rent_values ? convertVariableRentValuesToJson(data.variable_rent_values) : undefined,
-  };
+    recurring_transactions: rt ? (rt as unknown as Json) : undefined,
+  } as any;
   
   const { data: updatedData, error } = await supabase
     .from('contracts')
