@@ -175,12 +175,14 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
     });
   }
 
-  // Convert variable_rent_values to JSON for Supabase
+  // Convert variable_rent_values and recurring_transactions to JSON for Supabase
+  const { recurring_transactions, ...restData } = contractData;
   const supabaseData = {
-    ...contractData,
+    ...restData,
     variable_rent_values: convertVariableRentValuesToJson(contractData.variable_rent_values),
+    recurring_transactions: recurring_transactions ? (recurring_transactions as unknown as Json) : undefined,
     user_id: user.data.user?.id,
-  };
+  } as any;
   
   const { data, error } = await supabase
     .from('contracts')
