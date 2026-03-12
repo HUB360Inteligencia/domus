@@ -166,6 +166,7 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       ...updatedData,
       status: updatedData.status as PropertyStatus,
       furnished: updatedData.furnished as FurnishedStatus,
+      features: updatedData.features as any,
       tags: updatedData.tags || [],
       rental_value: updatedData.rental_value || 0,
       land_area: updatedData.land_area || 0
