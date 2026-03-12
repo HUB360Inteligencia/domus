@@ -53,7 +53,7 @@ export const createPropertyEnhanced = async (propertyData: Omit<PropertyFormData
     }
 
     console.log('Property created successfully:', data);
-    return data;
+    return data as unknown as Property;
     
   } catch (err: any) {
     console.error('Failed to create property:', err);
