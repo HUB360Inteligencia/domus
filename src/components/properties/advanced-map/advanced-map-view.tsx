@@ -183,7 +183,7 @@ export function AdvancedMapView({ properties, onSelect }: AdvancedMapViewProps) 
       )}
 
       {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env.DEV && (
         <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs p-2 rounded">
           <div>Ready: {isReady ? 'Yes' : 'No'}</div>
           <div>Loaded: {mapboxLoaded ? 'Yes' : 'No'}</div>
