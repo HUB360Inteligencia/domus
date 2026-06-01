@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { logger } from "@/lib/logger";
 import { 
   fetchNotifications, 
   createNotification, 
@@ -33,7 +34,7 @@ export const useNotifications = () => {
       toast.success('Notificação criada com sucesso!');
     },
     onError: (error: Error) => {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification:', error);
       toast.error(`Erro ao criar notificação: ${error.message}`);
     },
   });
@@ -44,7 +45,7 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: Error) => {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
       toast.error(`Erro ao marcar como lida: ${error.message}`);
     },
   });
@@ -56,7 +57,7 @@ export const useNotifications = () => {
       toast.success('Todas as notificações foram marcadas como lidas!');
     },
     onError: (error: Error) => {
-      console.error('Error marking all notifications as read:', error);
+      logger.error('Error marking all notifications as read:', error);
       toast.error(`Erro ao marcar todas como lidas: ${error.message}`);
     },
   });
@@ -68,7 +69,7 @@ export const useNotifications = () => {
       toast.success('Notificação excluída com sucesso!');
     },
     onError: (error: Error) => {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification:', error);
       toast.error(`Erro ao excluir notificação: ${error.message}`);
     },
   });
@@ -79,7 +80,7 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: Error) => {
-      console.error('Error checking contract expirations:', error);
+      logger.error('Error checking contract expirations:', error);
     },
   });
 
@@ -89,7 +90,7 @@ export const useNotifications = () => {
         await createNotificationMutation.mutateAsync(data);
         return true;
       } catch (error) {
-        console.error('Error adding notification:', error);
+        logger.error('Error adding notification:', error);
         return false;
       }
     },
@@ -102,7 +103,7 @@ export const useNotifications = () => {
         await markAsReadMutation.mutateAsync(notificationId);
         return true;
       } catch (error) {
-        console.error('Error marking as read:', error);
+        logger.error('Error marking as read:', error);
         return false;
       }
     },
@@ -115,7 +116,7 @@ export const useNotifications = () => {
         await markAllAsReadMutation.mutateAsync();
         return true;
       } catch (error) {
-        console.error('Error marking all as read:', error);
+        logger.error('Error marking all as read:', error);
         return false;
       }
     },
@@ -128,7 +129,7 @@ export const useNotifications = () => {
         await deleteNotificationMutation.mutateAsync(notificationId);
         return true;
       } catch (error) {
-        console.error('Error deleting notification:', error);
+        logger.error('Error deleting notification:', error);
         return false;
       }
     },
@@ -141,7 +142,7 @@ export const useNotifications = () => {
         await checkExpirationsMutation.mutateAsync();
         return true;
       } catch (error) {
-        console.error('Error checking expirations:', error);
+        logger.error('Error checking expirations:', error);
         return false;
       }
     },

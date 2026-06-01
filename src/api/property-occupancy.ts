@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyOccupancyPeriod, PropertyOccupancyFormData, OccupancyType } from '@/types/property-occupancy';
 
+import { logger } from "@/lib/logger";
 export const fetchPropertyOccupancyPeriods = async (propertyId: string): Promise<PropertyOccupancyPeriod[]> => {
   try {
     const { data, error } = await supabase
@@ -11,7 +12,7 @@ export const fetchPropertyOccupancyPeriods = async (propertyId: string): Promise
       .order('start_date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching property occupancy periods:', error);
+      logger.error('Error fetching property occupancy periods:', error);
       throw error;
     }
 
@@ -20,7 +21,7 @@ export const fetchPropertyOccupancyPeriods = async (propertyId: string): Promise
       occupancy_type: item.occupancy_type as OccupancyType
     }));
   } catch (err) {
-    console.error('Failed to fetch property occupancy periods:', err);
+    logger.error('Failed to fetch property occupancy periods:', err);
     throw err;
   }
 };
@@ -44,7 +45,7 @@ export const createPropertyOccupancyPeriod = async (
       .single();
 
     if (error) {
-      console.error('Error creating property occupancy period:', error);
+      logger.error('Error creating property occupancy period:', error);
       throw error;
     }
 
@@ -53,7 +54,7 @@ export const createPropertyOccupancyPeriod = async (
       occupancy_type: data.occupancy_type as OccupancyType
     };
   } catch (err) {
-    console.error('Failed to create property occupancy period:', err);
+    logger.error('Failed to create property occupancy period:', err);
     throw err;
   }
 };
@@ -71,7 +72,7 @@ export const updatePropertyOccupancyPeriod = async (
       .single();
 
     if (error) {
-      console.error('Error updating property occupancy period:', error);
+      logger.error('Error updating property occupancy period:', error);
       throw error;
     }
 
@@ -80,7 +81,7 @@ export const updatePropertyOccupancyPeriod = async (
       occupancy_type: data.occupancy_type as OccupancyType
     };
   } catch (err) {
-    console.error('Failed to update property occupancy period:', err);
+    logger.error('Failed to update property occupancy period:', err);
     throw err;
   }
 };
@@ -92,7 +93,7 @@ export const deletePropertyOccupancyPeriod = async (periodId: string): Promise<v
     .eq('id', periodId);
 
   if (error) {
-    console.error('Error deleting property occupancy period:', error);
+    logger.error('Error deleting property occupancy period:', error);
     throw error;
   }
 };
@@ -106,7 +107,7 @@ export const calculateVacancyRate = async (propertyId: string): Promise<number> 
       .eq('property_id', propertyId);
 
     if (error) {
-      console.error('Error fetching property occupancy periods for vacancy calculation:', error);
+      logger.error('Error fetching property occupancy periods for vacancy calculation:', error);
       throw error;
     }
     
@@ -149,12 +150,12 @@ export const calculateVacancyRate = async (propertyId: string): Promise<number> 
       .eq('id', propertyId);
 
     if (updateError) {
-      console.error('Error updating property vacancy rate:', updateError);
+      logger.error('Error updating property vacancy rate:', updateError);
     }
     
     return vacancyRate;
   } catch (err) {
-    console.error('Failed to calculate vacancy rate:', err);
+    logger.error('Failed to calculate vacancy rate:', err);
     throw err;
   }
 };

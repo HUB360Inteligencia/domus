@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PropertyValuation } from "@/types/property";
 
+import { logger } from "@/lib/logger";
 /**
  * Fetches all valuations for a property
  */
@@ -14,13 +15,13 @@ export const fetchPropertyValuations = async (propertyId: string): Promise<Prope
       .order('valuation_date', { ascending: true });
 
     if (error) {
-      console.error('Error fetching property valuations:', error);
+      logger.error('Error fetching property valuations:', error);
       throw new Error(error.message);
     }
 
     return data || [];
   } catch (err) {
-    console.error('Failed to fetch property valuations:', err);
+    logger.error('Failed to fetch property valuations:', err);
     throw err;
   }
 };
@@ -51,13 +52,13 @@ export const createPropertyValuation = async (
       .single();
 
     if (error) {
-      console.error('Error creating property valuation:', error);
+      logger.error('Error creating property valuation:', error);
       throw new Error(error.message);
     }
 
     return data;
   } catch (err) {
-    console.error('Failed to create property valuation:', err);
+    logger.error('Failed to create property valuation:', err);
     throw err;
   }
 };
@@ -78,13 +79,13 @@ export const updatePropertyValuation = async (
       .single();
 
     if (error) {
-      console.error('Error updating property valuation:', error);
+      logger.error('Error updating property valuation:', error);
       throw new Error(error.message);
     }
 
     return data;
   } catch (err) {
-    console.error('Failed to update property valuation:', err);
+    logger.error('Failed to update property valuation:', err);
     throw err;
   }
 };
@@ -100,11 +101,11 @@ export const deletePropertyValuation = async (id: string): Promise<void> => {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting property valuation:', error);
+      logger.error('Error deleting property valuation:', error);
       throw new Error(error.message);
     }
   } catch (err) {
-    console.error('Failed to delete property valuation:', err);
+    logger.error('Failed to delete property valuation:', err);
     throw err;
   }
 };

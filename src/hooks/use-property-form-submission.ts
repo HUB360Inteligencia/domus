@@ -5,6 +5,7 @@ import { PropertyFormData } from '@/types/property';
 import { usePropertyMutationsEnhanced } from './use-property-mutations-enhanced';
 import { uploadPropertyImage as apiUploadPropertyImage } from '@/api/property-images';
 
+import { logger } from "@/lib/logger";
 export const usePropertyFormSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createProperty, updateProperty } = usePropertyMutationsEnhanced();
@@ -55,7 +56,7 @@ export const usePropertyFormSubmission = () => {
   const uploadImages = async (propertyId: string, images: any[]): Promise<void> => {
     if (!images || images.length === 0) return;
 
-    console.log(`Uploading ${images.length} images for property ${propertyId}`);
+    logger.log(`Uploading ${images.length} images for property ${propertyId}`);
     
     for (const image of images) {
       if (!image.file) continue;
@@ -65,9 +66,9 @@ export const usePropertyFormSubmission = () => {
           description: image.description || image.name,
           is_primary: image.is_primary || false
         });
-        console.log(`Image uploaded successfully: ${image.name}`);
+        logger.log(`Image uploaded successfully: ${image.name}`);
       } catch (error) {
-        console.error(`Failed to upload image ${image.name}:`, error);
+        logger.error(`Failed to upload image ${image.name}:`, error);
         toast.error(`Erro ao enviar imagem ${image.name}`);
         // Continue with other images even if one fails
       }
@@ -83,7 +84,7 @@ export const usePropertyFormSubmission = () => {
     
     try {
       // Step 1: Validate form data
-      console.log('Validating form data...');
+      logger.log('Validating form data...');
       const validationErrors = validateFormData(data);
       if (validationErrors.length > 0) {
         toast.error(`Erros de validação: ${validationErrors.join(', ')}`);
@@ -91,24 +92,24 @@ export const usePropertyFormSubmission = () => {
       }
 
       // Step 2: Sanitize data
-      console.log('Sanitizing form data...');
+      logger.log('Sanitizing form data...');
       const sanitizedData = sanitizeFormData(data);
       
       // Step 3: Prepare data for submission (remove images from main data)
       const { images, ...propertyData } = sanitizedData;
       
-      console.log('Property data to submit:', propertyData);
+      logger.log('Property data to submit:', propertyData);
 
       // Step 4: Create or update property
       let resultPropertyId: string;
       
       if (isEditing && propertyId) {
-        console.log(`Updating property ${propertyId}...`);
+        logger.log(`Updating property ${propertyId}...`);
         const updatedProperty = await updateProperty({ id: propertyId, ...propertyData });
         resultPropertyId = updatedProperty.id;
         toast.success('Propriedade atualizada com sucesso!');
       } else {
-        console.log('Creating new property...');
+        logger.log('Creating new property...');
         const newProperty = await createProperty(propertyData);
         resultPropertyId = newProperty.id;
         toast.success('Propriedade criada com sucesso!');
@@ -116,12 +117,12 @@ export const usePropertyFormSubmission = () => {
 
       // Step 5: Upload images (separate operation)
       if (images && images.length > 0) {
-        console.log('Starting image upload process...');
+        logger.log('Starting image upload process...');
         try {
           await uploadImages(resultPropertyId, images);
           toast.success('Imagens enviadas com sucesso!');
         } catch (error) {
-          console.error('Image upload failed:', error);
+          logger.error('Image upload failed:', error);
           toast.warning('Propriedade salva, mas houve erro no upload das imagens');
         }
       }
@@ -129,7 +130,7 @@ export const usePropertyFormSubmission = () => {
       return resultPropertyId;
       
     } catch (error: any) {
-      console.error('Property submission failed:', error);
+      logger.error('Property submission failed:', error);
       
       // Provide more specific error messages
       let errorMessage = 'Erro ao salvar propriedade';

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 export interface Notification {
   id: string;
   user_id: string;
@@ -35,7 +36,7 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
       .limit(50);
 
     if (error) {
-      console.error('Error fetching notifications:', error);
+      logger.error('Error fetching notifications:', error);
       throw error;
     }
 
@@ -47,7 +48,7 @@ export const fetchNotifications = async (): Promise<Notification[]> => {
         : 'info') as 'info' | 'warning' | 'error' | 'success'
     }));
   } catch (err) {
-    console.error('Failed to fetch notifications:', err);
+    logger.error('Failed to fetch notifications:', err);
     throw err;
   }
 };
@@ -69,7 +70,7 @@ export const createNotification = async (notificationData: CreateNotificationDat
       .single();
 
     if (error) {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification:', error);
       throw error;
     }
 
@@ -81,7 +82,7 @@ export const createNotification = async (notificationData: CreateNotificationDat
         : 'info') as 'info' | 'warning' | 'error' | 'success'
     };
   } catch (err) {
-    console.error('Failed to create notification:', err);
+    logger.error('Failed to create notification:', err);
     throw err;
   }
 };
@@ -94,11 +95,11 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
       .eq('id', notificationId);
 
     if (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
       throw error;
     }
   } catch (err) {
-    console.error('Failed to mark notification as read:', err);
+    logger.error('Failed to mark notification as read:', err);
     throw err;
   }
 };
@@ -117,11 +118,11 @@ export const markAllNotificationsAsRead = async (): Promise<void> => {
       .eq('is_read', false);
 
     if (error) {
-      console.error('Error marking all notifications as read:', error);
+      logger.error('Error marking all notifications as read:', error);
       throw error;
     }
   } catch (err) {
-    console.error('Failed to mark all notifications as read:', err);
+    logger.error('Failed to mark all notifications as read:', err);
     throw err;
   }
 };
@@ -134,11 +135,11 @@ export const deleteNotification = async (notificationId: string): Promise<void> 
       .eq('id', notificationId);
 
     if (error) {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification:', error);
       throw error;
     }
   } catch (err) {
-    console.error('Failed to delete notification:', err);
+    logger.error('Failed to delete notification:', err);
     throw err;
   }
 };
@@ -193,7 +194,7 @@ export const checkContractExpirations = async (): Promise<void> => {
       }
     }
   } catch (err) {
-    console.error('Failed to check contract expirations:', err);
+    logger.error('Failed to check contract expirations:', err);
     throw err;
   }
 };

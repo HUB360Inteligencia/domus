@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import {
   BarChart3,
-  Calendar,
+  CalendarDays,
   DollarSign,
   FileText,
   Home,
@@ -37,6 +37,7 @@ import {
   ArrowDownCircle,
   LineChart,
   Scroll,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,9 +63,9 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Atividades",
-    url: "/activities",
-    icon: Calendar,
+    title: "Agenda",
+    url: "/agenda",
+    icon: CalendarDays,
   },
   {
     title: "Usuários",
@@ -138,7 +139,7 @@ export function AppSidebar() {
                   className={cn(
                     navigationMenuTriggerStyle(),
                     "h-11 rounded-md font-medium data-[active]:bg-secondary data-[state=open]:bg-secondary flex items-center justify-start gap-2 pl-4 text-sm",
-                    location.pathname === item.url && "bg-secondary"
+                    (location.pathname === item.url || (item.url === "/agenda" && location.pathname.startsWith("/activities"))) && "bg-secondary"
                   )}
                   onClick={(event) => {
                     event.preventDefault();

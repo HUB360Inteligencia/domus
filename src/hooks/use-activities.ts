@@ -4,6 +4,7 @@ import { Activity, ActivityFormData, ActivityStatus, ActivityFilters } from '@/t
 import { useActivityQueries } from './use-activity-queries';
 import { useActivityMutations } from './use-activity-mutations';
 
+import { logger } from "@/lib/logger";
 export const useActivities = (
   propertyId: string | null = null,
   contractId: string | null = null
@@ -81,7 +82,7 @@ export const useActivities = (
       // Placeholder for neighborhood/city filtering
       // In a real implementation, we'd need to join with properties table
       // or preload property data with activities
-      console.log("Filtering by neighborhood/city would require more data");
+      logger.log("Filtering by neighborhood/city would require more data");
     }
     
     if (filters.dueDateRange && (filters.dueDateRange.from || filters.dueDateRange.to)) {

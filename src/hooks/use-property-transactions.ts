@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { subMonths, format } from 'date-fns';
 
+import { logger } from "@/lib/logger";
 export interface PropertyTransaction {
   id: string;
   name: string;
@@ -37,7 +38,7 @@ export const usePropertyTransactions = (propertyId: string | null, months: numbe
         .order('transaction_date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching property transactions:', error);
+        logger.error('Error fetching property transactions:', error);
         return [];
       }
 

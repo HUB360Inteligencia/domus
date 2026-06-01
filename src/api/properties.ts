@@ -3,18 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
 import { handleAuthError } from "@/utils/auth-utils";
 
+import { logger } from "@/lib/logger";
 /**
  * Fetches all properties for the current user
  */
 export const fetchProperties = async (): Promise<Property[]> => {
   try {
-    console.log('Fetching properties from Supabase...');
+    logger.log('Fetching properties from Supabase...');
     
     // Check authentication first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
-      console.error('No active session found:', sessionError);
+      logger.error('No active session found:', sessionError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -24,12 +25,12 @@ export const fetchProperties = async (): Promise<Property[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching properties:', error);
+      logger.error('Error fetching properties:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
 
-    console.log('Properties fetched successfully:', data?.length || 0);
+    logger.log('Properties fetched successfully:', data?.length || 0);
 
     // Transform the data to ensure property types are correctly cast
     return (data || []).map(item => ({
@@ -42,7 +43,7 @@ export const fetchProperties = async (): Promise<Property[]> => {
       land_area: item.land_area || 0
     }));
   } catch (err) {
-    console.error('Failed to fetch properties:', err);
+    logger.error('Failed to fetch properties:', err);
     throw err;
   }
 };
@@ -54,13 +55,13 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
   if (!id) return null;
   
   try {
-    console.log(`Fetching property details for ID: ${id}`);
+    logger.log(`Fetching property details for ID: ${id}`);
     
     // Check authentication first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
-      console.error('No active session found:', sessionError);
+      logger.error('No active session found:', sessionError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -71,12 +72,12 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
 
     if (error) {
-      console.error(`Error fetching property ${id}:`, error);
+      logger.error(`Error fetching property ${id}:`, error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
 
-    console.log('Property detail fetch result:', data ? 'Success' : 'Not found');
+    logger.log('Property detail fetch result:', data ? 'Success' : 'Not found');
 
     // Transform the data to ensure property types are correctly cast
     return data ? {
@@ -89,7 +90,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       land_area: data.land_area || 0
     } : null;
   } catch (err) {
-    console.error(`Failed to fetch property ${id}:`, err);
+    logger.error(`Failed to fetch property ${id}:`, err);
     throw err;
   }
 };
@@ -117,7 +118,7 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       .single();
 
     if (error) {
-      console.error('Error creating property:', error);
+      logger.error('Error creating property:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
@@ -133,7 +134,7 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       land_area: data.land_area || 0
     };
   } catch (err) {
-    console.error('Failed to create property:', err);
+    logger.error('Failed to create property:', err);
     throw err;
   }
 };
@@ -145,7 +146,7 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
   const { id, ...data } = propertyData;
   
   try {
-    console.log(`Updating property ${id} with data:`, data);
+    logger.log(`Updating property ${id} with data:`, data);
     
     const { data: updatedData, error } = await supabase
       .from('properties')
@@ -155,12 +156,12 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       .single();
 
     if (error) {
-      console.error('Error updating property:', error);
+      logger.error('Error updating property:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
 
-    console.log('Property updated successfully:', updatedData);
+    logger.log('Property updated successfully:', updatedData);
 
     return {
       ...updatedData,
@@ -172,7 +173,7 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       land_area: updatedData.land_area || 0
     };
   } catch (err) {
-    console.error('Failed to update property:', err);
+    logger.error('Failed to update property:', err);
     throw err;
   }
 };
@@ -189,7 +190,7 @@ export const updatePropertyCoordinates = async ({
   latitude: number; 
   longitude: number 
 }): Promise<Property> => {
-  console.log(`Updating coordinates for property ${id}:`, { latitude, longitude });
+  logger.log(`Updating coordinates for property ${id}:`, { latitude, longitude });
 
   const { data, error } = await supabase
     .from('properties')
@@ -199,11 +200,11 @@ export const updatePropertyCoordinates = async ({
     .single();
 
   if (error) {
-    console.error('Error updating property coordinates:', error);
+    logger.error('Error updating property coordinates:', error);
     throw new Error(error.message);
   }
 
-  console.log('Property coordinates updated successfully');
+  logger.log('Property coordinates updated successfully');
 
   return {
     ...data,
@@ -224,7 +225,7 @@ export const deleteProperty = async (id: string): Promise<void> => {
     .eq('id', id);
 
   if (error) {
-    console.error('Error deleting property:', error);
+    logger.error('Error deleting property:', error);
     throw new Error(error.message);
   }
 };
@@ -239,7 +240,7 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
     const fileName = `${id}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    console.log(`Uploading image for property ${id} to property_images bucket`);
+    logger.log(`Uploading image for property ${id} to property_images bucket`);
 
     const { error: uploadError } = await supabase
       .storage
@@ -247,7 +248,7 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
       .upload(filePath, imageFile);
 
     if (uploadError) {
-      console.error('Error uploading image:', uploadError);
+      logger.error('Error uploading image:', uploadError);
       throw new Error(uploadError.message);
     }
 
@@ -257,7 +258,7 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
       .from('property_images')
       .getPublicUrl(filePath);
 
-    console.log('Image uploaded successfully, URL:', data.publicUrl);
+    logger.log('Image uploaded successfully, URL:', data.publicUrl);
 
     // Update the property with the image URL
     const { error: updateError } = await supabase
@@ -266,13 +267,13 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
       .eq('id', id);
 
     if (updateError) {
-      console.error('Error updating property with image URL:', updateError);
+      logger.error('Error updating property with image URL:', updateError);
       throw new Error(updateError.message);
     }
 
     return data.publicUrl;
   } catch (err) {
-    console.error('Failed to upload property image:', err);
+    logger.error('Failed to upload property image:', err);
     throw err;
   }
 };
@@ -287,7 +288,7 @@ export const geocodeAddress = async (
   state?: string
 ): Promise<{ lat: number, lng: number } | null> => {
   try {
-    console.log('Geocoding address:', address);
+    logger.log('Geocoding address:', address);
     
     // Create a full address string
     const fullAddress = `${address}${propertyNumber ? `, ${propertyNumber}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}`;
@@ -298,7 +299,7 @@ export const geocodeAddress = async (
     // Check if we have cached results
     const cachedResult = sessionStorage.getItem(cacheKey);
     if (cachedResult) {
-      console.log('Using cached geocode result for:', fullAddress);
+      logger.log('Using cached geocode result for:', fullAddress);
       return JSON.parse(cachedResult);
     }
     
@@ -327,19 +328,19 @@ export const geocodeAddress = async (
           
           // Cache the result
           sessionStorage.setItem(cacheKey, JSON.stringify(result));
-          console.log('Geocoded using Mapbox API:', result);
+          logger.log('Geocoded using Mapbox API:', result);
           return result;
         } else {
-          console.log('No features returned from Mapbox Geocoding API');
+          logger.log('No features returned from Mapbox Geocoding API');
         }
       } catch (error) {
-        console.error('Error using Mapbox Geocoding API:', error);
+        logger.error('Error using Mapbox Geocoding API:', error);
         // Continue to fallback method if Mapbox fails
       }
     }
     
     // Fallback: Use our predefined list of city coordinates with random offset
-    console.log('Using fallback geocoding with predefined coordinates');
+    logger.log('Using fallback geocoding with predefined coordinates');
     
     // Map of cities to their approximate coordinates
     const cityCoordinates: Record<string, { lat: number, lng: number }> = {
@@ -381,7 +382,7 @@ export const geocodeAddress = async (
     sessionStorage.setItem(cacheKey, JSON.stringify(defaultCoords));
     return defaultCoords;
   } catch (error) {
-    console.error('Error geocoding address:', error);
+    logger.error('Error geocoding address:', error);
     return null;
   }
 };

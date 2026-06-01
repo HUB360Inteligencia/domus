@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 interface ReportTemplate {
   id: string;
   name: string;
@@ -35,7 +36,7 @@ export const useAdvancedReports = () => {
         .like('key', 'report_template_%');
 
       if (error) {
-        console.error('Erro ao buscar templates:', error);
+        logger.error('Erro ao buscar templates:', error);
         return [];
       }
 
@@ -108,7 +109,7 @@ export const useAdvancedReports = () => {
   });
 
   const generateReport = async (config: any) => {
-    console.log('Gerando relatório com configuração:', config);
+    logger.log('Gerando relatório com configuração:', config);
     
     // Buscar dados reais do banco
     const { data: properties } = await supabase
@@ -146,7 +147,7 @@ export const useAdvancedReports = () => {
   };
 
   const exportReport = async (format: 'pdf' | 'excel', data: any[]) => {
-    console.log(`Exportando ${data.length} registros como ${format}`);
+    logger.log(`Exportando ${data.length} registros como ${format}`);
     // Implementar lógica real de exportação
     return `report-${Date.now()}.${format}`;
   };
@@ -162,7 +163,7 @@ export const useAdvancedReports = () => {
       .select();
 
     if (error) {
-      console.error('Erro ao salvar template:', error);
+      logger.error('Erro ao salvar template:', error);
       throw error;
     }
 

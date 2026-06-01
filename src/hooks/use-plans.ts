@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { 
   fetchPlans, 
   fetchPlanById, 
@@ -40,7 +41,7 @@ export function useCreatePlan() {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
     },
     onError: (error) => {
-      console.error("Erro ao criar plano:", error);
+      logger.error("Erro ao criar plano:", error);
       toast.error("Erro ao criar plano");
     },
   });
@@ -59,7 +60,7 @@ export function useUpdatePlan(planId?: string) {
       queryClient.invalidateQueries({ queryKey: ["plan", planId] });
     },
     onError: (error) => {
-      console.error("Erro ao atualizar plano:", error);
+      logger.error("Erro ao atualizar plano:", error);
       toast.error("Erro ao atualizar plano");
     },
   });
@@ -79,7 +80,7 @@ export function useTogglePlanStatus() {
       queryClient.invalidateQueries({ queryKey: ["plan", variables.planId] });
     },
     onError: (error) => {
-      console.error("Erro ao alterar status do plano:", error);
+      logger.error("Erro ao alterar status do plano:", error);
       toast.error("Erro ao alterar status do plano");
     },
   });
@@ -96,7 +97,7 @@ export function useDeletePlan() {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
     },
     onError: (error) => {
-      console.error("Erro ao excluir plano:", error);
+      logger.error("Erro ao excluir plano:", error);
       toast.error("Erro ao excluir plano");
     },
   });

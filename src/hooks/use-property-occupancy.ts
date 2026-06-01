@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { logger } from "@/lib/logger";
 import { 
   fetchPropertyOccupancyPeriods, 
   createPropertyOccupancyPeriod, 
@@ -39,7 +40,7 @@ export const usePropertyOccupancy = (propertyId: string | null) => {
           setVacancyRate(rate);
         })
         .catch(error => {
-          console.error('Error calculating vacancy rate:', error);
+          logger.error('Error calculating vacancy rate:', error);
         });
     }
   }, [propertyId, occupancyPeriods]);

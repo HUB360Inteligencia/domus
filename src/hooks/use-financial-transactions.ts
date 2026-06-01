@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { logger } from "@/lib/logger";
 export interface FinancialTransaction {
   id: string;
   name: string;
@@ -50,6 +51,16 @@ export interface TransactionFilters {
   minAmount?: number;
   maxAmount?: number;
 }
+
+const getCurrentUserId = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  return user.id;
+};
 
 export const useFinancialTransactions = (initialFilters: TransactionFilters = {}) => {
   const [filters, setFilters] = useState<TransactionFilters>(initialFilters);
@@ -102,7 +113,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching financial transactions:', error);
+        logger.error('Error fetching financial transactions:', error);
         toast.error('Falha ao buscar transações');
         return [];
       }
@@ -132,16 +143,17 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   // Create transaction
   const { mutateAsync: createTransaction, isPending: isCreating } = useMutation({
     mutationFn: async (transaction: TransactionFormData) => {
+      const userId = await getCurrentUserId();
       const { data, error } = await supabase
         .from('financial_transactions')
         .insert([{
           ...transaction,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: userId
         }])
         .select();
 
       if (error) {
-        console.error('Error creating transaction:', error);
+        logger.error('Error creating transaction:', error);
         throw error;
       }
 
@@ -152,7 +164,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       toast.success('Transação criada com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to create transaction:', error);
+      logger.error('Failed to create transaction:', error);
       toast.error('Falha ao criar transação');
     }
   });
@@ -160,14 +172,16 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   // Update transaction
   const { mutateAsync: updateTransaction, isPending: isUpdating } = useMutation({
     mutationFn: async ({ id, ...transaction }: TransactionFormData & { id: string }) => {
+      const userId = await getCurrentUserId();
       const { data, error } = await supabase
         .from('financial_transactions')
         .update(transaction)
         .eq('id', id)
+        .eq('user_id', userId)
         .select();
 
       if (error) {
-        console.error('Error updating transaction:', error);
+        logger.error('Error updating transaction:', error);
         throw error;
       }
 
@@ -178,7 +192,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       toast.success('Transação atualizada com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to update transaction:', error);
+      logger.error('Failed to update transaction:', error);
       toast.error('Falha ao atualizar transação');
     }
   });
@@ -186,15 +200,17 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
   // Delete transaction
   const { mutateAsync: deleteTransaction, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string) => {
+      const userId = await getCurrentUserId();
       // Get the transaction first to check if it has a receipt
       const { data: transaction, error: getError } = await supabase
         .from('financial_transactions')
         .select('receipt_url')
         .eq('id', id)
+        .eq('user_id', userId)
         .single();
       
       if (getError) {
-        console.error('Error getting transaction before delete:', getError);
+        logger.error('Error getting transaction before delete:', getError);
       }
       
       // If there's a receipt, delete it from storage
@@ -206,7 +222,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
             .remove([receiptPath]);
             
           if (storageError) {
-            console.error('Error deleting receipt from storage:', storageError);
+            logger.error('Error deleting receipt from storage:', storageError);
           }
         }
       }
@@ -215,10 +231,11 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       const { error } = await supabase
         .from('financial_transactions')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
 
       if (error) {
-        console.error('Error deleting transaction:', error);
+        logger.error('Error deleting transaction:', error);
         throw error;
       }
 
@@ -229,7 +246,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       toast.success('Transação excluída com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to delete transaction:', error);
+      logger.error('Failed to delete transaction:', error);
       toast.error('Falha ao excluir transação');
     }
   });

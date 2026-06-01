@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { fetchUsers, fetchUserById, updateUserProfile, updateUserRole, deleteUser, UserWithRole } from "@/api/users";
 import { Database } from "@/integrations/supabase/types";
 
+import { logger } from "@/lib/logger";
 // Type for app_role from Supabase
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -42,7 +43,7 @@ export function useUpdateUserProfile() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
-      console.error("Erro ao atualizar perfil:", error);
+      logger.error("Erro ao atualizar perfil:", error);
       toast.error("Erro ao atualizar o perfil");
     },
   });
@@ -61,7 +62,7 @@ export function useUpdateUserRole() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
-      console.error("Erro ao atualizar função:", error);
+      logger.error("Erro ao atualizar função:", error);
       toast.error("Erro ao atualizar função do usuário");
     },
   });
@@ -78,7 +79,7 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
-      console.error("Erro ao excluir usuário:", error);
+      logger.error("Erro ao excluir usuário:", error);
       toast.error("Erro ao excluir usuário");
     },
   });

@@ -31,10 +31,12 @@ export function MapboxProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     
     try {
-      // Try to load token from localStorage on init
-      const savedToken = localStorage.getItem('mapbox_token');
-      if (savedToken) {
-        setTokenState(savedToken);
+      // Load token from environment variables
+      const envToken = import.meta.env.VITE_MAPBOX_TOKEN;
+      if (envToken) {
+        setTokenState(envToken);
+      } else {
+        setError('Token do Mapbox não configurado no servidor.');
       }
     } catch (err) {
       console.error('Error loading Mapbox token:', err);
@@ -45,14 +47,7 @@ export function MapboxProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setToken = (newToken: string) => {
-    try {
-      setTokenState(newToken);
-      localStorage.setItem('mapbox_token', newToken);
-      setError(null);
-    } catch (err) {
-      console.error('Error saving Mapbox token:', err);
-      setError('Erro ao salvar token do Mapbox');
-    }
+    console.warn('Mapbox tokens are now managed via environment variables. This function is deprecated.');
   };
 
   const getTokenForContext = (context: string) => {

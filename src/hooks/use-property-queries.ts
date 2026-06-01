@@ -1,8 +1,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchProperties, fetchPropertyById } from '@/api/properties';
+import { useAuth } from '@/lib/auth';
 
 export const usePropertyQueries = (selectedPropertyId: string | null) => {
+  const { session } = useAuth();
+  const isAuthenticated = !!session;
+
   // Fetch all properties
   const { 
     data: properties = [], 
@@ -13,6 +17,7 @@ export const usePropertyQueries = (selectedPropertyId: string | null) => {
     queryFn: fetchProperties,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    enabled: isAuthenticated,
   });
   
   // Fetch selected property details
@@ -23,7 +28,7 @@ export const usePropertyQueries = (selectedPropertyId: string | null) => {
   } = useQuery({
     queryKey: ['property', selectedPropertyId],
     queryFn: () => fetchPropertyById(selectedPropertyId || ''),
-    enabled: !!selectedPropertyId,
+    enabled: isAuthenticated && !!selectedPropertyId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   

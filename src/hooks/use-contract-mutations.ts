@@ -30,6 +30,7 @@ import {
 } from '@/api/notifications';
 import { Contract, ContractFormData } from '@/types/contract';
 
+import { logger } from "@/lib/logger";
 export const useContractMutations = () => {
   const queryClient = useQueryClient();
 
@@ -59,7 +60,7 @@ export const useContractMutations = () => {
           queryClient.invalidateQueries({ queryKey: ['activities'] });
           queryClient.invalidateQueries({ queryKey: ['activities', 'property', newContract.property_id] });
         } catch (error) {
-          console.error('Error creating activity for pending contract:', error);
+          logger.error('Error creating activity for pending contract:', error);
         }
       }
       
@@ -127,7 +128,7 @@ export const useContractMutations = () => {
             queryClient.invalidateQueries({ queryKey: ['activities'] });
           }
         } catch (error) {
-          console.error('Error completing related activity:', error);
+          logger.error('Error completing related activity:', error);
         }
       }
       
@@ -254,7 +255,7 @@ export const useContractMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
-      console.error('Error creating notification:', error);
+      logger.error('Error creating notification:', error);
     }
   });
 
@@ -264,7 +265,7 @@ export const useContractMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
     }
   });
 
@@ -285,7 +286,7 @@ export const useContractMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification:', error);
     }
   });
 

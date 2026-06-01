@@ -16,6 +16,9 @@ import { ContractFormRentField } from '@/components/contracts/contract-form-rent
 import { ContractFormData, Contract } from '@/types/contract';
 import { useProperties } from '@/hooks/use-properties';
 import { FileUpload } from '@/components/ui/file-upload';
+import { ContactCombobox } from '@/components/contacts/contact-combobox';
+import { useContactLinkMutations } from '@/hooks/use-contact-links';
+import { formatContactPhone } from '@/types/contact';
 
 const adjustmentIndexOptions = [
   'IGP-DI',
@@ -62,6 +65,7 @@ interface ContractFormProps {
 
 export function ContractForm({ initialData, onSubmit, onCancel, isLoading = false }: ContractFormProps) {
   const { properties } = useProperties();
+  const { linkContract } = useContactLinkMutations();
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   
   // Estado para datas em formato brasileiro
@@ -187,7 +191,7 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading = fals
             <Label htmlFor="status">Status</Label>
             <Select
               value={watch('status')}
-              onValueChange={(value) => setValue('status', value as any)}
+              onValueChange={(value) => setValue('status', value as ContractFormData['status'])}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -210,6 +214,32 @@ export function ContractForm({ initialData, onSubmit, onCancel, isLoading = fals
           <CardTitle>Informações do Inquilino</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div>
+            <Label>Selecionar contato existente</Label>
+            <ContactCombobox
+              value={null}
+              presetRole="tenant"
+              placeholder="Buscar contato ou criar novo..."
+              onChange={(contactId, contact) => {
+                if (!contact) return;
+                setValue('tenant_name', contact.trade_name || contact.display_name);
+                setValue(
+                  'tenant_contact',
+                  formatContactPhone(contact.primary_whatsapp || contact.primary_phone) ||
+                    contact.primary_email ||
+                    '',
+                );
+                if (contact.document_number) setValue('tenant_document', contact.document_number);
+                // Dual-write: ao editar um contrato existente, cria o vínculo imediatamente.
+                if (contactId && initialData?.id) {
+                  linkContract({ contactId, contractId: initialData.id, linkRole: 'tenant' }).catch(() => {});
+                }
+              }}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Selecionar um contato preenche os campos abaixo. Os dados de texto continuam salvos para compatibilidade.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="tenant_name">Nome do Inquilino *</Label>

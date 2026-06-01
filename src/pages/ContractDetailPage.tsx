@@ -20,6 +20,7 @@ import {
 import { useContracts } from '@/hooks/use-contracts';
 import { ContractAdjustmentForm } from '@/components/contracts/contract-adjustment-form';
 import { ContractAdjustmentHistory } from '@/components/contracts/contract-adjustment-history';
+import { LinkedContactsSection } from '@/components/contacts/linked-contacts-section';
 import { formatCurrency } from '@/lib/format';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -256,6 +257,9 @@ export default function ContractDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Contatos vinculados */}
+      <LinkedContactsSection entity="contract" entityId={selectedContract.id} />
 
       {/* Seção de Reajustes */}
       <div className="space-y-6">

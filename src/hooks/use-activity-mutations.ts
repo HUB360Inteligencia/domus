@@ -18,6 +18,7 @@ export const useActivityMutations = () => {
     mutationFn: createActivity,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['agenda-events'] });
       toast.success('Atividade criada com sucesso!');
     },
     onError: (error: Error) => {
@@ -29,6 +30,7 @@ export const useActivityMutations = () => {
     mutationFn: updateActivity,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['agenda-events'] });
       toast.success('Atividade atualizada com sucesso!');
     },
     onError: (error: Error) => {
@@ -41,6 +43,7 @@ export const useActivityMutations = () => {
       updateActivityStatus(id, status),
     onSuccess: async (updatedActivity, { id, status }) => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['agenda-events'] });
       
       // Se a atividade foi concluída e está relacionada a um contrato, ativar o contrato
       if (status === 'completed') {
@@ -81,6 +84,7 @@ export const useActivityMutations = () => {
     mutationFn: deleteActivity,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['agenda-events'] });
       toast.success('Atividade excluída com sucesso!');
     },
     onError: (error: Error) => {
@@ -93,6 +97,7 @@ export const useActivityMutations = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
       queryClient.invalidateQueries({ queryKey: ['property_expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['agenda-events'] });
       toast.success('Atividade convertida em despesa com sucesso!');
     },
     onError: (error: Error) => {

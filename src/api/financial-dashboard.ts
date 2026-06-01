@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 export interface FinancialMetrics {
   totalRevenue: number;
   totalExpenses: number;
@@ -175,7 +176,7 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
       roiByPropertyType
     };
   } catch (error) {
-    console.error('Error fetching financial metrics:', error);
+    logger.error('Error fetching financial metrics:', error);
     throw error;
   }
 };
@@ -187,8 +188,15 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
       throw new Error('User not authenticated');
     }
 
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
+    const now = new Date();
+    const monthWindows = Array.from({ length: months }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - months + 1 + index, 1);
+      return {
+        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+        date,
+      };
+    });
+    const startDate = monthWindows[0]?.date ?? new Date(now.getFullYear(), now.getMonth(), 1);
 
     const { data: transactions, error } = await supabase
       .from('financial_transactions')
@@ -208,15 +216,18 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
     const totalMarketValue = properties?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
     const totalAcquisitionValue = properties?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
 
-    // Group by month
-    const monthlyData: { [key: string]: { revenue: number; expenses: number } } = {};
+    // Group by month and keep empty months visible for honest chart continuity.
+    const monthlyData = monthWindows.reduce((acc, month) => {
+      acc[month.key] = { revenue: 0, expenses: 0 };
+      return acc;
+    }, {} as Record<string, { revenue: number; expenses: number }>);
 
     transactions?.forEach(transaction => {
       const date = new Date(transaction.transaction_date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { revenue: 0, expenses: 0 };
+        return;
       }
 
       if (transaction.transaction_type === 'income') {
@@ -226,17 +237,20 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
       }
     });
 
-    return Object.entries(monthlyData).map(([month, data]) => ({
-      month,
-      revenue: data.revenue,
-      expenses: data.expenses,
-      netIncome: data.revenue - data.expenses,
-      marketValue: totalMarketValue,
-      bookValue: totalMarketValue,
-      acquisitionValue: totalAcquisitionValue
-    }));
+    return monthWindows.map(({ key }) => {
+      const data = monthlyData[key];
+      return {
+        month: key,
+        revenue: data.revenue,
+        expenses: data.expenses,
+        netIncome: data.revenue - data.expenses,
+        marketValue: totalMarketValue,
+        bookValue: totalMarketValue,
+        acquisitionValue: totalAcquisitionValue
+      };
+    });
   } catch (error) {
-    console.error('Error fetching monthly financial data:', error);
+    logger.error('Error fetching monthly financial data:', error);
     throw error;
   }
 };
@@ -256,32 +270,45 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
 
     if (propertiesError) throw propertiesError;
 
-    const rankings: PropertyFinancialRanking[] = [];
+    if (!properties || properties.length === 0) {
+      return [];
+    }
 
-    for (const property of properties || []) {
-      // Fetch revenue for this property
-      const { data: revenueData } = await supabase
-        .from('financial_transactions')
-        .select('amount')
-        .eq('user_id', session.data.session.user.id)
-        .eq('property_id', property.id)
-        .eq('transaction_type', 'income');
+    const propertyIds = properties.map((property) => property.id);
+    const { data: propertyTransactions, error: transactionsError } = await supabase
+      .from('financial_transactions')
+      .select('amount, transaction_type, property_id')
+      .eq('user_id', session.data.session.user.id)
+      .in('property_id', propertyIds);
 
-      // Fetch expenses for this property
-      const { data: expenseData } = await supabase
-        .from('financial_transactions')
-        .select('amount')
-        .eq('user_id', session.data.session.user.id)
-        .eq('property_id', property.id)
-        .eq('transaction_type', 'expense');
+    if (transactionsError) throw transactionsError;
 
-      const revenue = revenueData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-      const expenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+    const totalsByProperty = (propertyTransactions || []).reduce((acc, transaction) => {
+      const propertyId = transaction.property_id;
+      if (!propertyId) return acc;
+
+      if (!acc[propertyId]) {
+        acc[propertyId] = { revenue: 0, expenses: 0 };
+      }
+
+      if (transaction.transaction_type === 'income') {
+        acc[propertyId].revenue += transaction.amount || 0;
+      } else {
+        acc[propertyId].expenses += transaction.amount || 0;
+      }
+
+      return acc;
+    }, {} as Record<string, { revenue: number; expenses: number }>);
+
+    const rankings: PropertyFinancialRanking[] = properties.map((property) => {
+      const totals = totalsByProperty[property.id] || { revenue: 0, expenses: 0 };
+      const revenue = totals.revenue;
+      const expenses = totals.expenses;
       const netIncome = revenue - expenses;
       const investment = property.purchase_value || property.total_investment || 0;
       const roi = investment > 0 ? (netIncome / investment) * 100 : 0;
 
-      rankings.push({
+      return {
         propertyId: property.id,
         propertyTitle: property.title,
         revenue,
@@ -296,12 +323,12 @@ export const fetchPropertyFinancialRanking = async (): Promise<PropertyFinancial
         neighborhood: property.neighborhood || 'Não informado',
         monthlyReturn: netIncome,
         returnPercentage: roi
-      });
-    }
+      };
+    });
 
     return rankings.sort((a, b) => b.roi - a.roi);
   } catch (error) {
-    console.error('Error fetching property financial ranking:', error);
+    logger.error('Error fetching property financial ranking:', error);
     throw error;
   }
 };

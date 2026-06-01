@@ -1,6 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Contract, ContractFormData, ContractStatus, SignatureStatus, VariableRentValue, RecurringTransaction } from '@/types/contract';
-import { Json } from '@/integrations/supabase/types';
+import { Json, Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+
+import { logger } from "@/lib/logger";
+type ContractWithProperty = Tables<'contracts'> & {
+  property?: Contract['property'] | null;
+};
 
 // Helper function to ensure proper type conversion
 const convertJsonToVariableRentValues = (jsonValue: Json | null): VariableRentValue[] | null => {
@@ -11,7 +16,7 @@ const convertJsonToVariableRentValues = (jsonValue: Json | null): VariableRentVa
     }
     return jsonValue as unknown as VariableRentValue[];
   } catch (e) {
-    console.error('Error parsing variable_rent_values:', e);
+    logger.error('Error parsing variable_rent_values:', e);
     return null;
   }
 };
@@ -31,16 +36,17 @@ const convertJsonToRecurringTransactions = (jsonValue: Json | null): RecurringTr
     }
     return jsonValue as unknown as RecurringTransaction[];
   } catch (e) {
-    console.error('Error parsing recurring_transactions:', e);
+    logger.error('Error parsing recurring_transactions:', e);
     return null;
   }
 };
 
 // Helper to cast a raw Supabase contract row to our Contract type
-const mapRawToContract = (item: any): Contract => ({
+const mapRawToContract = (item: ContractWithProperty): Contract => ({
   ...item,
+  property: item.property ?? undefined,
   status: item.status as ContractStatus,
-  signature_status: item.signature_status as SignatureStatus,
+  signature_status: (item.signature_status ?? 'unsigned') as SignatureStatus,
   has_variable_rent: item.has_variable_rent ?? false,
   variable_rent_values: convertJsonToVariableRentValues(item.variable_rent_values),
   recurring_transactions: convertJsonToRecurringTransactions(item.recurring_transactions),
@@ -67,11 +73,11 @@ const mapRawToContract = (item: any): Contract => ({
  */
 export const fetchContracts = async (): Promise<Contract[]> => {
   try {
-    console.log('Fetching contracts from Supabase...');
+    logger.log('Fetching contracts from Supabase...');
     const session = await supabase.auth.getSession();
     
     if (!session.data.session) {
-      console.error('No active session found');
+      logger.error('No active session found');
       throw new Error('Usuário não autenticado');
     }
 
@@ -92,11 +98,11 @@ export const fetchContracts = async (): Promise<Contract[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching contracts:', error);
+      logger.error('Error fetching contracts:', error);
       throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
     }
 
-    console.log('Contracts fetched successfully:', data?.length || 0);
+    logger.log('Contracts fetched successfully:', data?.length || 0);
 
     if (!data) {
       return [];
@@ -104,7 +110,7 @@ export const fetchContracts = async (): Promise<Contract[]> => {
 
     return data.map(mapRawToContract);
   } catch (err) {
-    console.error('Failed to fetch contracts:', err);
+    logger.error('Failed to fetch contracts:', err);
     throw err;
   }
 };
@@ -116,10 +122,10 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
   if (!id) return null;
   
   try {
-    console.log(`Fetching contract details for ID: ${id}`);
+    logger.log(`Fetching contract details for ID: ${id}`);
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
-      console.error('No active session found');
+      logger.error('No active session found');
       throw new Error('Usuário não autenticado');
     }
 
@@ -141,11 +147,11 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
       .single();
 
     if (error) {
-      console.error(`Error fetching contract ${id}:`, error);
+      logger.error(`Error fetching contract ${id}:`, error);
       throw { message: error.message, status: error.code === 'PGRST301' ? 401 : 500 };
     }
 
-    console.log('Contract detail fetch result:', data ? 'Success' : 'Not found');
+    logger.log('Contract detail fetch result:', data ? 'Success' : 'Not found');
 
     if (!data) {
       return null;
@@ -153,7 +159,7 @@ export const fetchContractById = async (id: string): Promise<Contract | null> =>
 
     return mapRawToContract(data);
   } catch (err) {
-    console.error(`Failed to fetch contract ${id}:`, err);
+    logger.error(`Failed to fetch contract ${id}:`, err);
     throw err;
   }
 };
@@ -165,7 +171,7 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
   const user = await supabase.auth.getUser();
   if (!user.data.user) throw new Error('User not authenticated');
   
-  console.log('Creating new contract with data:', contractData);
+  logger.log('Creating new contract with data:', contractData);
   
   // If the contract is active, update the property with tenant information
   if (contractData.status === 'active' && contractData.property_id) {
@@ -176,13 +182,13 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
   }
 
   // Convert variable_rent_values and recurring_transactions to JSON for Supabase
-  const { recurring_transactions, ...restData } = contractData;
-  const supabaseData = {
+  const { recurring_transactions, variable_rent_values, ...restData } = contractData;
+  const supabaseData: TablesInsert<'contracts'> = {
     ...restData,
-    variable_rent_values: convertVariableRentValuesToJson(contractData.variable_rent_values),
+    variable_rent_values: convertVariableRentValuesToJson(variable_rent_values),
     recurring_transactions: recurring_transactions ? (recurring_transactions as unknown as Json) : undefined,
-    user_id: user.data.user?.id,
-  } as any;
+    user_id: user.data.user.id,
+  };
   
   const { data, error } = await supabase
     .from('contracts')
@@ -191,11 +197,11 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
     .single();
 
   if (error) {
-    console.error('Error creating contract:', error);
+    logger.error('Error creating contract:', error);
     throw new Error(error.message);
   }
 
-  console.log('Contract created successfully:', data.id);
+  logger.log('Contract created successfully:', data.id);
 
   return mapRawToContract(data);
 };
@@ -206,7 +212,7 @@ export const createContract = async (contractData: ContractFormData): Promise<Co
 export const updateContract = async (contractData: Partial<Contract> & { id: string }): Promise<Contract> => {
   const { id, ...data } = contractData;
   
-  console.log(`Updating contract ${id} with data:`, data);
+  logger.log(`Updating contract ${id} with data:`, data);
   
   // If the contract is active, update the property with tenant information
   if (data.status === 'active' && data.property_id) {
@@ -217,12 +223,13 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
   }
   
   // Convert for Supabase - cast recurring_transactions too
-  const { recurring_transactions: rt, property, ...restUpdateData } = data;
-  const supabaseData = {
+  const { recurring_transactions: rt, variable_rent_values, property, ...restUpdateData } = data;
+  void property;
+  const supabaseData: TablesUpdate<'contracts'> = {
     ...restUpdateData,
-    variable_rent_values: data.variable_rent_values ? convertVariableRentValuesToJson(data.variable_rent_values) : undefined,
+    variable_rent_values: variable_rent_values ? convertVariableRentValuesToJson(variable_rent_values) : undefined,
     recurring_transactions: rt ? (rt as unknown as Json) : undefined,
-  } as any;
+  };
   
   const { data: updatedData, error } = await supabase
     .from('contracts')
@@ -232,11 +239,11 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
     .single();
 
   if (error) {
-    console.error('Error updating contract:', error);
+    logger.error('Error updating contract:', error);
     throw new Error(error.message);
   }
 
-  console.log('Contract updated successfully:', updatedData.id);
+  logger.log('Contract updated successfully:', updatedData.id);
 
   return mapRawToContract(updatedData);
 };
@@ -246,7 +253,7 @@ export const updateContract = async (contractData: Partial<Contract> & { id: str
  */
 const updatePropertyTenantInfo = async (propertyId: string, tenantInfo: { tenant_name: string; tenant_contact: string | null }) => {
   try {
-    console.log(`Updating property ${propertyId} with tenant info:`, tenantInfo);
+    logger.log(`Updating property ${propertyId} with tenant info:`, tenantInfo);
     
     const { error } = await supabase
       .from('properties')
@@ -258,24 +265,45 @@ const updatePropertyTenantInfo = async (propertyId: string, tenantInfo: { tenant
       .eq('id', propertyId);
 
     if (error) {
-      console.error('Error updating property tenant info:', error);
+      logger.error('Error updating property tenant info:', error);
       // We don't throw here to avoid blocking the contract creation/update
     } else {
-      console.log('Property tenant info updated successfully');
+      logger.log('Property tenant info updated successfully');
     }
   } catch (err) {
-    console.error('Failed to update property tenant info:', err);
+    logger.error('Failed to update property tenant info:', err);
     // We don't throw here to avoid blocking the contract creation/update
   }
 };
+
+const isMissingRpcError = (error: { code?: string; message?: string }) =>
+  error.code === 'PGRST202' ||
+  error.message?.toLowerCase().includes('could not find the function') ||
+  error.message?.toLowerCase().includes('schema cache');
 
 /**
  * Deletes a contract and all related data
  */
 export const deleteContract = async (id: string): Promise<void> => {
-  console.log(`Deleting contract ${id} and related data`);
+  logger.log(`Deleting contract ${id} and related data`);
   
   try {
+    const { error: rpcError } = await supabase.rpc('delete_contract_cascade', {
+      p_contract_id: id,
+    });
+
+    if (!rpcError) {
+      logger.log('Contract deleted via delete_contract_cascade RPC');
+      return;
+    }
+
+    if (!isMissingRpcError(rpcError)) {
+      logger.error('Error deleting contract via RPC:', rpcError);
+      throw new Error(`Erro ao excluir contrato: ${rpcError.message}`);
+    }
+
+    logger.warn('delete_contract_cascade RPC unavailable; falling back to client-side delete flow');
+
     // First, delete related activities
     const { error: activitiesError } = await supabase
       .from('activities')
@@ -283,7 +311,7 @@ export const deleteContract = async (id: string): Promise<void> => {
       .eq('contract_id', id);
 
     if (activitiesError) {
-      console.error('Error deleting related activities:', activitiesError);
+      logger.error('Error deleting related activities:', activitiesError);
       throw new Error(`Erro ao excluir atividades relacionadas: ${activitiesError.message}`);
     }
 
@@ -294,7 +322,7 @@ export const deleteContract = async (id: string): Promise<void> => {
       .eq('contract_id', id);
 
     if (adjustmentsError) {
-      console.error('Error deleting contract adjustments:', adjustmentsError);
+      logger.error('Error deleting contract adjustments:', adjustmentsError);
       throw new Error(`Erro ao excluir reajustes do contrato: ${adjustmentsError.message}`);
     }
 
@@ -305,7 +333,7 @@ export const deleteContract = async (id: string): Promise<void> => {
       .eq('contract_id', id);
 
     if (documentsError) {
-      console.error('Error deleting contract documents:', documentsError);
+      logger.error('Error deleting contract documents:', documentsError);
       throw new Error(`Erro ao excluir documentos do contrato: ${documentsError.message}`);
     }
 
@@ -316,13 +344,13 @@ export const deleteContract = async (id: string): Promise<void> => {
       .eq('id', id);
 
     if (contractError) {
-      console.error('Error deleting contract:', contractError);
+      logger.error('Error deleting contract:', contractError);
       throw new Error(`Erro ao excluir contrato: ${contractError.message}`);
     }
     
-    console.log('Contract and all related data deleted successfully');
+    logger.log('Contract and all related data deleted successfully');
   } catch (err) {
-    console.error('Failed to delete contract:', err);
+    logger.error('Failed to delete contract:', err);
     throw err;
   }
 };
@@ -348,7 +376,7 @@ export const uploadContractDocument = async ({
   const fileName = `${contractId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  console.log(`Uploading document for contract ${contractId} to contract_documents bucket`);
+  logger.log(`Uploading document for contract ${contractId} to contract_documents bucket`);
 
   const { error: uploadError } = await supabase
     .storage
@@ -356,7 +384,7 @@ export const uploadContractDocument = async ({
     .upload(filePath, file);
 
   if (uploadError) {
-    console.error('Error uploading document:', uploadError);
+    logger.error('Error uploading document:', uploadError);
     throw new Error(uploadError.message);
   }
 
@@ -366,7 +394,7 @@ export const uploadContractDocument = async ({
     .from('contract_documents')
     .getPublicUrl(filePath);
 
-  console.log('Document uploaded successfully, URL:', data.publicUrl);
+  logger.log('Document uploaded successfully, URL:', data.publicUrl);
 
   // Add the document to the documents table
   const { error: dbError } = await supabase
@@ -383,7 +411,7 @@ export const uploadContractDocument = async ({
     });
 
   if (dbError) {
-    console.error('Error recording document in database:', dbError);
+    logger.error('Error recording document in database:', dbError);
     throw new Error(dbError.message);
   }
 
@@ -394,7 +422,7 @@ export const uploadContractDocument = async ({
     .eq('id', contractId);
 
   if (updateError) {
-    console.error('Error updating contract with document URL:', updateError);
+    logger.error('Error updating contract with document URL:', updateError);
     throw new Error(updateError.message);
   }
 
@@ -408,7 +436,7 @@ export const updateContractStatus = async (
   id: string, 
   status: ContractStatus
 ): Promise<Contract> => {
-  console.log(`Updating status of contract ${id} to ${status}`);
+  logger.log(`Updating status of contract ${id} to ${status}`);
   
   // Get current contract to check if we need to update property
   const { data: contract, error: fetchError } = await supabase
@@ -418,7 +446,7 @@ export const updateContractStatus = async (
     .single();
   
   if (fetchError) {
-    console.error('Error fetching contract for status update:', fetchError);
+    logger.error('Error fetching contract for status update:', fetchError);
     throw new Error(fetchError.message);
   }
   
@@ -438,11 +466,11 @@ export const updateContractStatus = async (
     .single();
 
   if (error) {
-    console.error('Error updating contract status:', error);
+    logger.error('Error updating contract status:', error);
     throw new Error(error.message);
   }
 
-  console.log('Contract status updated successfully');
+  logger.log('Contract status updated successfully');
 
   return mapRawToContract(data);
 };
@@ -454,7 +482,7 @@ export const updateSignatureStatus = async (
   id: string, 
   signature_status: SignatureStatus
 ): Promise<Contract> => {
-  console.log(`Updating signature status of contract ${id} to ${signature_status}`);
+  logger.log(`Updating signature status of contract ${id} to ${signature_status}`);
   
   const { data, error } = await supabase
     .from('contracts')
@@ -464,11 +492,11 @@ export const updateSignatureStatus = async (
     .single();
 
   if (error) {
-    console.error('Error updating contract signature status:', error);
+    logger.error('Error updating contract signature status:', error);
     throw new Error(error.message);
   }
 
-  console.log('Contract signature status updated successfully');
+  logger.log('Contract signature status updated successfully');
 
   return mapRawToContract(data);
 };
@@ -484,7 +512,7 @@ export const calculateOccupancyRate = async (): Promise<number> => {
       .not('status', 'eq', 'sold');
       
     if (propertiesError) {
-      console.error('Error fetching properties for occupancy rate:', propertiesError);
+      logger.error('Error fetching properties for occupancy rate:', propertiesError);
       return 0;
     }
     
@@ -495,7 +523,7 @@ export const calculateOccupancyRate = async (): Promise<number> => {
     const rentedCount = properties.filter(p => p.status === 'rented').length;
     return (rentedCount / properties.length) * 100;
   } catch (err) {
-    console.error('Error calculating occupancy rate:', err);
+    logger.error('Error calculating occupancy rate:', err);
     return 0;
   }
 };

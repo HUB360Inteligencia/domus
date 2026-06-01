@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 
+import { logger } from "@/lib/logger";
 interface UseMapboxLoaderReturn {
   isLoaded: boolean;
   isLoading: boolean;
@@ -30,24 +31,24 @@ const notifyCallbacks = () => {
     error: mapboxLoadState.error,
     retryLoad: () => loadMapbox(true)
   };
-  console.log('useMapboxLoader: Notifying callbacks with state:', state);
+  logger.log('useMapboxLoader: Notifying callbacks with state:', state);
   mapboxLoadState.callbacks.forEach(callback => callback(state));
 };
 
 const loadMapbox = async (forceReload = false) => {
   // If already loaded and not forcing reload, return
   if (mapboxLoadState.isLoaded && !forceReload) {
-    console.log('useMapboxLoader: Mapbox already loaded');
+    logger.log('useMapboxLoader: Mapbox already loaded');
     return;
   }
 
   // If already loading and not forcing reload, wait for existing promise
   if (mapboxLoadState.isLoading && !forceReload && mapboxLoadState.loadPromise) {
-    console.log('useMapboxLoader: Waiting for existing load promise');
+    logger.log('useMapboxLoader: Waiting for existing load promise');
     return mapboxLoadState.loadPromise;
   }
 
-  console.log('useMapboxLoader: Starting mapbox script load', { forceReload });
+  logger.log('useMapboxLoader: Starting mapbox script load', { forceReload });
   
   mapboxLoadState.isLoading = true;
   mapboxLoadState.error = null;
@@ -57,7 +58,7 @@ const loadMapbox = async (forceReload = false) => {
     try {
       // Check if already loaded in window
       if (window.mapboxgl && !forceReload) {
-        console.log('useMapboxLoader: Mapbox already loaded from window');
+        logger.log('useMapboxLoader: Mapbox already loaded from window');
         mapboxLoadState.isLoaded = true;
         mapboxLoadState.isLoading = false;
         notifyCallbacks();
@@ -84,16 +85,16 @@ const loadMapbox = async (forceReload = false) => {
       // Check if script already exists (and not force reloading)
       const existingScript = document.querySelector('script[src*="mapbox-gl.js"]');
       if (existingScript && !forceReload) {
-        console.log('useMapboxLoader: Mapbox script already exists, waiting for load');
+        logger.log('useMapboxLoader: Mapbox script already exists, waiting for load');
         existingScript.addEventListener('load', () => {
-          console.log('useMapboxLoader: Existing script loaded');
+          logger.log('useMapboxLoader: Existing script loaded');
           mapboxLoadState.isLoaded = true;
           mapboxLoadState.isLoading = false;
           notifyCallbacks();
           resolve();
         });
         existingScript.addEventListener('error', (error) => {
-          console.error('useMapboxLoader: Error with existing script:', error);
+          logger.error('useMapboxLoader: Error with existing script:', error);
           mapboxLoadState.error = 'Erro ao carregar biblioteca do Mapbox';
           mapboxLoadState.isLoading = false;
           notifyCallbacks();
@@ -102,7 +103,7 @@ const loadMapbox = async (forceReload = false) => {
         return;
       }
 
-      console.log('useMapboxLoader: Creating new script element');
+      logger.log('useMapboxLoader: Creating new script element');
 
       // Load CSS first
       const existingLink = document.querySelector('link[href*="mapbox-gl.css"]');
@@ -111,14 +112,14 @@ const loadMapbox = async (forceReload = false) => {
         link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
         link.rel = 'stylesheet';
         document.head.appendChild(link);
-        console.log('useMapboxLoader: CSS loaded');
+        logger.log('useMapboxLoader: CSS loaded');
       }
 
       // Load script
       const script = document.createElement('script');
       script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
       script.onload = () => {
-        console.log('useMapboxLoader: Script loaded successfully');
+        logger.log('useMapboxLoader: Script loaded successfully');
         // Small delay to ensure mapboxgl is available
         setTimeout(() => {
           if (window.mapboxgl) {
@@ -128,7 +129,7 @@ const loadMapbox = async (forceReload = false) => {
             resolve();
           } else {
             const error = 'Mapbox GL não está disponível após o carregamento';
-            console.error('useMapboxLoader:', error);
+            logger.error('useMapboxLoader:', error);
             mapboxLoadState.error = error;
             mapboxLoadState.isLoading = false;
             notifyCallbacks();
@@ -137,7 +138,7 @@ const loadMapbox = async (forceReload = false) => {
         }, 100);
       };
       script.onerror = (error) => {
-        console.error('useMapboxLoader: Error loading script:', error);
+        logger.error('useMapboxLoader: Error loading script:', error);
         mapboxLoadState.error = 'Erro ao carregar biblioteca do Mapbox';
         mapboxLoadState.isLoading = false;
         notifyCallbacks();
@@ -146,7 +147,7 @@ const loadMapbox = async (forceReload = false) => {
       document.head.appendChild(script);
 
     } catch (error) {
-      console.error('useMapboxLoader: Exception during load:', error);
+      logger.error('useMapboxLoader: Exception during load:', error);
       mapboxLoadState.error = 'Erro inesperado ao carregar Mapbox';
       mapboxLoadState.isLoading = false;
       notifyCallbacks();
@@ -166,7 +167,7 @@ export const useMapboxLoader = (): UseMapboxLoaderReturn => {
   });
 
   useEffect(() => {
-    console.log('useMapboxLoader: Component mounted, registering callback');
+    logger.log('useMapboxLoader: Component mounted, registering callback');
     
     // Add callback to global state
     mapboxLoadState.callbacks.add(setState);
@@ -178,7 +179,7 @@ export const useMapboxLoader = (): UseMapboxLoaderReturn => {
 
     // Cleanup
     return () => {
-      console.log('useMapboxLoader: Component unmounted, removing callback');
+      logger.log('useMapboxLoader: Component unmounted, removing callback');
       mapboxLoadState.callbacks.delete(setState);
     };
   }, []);

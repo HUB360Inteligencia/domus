@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
-import { toast } from 'sonner';
+import type { Session } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-import { useNavigate } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type UserRole = Database['public']['Enums']['app_role'];
@@ -60,7 +59,7 @@ export async function fetchUserProfile(userId: string): Promise<Profile | null> 
     .single();
 
   if (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error('Error fetching user profile:', error);
     return null;
   }
 
@@ -72,7 +71,18 @@ export async function fetchUserRole(userId: string): Promise<UserRole | null> {
     .rpc('get_user_role', { user_id: userId });
 
   if (error) {
-    console.error('Error fetching user role:', error);
+    logger.error('Error fetching user role:', error);
+    return null;
+  }
+
+  return data as UserRole;
+}
+
+export async function fetchCurrentUserRole(): Promise<UserRole | null> {
+  const { data, error } = await supabase.rpc('current_user_role');
+
+  if (error) {
+    logger.error('Error fetching current user role:', error);
     return null;
   }
 
@@ -81,13 +91,13 @@ export async function fetchUserRole(userId: string): Promise<UserRole | null> {
 
 export async function checkPermission(userId: string, permission: string): Promise<boolean> {
   const { data, error } = await supabase
-    .rpc('user_has_permission', { 
+    .rpc('user_has_permission', {
       user_id: userId,
       permission_name: permission
     });
 
   if (error) {
-    console.error('Error checking permission:', error);
+    logger.error('Error checking permission:', error);
     return false;
   }
 

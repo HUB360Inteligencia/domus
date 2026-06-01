@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Activity, ActivityFormData, ActivityStatus } from '@/types/activity';
 
+import { logger } from "@/lib/logger";
 // Fetch all activities for the current user
 export async function fetchActivities(): Promise<Activity[]> {
   const { data, error } = await supabase
@@ -10,7 +11,7 @@ export async function fetchActivities(): Promise<Activity[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching activities:', error);
+    logger.error('Error fetching activities:', error);
     throw new Error(error.message);
   }
 
@@ -26,7 +27,7 @@ export async function fetchActivityById(id: string): Promise<Activity> {
     .single();
 
   if (error) {
-    console.error(`Error fetching activity with id ${id}:`, error);
+    logger.error(`Error fetching activity with id ${id}:`, error);
     throw new Error(error.message);
   }
 
@@ -42,7 +43,7 @@ export async function fetchActivitiesByProperty(propertyId: string): Promise<Act
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(`Error fetching activities for property ${propertyId}:`, error);
+    logger.error(`Error fetching activities for property ${propertyId}:`, error);
     throw new Error(error.message);
   }
 
@@ -58,7 +59,7 @@ export async function fetchActivitiesByContract(contractId: string): Promise<Act
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(`Error fetching activities for contract ${contractId}:`, error);
+    logger.error(`Error fetching activities for contract ${contractId}:`, error);
     throw new Error(error.message);
   }
 
@@ -70,7 +71,7 @@ export async function createActivity(data: ActivityFormData): Promise<Activity> 
   // Get the current user's ID
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) {
-    console.error('Error getting current user:', userError);
+    logger.error('Error getting current user:', userError);
     throw new Error(userError.message);
   }
   
@@ -87,7 +88,7 @@ export async function createActivity(data: ActivityFormData): Promise<Activity> 
     .single();
 
   if (error) {
-    console.error('Error creating activity:', error);
+    logger.error('Error creating activity:', error);
     throw new Error(error.message);
   }
 
@@ -104,7 +105,7 @@ export async function updateActivity({ id, data }: { id: string; data: Partial<A
     .single();
 
   if (error) {
-    console.error(`Error updating activity ${id}:`, error);
+    logger.error(`Error updating activity ${id}:`, error);
     throw new Error(error.message);
   }
 
@@ -121,7 +122,7 @@ export async function updateActivityStatus(id: string, status: ActivityStatus): 
     .single();
 
   if (error) {
-    console.error(`Error updating activity status ${id}:`, error);
+    logger.error(`Error updating activity status ${id}:`, error);
     throw new Error(error.message);
   }
 
@@ -136,7 +137,7 @@ export async function deleteActivity(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) {
-    console.error(`Error deleting activity ${id}:`, error);
+    logger.error(`Error deleting activity ${id}:`, error);
     throw new Error(error.message);
   }
 }
@@ -169,7 +170,7 @@ export async function convertActivityToExpense(activityId: string): Promise<{ ex
     .single();
 
   if (error) {
-    console.error('Error creating expense from activity:', error);
+    logger.error('Error creating expense from activity:', error);
     throw new Error(error.message);
   }
 

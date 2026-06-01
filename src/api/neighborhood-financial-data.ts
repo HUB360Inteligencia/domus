@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 export interface NeighborhoodFinancialData {
   name: string;
   revenue: number;
@@ -103,7 +104,7 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
     // Sort by ROI descending
     return result.sort((a, b) => b.roi - a.roi);
   } catch (error) {
-    console.error('Error fetching neighborhood financial data:', error);
+    logger.error('Error fetching neighborhood financial data:', error);
     throw error;
   }
 };

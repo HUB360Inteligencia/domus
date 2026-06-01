@@ -20,34 +20,57 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, CheckCircle, KeyRound, Eye, EyeOff, Shield, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useCreateClientUser, useResetUserPassword, useCurrentUserClientId } from "@/hooks/use-client-users";
 import { ClientUser } from "@/api/client-users";
+import { logger } from "@/lib/logger";
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "";
 
 // Schema for creating a new user
 const createUserSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres")
-    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
-  confirmPassword: z.string(),
   first_name: z.string().min(1, "Nome é obrigatório"),
   last_name: z.string().min(1, "Sobrenome é obrigatório"),
+  role: z.string().default("user"),
+  use_generic_password: z.boolean().default(true),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
   is_primary: z.boolean().default(false),
-}).refine((data) => data.password === data.confirmPassword, {
+  must_change_password: z.boolean().default(true),
+}).refine((data) => {
+  if (!data.use_generic_password) {
+    return data.password && data.password.length >= 6;
+  }
+  return true;
+}, {
+  message: "A senha deve ter pelo menos 6 caracteres",
+  path: ["password"],
+}).refine((data) => {
+  if (!data.use_generic_password && data.password) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
   message: "As senhas não conferem",
   path: ["confirmPassword"],
 });
 
 // Schema for resetting password
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres")
-    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não conferem",
@@ -56,6 +79,13 @@ const resetPasswordSchema = z.object({
 
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
+const ROLE_OPTIONS = [
+  { value: "admin", label: "Administrador", description: "Acesso total à organização" },
+  { value: "manager", label: "Gerente", description: "Gerencia imóveis e contratos" },
+  { value: "user", label: "Usuário", description: "Acesso padrão ao sistema" },
+  { value: "viewer", label: "Visualizador", description: "Apenas visualização" },
+];
 
 interface ClientUserFormProps {
   clientId?: string;
@@ -71,7 +101,9 @@ export function ClientUserForm({
   onCancel 
 }: ClientUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string } | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
   const isEditMode = !!existingUser;
   
   const { data: currentUserClientId } = useCurrentUserClientId();
@@ -89,7 +121,10 @@ export function ClientUserForm({
       confirmPassword: "",
       first_name: "",
       last_name: "",
+      role: "user",
+      use_generic_password: true,
       is_primary: false,
+      must_change_password: true,
     },
   });
 
@@ -102,6 +137,8 @@ export function ClientUserForm({
     },
   });
 
+  const watchUseGenericPassword = createForm.watch("use_generic_password");
+
   // Handle creating a new user
   async function handleCreateUser(data: CreateUserFormValues) {
     if (!effectiveClientId) {
@@ -111,24 +148,28 @@ export function ClientUserForm({
 
     setIsSubmitting(true);
     try {
-      await createUserMutation.mutateAsync({
+      const createdUser = await createUserMutation.mutateAsync({
         client_id: effectiveClientId,
         email: data.email,
-        password: data.password,
+        password: data.use_generic_password ? undefined : data.password,
+        use_generic_password: data.use_generic_password,
         first_name: data.first_name,
         last_name: data.last_name,
         is_primary: data.is_primary,
+        role: data.role,
+        must_change_password: data.must_change_password,
       });
       
-      setIsSuccess(true);
-      toast.success("Usuário criado com sucesso");
+      const password = createdUser.generated_password || data.password!;
+      setCreatedInfo({ email: data.email, password });
       
       setTimeout(() => {
         if (onSuccess) onSuccess();
-      }, 1500);
-    } catch (error: any) {
-      console.error("Erro ao criar usuário:", error);
-      if (error.message?.includes("email")) {
+      }, 3000);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      logger.error("Erro ao criar usuário:", error);
+      if (message.includes("email")) {
         toast.error("Este email já está cadastrado");
       } else {
         toast.error("Erro ao criar usuário. Tente novamente.");
@@ -149,17 +190,27 @@ export function ClientUserForm({
         password: data.password,
       });
       
-      setIsSuccess(true);
       toast.success("Senha redefinida com sucesso");
       
       setTimeout(() => {
         if (onSuccess) onSuccess();
       }, 1500);
-    } catch (error: any) {
-      console.error("Erro ao redefinir senha:", error);
+    } catch (error: unknown) {
+      logger.error("Erro ao redefinir senha:", error);
       toast.error("Erro ao redefinir senha. Tente novamente.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  function handleCopyCredentials() {
+    if (createdInfo) {
+      navigator.clipboard.writeText(
+        `Email: ${createdInfo.email}\nSenha: ${createdInfo.password}`
+      );
+      setCopiedPassword(true);
+      toast.success("Credenciais copiadas!");
+      setTimeout(() => setCopiedPassword(false), 2000);
     }
   }
 
@@ -168,9 +219,7 @@ export function ClientUserForm({
       <Card>
         <CardHeader>
           <CardTitle>Erro</CardTitle>
-          <CardDescription>
-            Nenhum cliente selecionado
-          </CardDescription>
+          <CardDescription>Nenhum cliente selecionado</CardDescription>
         </CardHeader>
         <CardFooter>
           <Button onClick={onCancel}>Voltar</Button>
@@ -179,25 +228,43 @@ export function ClientUserForm({
     );
   }
 
-  if (isSuccess) {
+  // Success state
+  if (createdInfo) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span>{isEditMode ? "Senha atualizada!" : "Usuário criado!"}</span>
-          </CardTitle>
+      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+          </div>
+          <CardTitle>Usuário criado com sucesso!</CardTitle>
           <CardDescription>
-            {isEditMode 
-              ? "A senha foi redefinida com sucesso."
-              : "O usuário foi criado e pode fazer login no sistema."
-            }
+            Compartilhe as credenciais abaixo com o novo usuário.
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border bg-background p-3 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Email:</span>
+              <span className="font-mono font-semibold">{createdInfo.email}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Senha:</span>
+              <span className="font-mono font-semibold">{createdInfo.password}</span>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <Button variant="outline" size="sm" onClick={handleCopyCredentials}>
+            {copiedPassword ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+            {copiedPassword ? "Copiado!" : "Copiar credenciais"}
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
 
+  // ─── Reset Password Mode ───
   if (isEditMode) {
     return (
       <Card>
@@ -219,14 +286,11 @@ export function ClientUserForm({
                     <FormControl>
                       <Input type="password" placeholder="Digite uma nova senha" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Mínimo 8 caracteres, com pelo menos 1 maiúscula e 1 número
-                    </FormDescription>
+                    <FormDescription>Mínimo 6 caracteres</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={resetPasswordForm.control}
                 name="confirmPassword"
@@ -241,11 +305,8 @@ export function ClientUserForm({
                 )}
               />
             </CardContent>
-            
             <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancelar
-              </Button>
+              <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Atualizar senha
@@ -257,12 +318,13 @@ export function ClientUserForm({
     );
   }
 
+  // ─── Create User Mode ───
   return (
     <Card>
       <CardHeader>
         <CardTitle>Cadastrar novo usuário</CardTitle>
         <CardDescription>
-          Crie um novo usuário para o cliente
+          Crie um novo usuário para esta organização
         </CardDescription>
       </CardHeader>
       <Form {...createForm}>
@@ -274,7 +336,7 @@ export function ClientUserForm({
                 name="first_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome</FormLabel>
+                    <FormLabel>Nome *</FormLabel>
                     <FormControl>
                       <Input placeholder="Nome" {...field} />
                     </FormControl>
@@ -282,13 +344,12 @@ export function ClientUserForm({
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={createForm.control}
                 name="last_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sobrenome</FormLabel>
+                    <FormLabel>Sobrenome *</FormLabel>
                     <FormControl>
                       <Input placeholder="Sobrenome" {...field} />
                     </FormControl>
@@ -303,7 +364,7 @@ export function ClientUserForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="email@exemplo.com" {...field} />
                   </FormControl>
@@ -312,38 +373,128 @@ export function ClientUserForm({
                 </FormItem>
               )}
             />
-            
+
+            {/* ─── Nível de Acesso ─── */}
             <FormField
               control={createForm.control}
-              name="password"
+              name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Digite uma senha" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Mínimo 8 caracteres, com pelo menos 1 maiúscula e 1 número
-                  </FormDescription>
+                  <FormLabel className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Nível de acesso
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o nível" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ROLE_OPTIONS.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{role.label}</span>
+                            <span className="text-xs text-muted-foreground">— {role.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
+            <Separator />
+
+            {/* ─── Senha ─── */}
             <FormField
               control={createForm.control}
-              name="confirmPassword"
+              name="use_generic_password"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirme a senha</FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base flex items-center gap-2">
+                      <KeyRound className="h-4 w-4" />
+                      Gerar senha temporária
+                    </FormLabel>
+                    <FormDescription>
+                      Uma senha forte será gerada e exibida uma única vez após a criação.
+                    </FormDescription>
+                  </div>
                   <FormControl>
-                    <Input type="password" placeholder="Confirme a senha" {...field} />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
+
+            {!watchUseGenericPassword && (
+              <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                <FormField
+                  control={createForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha personalizada *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="Digite a senha" 
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>Mínimo 6 caracteres</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirme a senha *</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Confirme a senha" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            <FormField
+              control={createForm.control}
+              name="must_change_password"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Solicitar troca de senha</FormLabel>
+                    <FormDescription>
+                      O usuário deverá trocar a senha no primeiro acesso
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={createForm.control}
               name="is_primary"
@@ -352,14 +503,11 @@ export function ClientUserForm({
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Usuário principal</FormLabel>
                     <FormDescription>
-                      Definir este usuário como administrador principal do cliente
+                      Definir como administrador principal da organização
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -367,9 +515,7 @@ export function ClientUserForm({
           </CardContent>
           
           <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
+            <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar usuário

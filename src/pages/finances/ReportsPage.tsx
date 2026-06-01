@@ -5,11 +5,19 @@ import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useProperties } from '@/hooks/use-properties';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFinancialCategories } from '@/hooks/use-financial-categories';
 
 export default function ReportsPage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const { transactions } = useFinancialTransactions();
   const { properties } = useProperties();
+  const { categories } = useFinancialCategories();
+  
+  // Função auxiliar para pegar o nome da categoria
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category ? category.name : 'Categoria Desconhecida';
+  };
   
   // Filtragem por propriedade, se selecionada
   const filteredTransactions = selectedPropertyId 
@@ -121,9 +129,9 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Object.entries(categoryTotals).map(([category, { income, expense }]) => (
-              <div key={category} className="flex items-center justify-between py-2 border-b">
-                <div className="font-medium">{category}</div>
+            {Object.entries(categoryTotals).map(([categoryId, { income, expense }]) => (
+              <div key={categoryId} className="flex items-center justify-between py-2 border-b">
+                <div className="font-medium">{getCategoryName(categoryId)}</div>
                 <div className="space-x-4 flex">
                   <span className="text-green-600">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(income)}

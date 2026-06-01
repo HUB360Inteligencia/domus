@@ -3,20 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFormData } from '@/types/property';
 import { handleAuthError } from '@/utils/auth-utils';
 
+import { logger } from "@/lib/logger";
 export const createPropertyEnhanced = async (propertyData: Omit<PropertyFormData, 'images'>): Promise<Property> => {
   try {
-    console.log('Creating property with data:', propertyData);
+    logger.log('Creating property with data:', propertyData);
     
     // Check authentication first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
-      console.error('Session error:', sessionError);
+      logger.error('Session error:', sessionError);
       throw new Error('Erro de autenticação');
     }
     
     if (!session) {
-      console.error('No active session found');
+      logger.error('No active session found');
       throw new Error('Usuário não autenticado');
     }
 
@@ -34,7 +35,7 @@ export const createPropertyEnhanced = async (propertyData: Omit<PropertyFormData
       value: Number(propertyData.value) || 0,
     };
 
-    console.log('Insert data prepared:', insertData);
+    logger.log('Insert data prepared:', insertData);
 
     const { data, error } = await supabase
       .from('properties')
@@ -43,7 +44,7 @@ export const createPropertyEnhanced = async (propertyData: Omit<PropertyFormData
       .single();
 
     if (error) {
-      console.error('Database error creating property:', error);
+      logger.error('Database error creating property:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
@@ -52,18 +53,18 @@ export const createPropertyEnhanced = async (propertyData: Omit<PropertyFormData
       throw new Error('Nenhum dado retornado ao criar propriedade');
     }
 
-    console.log('Property created successfully:', data);
+    logger.log('Property created successfully:', data);
     return data as unknown as Property;
     
   } catch (err: any) {
-    console.error('Failed to create property:', err);
+    logger.error('Failed to create property:', err);
     throw new Error(err.message || 'Erro ao criar propriedade');
   }
 };
 
 export const updatePropertyEnhanced = async (propertyData: { id: string } & Partial<Omit<PropertyFormData, 'images'>>): Promise<Property> => {
   try {
-    console.log('Updating property with data:', propertyData);
+    logger.log('Updating property with data:', propertyData);
     
     const { id, ...updateData } = propertyData;
 
@@ -71,16 +72,16 @@ export const updatePropertyEnhanced = async (propertyData: { id: string } & Part
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
-      console.error('Session error:', sessionError);
+      logger.error('Session error:', sessionError);
       throw new Error('Erro de autenticação');
     }
     
     if (!session) {
-      console.error('No active session found');
+      logger.error('No active session found');
       throw new Error('Usuário não autenticado');
     }
 
-    console.log('Update data prepared:', updateData);
+    logger.log('Update data prepared:', updateData);
 
     const { data, error } = await supabase
       .from('properties')
@@ -91,7 +92,7 @@ export const updatePropertyEnhanced = async (propertyData: { id: string } & Part
       .single();
 
     if (error) {
-      console.error('Database error updating property:', error);
+      logger.error('Database error updating property:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
@@ -100,11 +101,11 @@ export const updatePropertyEnhanced = async (propertyData: { id: string } & Part
       throw new Error('Propriedade não encontrada ou sem permissão para editar');
     }
 
-    console.log('Property updated successfully:', data);
+    logger.log('Property updated successfully:', data);
     return data as unknown as Property;
     
   } catch (err: any) {
-    console.error('Failed to update property:', err);
+    logger.error('Failed to update property:', err);
     throw new Error(err.message || 'Erro ao atualizar propriedade');
   }
 };

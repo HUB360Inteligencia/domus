@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+import { logger } from "@/lib/logger";
 export interface MrrData {
   month: string;
   value: number;
@@ -43,7 +44,7 @@ export async function fetchSubscriptionAnalytics(): Promise<SubscriptionAnalytic
     .eq('status', 'active');
 
   if (subscriptionsError) {
-    console.error('Error fetching subscriptions:', subscriptionsError);
+    logger.error('Error fetching subscriptions:', subscriptionsError);
     throw subscriptionsError;
   }
 
@@ -56,7 +57,7 @@ export async function fetchSubscriptionAnalytics(): Promise<SubscriptionAnalytic
     .select('id, is_active');
 
   if (clientsError) {
-    console.error('Error fetching clients:', clientsError);
+    logger.error('Error fetching clients:', clientsError);
     throw clientsError;
   }
 
@@ -126,7 +127,7 @@ export async function calculateMrr(): Promise<number> {
     .eq('status', 'active');
 
   if (error) {
-    console.error('Error calculating MRR:', error);
+    logger.error('Error calculating MRR:', error);
     throw error;
   }
 
@@ -150,7 +151,7 @@ export async function getClientDistributionByPlan(): Promise<{ planName: string;
     .eq('status', 'active');
 
   if (error) {
-    console.error('Error fetching client distribution:', error);
+    logger.error('Error fetching client distribution:', error);
     throw error;
   }
 

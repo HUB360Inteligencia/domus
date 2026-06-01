@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 export interface RentalItem {
   id?: string;
   name: string;
@@ -32,7 +33,7 @@ export const useRentalHistory = (propertyId: string) => {
         .order('transaction_date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching rental history:', error);
+        logger.error('Error fetching rental history:', error);
         throw error;
       }
 
@@ -54,7 +55,7 @@ export const useRentalHistory = (propertyId: string) => {
           }
         } catch (e) {
           // Se não for JSON válido, não é problema - usamos valores padrão
-          console.log('Description is not JSON, using transaction amount as balance');
+          logger.log('Description is not JSON, using transaction amount as balance');
         }
 
         // Se não conseguimos extrair dados do JSON, usar dados da transação

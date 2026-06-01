@@ -1,14 +1,47 @@
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthContext, AuthUser, fetchUserProfile, fetchUserRole } from '@/lib/auth';
+import { AuthContext, AuthUser, fetchCurrentUserRole, fetchUserProfile, fetchUserRole } from '@/lib/auth';
+import type { UserRole } from '@/lib/auth';
 import { Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { cleanupAuthState } from '@/utils/auth-cleanup';
+import { logger } from '@/lib/logger';
+
+const isDev = import.meta.env.DEV;
+
+function devLog(...args: unknown[]) {
+  if (isDev) console.log(...args);
+}
 
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// All common permissions are pre-fetched during login so hasPermission is always synchronous
+const COMMON_PERMISSIONS = [
+  'properties.view',
+  'properties.create',
+  'properties.edit',
+  'contracts.view',
+  'contracts.create',
+  'users.view',
+  'users.invite',
+  'settings.view',
+  'settings.edit',
+  'clients.view',
+  'manage_users',
+  'admin_access',
+  'contacts.view',
+  'contacts.create',
+  'contacts.edit',
+  'contacts.delete',
+  'contacts.links.manage',
+  'contacts.interactions.view',
+  'contacts.interactions.manage',
+  'contacts.financial.view',
+  'contacts.documents.view',
+];
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -16,66 +49,80 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
 
-  async function refreshUserData(session: Session) {
-    if (!session?.user) return;
+  const prefetchPermissions = useCallback(async (userId: string): Promise<Record<string, boolean>> => {
+    const results: Record<string, boolean> = {};
+
+    // Run all permission checks in parallel for speed
+    const checks = await Promise.allSettled(
+      COMMON_PERMISSIONS.map(async (perm) => {
+        const { data } = await supabase.rpc('user_has_permission', {
+          user_id: userId,
+          permission_name: perm,
+        });
+        return { perm, value: data || false };
+      })
+    );
+
+    for (const result of checks) {
+      if (result.status === 'fulfilled') {
+        results[result.value.perm] = result.value.value;
+      }
+    }
+
+    devLog('Permissions pre-fetched:', results);
+    return results;
+  }, []);
+
+  const refreshUserData = useCallback(async (currentSession: Session) => {
+    if (!currentSession?.user) return;
 
     try {
-      const profile = await fetchUserProfile(session.user.id);
-      const role = await fetchUserRole(session.user.id);
-      
-      console.log('User role fetched:', role);
+      const [profile, currentRole] = await Promise.all([
+        fetchUserProfile(currentSession.user.id),
+        fetchCurrentUserRole(),
+      ]);
+
+      let finalRole = currentRole || (await fetchUserRole(currentSession.user.id));
+
+      // If they are just a 'user' at system level, check if they are an admin/manager in their organization
+      if (finalRole === 'user' || !finalRole) {
+        const { data: clientUser } = await supabase
+          .from('client_users')
+          .select('role')
+          .eq('user_id', currentSession.user.id)
+          .maybeSingle();
+
+        if (clientUser && clientUser.role) {
+          finalRole = clientUser.role as UserRole;
+        }
+      }
+
+      devLog('User role fetched:', finalRole);
 
       setUser({
-        id: session.user.id,
-        email: session.user.email,
+        id: currentSession.user.id,
+        email: currentSession.user.email,
         profile,
-        role
+        role: finalRole,
       });
 
-      // Pre-fetch some common permissions for better performance
-      const commonPermissions = [
-        'properties.view', 
-        'properties.create', 
-        'properties.edit',
-        'contracts.view', 
-        'contracts.create', 
-        'users.view', 
-        'users.invite',
-        'settings.view', 
-        'settings.edit',
-        'clients.view', // Added clients.view to pre-fetched permissions
-      ];
-      
-      const permissionResults = {};
-      for (const perm of commonPermissions) {
-        const { data } = await supabase.rpc('user_has_permission', { 
-          user_id: session.user.id,
-          permission_name: perm
-        });
-        permissionResults[perm] = data || false;
-        console.log(`Permission check for ${perm}:`, data);
-      }
-      
-      setPermissions(permissionResults);
+      const perms = await prefetchPermissions(currentSession.user.id);
+      setPermissions(perms);
     } catch (error) {
-      console.error('Error refreshing user data:', error);
-      // If we get an error fetching user data, the session might be invalid
+      logger.error('Error refreshing user data:', error);
       if (String(error).includes('401') || String(error).includes('Unauthorized')) {
         handleSessionError();
       }
     }
-  }
+  }, [prefetchPermissions]);
 
   // Handle expired or invalid sessions
   function handleSessionError() {
-    console.log('Handling session error, cleaning up auth state');
+    devLog('Handling session error, cleaning up auth state');
     cleanupAuthState();
     setUser(null);
     setSession(null);
     setPermissions({});
-    
-    // Redirect to login with a page reload to clear any React state
-    window.location.href = '/login';
   }
 
   useEffect(() => {
@@ -86,12 +133,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         // Set up auth state listener FIRST to avoid missing auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log('Auth state changed:', event);
-          
+          devLog('Auth state changed:', event);
+
           if (mounted) {
             setSession(newSession);
           }
-          
+
           if (event === 'SIGNED_IN' && newSession) {
             // Use setTimeout to avoid potential deadlocks with Supabase client
             setTimeout(() => {
@@ -105,21 +152,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
               setPermissions({});
             }
           } else if (event === 'TOKEN_REFRESHED') {
-            console.log('Token refreshed successfully');
+            devLog('Token refreshed successfully');
           }
         });
 
         // THEN check for existing session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log('Initial session check:', initialSession ? 'Session exists' : 'No session');
-        
+        devLog('Initial session check:', initialSession ? 'Session exists' : 'No session');
+
         if (mounted) {
           setSession(initialSession);
-        
+
           if (initialSession) {
             await refreshUserData(initialSession);
           }
-          
+
           setIsLoading(false);
         }
 
@@ -127,7 +174,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           subscription.unsubscribe();
         };
       } catch (error) {
-        console.error('Error getting initial session:', error);
+        logger.error('Error getting initial session:', error);
         if (mounted) {
           setIsLoading(false);
         }
@@ -139,21 +186,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [refreshUserData]);
 
   async function signIn(email: string, password: string) {
     try {
       // Limpar estado de autenticação anterior
       cleanupAuthState();
-      
+
       // Tentar fazer logout global para garantir estado limpo
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
         // Continuar mesmo se falhar
-        console.log('Error during global signout:', err);
+        devLog('Error during global signout:', err);
       }
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -163,10 +210,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         toast.error(error.message);
         return Promise.reject(error);
       }
-      
-      // Forçar atualização da página para obter estado limpo
-      window.location.href = '/dashboard';
-      
+
+      // The onAuthStateChange listener will handle session setup and navigation
     } catch (error) {
       toast.error('Ocorreu um erro durante o login');
       return Promise.reject(error);
@@ -177,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Limpar estado de autenticação anterior
       cleanupAuthState();
-      
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -202,18 +247,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Limpar estado de autenticação
       cleanupAuthState();
-      
+
       // Tentar fazer logout global
       await supabase.auth.signOut({ scope: 'global' });
-      
+
       toast.success('Você saiu com sucesso');
-      
-      // Forçar atualização da página para obter estado limpo
-      window.location.href = '/login';
+
+      // The onAuthStateChange listener will clear the state
     } catch (error) {
       toast.error('Ocorreu um erro ao sair');
-      // Ainda assim, tente redirecionar para login
-      window.location.href = '/login';
       return Promise.reject(error);
     }
   }
@@ -286,44 +328,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  /**
+   * Purely synchronous permission check — uses only the pre-fetched cache.
+   * system_admin bypasses ALL checks.
+   * admin bypasses org-level checks but NOT system-level (admin_access).
+   */
   function hasPermission(permission: string): boolean {
-    console.log(`Checking permission ${permission} for user with role:`, user?.role);
-    
-    // If already cached, return immediately
-    if (permissions[permission] !== undefined) {
-      console.log(`Permission ${permission} cached result:`, permissions[permission]);
-      return permissions[permission];
-    }
-    
-    // Super admin bypass - FIXED: now checks for both 'admin' and 'system_admin' roles
-    if (user?.role === 'admin' || user?.role === 'system_admin') {
-      console.log(`User has admin/system_admin role, granting permission ${permission}`);
+    // System owner — full bypass
+    if (user?.role === 'system_admin') {
       return true;
     }
-    
-    // No admin so we need to fetch permission asynchronously
-    if (user) {
-      console.log(`Fetching permission ${permission} for user ${user.id}`);
-      supabase.rpc('user_has_permission', { 
-        user_id: user.id,
-        permission_name: permission
-      }).then(({ data, error }) => {
-        if (error) {
-          console.error(`Error checking permission ${permission}:`, error);
-        } else {
-          console.log(`Permission ${permission} RPC result:`, data);
-          setPermissions(prev => ({
-            ...prev,
-            [permission]: data || false
-          }));
-        }
-      });
+
+    // Org-level admin — bypass everything EXCEPT system-level permissions
+    if (user?.role === 'admin') {
+      if (permission === 'admin_access') {
+        return false;
+      }
+      return true;
     }
-    
-    // Since we couldn't determine immediately, default to false
-    // This will be updated when the RPC call completes
-    console.log(`Default deny for permission ${permission} (async check in progress)`);
-    return false;
+
+    // Return cached value; if not cached, deny by default.
+    // All common permissions are pre-fetched during login.
+    return permissions[permission] ?? false;
   }
 
   return (

@@ -87,10 +87,16 @@ export function ActivityForm({
 
   // Handle form submission
   const handleFormSubmit = (data: FormValues) => {
+    // If no dates provided, use today's date to ensure it appears in Agenda
+    let startDate = data.start_date;
+    if (!startDate && !data.due_date) {
+      startDate = new Date();
+    }
+
     // Convert date objects to ISO strings for backend
     const formattedData = {
       ...data,
-      start_date: data.start_date ? data.start_date.toISOString() : null,
+      start_date: startDate ? startDate.toISOString() : null,
       due_date: data.due_date ? data.due_date.toISOString() : null,
       completed_at: data.completed_at ? data.completed_at.toISOString() : null,
     };

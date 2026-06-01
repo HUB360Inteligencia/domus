@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Contract } from '@/types/contract';
 
+import { logger } from "@/lib/logger";
 export const usePropertyActiveContract = (propertyId: string | null) => {
   const { data: activeContract, isLoading } = useQuery({
     queryKey: ['active-contract', propertyId],
@@ -17,7 +18,7 @@ export const usePropertyActiveContract = (propertyId: string | null) => {
         .single();
 
       if (error) {
-        console.error('Error fetching active contract:', error);
+        logger.error('Error fetching active contract:', error);
         return null;
       }
 

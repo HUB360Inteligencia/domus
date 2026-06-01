@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Document, DocumentFormData } from "@/types/contract";
 import CryptoJS from "crypto-js";
 
+import { logger } from "@/lib/logger";
 /**
  * Fetches all documents for the current user
  */
 export const fetchDocuments = async (category?: string): Promise<Document[]> => {
   try {
-    console.log('Fetching documents...');
+    logger.log('Fetching documents...');
     let query = supabase.from('documents').select('*');
     
     if (category) {
@@ -18,14 +19,14 @@ export const fetchDocuments = async (category?: string): Promise<Document[]> => 
     const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching documents:', error);
+      logger.error('Error fetching documents:', error);
       throw new Error(error.message);
     }
 
-    console.log(`Documents fetched successfully: ${data?.length || 0}`);
+    logger.log(`Documents fetched successfully: ${data?.length || 0}`);
     return data || [];
   } catch (err) {
-    console.error('Failed to fetch documents:', err);
+    logger.error('Failed to fetch documents:', err);
     throw err;
   }
 };
@@ -35,7 +36,7 @@ export const fetchDocuments = async (category?: string): Promise<Document[]> => 
  */
 export const fetchContractDocuments = async (contractId: string): Promise<Document[]> => {
   try {
-    console.log(`Fetching documents for contract: ${contractId}`);
+    logger.log(`Fetching documents for contract: ${contractId}`);
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -43,14 +44,14 @@ export const fetchContractDocuments = async (contractId: string): Promise<Docume
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching contract documents:', error);
+      logger.error('Error fetching contract documents:', error);
       throw new Error(error.message);
     }
 
-    console.log(`Contract documents fetched successfully: ${data?.length || 0}`);
+    logger.log(`Contract documents fetched successfully: ${data?.length || 0}`);
     return data || [];
   } catch (err) {
-    console.error(`Failed to fetch documents for contract ${contractId}:`, err);
+    logger.error(`Failed to fetch documents for contract ${contractId}:`, err);
     throw err;
   }
 };
@@ -102,7 +103,7 @@ export const uploadDocument = async (documentData: DocumentFormData): Promise<Do
       .upload(filePath, file);
 
     if (uploadError) {
-      console.error('Error uploading document:', uploadError);
+      logger.error('Error uploading document:', uploadError);
       throw new Error(uploadError.message);
     }
 
@@ -131,14 +132,14 @@ export const uploadDocument = async (documentData: DocumentFormData): Promise<Do
     if (error) {
       // If database insert fails, try to clean up the uploaded file
       await supabase.storage.from('contract_documents').remove([filePath]);
-      console.error('Error saving document metadata:', error);
+      logger.error('Error saving document metadata:', error);
       throw new Error(error.message);
     }
 
-    console.log('Document uploaded successfully:', data);
+    logger.log('Document uploaded successfully:', data);
     return data;
   } catch (err) {
-    console.error('Upload document error:', err);
+    logger.error('Upload document error:', err);
     throw err;
   }
 };
@@ -155,7 +156,7 @@ export const downloadDocument = async (document: Document): Promise<{ url: strin
       .download(document.file_path);
     
     if (error) {
-      console.error('Error downloading document:', error);
+      logger.error('Error downloading document:', error);
       throw new Error(error.message);
     }
 
@@ -197,7 +198,7 @@ export const downloadDocument = async (document: Document): Promise<{ url: strin
     const url = URL.createObjectURL(data);
     return { url, filename: document.name };
   } catch (err) {
-    console.error('Download document error:', err);
+    logger.error('Download document error:', err);
     throw err;
   }
 };
@@ -214,7 +215,7 @@ export const deleteDocument = async (document: Document): Promise<void> => {
       .remove([document.file_path]);
       
     if (storageError) {
-      console.error('Error deleting document from storage:', storageError);
+      logger.error('Error deleting document from storage:', storageError);
       throw new Error(storageError.message);
     }
 
@@ -225,7 +226,7 @@ export const deleteDocument = async (document: Document): Promise<void> => {
       .eq('id', document.id);
       
     if (dbError) {
-      console.error('Error deleting document from database:', dbError);
+      logger.error('Error deleting document from database:', dbError);
       throw new Error(dbError.message);
     }
 
@@ -234,9 +235,9 @@ export const deleteDocument = async (document: Document): Promise<void> => {
       localStorage.removeItem(`docKey_${document.name}`);
     }
 
-    console.log('Document deleted successfully');
+    logger.log('Document deleted successfully');
   } catch (err) {
-    console.error('Delete document error:', err);
+    logger.error('Delete document error:', err);
     throw err;
   }
 };

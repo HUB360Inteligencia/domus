@@ -1,74 +1,80 @@
-
-import { Bell, Search } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Building2, CalendarDays, Plus, Search } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/lib/auth";
+import { useCurrentUserClientId } from "@/hooks/use-client-users";
+import { useClient } from "@/hooks/use-clients";
 
 export function AppHeader() {
-  const { signOut } = useAuth();
+  const { data: currentClientId } = useCurrentUserClientId();
+  const { data: currentClient } = useClient(currentClientId ?? undefined);
+
+  const organizationName = currentClient?.name || "Domus Portfolio";
+
+  const today = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  })
+    .format(new Date())
+    .replace(".", "");
 
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-background px-6 mt-14 md:mt-0">
-      <div className="flex flex-1 items-center gap-4">
-        <div className="relative flex-1 md:max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <header className="sticky top-0 z-30 hidden md:block mx-3 mt-4 md:mx-6 lg:mx-8">
+      <div className="premium-panel dark:premium-panel-dark flex min-h-[72px] items-center gap-3 rounded-[2rem] px-4 py-3 backdrop-blur-xl">
+        <div
+          className="hidden min-w-0 max-w-[260px] items-center gap-2 rounded-2xl border border-white/60 bg-white/60 px-3 py-2 shadow-sm dark:border-white/10 dark:bg-white/5 lg:flex"
+          title={organizationName}
+        >
+          <Building2 className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold uppercase leading-none text-muted-foreground/70">
+              Organizacao
+            </div>
+            <div className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
+              {organizationName}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative min-w-[180px] flex-1">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar..."
-            className="pl-8"
+            name="global-search"
+            placeholder="Buscar imoveis, contratos, relatorios…"
+            className="h-11 rounded-2xl border-white/70 bg-white/75 pl-10 shadow-none dark:border-white/10 dark:bg-white/5"
           />
         </div>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon">
-          <Bell className="h-4 w-4" />
-          <span className="sr-only">Notificações</span>
+
+        <Link
+          to="/agenda"
+          aria-label="Abrir agenda de hoje"
+          className="hidden items-center gap-2 rounded-2xl border border-white/60 bg-white/55 px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:bg-white hover:text-foreground dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 xl:flex"
+        >
+          <CalendarDays className="h-4 w-4 text-accent" />
+          {today}
+        </Link>
+
+        <Button
+          size="sm"
+          className="hidden h-11 px-4 sm:inline-flex"
+          asChild
+        >
+          <Link to="/properties/new">
+            <Plus className="h-4 w-4" />
+            Novo ativo
+          </Link>
         </Button>
-        
+
+        <NotificationCenter />
+
         <ThemeToggle />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt="Avatar" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Usuário</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  usuario@exemplo.com
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Configurações
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut}>
-              Sair
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+
       </div>
     </header>
   );

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { PropertyFormData } from "@/types/property";
 import { createPropertyEnhanced, updatePropertyEnhanced } from "@/api/properties-enhanced";
 
+import { logger } from "@/lib/logger";
 export const usePropertyMutationsEnhanced = () => {
   const queryClient = useQueryClient();
 
@@ -11,10 +12,10 @@ export const usePropertyMutationsEnhanced = () => {
     mutationFn: createPropertyEnhanced,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      console.log('Property created successfully:', data.id);
+      logger.log('Property created successfully:', data.id);
     },
     onError: (error: Error) => {
-      console.error('Create property mutation error:', error);
+      logger.error('Create property mutation error:', error);
       throw error; // Re-throw to be handled by the form
     }
   });
@@ -24,10 +25,10 @@ export const usePropertyMutationsEnhanced = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.id] });
-      console.log('Property updated successfully:', data.id);
+      logger.log('Property updated successfully:', data.id);
     },
     onError: (error: Error) => {
-      console.error('Update property mutation error:', error);
+      logger.error('Update property mutation error:', error);
       throw error; // Re-throw to be handled by the form
     }
   });

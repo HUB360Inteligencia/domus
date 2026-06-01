@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from "@/lib/logger";
 export interface PortfolioTimelineData {
   date: string;
   totalValue: number;
@@ -96,7 +97,7 @@ export const usePortfolioTimeline = () => {
 
         return timeline.filter(item => item.totalValue > 0);
       } catch (error) {
-        console.error('Error fetching portfolio timeline:', error);
+        logger.error('Error fetching portfolio timeline:', error);
         return [];
       }
     }

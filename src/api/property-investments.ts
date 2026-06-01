@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyInvestment, PropertyInvestmentFormData, InvestmentType } from '@/types/property-investment';
 
+import { logger } from "@/lib/logger";
 export const fetchPropertyInvestments = async (propertyId: string): Promise<PropertyInvestment[]> => {
   try {
     const { data, error } = await supabase
@@ -11,7 +12,7 @@ export const fetchPropertyInvestments = async (propertyId: string): Promise<Prop
       .order('investment_date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching property investments:', error);
+      logger.error('Error fetching property investments:', error);
       throw error;
     }
 
@@ -21,7 +22,7 @@ export const fetchPropertyInvestments = async (propertyId: string): Promise<Prop
       investment_type: item.investment_type as InvestmentType
     }));
   } catch (err) {
-    console.error('Failed to fetch property investments:', err);
+    logger.error('Failed to fetch property investments:', err);
     throw err;
   }
 };
@@ -45,7 +46,7 @@ export const createPropertyInvestment = async (
       .single();
 
     if (error) {
-      console.error('Error creating property investment:', error);
+      logger.error('Error creating property investment:', error);
       throw error;
     }
 
@@ -54,7 +55,7 @@ export const createPropertyInvestment = async (
       investment_type: data.investment_type as InvestmentType
     };
   } catch (err) {
-    console.error('Failed to create property investment:', err);
+    logger.error('Failed to create property investment:', err);
     throw err;
   }
 };
@@ -72,7 +73,7 @@ export const uploadInvestmentReceipt = async (file: File): Promise<string> => {
     .upload(filePath, file);
 
   if (error) {
-    console.error('Error uploading investment receipt:', error);
+    logger.error('Error uploading investment receipt:', error);
     throw error;
   }
 
@@ -91,7 +92,7 @@ export const deletePropertyInvestment = async (investmentId: string): Promise<vo
     .eq('id', investmentId);
 
   if (error) {
-    console.error('Error deleting property investment:', error);
+    logger.error('Error deleting property investment:', error);
     throw error;
   }
 };
@@ -106,7 +107,7 @@ export const calculateTotalInvestment = async (propertyId: string): Promise<numb
       .single();
 
     if (propertyError) {
-      console.error('Error fetching property data:', propertyError);
+      logger.error('Error fetching property data:', propertyError);
       throw propertyError;
     }
 
@@ -117,7 +118,7 @@ export const calculateTotalInvestment = async (propertyId: string): Promise<numb
       .eq('property_id', propertyId);
 
     if (investmentsError) {
-      console.error('Error fetching property investments:', investmentsError);
+      logger.error('Error fetching property investments:', investmentsError);
       throw investmentsError;
     }
 
@@ -133,12 +134,12 @@ export const calculateTotalInvestment = async (propertyId: string): Promise<numb
       .eq('id', propertyId);
 
     if (updateError) {
-      console.error('Error updating property total investment:', updateError);
+      logger.error('Error updating property total investment:', updateError);
     }
 
     return totalInvestment;
   } catch (err) {
-    console.error('Failed to calculate total investment:', err);
+    logger.error('Failed to calculate total investment:', err);
     throw err;
   }
 };

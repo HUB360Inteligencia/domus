@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Contract, ContractStatus, SignatureStatus } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
 
+import { logger } from "@/lib/logger";
 // Helper function to convert Json to proper type
 const convertJsonToVariableRentValues = (jsonValue: Json | null) => {
   if (!jsonValue) return null;
@@ -12,7 +13,7 @@ const convertJsonToVariableRentValues = (jsonValue: Json | null) => {
     }
     return jsonValue;
   } catch (e) {
-    console.error('Error parsing variable_rent_values:', e);
+    logger.error('Error parsing variable_rent_values:', e);
     return null;
   }
 };
@@ -55,7 +56,7 @@ export async function fetchContractStats(): Promise<ContractStats> {
     .select('id');
     
   if (totalError) {
-    console.error('Error fetching total contracts:', totalError);
+    logger.error('Error fetching total contracts:', totalError);
     throw totalError;
   }
   
@@ -66,7 +67,7 @@ export async function fetchContractStats(): Promise<ContractStats> {
     .eq('status', 'active');
     
   if (activeError) {
-    console.error('Error fetching active contracts:', activeError);
+    logger.error('Error fetching active contracts:', activeError);
     throw activeError;
   }
   
@@ -79,7 +80,7 @@ export async function fetchContractStats(): Promise<ContractStats> {
     .lte('end_date', thirtyDaysLater);
     
   if (expiringError) {
-    console.error('Error fetching expiring contracts:', expiringError);
+    logger.error('Error fetching expiring contracts:', expiringError);
     throw expiringError;
   }
   
@@ -98,7 +99,7 @@ export async function calculateFinancialStats(): Promise<FinancialStats> {
     .eq('status', 'active');
     
   if (error) {
-    console.error('Error calculating financial stats:', error);
+    logger.error('Error calculating financial stats:', error);
     throw error;
   }
   
@@ -119,7 +120,7 @@ export async function calculateFinancialStats(): Promise<FinancialStats> {
     .select('id, status');
     
   if (propError) {
-    console.error('Error fetching properties for occupancy rate:', propError);
+    logger.error('Error fetching properties for occupancy rate:', propError);
     throw propError;
   }
   
@@ -144,7 +145,7 @@ export async function generateFinancialChartData(): Promise<any[]> {
     .eq('status', 'active');
     
   if (error) {
-    console.error('Error fetching contract data for chart:', error);
+    logger.error('Error fetching contract data for chart:', error);
     throw error;
   }
   
@@ -208,7 +209,7 @@ export const fetchUpcomingEvents = async () => {
       .order('end_date', { ascending: true });
 
     if (expiringError) {
-      console.error('Error fetching expiring contracts:', expiringError);
+      logger.error('Error fetching expiring contracts:', expiringError);
       throw expiringError;
     }
 
@@ -221,7 +222,7 @@ export const fetchUpcomingEvents = async () => {
       .eq('status', 'active');
 
     if (paymentsError) {
-      console.error('Error fetching upcoming payments:', paymentsError);
+      logger.error('Error fetching upcoming payments:', paymentsError);
       throw paymentsError;
     }
 
@@ -265,7 +266,7 @@ export const fetchUpcomingEvents = async () => {
       payments: paymentEvents
     };
   } catch (error) {
-    console.error('Error fetching upcoming events:', error);
+    logger.error('Error fetching upcoming events:', error);
     throw error;
   }
 };
@@ -288,13 +289,13 @@ export const fetchRecentContracts = async (): Promise<Contract[]> => {
       .limit(5);
 
     if (error) {
-      console.error('Error fetching recent contracts:', error);
+      logger.error('Error fetching recent contracts:', error);
       throw error;
     }
 
     return data as unknown as Contract[];
   } catch (error) {
-    console.error('Error fetching recent contracts:', error);
+    logger.error('Error fetching recent contracts:', error);
     throw error;
   }
 };

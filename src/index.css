@@ -5,83 +5,83 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 35 18% 95%;
+    --foreground: 225 14% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 225 14% 13%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover: 35 24% 98%;
+    --popover-foreground: 225 14% 13%;
 
-    --primary: 233 88% 7%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 225 14% 13%;
+    --primary-foreground: 38 46% 94%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 36 30% 90%;
+    --secondary-foreground: 225 14% 13%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 36 24% 91%;
+    --muted-foreground: 222 10% 43%;
 
-    --accent: 233 88% 7%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 36 55% 49%;
+    --accent-foreground: 225 14% 13%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 233 88% 7%;
+    --border: 36 18% 82%;
+    --input: 36 18% 82%;
+    --ring: 36 55% 49%;
 
-    --radius: 1rem;
+    --radius: 1.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 233 88% 7%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 0 0% 92%;
-    --sidebar-ring: 233 88% 7%;
+    --sidebar-background: 38 34% 93%;
+    --sidebar-foreground: 225 14% 13%;
+    --sidebar-primary: 225 14% 13%;
+    --sidebar-primary-foreground: 38 46% 94%;
+    --sidebar-accent: 38 34% 87%;
+    --sidebar-accent-foreground: 225 14% 13%;
+    --sidebar-border: 36 20% 78%;
+    --sidebar-ring: 36 55% 49%;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 95%;
+    --background: 225 16% 8%;
+    --foreground: 38 38% 92%;
 
-    --card: 233 88% 7%;
-    --card-foreground: 0 0% 95%;
+    --card: 224 14% 13%;
+    --card-foreground: 38 38% 92%;
 
-    --popover: 233 88% 7%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 224 14% 13%;
+    --popover-foreground: 38 38% 92%;
 
-    --primary: 232 88% 13%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 38 48% 86%;
+    --primary-foreground: 225 16% 8%;
 
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 30 14% 18%;
+    --secondary-foreground: 38 38% 92%;
 
-    --muted: 0 0% 9%;
-    --muted-foreground: 0 0% 70%;
+    --muted: 30 12% 17%;
+    --muted-foreground: 38 14% 70%;
 
-    --accent: 232 88% 13%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 36 55% 55%;
+    --accent-foreground: 225 16% 8%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 95%;
+    --destructive-foreground: 38 38% 92%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 232 88% 13%;
+    --border: 30 12% 23%;
+    --input: 30 12% 23%;
+    --ring: 36 55% 55%;
 
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 232 88% 13%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 8%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 232 88% 13%;
+    --sidebar-background: 32 18% 12%;
+    --sidebar-foreground: 38 38% 92%;
+    --sidebar-primary: 36 55% 55%;
+    --sidebar-primary-foreground: 225 16% 8%;
+    --sidebar-accent: 30 14% 16%;
+    --sidebar-accent-foreground: 38 38% 92%;
+    --sidebar-border: 30 12% 20%;
+    --sidebar-ring: 36 55% 55%;
   }
 }
 
@@ -91,11 +91,79 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background:
+      linear-gradient(135deg, hsl(35 18% 95%) 0%, hsl(210 18% 96%) 46%, hsl(39 22% 91%) 100%);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .dark body {
+    background:
+      linear-gradient(135deg, hsl(225 16% 8%) 0%, hsl(222 12% 11%) 52%, hsl(25 18% 12%) 100%);
   }
 }
 
 @layer utilities {
+  .premium-panel {
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(250, 247, 240, 0.82));
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow: 0 24px 70px -42px rgba(31, 27, 24, 0.72);
+  }
+
+  .premium-panel-dark {
+    background:
+      linear-gradient(145deg, rgba(32, 28, 27, 0.96), rgba(22, 24, 30, 0.9));
+    border: 1px solid rgba(196, 153, 85, 0.18);
+    box-shadow: 0 24px 80px -45px rgba(0, 0, 0, 0.85);
+  }
+
+  .premium-gradient {
+    background:
+      linear-gradient(135deg, #201c1b 0%, #4d3223 48%, #c4934f 100%);
+  }
+
+  .premium-gradient-soft {
+    background:
+      linear-gradient(135deg, rgba(196, 147, 79, 0.18), rgba(74, 50, 35, 0.08));
+  }
+
+  .premium-sidebar {
+    background:
+      linear-gradient(180deg, rgba(255, 251, 243, 0.98) 0%, rgba(242, 234, 220, 0.98) 100%);
+    border-right: 1px solid rgba(158, 123, 82, 0.24);
+    box-shadow: 22px 0 70px -58px rgba(31, 27, 24, 0.9);
+  }
+
+  .dark .premium-sidebar {
+    background:
+      linear-gradient(180deg, rgba(43, 32, 25, 0.98) 0%, rgba(25, 24, 28, 0.98) 100%);
+    border-right: 1px solid rgba(196, 147, 79, 0.18);
+    box-shadow: 22px 0 80px -54px rgba(0, 0, 0, 0.95);
+  }
+
+  .premium-grid-lines {
+    background-image:
+      linear-gradient(rgba(32, 28, 27, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(32, 28, 27, 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .animate-rise {
+    animation: premium-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes premium-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -127,5 +195,11 @@
   
   .image-overlay-glass {
     @apply absolute inset-0 bg-black/30 backdrop-blur-sm rounded-3xl;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-rise {
+      animation: none;
+    }
   }
 }

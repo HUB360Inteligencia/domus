@@ -8,6 +8,7 @@ import { useRentalAnalytics } from './use-rental-analytics';
 export interface DashboardMetrics {
   // Portfólio de Imóveis
   totalProperties: number;
+  rentableProperties: number;
   rentedProperties: number;
   occupancyRate: number;
   
@@ -53,17 +54,37 @@ export const useDashboardMetrics = (): DashboardMetrics => {
   return useMemo(() => {
     // Calcular métricas do portfólio
     const totalProperties = properties.length;
+    const rentablePropertiesList = properties.filter(p => p.status !== 'sold');
+    const rentablePropertyIds = new Set(rentablePropertiesList.map(p => p.id));
     const activeContracts = contracts.filter(c => c.status === 'active');
-    const rentedProperties = activeContracts.length;
-    const occupancyRate = totalProperties > 0 ? (rentedProperties / totalProperties) * 100 : 0;
+    const rentedPropertyIds = new Set<string>();
+
+    activeContracts.forEach(contract => {
+      if (contract.property_id && rentablePropertyIds.has(contract.property_id)) {
+        rentedPropertyIds.add(contract.property_id);
+      }
+    });
+
+    rentablePropertiesList
+      .filter(p => p.status === 'rented' || p.status === 'airbnb')
+      .forEach(property => rentedPropertyIds.add(property.id));
+
+    const rentableProperties = rentablePropertiesList.length;
+    const rentedProperties = rentedPropertyIds.size;
+    const occupancyRate = rentableProperties > 0 ? (rentedProperties / rentableProperties) * 100 : 0;
 
     // Calcular patrimônio
     const totalPurchaseValue = properties.reduce((sum, p) => 
       sum + (p.purchase_value || p.total_investment || 0), 0
     );
     const totalMarketValue = properties.reduce((sum, p) => sum + (p.value || 0), 0);
-    const assetGrowthPercentage = totalPurchaseValue > 0 
-      ? ((totalMarketValue - totalPurchaseValue) / totalPurchaseValue) * 100 
+    const comparableProperties = properties.filter(p => (p.purchase_value || p.total_investment || 0) > 0);
+    const comparablePurchaseValue = comparableProperties.reduce((sum, p) => 
+      sum + (p.purchase_value || p.total_investment || 0), 0
+    );
+    const comparableMarketValue = comparableProperties.reduce((sum, p) => sum + (p.value || 0), 0);
+    const assetGrowthPercentage = comparablePurchaseValue > 0 
+      ? ((comparableMarketValue - comparablePurchaseValue) / comparablePurchaseValue) * 100 
       : 0;
 
     // Calcular performance financeira - TOTAIS (não apenas mês atual)
@@ -126,6 +147,7 @@ export const useDashboardMetrics = (): DashboardMetrics => {
 
     return {
       totalProperties,
+      rentableProperties,
       rentedProperties,
       occupancyRate,
       totalPurchaseValue,

@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { 
   fetchClientUsers, 
   getCurrentUserClientId, 
@@ -53,7 +54,7 @@ export function useCreateClientUser() {
       queryClient.invalidateQueries({ queryKey: ["client-users"] });
     },
     onError: (error) => {
-      console.error("Erro ao criar usuário:", error);
+      logger.error("Erro ao criar usuário:", error);
       toast.error("Erro ao criar usuário");
     }
   });
@@ -67,7 +68,7 @@ export function useResetUserPassword() {
       toast.success("Senha redefinida com sucesso");
     },
     onError: (error) => {
-      console.error("Erro ao redefinir senha:", error);
+      logger.error("Erro ao redefinir senha:", error);
       toast.error("Erro ao redefinir senha");
     }
   });

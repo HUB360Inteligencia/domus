@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Contract } from '@/types/contract';
 
+import { logger } from "@/lib/logger";
 export const useContractsByProperty = (propertyId: string | null) => {
   const { data: contracts = [], isLoading, refetch } = useQuery({
     queryKey: ['contracts', 'property', propertyId],
@@ -16,7 +17,7 @@ export const useContractsByProperty = (propertyId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching property contracts:', error);
+        logger.error('Error fetching property contracts:', error);
         throw new Error(error.message);
       }
 

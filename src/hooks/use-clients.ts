@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { 
   fetchClients, 
   fetchClientById, 
@@ -40,7 +41,7 @@ export function useCreateClient() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (error) => {
-      console.error("Erro ao criar cliente:", error);
+      logger.error("Erro ao criar cliente:", error);
       toast.error("Erro ao criar cliente");
     },
   });
@@ -59,7 +60,7 @@ export function useUpdateClient(clientId?: string) {
       queryClient.invalidateQueries({ queryKey: ["client", clientId] });
     },
     onError: (error) => {
-      console.error("Erro ao atualizar cliente:", error);
+      logger.error("Erro ao atualizar cliente:", error);
       toast.error("Erro ao atualizar cliente");
     },
   });
@@ -79,7 +80,7 @@ export function useToggleClientStatus() {
       queryClient.invalidateQueries({ queryKey: ["client", variables.clientId] });
     },
     onError: (error) => {
-      console.error("Erro ao alterar status do cliente:", error);
+      logger.error("Erro ao alterar status do cliente:", error);
       toast.error("Erro ao alterar status do cliente");
     },
   });
@@ -96,7 +97,7 @@ export function useDeleteClient() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (error) => {
-      console.error("Erro ao excluir cliente:", error);
+      logger.error("Erro ao excluir cliente:", error);
       toast.error("Erro ao excluir cliente");
     },
   });

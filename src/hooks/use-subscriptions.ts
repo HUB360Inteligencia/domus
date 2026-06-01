@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { 
   fetchSubscriptions,
   fetchClientSubscriptions,
@@ -55,7 +56,7 @@ export function useCreateSubscription() {
       queryClient.invalidateQueries({ queryKey: ["subscriptions", "client", data.client_id] });
     },
     onError: (error) => {
-      console.error("Erro ao criar assinatura:", error);
+      logger.error("Erro ao criar assinatura:", error);
       toast.error("Erro ao criar assinatura");
     },
   });
@@ -75,7 +76,7 @@ export function useUpdateSubscription(subscriptionId?: string) {
       queryClient.invalidateQueries({ queryKey: ["subscriptions", "client", data.client_id] });
     },
     onError: (error) => {
-      console.error("Erro ao atualizar assinatura:", error);
+      logger.error("Erro ao atualizar assinatura:", error);
       toast.error("Erro ao atualizar assinatura");
     },
   });
@@ -94,7 +95,7 @@ export function useCancelSubscription() {
       queryClient.invalidateQueries({ queryKey: ["subscriptions", "client", data.client_id] });
     },
     onError: (error) => {
-      console.error("Erro ao cancelar assinatura:", error);
+      logger.error("Erro ao cancelar assinatura:", error);
       toast.error("Erro ao cancelar assinatura");
     },
   });
@@ -121,7 +122,7 @@ export function useCreateInvoice() {
       queryClient.invalidateQueries({ queryKey: ["invoices", "subscription", data.subscription_id] });
     },
     onError: (error) => {
-      console.error("Erro ao criar fatura:", error);
+      logger.error("Erro ao criar fatura:", error);
       toast.error("Erro ao criar fatura");
     },
   });
@@ -139,7 +140,7 @@ export function usePayInvoice() {
       queryClient.invalidateQueries({ queryKey: ["invoices", "subscription", data.subscription_id] });
     },
     onError: (error) => {
-      console.error("Erro ao registrar pagamento:", error);
+      logger.error("Erro ao registrar pagamento:", error);
       toast.error("Erro ao registrar pagamento");
     },
   });
@@ -156,7 +157,7 @@ export function useCancelInvoice() {
       queryClient.invalidateQueries({ queryKey: ["invoices", "subscription", data.subscription_id] });
     },
     onError: (error) => {
-      console.error("Erro ao cancelar fatura:", error);
+      logger.error("Erro ao cancelar fatura:", error);
       toast.error("Erro ao cancelar fatura");
     },
   });

@@ -1,7 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
-import { Database } from "@/integrations/supabase/types";
 
 export interface ClientUser {
   id: string;
@@ -11,6 +9,8 @@ export interface ClientUser {
   role: string;
   created_at: string;
   updated_at: string;
+  generated_password?: string;
+  must_change_password?: boolean;
   profile?: {
     first_name?: string;
     last_name?: string;
@@ -22,11 +22,29 @@ export interface ClientUser {
 export interface CreateClientUserData {
   client_id: string;
   email: string;
-  password: string;
+  password?: string;
+  use_generic_password?: boolean;
   first_name?: string;
   last_name?: string;
   is_primary?: boolean;
   role?: string;
+  must_change_password?: boolean;
+}
+
+export interface CreateOrganizationWithUserData {
+  // Organization fields
+  org_name: string;
+  org_email: string;
+  org_phone?: string;
+  org_document_number?: string;
+  // User fields
+  user_email: string;
+  user_password?: string;
+  use_generic_password?: boolean;
+  user_first_name?: string;
+  user_last_name?: string;
+  user_role?: string;
+  must_change_password?: boolean;
 }
 
 export interface ResetPasswordData {
@@ -34,30 +52,27 @@ export interface ResetPasswordData {
   password: string;
 }
 
-// Fetch users for a specific client
-export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> {
-  const { data, error } = await supabase
-    .from("client_users")
-    .select(`
-      id,
-      user_id,
-      client_id,
-      is_primary,
-      role,
-      created_at,
-      updated_at,
-      profiles!inner(
-        first_name,
-        last_name,
-        email,
-        avatar_url
-      )
-    `)
-    .eq("client_id", clientId);
+export interface ChangeOwnPasswordData {
+  user_id: string;
+  new_password: string;
+}
 
-  if (error) throw error;
-  
-  return data?.map(item => ({
+type ClientUserFunctionRow = {
+  id: string;
+  user_id: string;
+  client_id: string;
+  is_primary: boolean;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  generated_password?: string;
+  must_change_password?: boolean;
+  profiles?: ClientUser["profile"];
+  profile?: ClientUser["profile"];
+};
+
+function mapClientUser(item: ClientUserFunctionRow): ClientUser {
+  return {
     id: item.id,
     user_id: item.user_id,
     client_id: item.client_id,
@@ -65,8 +80,27 @@ export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> 
     role: item.role,
     created_at: item.created_at,
     updated_at: item.updated_at,
-    profile: item.profiles as ClientUser['profile']
-  })) || [];
+    generated_password: item.generated_password,
+    must_change_password: item.must_change_password,
+    profile: item.profile ?? item.profiles,
+  };
+}
+
+// Fetch users for a specific client
+export async function fetchClientUsers(clientId: string): Promise<ClientUser[]> {
+  const { data, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "getClientUsers",
+      client_id: clientId
+    }
+  });
+
+  if (error) throw error;
+  if (data.error) throw new Error(data.error.message || "Error fetching users");
+  
+  const usersList = (data.data || []) as ClientUserFunctionRow[];
+  
+  return usersList.map(mapClientUser);
 }
 
 // Create a new user for a client using the edge function
@@ -80,6 +114,21 @@ export async function createClientUser(userData: CreateClientUserData): Promise<
 
   if (error) throw error;
   if (data.error) throw new Error(data.error.message || "Error creating user");
+  
+  return mapClientUser(data.data as ClientUserFunctionRow);
+}
+
+// Create an organization AND its first admin user in one step
+export async function createOrganizationWithUser(orgData: CreateOrganizationWithUserData) {
+  const { data, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "createOrganizationWithUser",
+      orgData
+    }
+  });
+
+  if (error) throw error;
+  if (data.error) throw new Error(data.error.message || "Error creating organization with user");
   
   return data.data;
 }
@@ -95,6 +144,21 @@ export async function resetUserPassword(data: ResetPasswordData): Promise<{ succ
 
   if (error) throw error;
   if (response.error) throw new Error(response.error.message || "Error resetting password");
+  
+  return { success: true };
+}
+
+// Change own password (user-initiated, also clears must_change_password)
+export async function changeOwnPassword(data: ChangeOwnPasswordData): Promise<{ success: boolean }> {
+  const { data: response, error } = await supabase.functions.invoke("user-management", {
+    body: {
+      action: "changeOwnPassword",
+      data
+    }
+  });
+
+  if (error) throw error;
+  if (response.error) throw new Error(response.error.message || "Error changing password");
   
   return { success: true };
 }

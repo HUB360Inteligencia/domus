@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { fetchPropertyFinancialMetrics } from '@/api/property-financial-metrics';
 
+import { logger } from "@/lib/logger";
 export interface PropertyAnalyticsData {
   id: string;
   title: string;
@@ -114,7 +115,7 @@ export const fetchPropertyAnalytics = async (filters?: PropertyAnalyticsFilters)
 
         analyticsData.push(analytics);
       } catch (error) {
-        console.error(`Error fetching metrics for property ${property.id}:`, error);
+        logger.error(`Error fetching metrics for property ${property.id}:`, error);
         // Continuar com dados básicos mesmo se as métricas falharem
         const basicAnalytics: PropertyAnalyticsData = {
           id: property.id,
@@ -139,7 +140,7 @@ export const fetchPropertyAnalytics = async (filters?: PropertyAnalyticsFilters)
 
     return analyticsData.sort((a, b) => b.monthlyROI - a.monthlyROI);
   } catch (error) {
-    console.error('Error fetching property analytics:', error);
+    logger.error('Error fetching property analytics:', error);
     throw error;
   }
 };
@@ -170,7 +171,7 @@ export const getUniqueFilterOptions = async () => {
       statuses: statuses.sort()
     };
   } catch (error) {
-    console.error('Error fetching filter options:', error);
+    logger.error('Error fetching filter options:', error);
     return {
       cities: [],
       neighborhoods: [],

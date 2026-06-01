@@ -5,7 +5,6 @@ import { geocodeAddress, updatePropertyCoordinates } from '@/api/properties';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { Button } from '@/components/ui/button';
-import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { toast } from 'sonner';
 
 interface PropertyMapProps {
@@ -41,7 +40,6 @@ export function PropertyMap({
   const markerRef = useRef<any>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(initialCoords || null);
   const [error, setError] = useState<string | null>(null);
-  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
@@ -237,15 +235,8 @@ export function PropertyMap({
           <AlertCircle className="mx-auto h-10 w-10 text-amber-500 mb-2" />
           <h3 className="font-medium mb-2">Token do Mapbox não configurado</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Para exibir o mapa "{mapTypeLabel}", configure o token correspondente nas configurações do sistema.
+            Para exibir o mapa "{mapTypeLabel}", configure o token no arquivo .env do servidor.
           </p>
-          <Button onClick={() => setTokenDialogOpen(true)}>
-            Configurar Token Mapbox
-          </Button>
-          <MapboxTokenDialog 
-            isOpen={tokenDialogOpen} 
-            onClose={() => setTokenDialogOpen(false)} 
-          />
         </div>
       </div>
     );
@@ -267,18 +258,7 @@ export function PropertyMap({
             >
               {isLocating ? 'Buscando...' : 'Tentar novamente'}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setTokenDialogOpen(true)}
-            >
-              Alterar Token Mapbox
-            </Button>
           </div>
-          <MapboxTokenDialog 
-            isOpen={tokenDialogOpen} 
-            onClose={() => setTokenDialogOpen(false)} 
-          />
         </div>
       </div>
     );

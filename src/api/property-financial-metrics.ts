@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { subMonths } from 'date-fns';
 
+import { logger } from "@/lib/logger";
 export interface PropertyFinancialMetrics {
   monthlyProfitability: number;
   accumulatedROI: number;
@@ -123,7 +124,7 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
       totalInvestment
     };
   } catch (error) {
-    console.error('Error fetching property financial metrics:', error);
+    logger.error('Error fetching property financial metrics:', error);
     throw error;
   }
 };
@@ -144,7 +145,7 @@ export const fetchActiveContractForProperty = async (propertyId: string) => {
     if (error) throw error;
     return contract;
   } catch (error) {
-    console.error('Error fetching active contract:', error);
+    logger.error('Error fetching active contract:', error);
     return null;
   }
 };

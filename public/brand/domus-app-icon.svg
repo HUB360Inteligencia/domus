@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Domus</title>
+  <desc id="desc">Rounded Domus app icon.</desc>
+  <defs>
+    <linearGradient id="domus-icon-gradient" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f1715"/>
+      <stop offset="0.58" stop-color="#6b4024"/>
+      <stop offset="1" stop-color="#d89d3d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#domus-icon-gradient)"/>
+  <g fill="#fff" transform="translate(50 48) scale(.805)">
+    <path fill-rule="evenodd" d="M256 42c-66 45-124 69-174 77-10 2-18 10-18 20v119c0 88 68 170 192 212 124-42 192-124 192-212V139c0-10-8-18-18-20-50-8-108-32-174-77Zm0 56c56 37 105 59 145 68v92c0 66-48 127-145 164-97-37-145-98-145-164v-92c40-9 89-31 145-68Z" clip-rule="evenodd"/>
+    <path d="M159 252 219 211v196l-60-34V252Z"/>
+    <path d="M246 174 295 210v188c0 9-6 17-15 20l-18 7c-8 3-16-3-16-12V174Z"/>
+    <path d="M319 267 374 304v48l-32 32v-65l-23-15v-37Z"/>
+  </g>
+</svg>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { logger } from "@/lib/logger";
 export interface FinancialCategory {
   id: string;
   name: string;
@@ -67,7 +68,7 @@ export const useFinancialCategories = () => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching categories:', error);
+        logger.error('Error fetching categories:', error);
         throw error;
       }
 
@@ -114,7 +115,7 @@ export const useFinancialCategories = () => {
         .insert(allCategories);
 
       if (error) {
-        console.error('Error creating default categories:', error);
+        logger.error('Error creating default categories:', error);
         throw error;
       }
 
@@ -125,7 +126,7 @@ export const useFinancialCategories = () => {
       toast.success('Categorias padrão criadas com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to create default categories:', error);
+      logger.error('Failed to create default categories:', error);
       toast.error('Erro ao criar categorias padrão');
     }
   });
@@ -147,7 +148,7 @@ export const useFinancialCategories = () => {
         .single();
 
       if (error) {
-        console.error('Error creating category:', error);
+        logger.error('Error creating category:', error);
         throw error;
       }
 
@@ -158,7 +159,7 @@ export const useFinancialCategories = () => {
       toast.success('Categoria criada com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to create category:', error);
+      logger.error('Failed to create category:', error);
       toast.error('Erro ao criar categoria');
     }
   });
@@ -174,7 +175,7 @@ export const useFinancialCategories = () => {
         .single();
 
       if (error) {
-        console.error('Error updating category:', error);
+        logger.error('Error updating category:', error);
         throw error;
       }
 
@@ -185,7 +186,7 @@ export const useFinancialCategories = () => {
       toast.success('Categoria atualizada com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to update category:', error);
+      logger.error('Failed to update category:', error);
       toast.error('Erro ao atualizar categoria');
     }
   });
@@ -199,7 +200,7 @@ export const useFinancialCategories = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting category:', error);
+        logger.error('Error deleting category:', error);
         throw error;
       }
 
@@ -210,7 +211,7 @@ export const useFinancialCategories = () => {
       toast.success('Categoria excluída com sucesso');
     },
     onError: (error) => {
-      console.error('Failed to delete category:', error);
+      logger.error('Failed to delete category:', error);
       toast.error('Erro ao excluir categoria');
     }
   });

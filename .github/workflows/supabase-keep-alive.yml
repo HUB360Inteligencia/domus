@@ -15,7 +15,7 @@ jobs:
       - name: Ping keep-alive edge function with retries
         env:
           KEEP_ALIVE_URL: https://hdeavqaoikojhlvvidtm.supabase.co/functions/v1/keep-alive
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkZWF2cWFvaWtvamhsdnZpZHRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTE1NDUsImV4cCI6MjA4ODE2NzU0NX0.nxQbQ3xoWYEC9UShwqN7V5gCyMVK52E8X-xFdhoe_Is
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           for attempt in 1 2 3; do
             status=$(curl --silent --show-error --output /tmp/keep-alive-response.json --write-out '%{http_code}' \

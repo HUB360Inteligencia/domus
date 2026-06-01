@@ -165,6 +165,547 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          birth_date: string | null
+          city: string | null
+          client_id: string | null
+          complement: string | null
+          country: string | null
+          created_at: string
+          deleted_at: string | null
+          display_name: string
+          document_number: string | null
+          document_type: string | null
+          foundation_date: string | null
+          id: string
+          kind: string
+          legal_name: string | null
+          marital_status: string | null
+          metadata: Json
+          municipal_registration: string | null
+          nationality: string | null
+          neighborhood: string | null
+          notes: string | null
+          number: string | null
+          primary_email: string | null
+          primary_phone: string | null
+          primary_whatsapp: string | null
+          profession: string | null
+          rg: string | null
+          secondary_email: string | null
+          secondary_phone: string | null
+          social_url: string | null
+          state: string | null
+          state_registration: string | null
+          status: string
+          street: string | null
+          tags: string[]
+          trade_name: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          city?: string | null
+          client_id?: string | null
+          complement?: string | null
+          country?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          display_name: string
+          document_number?: string | null
+          document_type?: string | null
+          foundation_date?: string | null
+          id?: string
+          kind?: string
+          legal_name?: string | null
+          marital_status?: string | null
+          metadata?: Json
+          municipal_registration?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          number?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          primary_whatsapp?: string | null
+          profession?: string | null
+          rg?: string | null
+          secondary_email?: string | null
+          secondary_phone?: string | null
+          social_url?: string | null
+          state?: string | null
+          state_registration?: string | null
+          status?: string
+          street?: string | null
+          tags?: string[]
+          trade_name?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          city?: string | null
+          client_id?: string | null
+          complement?: string | null
+          country?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          display_name?: string
+          document_number?: string | null
+          document_type?: string | null
+          foundation_date?: string | null
+          id?: string
+          kind?: string
+          legal_name?: string | null
+          marital_status?: string | null
+          metadata?: Json
+          municipal_registration?: string | null
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          number?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          primary_whatsapp?: string | null
+          profession?: string | null
+          rg?: string | null
+          secondary_email?: string | null
+          secondary_phone?: string | null
+          social_url?: string | null
+          state?: string | null
+          state_registration?: string | null
+          status?: string
+          street?: string | null
+          tags?: string[]
+          trade_name?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_roles: {
+        Row: {
+          client_id: string | null
+          contact_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_primary: boolean
+          notes: string | null
+          role_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          role_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          role_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_roles_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_roles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_property_links: {
+        Row: {
+          client_id: string | null
+          contact_id: string
+          created_at: string
+          deleted_at: string | null
+          end_date: string | null
+          id: string
+          link_role: string
+          notes: string | null
+          participation_percentage: number | null
+          property_id: string
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_id: string
+          created_at?: string
+          deleted_at?: string | null
+          end_date?: string | null
+          id?: string
+          link_role?: string
+          notes?: string | null
+          participation_percentage?: number | null
+          property_id: string
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          end_date?: string | null
+          id?: string
+          link_role?: string
+          notes?: string | null
+          participation_percentage?: number | null
+          property_id?: string
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_property_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_property_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_contract_links: {
+        Row: {
+          client_id: string | null
+          contact_id: string
+          contract_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_payment_responsible: boolean
+          is_receiving_responsible: boolean
+          link_role: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_id: string
+          contract_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_payment_responsible?: boolean
+          is_receiving_responsible?: boolean
+          link_role?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_id?: string
+          contract_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_payment_responsible?: boolean
+          is_receiving_responsible?: boolean
+          link_role?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_contract_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_contract_links_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_interactions: {
+        Row: {
+          assigned_to: string | null
+          client_id: string | null
+          contact_id: string
+          contract_id: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string
+          id: string
+          interaction_date: string
+          interaction_type: string
+          metadata: Json
+          next_action: string | null
+          property_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: string | null
+          contact_id: string
+          contract_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          id?: string
+          interaction_date?: string
+          interaction_type?: string
+          metadata?: Json
+          next_action?: string | null
+          property_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string | null
+          contact_id?: string
+          contract_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          id?: string
+          interaction_date?: string
+          interaction_type?: string
+          metadata?: Json
+          next_action?: string | null
+          property_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_interactions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_events: {
+        Row: {
+          activity_id: string | null
+          all_day: boolean
+          amount: number | null
+          assigned_to: string | null
+          cashflow_direction: string | null
+          client_id: string | null
+          contact_id: string | null
+          contract_id: string | null
+          created_at: string
+          description: string | null
+          document_id: string | null
+          ends_at: string | null
+          event_type: string
+          financial_transaction_id: string | null
+          id: string
+          metadata: Json
+          priority: string
+          property_id: string | null
+          recurrence_rule: Json | null
+          source: string
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_id?: string | null
+          all_day?: boolean
+          amount?: number | null
+          assigned_to?: string | null
+          cashflow_direction?: string | null
+          client_id?: string | null
+          contact_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          ends_at?: string | null
+          event_type?: string
+          financial_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          property_id?: string | null
+          recurrence_rule?: Json | null
+          source?: string
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string | null
+          all_day?: boolean
+          amount?: number | null
+          assigned_to?: string | null
+          cashflow_direction?: string | null
+          client_id?: string | null
+          contact_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          ends_at?: string | null
+          event_type?: string
+          financial_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          property_id?: string | null
+          recurrence_rule?: Json | null
+          source?: string
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_events_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          event_id: string
+          id: string
+          offset_minutes: number
+          remind_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          offset_minutes?: number
+          remind_at: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          offset_minutes?: number
+          remind_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clauses: {
         Row: {
           category: string
@@ -341,6 +882,86 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_expected_payments: {
+        Row: {
+          amount: number
+          client_id: string | null
+          contract_id: string
+          created_at: string
+          expected_due_date: string
+          financial_transaction_id: string | null
+          id: string
+          metadata: Json
+          property_id: string | null
+          reference_month: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          contract_id: string
+          created_at?: string
+          expected_due_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          property_id?: string | null
+          reference_month: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          contract_id?: string
+          created_at?: string
+          expected_due_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          property_id?: string | null
+          reference_month?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_expected_payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_expected_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_expected_payments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_expected_payments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           adjustment_date: string | null
@@ -368,6 +989,7 @@ export type Database = {
           payment_day: number
           payment_due_day: number | null
           payment_terms: string | null
+          primary_contact_id: string | null
           property_id: string | null
           recurring_transactions: Json | null
           renewal_terms: string | null
@@ -411,6 +1033,7 @@ export type Database = {
           payment_day: number
           payment_due_day?: number | null
           payment_terms?: string | null
+          primary_contact_id?: string | null
           property_id?: string | null
           recurring_transactions?: Json | null
           renewal_terms?: string | null
@@ -454,6 +1077,7 @@ export type Database = {
           payment_day?: number
           payment_due_day?: number | null
           payment_terms?: string | null
+          primary_contact_id?: string | null
           property_id?: string | null
           recurring_transactions?: Json | null
           renewal_terms?: string | null
@@ -956,6 +1580,7 @@ export type Database = {
         Row: {
           category: string
           client_id: string | null
+          contact_id: string | null
           contract_id: string | null
           created_at: string
           file_path: string
@@ -970,6 +1595,7 @@ export type Database = {
         Insert: {
           category: string
           client_id?: string | null
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           file_path: string
@@ -984,6 +1610,7 @@ export type Database = {
         Update: {
           category?: string
           client_id?: string | null
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           file_path?: string
@@ -1043,6 +1670,7 @@ export type Database = {
         Row: {
           amount: number
           category: string
+          contact_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -1062,6 +1690,7 @@ export type Database = {
         Insert: {
           amount: number
           category: string
+          contact_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1081,6 +1710,7 @@ export type Database = {
         Update: {
           amount?: number
           category?: string
+          contact_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1922,12 +2552,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      delete_contract_cascade: {
+        Args: { p_contract_id: string }
+        Returns: undefined
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      generate_contract_expected_payments: {
+        Args: { p_from_month: string; p_through_month: string }
+        Returns: number
+      }
       is_admin: { Args: { user_id: string }; Returns: boolean }
       is_admin_or_system_admin: { Args: { user_id: string }; Returns: boolean }
+      is_current_user_system_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      process_due_agenda_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      record_expected_contract_payment: {
+        Args: {
+          p_expected_payment_id: string
+          p_paid_date?: string | null
+          p_payment_method?: string | null
+        }
+        Returns: string
+      }
+      user_can_access_client: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
+      user_can_access_row: {
+        Args: { p_client_id: string | null; p_user_id: string }
+        Returns: boolean
+      }
+      user_can_admin_client: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
       user_belongs_to_client: {
         Args: { client_id: string; user_id: string }
         Returns: boolean

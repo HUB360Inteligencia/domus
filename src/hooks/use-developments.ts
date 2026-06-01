@@ -4,6 +4,7 @@ import { developmentsApi } from '@/api/developments';
 import { DevelopmentFormData } from '@/types/development';
 import { toast } from 'sonner';
 
+import { logger } from "@/lib/logger";
 export const useDevelopments = () => {
   return useQuery({
     queryKey: ['developments'],
@@ -29,7 +30,7 @@ export const useCreateDevelopment = () => {
       toast.success('Empreendimento criado com sucesso!');
     },
     onError: (error) => {
-      console.error('Erro ao criar empreendimento:', error);
+      logger.error('Erro ao criar empreendimento:', error);
       toast.error('Erro ao criar empreendimento');
     },
   });
@@ -47,7 +48,7 @@ export const useUpdateDevelopment = () => {
       toast.success('Empreendimento atualizado com sucesso!');
     },
     onError: (error) => {
-      console.error('Erro ao atualizar empreendimento:', error);
+      logger.error('Erro ao atualizar empreendimento:', error);
       toast.error('Erro ao atualizar empreendimento');
     },
   });
@@ -63,7 +64,7 @@ export const useDeleteDevelopment = () => {
       toast.success('Empreendimento excluído com sucesso!');
     },
     onError: (error) => {
-      console.error('Erro ao excluir empreendimento:', error);
+      logger.error('Erro ao excluir empreendimento:', error);
       toast.error('Erro ao excluir empreendimento');
     },
   });

@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Property } from '@/types/property';
-import { MapboxTokenDialog } from './mapbox-token-dialog';
 import { useMapbox } from '@/contexts/MapboxContext';
 import { Button } from '@/components/ui/button';
 import { Settings, AlertCircle, MapPin } from 'lucide-react';
@@ -35,7 +34,6 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const { token, isConfigured } = useMapbox();
-  const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -227,19 +225,10 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-muted rounded-lg">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Configuração do Mapbox Necessária</h3>
-        <p className="text-muted-foreground text-center mb-4 max-w-md">
-          Para visualizar o mapa de imóveis, é necessário configurar um token do Mapbox.
+        <h3 className="text-lg font-semibold mb-2">Erro de Configuração</h3>
+        <p className="text-muted-foreground text-center max-w-md">
+          O token do Mapbox não está configurado nas Variáveis de Ambiente do servidor. Contate o administrador do sistema.
         </p>
-        <Button onClick={() => setShowTokenDialog(true)}>
-          <Settings className="mr-2 h-4 w-4" />
-          Configurar Token
-        </Button>
-        
-        <MapboxTokenDialog 
-          isOpen={showTokenDialog}
-          onClose={() => setShowTokenDialog(false)}
-        />
       </div>
     );
   }
@@ -253,19 +242,6 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
             {mapError}
           </AlertDescription>
         </Alert>
-        <Button 
-          onClick={() => setShowTokenDialog(true)}
-          className="mt-4"
-          variant="outline"
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          Reconfigurar Token
-        </Button>
-        
-        <MapboxTokenDialog 
-          isOpen={showTokenDialog}
-          onClose={() => setShowTokenDialog(false)}
-        />
       </div>
     );
   }

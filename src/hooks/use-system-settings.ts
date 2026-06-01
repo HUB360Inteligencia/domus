@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 
+import { logger } from "@/lib/logger";
 export interface SystemSetting {
   id: string;
   key: string;
@@ -34,7 +35,7 @@ export const useSystemSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      console.log('useSystemSettings: Fetching settings...');
+      logger.log('useSystemSettings: Fetching settings...');
       setIsLoading(true);
       setError(null);
       
@@ -44,15 +45,15 @@ export const useSystemSettings = () => {
         .order('key');
 
       if (error) {
-        console.error('useSystemSettings: Supabase error:', error);
+        logger.error('useSystemSettings: Supabase error:', error);
         throw error;
       }
       
-      console.log('useSystemSettings: Settings loaded:', data?.length || 0);
+      logger.log('useSystemSettings: Settings loaded:', data?.length || 0);
       setSettings(data || []);
       setIsInitialized(true);
     } catch (err: any) {
-      console.error('useSystemSettings: Error:', err);
+      logger.error('useSystemSettings: Error:', err);
       setError(err.message);
       setIsInitialized(true); // Mark as initialized even with error
     } finally {
@@ -62,7 +63,7 @@ export const useSystemSettings = () => {
 
   const updateSetting = async (key: string, value: string | null) => {
     try {
-      console.log('useSystemSettings: Updating setting:', key);
+      logger.log('useSystemSettings: Updating setting:', key);
       
       const { error } = await supabase
         .from('system_settings')
@@ -86,7 +87,7 @@ export const useSystemSettings = () => {
       
       return true;
     } catch (err: any) {
-      console.error('useSystemSettings: Error updating setting:', err);
+      logger.error('useSystemSettings: Error updating setting:', err);
       setError(err.message);
       return false;
     }
@@ -94,7 +95,7 @@ export const useSystemSettings = () => {
 
   const getSetting = (key: string): SystemSetting | null => {
     const setting = settings.find(s => s.key === key) || null;
-    console.log('useSystemSettings: Get setting:', { 
+    logger.log('useSystemSettings: Get setting:', { 
       key, 
       found: !!setting, 
       hasValue: !!setting?.value 
@@ -104,14 +105,14 @@ export const useSystemSettings = () => {
 
   const getMapboxToken = (tokenType: MapboxTokenType): string | null => {
     if (!isInitialized) {
-      console.log(`useSystemSettings: Not initialized for ${tokenType}`);
+      logger.log(`useSystemSettings: Not initialized for ${tokenType}`);
       return null;
     }
     
     const setting = getSetting(tokenType);
     const token = setting?.value || null;
     
-    console.log(`useSystemSettings: Token for ${tokenType}:`, {
+    logger.log(`useSystemSettings: Token for ${tokenType}:`, {
       found: !!setting,
       hasValue: !!token,
       tokenLength: token?.length || 0
@@ -122,14 +123,14 @@ export const useSystemSettings = () => {
 
   const getMapboxStyle = (styleType: MapboxStyleType): string | null => {
     if (!isInitialized) {
-      console.log(`useSystemSettings: Not initialized for ${styleType}`);
+      logger.log(`useSystemSettings: Not initialized for ${styleType}`);
       return null;
     }
     
     const setting = getSetting(styleType);
     const style = setting?.value || null;
     
-    console.log(`useSystemSettings: Style for ${styleType}:`, {
+    logger.log(`useSystemSettings: Style for ${styleType}:`, {
       found: !!setting,
       hasValue: !!style,
       style
@@ -140,13 +141,13 @@ export const useSystemSettings = () => {
 
   // Initial fetch
   useEffect(() => {
-    console.log('useSystemSettings: Initial fetch');
+    logger.log('useSystemSettings: Initial fetch');
     fetchSettings();
     
     // Set timeout to avoid infinite loading
     const timeout = setTimeout(() => {
       if (!isInitialized) {
-        console.log('useSystemSettings: Timeout reached, marking as initialized');
+        logger.log('useSystemSettings: Timeout reached, marking as initialized');
         setIsInitialized(true);
         setIsLoading(false);
       }

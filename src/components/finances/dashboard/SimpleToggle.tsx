@@ -19,13 +19,13 @@ export function SimpleToggle({ value, onValueChange, options, className }: Simpl
       type="single"
       value={value}
       onValueChange={(val) => val && onValueChange(val)}
-      className={cn('bg-gray-100 p-1 rounded-md h-9', className)}
+      className={cn('h-9 rounded-2xl bg-secondary/70 p-1', className)}
     >
       {options.map((option) => (
         <ToggleGroupItem
           key={option.value}
           value={option.value}
-          className="text-xs px-2 py-1 data-[state=on]:bg-white data-[state=on]:shadow-sm"
+          className="rounded-xl px-2 py-1 text-xs transition-all data-[state=on]:bg-white data-[state=on]:shadow-sm dark:data-[state=on]:bg-white/12"
         >
           {option.label}
         </ToggleGroupItem>

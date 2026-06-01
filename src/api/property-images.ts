@@ -3,13 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { PropertyImage, PropertyImageFormData } from '@/types/property-image';
 import { handleAuthError } from '@/utils/auth-utils';
 
+import { logger } from "@/lib/logger";
 export const fetchPropertyImages = async (propertyId: string): Promise<PropertyImage[]> => {
   try {
     // Check authentication first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
-      console.error('No active session found:', sessionError);
+      logger.error('No active session found:', sessionError);
       throw new Error('Usuário não autenticado');
     }
 
@@ -20,14 +21,14 @@ export const fetchPropertyImages = async (propertyId: string): Promise<PropertyI
       .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching property images:', error);
+      logger.error('Error fetching property images:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
 
     return data || [];
   } catch (err) {
-    console.error('Failed to fetch property images:', err);
+    logger.error('Failed to fetch property images:', err);
     throw err;
   }
 };
@@ -54,7 +55,7 @@ export const uploadPropertyImage = async (
       .upload(filePath, imageFile);
 
     if (uploadError) {
-      console.error('Error uploading image:', uploadError);
+      logger.error('Error uploading image:', uploadError);
       throw new Error(uploadError.message);
     }
 
@@ -70,7 +71,7 @@ export const uploadPropertyImage = async (
       .eq('property_id', propertyId);
 
     if (countError) {
-      console.error('Error getting image count:', countError);
+      logger.error('Error getting image count:', countError);
     }
 
     // Set primary flag automatically if this is the first image
@@ -85,7 +86,7 @@ export const uploadPropertyImage = async (
       .limit(1);
 
     if (maxOrderError) {
-      console.error('Error getting max display order:', maxOrderError);
+      logger.error('Error getting max display order:', maxOrderError);
     }
 
     const nextOrder = maxOrderData && maxOrderData.length > 0
@@ -107,7 +108,7 @@ export const uploadPropertyImage = async (
       .single();
 
     if (error) {
-      console.error('Error creating property image record:', error);
+      logger.error('Error creating property image record:', error);
       const authError = handleAuthError(error);
       throw new Error(authError.message);
     }
@@ -129,7 +130,7 @@ export const uploadPropertyImage = async (
 
     return data;
   } catch (err) {
-    console.error('Failed to upload property image:', err);
+    logger.error('Failed to upload property image:', err);
     throw err;
   }
 };
@@ -144,7 +145,7 @@ export const setPropertyImageAsPrimary = async (imageId: string, propertyId: str
       .single();
 
     if (getError) {
-      console.error('Error getting image details:', getError);
+      logger.error('Error getting image details:', getError);
       throw getError;
     }
 
@@ -155,7 +156,7 @@ export const setPropertyImageAsPrimary = async (imageId: string, propertyId: str
       .eq('id', imageId);
 
     if (updateError) {
-      console.error('Error setting image as primary:', updateError);
+      logger.error('Error setting image as primary:', updateError);
       throw updateError;
     }
 
@@ -167,7 +168,7 @@ export const setPropertyImageAsPrimary = async (imageId: string, propertyId: str
       .neq('id', imageId);
 
     if (updateOthersError) {
-      console.error('Error updating other images:', updateOthersError);
+      logger.error('Error updating other images:', updateOthersError);
       throw updateOthersError;
     }
 
@@ -179,12 +180,12 @@ export const setPropertyImageAsPrimary = async (imageId: string, propertyId: str
         .eq('id', propertyId);
 
       if (updatePropertyError) {
-        console.error('Error updating property image_url:', updatePropertyError);
+        logger.error('Error updating property image_url:', updatePropertyError);
         throw updatePropertyError;
       }
     }
   } catch (err) {
-    console.error('Failed to set primary image:', err);
+    logger.error('Failed to set primary image:', err);
     throw err;
   }
 };
@@ -201,12 +202,12 @@ export const updatePropertyImageOrder = async (
         .eq('id', image.id);
         
       if (error) {
-        console.error(`Error updating image ${image.id} order:`, error);
+        logger.error(`Error updating image ${image.id} order:`, error);
         throw error;
       }
     }
   } catch (err) {
-    console.error('Failed to update image order:', err);
+    logger.error('Failed to update image order:', err);
     throw err;
   }
 };
@@ -224,13 +225,13 @@ export const updatePropertyImageDescription = async (
       .single();
 
     if (error) {
-      console.error('Error updating image description:', error);
+      logger.error('Error updating image description:', error);
       throw error;
     }
 
     return data;
   } catch (err) {
-    console.error('Failed to update image description:', err);
+    logger.error('Failed to update image description:', err);
     throw err;
   }
 };
@@ -248,7 +249,7 @@ export const deletePropertyImage = async (
       .single();
 
     if (getError) {
-      console.error('Error getting image details:', getError);
+      logger.error('Error getting image details:', getError);
       throw getError;
     }
 
@@ -259,7 +260,7 @@ export const deletePropertyImage = async (
       .eq('id', imageId);
 
     if (deleteError) {
-      console.error('Error deleting image:', deleteError);
+      logger.error('Error deleting image:', deleteError);
       throw deleteError;
     }
 
@@ -274,7 +275,7 @@ export const deletePropertyImage = async (
         .single();
 
       if (nextImageError && nextImageError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.error('Error getting next image:', nextImageError);
+        logger.error('Error getting next image:', nextImageError);
       }
 
       if (nextImage) {
@@ -309,11 +310,11 @@ export const deletePropertyImage = async (
       .remove([fileName]);
 
     if (storageError) {
-      console.error('Error deleting image from storage:', storageError);
+      logger.error('Error deleting image from storage:', storageError);
       // Don't throw here, as the database record is already deleted
     }
   } catch (err) {
-    console.error('Failed to delete property image:', err);
+    logger.error('Failed to delete property image:', err);
     throw err;
   }
 };

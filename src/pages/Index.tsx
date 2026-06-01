@@ -14,8 +14,12 @@ const Index = () => {
     </div>;
   }
   
-  // Once loaded, redirect based on auth state
-  return auth.user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+  if (!auth.user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const homePath = auth.user.role === "system_admin" ? "/admin" : "/dashboard";
+  return <Navigate to={homePath} replace />;
 };
 
 export default Index;

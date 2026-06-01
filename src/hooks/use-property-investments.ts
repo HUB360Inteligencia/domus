@@ -11,6 +11,7 @@ import {
 } from '@/api/property-investments';
 import { PropertyInvestmentFormData, PropertyInvestment, InvestmentType } from '@/types/property-investment';
 
+import { logger } from "@/lib/logger";
 export const usePropertyInvestments = (propertyId: string | null) => {
   const [totalInvestment, setTotalInvestment] = useState<number>(0);
   const queryClient = useQueryClient();
@@ -33,7 +34,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
           setTotalInvestment(total);
         })
         .catch(error => {
-          console.error('Error calculating total investment:', error);
+          logger.error('Error calculating total investment:', error);
         });
     }
   }, [propertyId, investments]);
@@ -47,7 +48,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
       toast.success('Investimento registrado com sucesso!');
     },
     onError: (error: Error) => {
-      console.error('Error creating investment:', error);
+      logger.error('Error creating investment:', error);
       toast.error(`Erro ao registrar investimento: ${error.message}`);
     },
   });
@@ -61,7 +62,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
       toast.success('Investimento excluído com sucesso!');
     },
     onError: (error: Error) => {
-      console.error('Error deleting investment:', error);
+      logger.error('Error deleting investment:', error);
       toast.error(`Erro ao excluir investimento: ${error.message}`);
     },
   });
@@ -72,7 +73,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
       toast.success('Comprovante enviado com sucesso!');
     },
     onError: (error: Error) => {
-      console.error('Error uploading receipt:', error);
+      logger.error('Error uploading receipt:', error);
       toast.error(`Erro ao enviar comprovante: ${error.message}`);
     },
   });
@@ -80,7 +81,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
   const registerInvestment = useCallback(
     async (data: Omit<PropertyInvestmentFormData, 'property_id'>, receiptFile?: File) => {
       try {
-        console.log('Registering investment with data:', data);
+        logger.log('Registering investment with data:', data);
         
         let receiptUrl = undefined;
         
@@ -91,7 +92,7 @@ export const usePropertyInvestments = (propertyId: string | null) => {
         // Ensure amount is a number
         const amountValue = typeof data.amount === 'number' ? data.amount : Number(data.amount);
           
-        console.log('Parsed amount value:', amountValue);
+        logger.log('Parsed amount value:', amountValue);
           
         // Allow zero values for investments
         if (isNaN(amountValue) || amountValue < 0) {
@@ -105,13 +106,13 @@ export const usePropertyInvestments = (propertyId: string | null) => {
           receipt_url: receiptUrl,
         };
         
-        console.log('Final investment data:', investmentData);
+        logger.log('Final investment data:', investmentData);
         
         await createInvestmentMutation.mutateAsync(investmentData);
         
         return true;
       } catch (error) {
-        console.error('Error registering investment:', error);
+        logger.error('Error registering investment:', error);
         toast.error(error instanceof Error ? error.message : 'Erro ao registrar investimento');
         return false;
       }

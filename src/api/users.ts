@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "@/lib/auth";
 import { Database } from "@/integrations/supabase/types";
 
+import { logger } from "@/lib/logger";
 // Type for app_role from Supabase
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -41,7 +42,7 @@ export async function fetchUsers(): Promise<UserWithRole[]> {
 
     return users;
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
+    logger.error("Erro ao buscar usuários:", error);
     throw error;
   }
 }
@@ -77,7 +78,7 @@ export async function fetchUserById(userId: string): Promise<UserWithRole | null
       role,
     };
   } catch (error) {
-    console.error(`Erro ao buscar usuário ${userId}:`, error);
+    logger.error(`Erro ao buscar usuário ${userId}:`, error);
     throw error;
   }
 }
@@ -97,7 +98,7 @@ export async function updateUserProfile(
     
     return { success: true };
   } catch (error) {
-    console.error("Erro ao atualizar perfil:", error);
+    logger.error("Erro ao atualizar perfil:", error);
     throw error;
   }
 }
@@ -141,7 +142,7 @@ export async function updateUserRole(userId: string, roleName: AppRole) {
 
     return { success: true };
   } catch (error) {
-    console.error("Erro ao atualizar função do usuário:", error);
+    logger.error("Erro ao atualizar função do usuário:", error);
     throw error;
   }
 }
@@ -165,7 +166,7 @@ export async function deleteUser(userId: string) {
     
     return { success: true };
   } catch (error) {
-    console.error("Erro ao excluir usuário:", error);
+    logger.error("Erro ao excluir usuário:", error);
     throw error;
   }
 }

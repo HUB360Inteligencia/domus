@@ -94,10 +94,10 @@ export default function ClientsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Clientes</h1>
+        <h1 className="text-3xl font-bold">Organizações</h1>
         <Button onClick={() => navigate("/admin/clients/new")}>
           <Plus className="h-4 w-4 mr-2" />
-          Novo cliente
+          Nova organização
         </Button>
       </div>
 
@@ -113,10 +113,10 @@ export default function ClientsPage() {
 
       {filteredClients?.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 border rounded-md border-dashed">
-          <p className="text-muted-foreground mb-4">Nenhum cliente encontrado.</p>
+          <p className="text-muted-foreground mb-4">Nenhuma organização encontrada.</p>
           <Button onClick={() => navigate("/admin/clients/new")}>
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar cliente
+            Adicionar organização
           </Button>
         </div>
       ) : (

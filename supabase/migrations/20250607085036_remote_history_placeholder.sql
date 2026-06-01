@@ -1,0 +1,3 @@
+-- This version exists in the remote Supabase migration history.
+-- The original SQL was not present in this local checkout, so this file
+-- keeps local migration history aligned without changing the database.

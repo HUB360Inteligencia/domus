@@ -12,6 +12,7 @@ import {
 } from '@/api/property-images';
 import { PropertyImage, PropertyImageFormData } from '@/types/property-image';
 
+import { logger } from "@/lib/logger";
 export const usePropertyImages = (propertyId: string | null) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -121,7 +122,7 @@ export const usePropertyImages = (propertyId: string | null) => {
         await Promise.all(uploads);
         return true;
       } catch (error) {
-        console.error('Error uploading multiple images:', error);
+        logger.error('Error uploading multiple images:', error);
         return false;
       }
     },

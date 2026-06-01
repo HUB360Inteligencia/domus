@@ -2,6 +2,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useMapboxLoader } from './use-mapbox-loader';
 
+import { logger } from "@/lib/logger";
 interface UseMapboxMapOptions {
   token: string | null;
   style: string;
@@ -34,7 +35,7 @@ export const useMapboxMap = ({
 
   const initializeMap = useCallback(() => {
     if (!mapboxLoaded || !token || !mapContainer.current || !window.mapboxgl || map.current) {
-      console.log('Map initialization skipped:', { 
+      logger.log('Map initialization skipped:', { 
         mapboxLoaded, 
         token: !!token, 
         container: !!mapContainer.current, 
@@ -45,7 +46,7 @@ export const useMapboxMap = ({
     }
 
     try {
-      console.log('Initializing map with:', { token: token.substring(0, 20) + '...', style, center, zoom, pitch });
+      logger.log('Initializing map with:', { token: token.substring(0, 20) + '...', style, center, zoom, pitch });
       
       window.mapboxgl.accessToken = token;
       
@@ -62,18 +63,18 @@ export const useMapboxMap = ({
       map.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
 
       map.current.on('load', () => {
-        console.log('Map loaded successfully');
+        logger.log('Map loaded successfully');
         setIsReady(true);
         setError(null);
       });
 
       map.current.on('error', (e: any) => {
-        console.error('Map error:', e);
+        logger.error('Map error:', e);
         setError('Erro no mapa: ' + (e.error?.message || 'Erro desconhecido'));
       });
 
     } catch (err) {
-      console.error('Error initializing map:', err);
+      logger.error('Error initializing map:', err);
       setError('Erro ao inicializar o mapa. Verifique se o token é válido.');
     }
   }, [mapboxLoaded, token, style, center, zoom, pitch]);
@@ -89,7 +90,7 @@ export const useMapboxMap = ({
     // Cleanup on unmount
     return () => {
       if (map.current) {
-        console.log('Cleaning up map');
+        logger.log('Cleaning up map');
         map.current.remove();
         map.current = null;
         setIsReady(false);
