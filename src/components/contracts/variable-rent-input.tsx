@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { CalendarIcon, Plus, Trash2, CheckSquare, Square } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency, parseCurrencyToNumber } from "@/lib/format";
@@ -130,10 +131,9 @@ export function VariableRentInput({ values, onChange }: VariableRentInputProps) 
                 
                 <div className="col-span-4 flex flex-col">
                   <span className="text-xs text-muted-foreground">Valor</span>
-                  <Input
-                    type="text"
-                    value={formatCurrency(item.value)}
-                    onChange={(e) => handleInputChange(index, 'value', e.target.value)}
+                  <CurrencyInput
+                    value={item.value ?? 0}
+                    onValueChange={(value) => updateValueAtIndex(index, 'value', value)}
                     className="mt-1"
                     placeholder="R$ 0,00"
                   />

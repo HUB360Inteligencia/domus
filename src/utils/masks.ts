@@ -1,4 +1,51 @@
 /**
+ * Strips every non-digit character from a value.
+ */
+export const onlyDigits = (value?: string | null): string => (value ?? '').replace(/\D/g, '');
+
+/**
+ * Brazilian phone/cellphone mask applied while typing.
+ * Handles 10-digit landlines (XX) XXXX-XXXX and 11-digit mobiles (XX) XXXXX-XXXX.
+ */
+export const formatPhone = (value: string): string => {
+  const d = onlyDigits(value).slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+};
+
+/** CPF mask (000.000.000-00) applied while typing. */
+export const formatCPF = (value: string): string => {
+  const d = onlyDigits(value).slice(0, 11);
+  let out = d.slice(0, 3);
+  if (d.length > 3) out += `.${d.slice(3, 6)}`;
+  if (d.length > 6) out += `.${d.slice(6, 9)}`;
+  if (d.length > 9) out += `-${d.slice(9, 11)}`;
+  return out;
+};
+
+/** CNPJ mask (00.000.000/0000-00) applied while typing. */
+export const formatCNPJ = (value: string): string => {
+  const d = onlyDigits(value).slice(0, 14);
+  let out = d.slice(0, 2);
+  if (d.length > 2) out += `.${d.slice(2, 5)}`;
+  if (d.length > 5) out += `.${d.slice(5, 8)}`;
+  if (d.length > 8) out += `/${d.slice(8, 12)}`;
+  if (d.length > 12) out += `-${d.slice(12, 14)}`;
+  return out;
+};
+
+/**
+ * Auto-detecting CPF/CNPJ mask for ambiguous "CNPJ / CPF" fields:
+ * up to 11 digits → CPF, beyond that → CNPJ.
+ */
+export const formatCpfCnpj = (value: string): string => {
+  const d = onlyDigits(value);
+  return d.length <= 11 ? formatCPF(d) : formatCNPJ(d);
+};
+
+/**
  * Applies a date mask in DD/MM/YYYY format
  * @param value - The input value
  * @returns Formatted date string

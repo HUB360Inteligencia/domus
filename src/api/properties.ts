@@ -279,108 +279,86 @@ export const uploadPropertyImage = async ({ id, imageFile }: { id: string; image
 };
 
 /**
- * Get coordinates from an address using Mapbox Geocoding API
+ * Get coordinates from an address using the Mapbox Geocoding API.
+ *
+ * Returns the exact coordinates for the address, or `null` when the address
+ * cannot be geocoded. We intentionally do NOT fall back to a city center with a
+ * random offset: that produced pins on the wrong street. A `null` result lets
+ * the caller tell the user the address could not be located instead of storing
+ * a bogus coordinate.
  */
 export const geocodeAddress = async (
   address: string,
   propertyNumber?: string,
   city?: string,
-  state?: string
+  state?: string,
+  postalCode?: string
 ): Promise<{ lat: number, lng: number } | null> => {
   try {
     logger.log('Geocoding address:', address);
-    
-    // Create a full address string
-    const fullAddress = `${address}${propertyNumber ? `, ${propertyNumber}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}`;
-    
-    // Create a cache key for this address
+
+    // Build the most specific address string we can. The postal code greatly
+    // improves accuracy for Brazilian addresses.
+    const fullAddress = [
+      propertyNumber ? `${address}, ${propertyNumber}` : address,
+      city,
+      state,
+      postalCode,
+      'Brasil',
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    // Cache key for this address (sessionStorage avoids repeat API calls).
     const cacheKey = `geocode_${fullAddress.replace(/\s+/g, '_').toLowerCase()}`;
-    
-    // Check if we have cached results
     const cachedResult = sessionStorage.getItem(cacheKey);
     if (cachedResult) {
       logger.log('Using cached geocode result for:', fullAddress);
       return JSON.parse(cachedResult);
     }
-    
-    // Get user's Mapbox token from context
-    const mapboxToken = localStorage.getItem('mapbox_token');
-    
-    if (mapboxToken) {
-      try {
-        // Use Mapbox Geocoding API
-        const encodedAddress = encodeURIComponent(fullAddress);
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&limit=1`
-        );
-        
-        if (!response.ok) {
-          throw new Error(`Mapbox API returned ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.features && data.features.length > 0) {
-          // Mapbox returns coordinates as [longitude, latitude]
-          const [lng, lat] = data.features[0].center;
-          
-          const result = { lat, lng };
-          
-          // Cache the result
-          sessionStorage.setItem(cacheKey, JSON.stringify(result));
-          logger.log('Geocoded using Mapbox API:', result);
-          return result;
-        } else {
-          logger.log('No features returned from Mapbox Geocoding API');
-        }
-      } catch (error) {
-        logger.error('Error using Mapbox Geocoding API:', error);
-        // Continue to fallback method if Mapbox fails
-      }
+
+    // Use the same token source as the map (env var), falling back to any
+    // legacy token stored in localStorage.
+    const mapboxToken =
+      (import.meta.env.VITE_MAPBOX_TOKEN as string | undefined) ||
+      localStorage.getItem('mapbox_token');
+
+    if (!mapboxToken) {
+      logger.error('Geocoding skipped: no Mapbox token configured');
+      return null;
     }
-    
-    // Fallback: Use our predefined list of city coordinates with random offset
-    logger.log('Using fallback geocoding with predefined coordinates');
-    
-    // Map of cities to their approximate coordinates
-    const cityCoordinates: Record<string, { lat: number, lng: number }> = {
-      'são paulo': { lat: -23.550520, lng: -46.633308 },
-      'rio de janeiro': { lat: -22.906847, lng: -43.172896 },
-      'brasília': { lat: -15.7942, lng: -47.8822 },
-      'salvador': { lat: -12.9714, lng: -38.5014 },
-      'fortaleza': { lat: -3.7319, lng: -38.5267 },
-      'belo horizonte': { lat: -19.9167, lng: -43.9345 },
-      'manaus': { lat: -3.1190, lng: -60.0217 },
-      'curitiba': { lat: -25.4284, lng: -49.2733 },
-      'recife': { lat: -8.0476, lng: -34.8770 },
-      'porto alegre': { lat: -30.0346, lng: -51.2177 },
-    };
-    
-    // Try to find the city in our address and return its coordinates
-    const lowercaseAddress = fullAddress.toLowerCase();
-    for (const [city, coords] of Object.entries(cityCoordinates)) {
-      if (lowercaseAddress.includes(city)) {
-        // Add small random offset to make properties in the same city appear slightly different
-        const randomLat = (Math.random() - 0.5) * 0.01;
-        const randomLng = (Math.random() - 0.5) * 0.01;
-        
-        const result = { 
-          lat: coords.lat + randomLat, 
-          lng: coords.lng + randomLng
-        };
-        
-        // Cache the result
-        sessionStorage.setItem(cacheKey, JSON.stringify(result));
-        return result;
-      }
+
+    const encodedAddress = encodeURIComponent(fullAddress);
+    const params = new URLSearchParams({
+      access_token: mapboxToken,
+      limit: '1',
+      country: 'br',
+      language: 'pt',
+      types: 'address',
+    });
+
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Mapbox API returned ${response.status}: ${response.statusText}`);
     }
-    
-    // If city not found in our list, return default coordinates with random offset
-    const defaultCoords = { lat: -23.550520 + (Math.random() - 0.5) * 0.05, lng: -46.633308 + (Math.random() - 0.5) * 0.05 };
-    
-    // Cache the result
-    sessionStorage.setItem(cacheKey, JSON.stringify(defaultCoords));
-    return defaultCoords;
+
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      // Mapbox returns coordinates as [longitude, latitude].
+      const [lng, lat] = data.features[0].center;
+      const result = { lat, lng };
+
+      sessionStorage.setItem(cacheKey, JSON.stringify(result));
+      logger.log('Geocoded using Mapbox API:', result);
+      return result;
+    }
+
+    logger.log('No features returned from Mapbox Geocoding API for:', fullAddress);
+    return null;
   } catch (error) {
     logger.error('Error geocoding address:', error);
     return null;

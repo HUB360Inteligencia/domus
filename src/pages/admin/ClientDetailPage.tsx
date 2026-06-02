@@ -16,6 +16,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useClient } from "@/hooks/use-clients";
+import { formatPhone, formatCpfCnpj } from "@/utils/masks";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -135,13 +136,13 @@ export default function ClientDetailPage() {
             {client.phone && (
               <div className="flex items-center">
                 <Phone className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>{client.phone}</span>
+                <span>{formatPhone(client.phone)}</span>
               </div>
             )}
             {client.document_number && (
               <div className="flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Documento: {client.document_number}</span>
+                <span>Documento: {formatCpfCnpj(client.document_number)}</span>
               </div>
             )}
             <div className="flex items-center">

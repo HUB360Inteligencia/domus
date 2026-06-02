@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { formatPhone, formatCpfCnpj } from "@/utils/masks";
 
 // Fetch organization info for the current user
 async function fetchCurrentUserOrganization(): Promise<{
@@ -40,7 +41,7 @@ async function fetchCurrentUserOrganization(): Promise<{
     .from("client_users")
     .select("client_id")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (cuError || !clientUser) return null;
 
@@ -211,13 +212,13 @@ export default function OrgSettingsPage() {
                 {org.phone && (
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-muted-foreground">Telefone</label>
-                    <p className="text-sm">{org.phone}</p>
+                    <p className="text-sm">{formatPhone(org.phone)}</p>
                   </div>
                 )}
                 {org.document_number && (
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-muted-foreground">CNPJ/CPF</label>
-                    <p className="text-sm">{org.document_number}</p>
+                    <p className="text-sm">{formatCpfCnpj(org.document_number)}</p>
                   </div>
                 )}
               </div>

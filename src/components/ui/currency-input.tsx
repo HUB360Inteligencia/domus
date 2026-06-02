@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 
 interface CurrencyInputProps {
@@ -13,139 +12,64 @@ interface CurrencyInputProps {
   required?: boolean;
 }
 
+/** Formata um número como moeda brasileira (ex.: 2000000 → "R$ 2.000.000,00"). */
+const formatBRL = (num: number): string =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+
+const toNumber = (value: string | number): number => {
+  if (typeof value === 'number') return value;
+  const digits = value.replace(/\D/g, '');
+  return digits ? Number(digits) / 100 : 0;
+};
+
+/**
+ * Campo de moeda com máscara aplicada ao vivo: conforme o usuário digita, os
+ * dígitos são interpretados como centavos e exibidos já formatados com
+ * separador de milhar (.) e decimal (,) — ex.: digitar 200000000000 mostra
+ * "R$ 2.000.000.000,00". Assim não há ambiguidade entre milhões/bilhões.
+ */
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   value,
   onChange,
   onValueChange,
-  placeholder = "R$ 0,00",
+  placeholder = 'R$ 0,00',
   className,
   id,
   disabled = false,
-  required = false
+  required = false,
 }) => {
   const [displayValue, setDisplayValue] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
 
+  // Sincroniza com o valor externo (carregamento/edição), sem interferir na digitação.
   useEffect(() => {
-    if (!isFocused) {
-      if (typeof value === 'number') {
-        setDisplayValue(formatCurrencyDisplay(value));
-      } else if (value) {
-        const numericValue = parseCurrencyToNumber(value);
-        setDisplayValue(formatCurrencyDisplay(numericValue));
-      } else {
-        setDisplayValue('');
-      }
-    }
-  }, [value, isFocused]);
+    const num = toNumber(value);
+    setDisplayValue(num ? formatBRL(num) : '');
+  }, [value]);
 
-  const formatCurrencyDisplay = (num: number): string => {
-    if (num === 0) return 'R$ 0,00';
-    
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const digits = e.target.value.replace(/\D/g, '');
+      const num = digits ? Number(digits) / 100 : 0;
 
-  const parseCurrencyToNumber = (str: string): number => {
-    if (!str) return 0;
-    
-    // Remove all non-numeric characters except comma and dot
-    const cleanStr = str.replace(/[^\d,.]/g, '');
-    
-    if (!cleanStr) return 0;
-    
-    // Handle different decimal separators
-    if (cleanStr.includes(',') && cleanStr.includes('.')) {
-      const lastComma = cleanStr.lastIndexOf(',');
-      const lastDot = cleanStr.lastIndexOf('.');
-      
-      if (lastComma > lastDot) {
-        // Comma is decimal separator
-        return parseFloat(cleanStr.replace(/\./g, '').replace(',', '.')) || 0;
-      } else {
-        // Dot is decimal separator
-        return parseFloat(cleanStr.replace(/,/g, '')) || 0;
-      }
-    }
-    
-    // Only comma (Brazilian format)
-    if (cleanStr.includes(',') && !cleanStr.includes('.')) {
-      return parseFloat(cleanStr.replace(',', '.')) || 0;
-    }
-    
-    // Only dot - could be thousands separator or decimal
-    if (cleanStr.includes('.') && !cleanStr.includes(',')) {
-      const parts = cleanStr.split('.');
-      if (parts[parts.length - 1].length === 2) {
-        // Decimal separator
-        return parseFloat(cleanStr) || 0;
-      } else {
-        // Thousands separator
-        return parseFloat(cleanStr.replace(/\./g, '')) || 0;
-      }
-    }
-    
-    // No separators, just numbers
-    return parseFloat(cleanStr) || 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    
-    if (isFocused) {
-      setDisplayValue(inputValue);
-      
-      const numericValue = parseCurrencyToNumber(inputValue);
-      
-      // Call both callbacks for backward compatibility
-      if (onChange) {
-        onChange(numericValue.toString());
-      }
-      if (onValueChange) {
-        onValueChange(numericValue);
-      }
-    }
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    if (displayValue) {
-      const numericValue = parseCurrencyToNumber(displayValue);
-      if (numericValue === 0) {
-        setDisplayValue('');
-      } else {
-        setDisplayValue(displayValue);
-      }
-    }
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    const numericValue = parseCurrencyToNumber(displayValue);
-    const formattedValue = formatCurrencyDisplay(numericValue);
-    setDisplayValue(formattedValue);
-    
-    // Call both callbacks for backward compatibility
-    if (onChange) {
-      onChange(numericValue.toString());
-    }
-    if (onValueChange) {
-      onValueChange(numericValue);
-    }
-  };
+      setDisplayValue(digits ? formatBRL(num) : '');
+      onChange?.(num.toString());
+      onValueChange?.(num);
+    },
+    [onChange, onValueChange],
+  );
 
   return (
     <Input
       id={id}
       type="text"
+      inputMode="numeric"
       value={displayValue}
       onChange={handleInputChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
       placeholder={placeholder}
       className={className}
       disabled={disabled}

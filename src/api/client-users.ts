@@ -148,18 +148,18 @@ export async function resetUserPassword(data: ResetPasswordData): Promise<{ succ
   return { success: true };
 }
 
-// Change own password (user-initiated, also clears must_change_password)
+// Change own password (user-initiated, also clears must_change_password).
+// Usa o updateUser do próprio usuário (e não a Admin API via edge function),
+// para que a SESSÃO ATUAL seja preservada — trocar a senha pela Admin API
+// revoga os tokens da sessão e derrubaria o usuário do sistema.
 export async function changeOwnPassword(data: ChangeOwnPasswordData): Promise<{ success: boolean }> {
-  const { data: response, error } = await supabase.functions.invoke("user-management", {
-    body: {
-      action: "changeOwnPassword",
-      data
-    }
+  const { error } = await supabase.auth.updateUser({
+    password: data.new_password,
+    data: { must_change_password: false },
   });
 
-  if (error) throw error;
-  if (response.error) throw new Error(response.error.message || "Error changing password");
-  
+  if (error) throw new Error(error.message || "Error changing password");
+
   return { success: true };
 }
 
@@ -188,10 +188,10 @@ export async function getCurrentUserClientId(): Promise<string | null> {
     .from("client_users")
     .select("client_id")
     .eq("user_id", user.id)
-    .single();
-  
+    .maybeSingle();
+
   if (error || !data) return null;
-  
+
   return data.client_id;
 }
 
@@ -206,7 +206,7 @@ export async function userBelongsToClient(clientId: string): Promise<boolean> {
     .select("id")
     .eq("user_id", user.id)
     .eq("client_id", clientId)
-    .single();
-  
+    .maybeSingle();
+
   return !error && !!data;
 }

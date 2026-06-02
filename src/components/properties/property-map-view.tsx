@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Property } from '@/types/property';
@@ -37,9 +37,11 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
   const [mapError, setMapError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Filter properties that have coordinates
-  const propertiesWithCoords = properties.filter(
-    p => p.latitude !== null && p.longitude !== null
+  // Filter properties that have coordinates.
+  // Memoized so the markers effect doesn't tear down and rebuild every render.
+  const propertiesWithCoords = useMemo(
+    () => properties.filter(p => p.latitude !== null && p.longitude !== null),
+    [properties]
   );
 
   useEffect(() => {
@@ -113,10 +115,14 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
     propertiesWithCoords.forEach(property => {
       if (property.latitude === null || property.longitude === null) return;
 
-      // Create marker element
+      // Outer element: positioned by Mapbox via inline `transform: translate(...)`.
+      // We must NOT touch its transform, or the marker jumps to the map origin.
       const markerElement = document.createElement('div');
       markerElement.className = 'property-marker';
-      markerElement.style.cssText = `
+
+      // Inner element: handles styling and the hover scale animation.
+      const markerDot = document.createElement('div');
+      markerDot.style.cssText = `
         width: 12px;
         height: 12px;
         border-radius: 50%;
@@ -126,13 +132,14 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
         cursor: pointer;
         transition: transform 0.2s;
       `;
+      markerElement.appendChild(markerDot);
 
       markerElement.addEventListener('mouseenter', () => {
-        markerElement.style.transform = 'scale(1.2)';
+        markerDot.style.transform = 'scale(1.2)';
       });
 
       markerElement.addEventListener('mouseleave', () => {
-        markerElement.style.transform = 'scale(1)';
+        markerDot.style.transform = 'scale(1)';
       });
 
       // Create popup

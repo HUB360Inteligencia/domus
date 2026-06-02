@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Client } from "@/api/clients";
+import { formatCpfCnpj } from "@/utils/masks";
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ export default function ClientsPage() {
                     </Link>
                   </TableCell>
                   <TableCell>{client.email}</TableCell>
-                  <TableCell>{client.document_number || "-"}</TableCell>
+                  <TableCell>{client.document_number ? formatCpfCnpj(client.document_number) : "-"}</TableCell>
                   <TableCell>
                     <Badge variant={client.is_active ? "default" : "secondary"}>
                       {client.is_active ? "Ativo" : "Inativo"}

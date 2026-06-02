@@ -28,6 +28,7 @@ import { createOrganizationWithUser } from "@/api/client-users";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { logger } from "@/lib/logger";
+import { formatPhone, formatCpfCnpj } from "@/utils/masks";
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "";
 
@@ -134,14 +135,14 @@ export default function ClientFormPage() {
 
   // Auto-fill org email when user email is typed (for create mode)
   const watchUserEmail = createForm.watch("user_email");
-  const watchOrgEmail = createForm.watch("org_email");
+  const isOrgEmailDirty = createForm.formState.dirtyFields.org_email;
   
   useEffect(() => {
-    // If org email is empty or was auto-synced, sync it with user email
-    if (!isEditing && watchUserEmail && (!watchOrgEmail || watchOrgEmail === "")) {
+    // If org email hasn't been manually edited, sync it with user email
+    if (!isEditing && !isOrgEmailDirty && watchUserEmail !== undefined) {
       createForm.setValue("org_email", watchUserEmail);
     }
-  }, [watchUserEmail, isEditing]);
+  }, [watchUserEmail, isEditing, isOrgEmailDirty, createForm]);
 
   // Fill edit form with existing data
   useEffect(() => {
@@ -149,8 +150,10 @@ export default function ClientFormPage() {
       editForm.reset({
         org_name: existingClient.name,
         org_email: existingClient.email,
-        org_phone: existingClient.phone || "",
-        org_document_number: existingClient.document_number || "",
+        org_phone: existingClient.phone ? formatPhone(existingClient.phone) : "",
+        org_document_number: existingClient.document_number
+          ? formatCpfCnpj(existingClient.document_number)
+          : "",
         is_active: existingClient.is_active,
       });
     }
@@ -180,11 +183,8 @@ export default function ClientFormPage() {
       const password = result.user?.generated_password || data.user_password!;
       setCreatedUserInfo({ email: data.user_email, password });
       toast.success("Organização e usuário criados com sucesso!");
-      
-      // Navigate to the new client's detail page after a short delay
-      setTimeout(() => {
-        navigate(`/admin/clients/${result.client.id}`);
-      }, 3000);
+      // Não redireciona automaticamente: o usuário precisa copiar a senha
+      // provisória (exibida uma única vez) antes de sair desta tela.
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error("Erro ao criar organização:", error);
@@ -344,7 +344,12 @@ export default function ClientFormPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                          <Input
+                            inputMode="numeric"
+                            placeholder="(XX) XXXXX-XXXX"
+                            {...field}
+                            onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -358,7 +363,12 @@ export default function ClientFormPage() {
                       <FormItem>
                         <FormLabel>CNPJ / CPF</FormLabel>
                         <FormControl>
-                          <Input placeholder="XX.XXX.XXX/XXXX-XX" {...field} />
+                          <Input
+                            inputMode="numeric"
+                            placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                            {...field}
+                            onChange={(e) => field.onChange(formatCpfCnpj(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -448,7 +458,12 @@ export default function ClientFormPage() {
                     <FormItem>
                       <FormLabel>Telefone</FormLabel>
                       <FormControl>
-                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                        <Input
+                          inputMode="numeric"
+                          placeholder="(XX) XXXXX-XXXX"
+                          {...field}
+                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -461,7 +476,12 @@ export default function ClientFormPage() {
                     <FormItem>
                       <FormLabel>CNPJ / CPF</FormLabel>
                       <FormControl>
-                        <Input placeholder="XX.XXX.XXX/XXXX-XX" {...field} />
+                        <Input
+                          inputMode="numeric"
+                          placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                          {...field}
+                          onChange={(e) => field.onChange(formatCpfCnpj(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

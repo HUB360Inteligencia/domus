@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Development, DevelopmentFormData } from '@/types/development';
-import { applyCurrencyMask } from '@/utils/masks';
+import { applyCurrencyMask, onlyDigits } from '@/utils/masks';
+import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
+import { Loader2, Check, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 const developmentSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -38,6 +41,9 @@ interface DevelopmentFormProps {
 export function DevelopmentForm({ initialData, onSubmit, onCancel, isLoading }: DevelopmentFormProps) {
   const [landAreaMask, setLandAreaMask] = useState('');
   const [builtAreaMask, setBuiltAreaMask] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepFound, setCepFound] = useState(false);
+  const lastCepRef = useRef('');
 
   const form = useForm<DevelopmentFormData>({
     resolver: zodResolver(developmentSchema),
@@ -79,6 +85,38 @@ export function DevelopmentForm({ initialData, onSubmit, onCancel, isLoading }: 
       }
     }
   }, [initialData, form]);
+
+  // Busca de CEP automática (ViaCEP) assim que houver 8 dígitos.
+  const handleCepChange = (value: string) => {
+    const masked = formatCEP(value);
+    form.setValue('zip_code', masked);
+    setCepFound(false);
+    const digits = onlyDigits(masked);
+    if (digits.length === 8 && digits !== lastCepRef.current) {
+      lastCepRef.current = digits;
+      void lookupCep(digits);
+    } else if (digits.length < 8) {
+      lastCepRef.current = '';
+    }
+  };
+
+  const lookupCep = async (digits: string) => {
+    setCepLoading(true);
+    try {
+      const addr = await fetchAddressFromCEP(digits);
+      if (!addr.erro) {
+        if (addr.logradouro) form.setValue('address', addr.logradouro);
+        if (addr.localidade) form.setValue('city', addr.localidade);
+        if (addr.uf) form.setValue('state', addr.uf);
+        setCepFound(true);
+        toast.success('Endereço encontrado!');
+      }
+    } catch {
+      toast.error('Não foi possível buscar o CEP.');
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
   const handleLandAreaChange = (value: string) => {
     const numericValue = parseFloat(value.replace(/[^\d]/g, ''));
@@ -212,7 +250,24 @@ export function DevelopmentForm({ initialData, onSubmit, onCancel, isLoading }: 
                   <FormItem>
                     <FormLabel>CEP</FormLabel>
                     <FormControl>
-                      <Input placeholder="00000-000" {...field} />
+                      <div className="relative">
+                        <Input
+                          placeholder="00000-000"
+                          inputMode="numeric"
+                          maxLength={9}
+                          value={field.value ?? ''}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {cepLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : cepFound ? (
+                            <Check className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </span>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

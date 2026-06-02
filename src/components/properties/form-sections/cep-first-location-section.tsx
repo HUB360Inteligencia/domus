@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, Check } from 'lucide-react';
 import { PropertyFormData } from '@/types/property';
-import { fetchAddressFromCEP, formatCEP, createFullAddressString } from '@/utils/cep-lookup';
+import { fetchAddressFromCEP, formatCEP } from '@/utils/cep-lookup';
 import { geocodeAddress } from '@/api/properties';
+import { LocationMapPreview } from '@/components/properties/location-map-preview';
 import { toast } from 'sonner';
 
 interface CEPFirstLocationSectionProps {
@@ -17,16 +17,15 @@ interface CEPFirstLocationSectionProps {
   showMapPreview?: boolean;
 }
 
-export function CEPFirstLocationSection({ 
-  formData, 
-  onInputChange, 
+export function CEPFirstLocationSection({
+  formData,
+  onInputChange,
   onCoordsChange,
-  showMapPreview = true 
+  showMapPreview = true
 }: CEPFirstLocationSectionProps) {
   const [isCEPLoading, setIsCEPLoading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [cepFound, setCepFound] = useState(false);
-  const [coordsFound, setCoordsFound] = useState(false);
 
   // Auto busca CEP quando tem 8 dígitos
   useEffect(() => {
@@ -55,7 +54,7 @@ export function CEPFirstLocationSection({
     setIsCEPLoading(true);
     try {
       const addressData = await fetchAddressFromCEP(formData.zip_code);
-      
+
       if (addressData && !addressData.erro) {
         onInputChange('address', addressData.logradouro || '');
         onInputChange('neighborhood', addressData.bairro || '');
@@ -77,25 +76,18 @@ export function CEPFirstLocationSection({
 
     setIsGeocoding(true);
     try {
-      const fullAddress = createFullAddressString(
-        formData.address,
-        formData.property_number,
-        formData.city,
-        formData.state
-      );
-
       const coords = await geocodeAddress(
         formData.address,
         formData.property_number,
         formData.city,
-        formData.state
+        formData.state,
+        formData.zip_code
       );
 
       if (coords) {
         onInputChange('latitude', coords.lat);
         onInputChange('longitude', coords.lng);
         onCoordsChange?.(coords);
-        setCoordsFound(true);
       }
     } catch (error) {
       console.error('Error geocoding address:', error);
@@ -103,6 +95,8 @@ export function CEPFirstLocationSection({
       setIsGeocoding(false);
     }
   };
+
+  const mapLabel = [formData.address, formData.property_number].filter(Boolean).join(', ');
 
   return (
     <Card>
@@ -113,36 +107,32 @@ export function CEPFirstLocationSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* CEP - Primeiro campo */}
+        {/* CEP - Primeiro campo. Busca o endereço automaticamente ao completar 8 dígitos. */}
         <div>
           <Label htmlFor="zip_code">CEP *</Label>
-          <div className="flex gap-2">
+          <div className="relative">
             <Input
               id="zip_code"
               value={formData.zip_code || ''}
               onChange={(e) => handleCEPChange(e.target.value)}
               placeholder="00000-000"
+              inputMode="numeric"
               maxLength={9}
-              className="flex-1"
               required
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCEPLookup}
-              disabled={isCEPLoading || !formData.zip_code || formData.zip_code.length < 9}
-              className="flex items-center gap-2"
-            >
+            <span className="absolute right-3 top-1/2 -translate-y-1/2">
               {isCEPLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : cepFound ? (
-                <Check className="h-4 w-4 text-green-600" />
+                <Check className="h-4 w-4 text-emerald-600" />
               ) : (
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-4 w-4 text-muted-foreground" />
               )}
-              {isCEPLoading ? 'Buscando...' : 'Buscar'}
-            </Button>
+            </span>
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O endereço é preenchido automaticamente ao digitar o CEP.
+          </p>
         </div>
 
         {/* Endereço e Número */}
@@ -213,31 +203,24 @@ export function CEPFirstLocationSection({
           </div>
         </div>
 
-        {/* Status de coordenadas e busca automática */}
-        {isGeocoding && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Buscando coordenadas...
-          </div>
-        )}
-
-        {coordsFound && formData.latitude && formData.longitude && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-green-800">
-              <Check className="h-4 w-4" />
-              <span className="text-sm font-medium">Coordenadas encontradas</span>
+        {/* Mapa do imóvel */}
+        {showMapPreview && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {isGeocoding ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Localizando o imóvel no mapa...
+                </>
+              ) : (
+                <span>Pré-visualização da localização</span>
+              )}
             </div>
-            <div className="text-xs text-green-600 mt-1">
-              Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
-            </div>
-          </div>
-        )}
-
-        {/* Preview do mapa seria aqui se showMapPreview for true */}
-        {showMapPreview && formData.latitude && formData.longitude && (
-          <div className="bg-gray-100 border rounded-lg p-4 text-center text-sm text-muted-foreground">
-            <MapPin className="h-8 w-8 mx-auto mb-2" />
-            Localização no mapa será exibida aqui
+            <LocationMapPreview
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              label={mapLabel || undefined}
+            />
           </div>
         )}
       </CardContent>
