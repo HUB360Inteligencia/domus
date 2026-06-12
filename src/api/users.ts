@@ -10,37 +10,30 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 export interface UserWithRole extends Omit<AuthUser, 'role'> {
   role?: AppRole | string;
   created_at?: string;
+  last_sign_in_at?: string | null;
 }
 
-// Buscar todos os usuários
+// Buscar todos os usuários (created_at e last_sign_in_at vêm de auth.users,
+// acessíveis apenas via a RPC SECURITY DEFINER admin_list_users).
 export async function fetchUsers(): Promise<UserWithRole[]> {
   try {
-    // Buscar todos os perfis
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("*");
+    const { data, error } = await supabase.rpc("admin_list_users");
 
-    if (profilesError) throw profilesError;
+    if (error) throw error;
 
-    // Converter para o formato esperado
-    const users: UserWithRole[] = await Promise.all(
-      profiles.map(async (profile) => {
-        // Buscar função/papel do usuário
-        const { data: role } = await supabase.rpc("get_user_role", {
-          user_id: profile.id
-        });
-
-        // Montar objeto de usuário
-        return {
-          id: profile.id,
-          email: profile.email,
-          profile,
-          role,
-        };
-      })
-    );
-
-    return users;
+    return (data || []).map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      created_at: row.created_at,
+      last_sign_in_at: row.last_sign_in_at,
+      profile: {
+        id: row.id,
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name,
+      } as AuthUser["profile"],
+    }));
   } catch (error) {
     logger.error("Erro ao buscar usuários:", error);
     throw error;

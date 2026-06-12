@@ -102,6 +102,7 @@ export function UserTable({ users, isLoading }: UserTableProps) {
               <TableHead>Email</TableHead>
               <TableHead>Função</TableHead>
               <TableHead>Data de Criação</TableHead>
+              <TableHead>Último Login</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -119,6 +120,16 @@ export function UserTable({ users, isLoading }: UserTableProps) {
                   {user.created_at
                     ? new Date(user.created_at).toLocaleDateString("pt-BR")
                     : "N/A"}
+                </TableCell>
+                <TableCell>
+                  {user.last_sign_in_at ? (
+                    new Date(user.last_sign_in_at).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })
+                  ) : (
+                    <span className="text-muted-foreground">Nunca acessou</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
