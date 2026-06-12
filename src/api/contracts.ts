@@ -338,14 +338,19 @@ export const deleteContract = async (id: string): Promise<void> => {
     }
 
     // Finally, delete the contract
-    const { error: contractError } = await supabase
+    const { error: contractError, count } = await supabase
       .from('contracts')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', id);
 
     if (contractError) {
       logger.error('Error deleting contract:', contractError);
       throw new Error(`Erro ao excluir contrato: ${contractError.message}`);
+    }
+
+    // RLS silently filters rows the user cannot delete (0 rows, no error).
+    if (!count) {
+      throw new Error('Você não tem permissão para excluir este contrato.');
     }
     
     logger.log('Contract and all related data deleted successfully');

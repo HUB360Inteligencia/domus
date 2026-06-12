@@ -51,11 +51,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  available: 'bg-emerald-500',
-  rented: 'bg-blue-500',
-  airbnb: 'bg-red-500',
-  maintenance: 'bg-amber-500',
-  sold: 'bg-purple-500',
+  available: 'bg-[#4a7c59] border-[#4a7c59]',
+  rented: 'bg-[#6f8f74] border-[#6f8f74]',
+  airbnb: 'bg-[#c4934f] border-[#c4934f]',
+  maintenance: 'bg-amber-500 border-amber-500',
+  sold: 'bg-stone-500 border-stone-500',
 };
 
 export function PropertyTable({ properties, onSelect, onEdit, onDelete }: PropertyTableProps) {

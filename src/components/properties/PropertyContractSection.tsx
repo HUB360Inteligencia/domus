@@ -15,6 +15,14 @@ import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelec
 import { useContractMutations } from '@/hooks/use-contract-mutations';
 import { RentalManagementModal, RentalHistoryTable, MonthlyAverageCard } from './rental-management';
 
+const statusStyles: Record<string, string> = {
+  rented: "border-[#6f8f74]/25 bg-[#6f8f74]/12 text-[#3f5f45]",
+  available: "border-[#4a7c59]/25 bg-[#4a7c59]/12 text-[#2f543a]",
+  airbnb: "border-[#c4934f]/30 bg-[#c4934f]/14 text-[#7a5529]",
+  maintenance: "border-amber-200 bg-amber-50 text-amber-800",
+  sold: "border-stone-300 bg-stone-100 text-stone-700",
+};
+
 interface PropertyContractSectionProps {
   property: Property | null | undefined;
   isLoading?: boolean;
@@ -101,7 +109,7 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
           <h3 className="text-xl font-semibold">Contratos</h3>
           <div className="flex items-center gap-3">
             {property?.status && (
-              <Badge variant={property.status === 'rented' ? 'default' : property.status === 'available' ? 'outline' : 'secondary'}>
+              <Badge variant="outline" className={statusStyles[property.status] || "border-border bg-secondary text-secondary-foreground"}>
                 {property.status === 'rented' ? 'Alugado' : 
                  property.status === 'available' ? 'Disponível' : 
                  property.status === 'airbnb' ? 'Airbnb' : 

@@ -26,9 +26,11 @@ export function CEPFirstLocationSection({
   const [isCEPLoading, setIsCEPLoading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [cepFound, setCepFound] = useState(false);
+  const userTypedCEP = React.useRef(false);
 
-  // Auto busca CEP quando tem 8 dígitos
+  // Auto busca CEP quando tem 8 dígitos — só se o usuário digitou
   useEffect(() => {
+    if (!userTypedCEP.current) return;
     const cleanCEP = (formData.zip_code || '').replace(/\D/g, '');
     if (cleanCEP.length === 8 && !isCEPLoading) {
       handleCEPLookup();
@@ -43,6 +45,7 @@ export function CEPFirstLocationSection({
   }, [formData.address, formData.property_number, formData.city]);
 
   const handleCEPChange = (value: string) => {
+    userTypedCEP.current = true;
     const formatted = formatCEP(value);
     onInputChange('zip_code', formatted);
     setCepFound(false);

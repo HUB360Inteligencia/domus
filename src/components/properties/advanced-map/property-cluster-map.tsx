@@ -215,11 +215,11 @@ export function PropertyClusterMap({
         paint: {
           'circle-color': [
             'case',
-            ['==', ['get', 'status'], 'available'], '#10b981',
-            ['==', ['get', 'status'], 'rented'], '#3b82f6',
-            ['==', ['get', 'status'], 'airbnb'], '#ef4444',
+            ['==', ['get', 'status'], 'available'], '#4a7c59',
+            ['==', ['get', 'status'], 'rented'], '#6f8f74',
+            ['==', ['get', 'status'], 'airbnb'], '#c4934f',
             ['==', ['get', 'status'], 'maintenance'], '#f59e0b',
-            ['==', ['get', 'status'], 'sold'], '#8b5cf6',
+            ['==', ['get', 'status'], 'sold'], '#78716c',
             '#6b7280'
           ],
           'circle-radius': 8,

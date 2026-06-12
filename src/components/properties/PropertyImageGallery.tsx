@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   Dialog,
   DialogContent, 
@@ -30,7 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Upload, Star, Images } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Upload, Star, Images, X, Maximize2 } from 'lucide-react';
 import { usePropertyImages } from '@/hooks/use-property-images';
 import { PropertyImage } from '@/types/property-image';
 import { useForm } from 'react-hook-form';
@@ -90,6 +90,20 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
     },
   });
   
+  // Keyboard navigation for the lightbox (←/→ to navigate, Esc to close)
+  useEffect(() => {
+    if (!isGalleryOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') nextImage();
+      else if (e.key === 'ArrowLeft') prevImage();
+      else if (e.key === 'Escape') closeGallery();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isGalleryOpen, nextImage, prevImage, closeGallery]);
+
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -175,72 +189,69 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
           {images.map((image, index) => (
             <Card key={image.id} className="relative group overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative aspect-square">
+                <button
+                  type="button"
+                  onClick={() => openGallery(index)}
+                  className="relative aspect-square w-full block cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label={`Abrir imagem ${index + 1} em tela cheia`}
+                >
                   <img
                     src={image.image_url}
                     alt={image.description || `Imagem ${index + 1}`}
-                    className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-                    onClick={() => openGallery(index)}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  
-                  {/* Progressive blur gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
-                  {image.is_primary && (
-                    <Badge className="absolute top-2 left-2 bg-primary">
-                      <Star className="h-3 w-3 mr-1" />
-                      Principal
-                    </Badge>
-                  )}
 
-                  {/* Image info overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <h4 className="font-medium text-sm line-clamp-1">
+                  {/* Subtle bottom gradient with caption (no centered icons) */}
+                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3 text-left text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    <h4 className="font-medium text-sm line-clamp-1 drop-shadow">
                       {image.description || `Imagem ${index + 1}`}
                     </h4>
-                    {image.description && (
-                      <p className="text-xs text-white/80 line-clamp-2 mt-1">
-                        {image.description}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    {!image.is_primary && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAsPrimary(image.id);
-                        }}
-                      >
-                        <Star className="h-4 w-4 mr-1" />
-                        Principal
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditImage(image);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(image);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  {/* Expand hint */}
+                  <div className="absolute bottom-2 right-2 h-7 w-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Maximize2 className="h-3.5 w-3.5" />
                   </div>
+                </button>
+
+                {/* Primary badge */}
+                {image.is_primary && (
+                  <Badge className="absolute top-2 left-2 bg-primary pointer-events-none">
+                    <Star className="h-3 w-3 mr-1" />
+                    Principal
+                  </Badge>
+                )}
+
+                {/* Action buttons — discreet, top-right corner */}
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {!image.is_primary && (
+                    <button
+                      type="button"
+                      title="Definir como principal"
+                      onClick={() => setAsPrimary(image.id)}
+                      className="h-8 w-8 rounded-full bg-black/55 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+                    >
+                      <Star className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    title="Editar descrição"
+                    onClick={() => handleEditImage(image)}
+                    className="h-8 w-8 rounded-full bg-black/55 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Excluir imagem"
+                    onClick={() => handleDelete(image)}
+                    className="h-8 w-8 rounded-full bg-black/55 hover:bg-red-600 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -314,56 +325,92 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
         </DialogContent>
       </Dialog>
       
-      {/* Full-screen gallery modal */}
-      <Dialog open={isGalleryOpen} onOpenChange={closeGallery}>
-        <DialogContent className="max-w-4xl w-full h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Galeria de Imagens</DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-grow relative overflow-hidden">
+      {/* Immersive full-screen lightbox */}
+      <Dialog open={isGalleryOpen} onOpenChange={(open) => !open && closeGallery()}>
+        <DialogContent className="max-w-none w-screen h-screen sm:max-w-none p-0 gap-0 border-0 rounded-none bg-black/95 shadow-none flex flex-col [&>button]:hidden">
+          <DialogTitle className="sr-only">Galeria de Imagens</DialogTitle>
+
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 text-white z-10 shrink-0">
+            <span className="text-sm font-medium tabular-nums text-white/80">
+              {images.length > 0 ? `${currentImageIndex + 1} / ${images.length}` : '0 / 0'}
+            </span>
+            <button
+              type="button"
+              onClick={closeGallery}
+              aria-label="Fechar galeria"
+              className="h-9 w-9 rounded-full hover:bg-white/15 flex items-center justify-center transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Main image area */}
+          <div className="flex-1 relative flex items-center justify-center overflow-hidden px-4 sm:px-16 min-h-0">
             {images.length > 0 && currentImageIndex < images.length && (
               <img
+                key={images[currentImageIndex].id}
                 src={images[currentImageIndex].image_url}
                 alt={images[currentImageIndex].description || `Imagem ${currentImageIndex + 1}`}
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-full object-contain select-none animate-in fade-in duration-200"
+                draggable={false}
               />
             )}
-            
+
             {images.length > 1 && (
               <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2"
+                <button
+                  type="button"
                   onClick={prevImage}
+                  aria-label="Imagem anterior"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
                 >
                   <ChevronLeft className="h-6 w-6" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                </button>
+                <button
+                  type="button"
                   onClick={nextImage}
+                  aria-label="Próxima imagem"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
                 >
                   <ChevronRight className="h-6 w-6" />
-                </Button>
+                </button>
               </>
             )}
           </div>
-          
-          <DialogFooter className="flex justify-between items-center">
-            <div>
-              {images.length > 0 && currentImageIndex < images.length && (
-                <p className="text-sm text-muted-foreground">
-                  {images[currentImageIndex].description || 'Sem descrição'}
-                </p>
-              )}
+
+          {/* Caption */}
+          {images.length > 0 && currentImageIndex < images.length && images[currentImageIndex].description && (
+            <p className="text-center text-sm text-white/70 px-4 pb-2 shrink-0 line-clamp-2">
+              {images[currentImageIndex].description}
+            </p>
+          )}
+
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="shrink-0 flex gap-2 overflow-x-auto px-4 py-4 justify-start sm:justify-center">
+              {images.map((image, index) => (
+                <button
+                  key={image.id}
+                  type="button"
+                  onClick={() => openGallery(index)}
+                  aria-label={`Ver imagem ${index + 1}`}
+                  className={`relative h-16 w-16 shrink-0 rounded-md overflow-hidden transition-all ${
+                    index === currentImageIndex
+                      ? 'ring-2 ring-white opacity-100'
+                      : 'opacity-50 hover:opacity-90'
+                  }`}
+                >
+                  <img
+                    src={image.image_url}
+                    alt={image.description || `Miniatura ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                </button>
+              ))}
             </div>
-            <div className="text-sm">
-              {images.length > 0 ? `${currentImageIndex + 1} / ${images.length}` : '0 / 0'}
-            </div>
-          </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
       

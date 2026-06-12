@@ -208,26 +208,32 @@ export const downloadDocument = async (document: Document): Promise<{ url: strin
  */
 export const deleteDocument = async (document: Document): Promise<void> => {
   try {
-    // Delete from storage first
+    // Delete the metadata from the database first: RLS silently filters rows
+    // the user cannot delete (0 rows, no error), and we must not remove the
+    // file from storage in that case.
+    const { error: dbError, count } = await supabase
+      .from('documents')
+      .delete({ count: 'exact' })
+      .eq('id', document.id);
+
+    if (dbError) {
+      logger.error('Error deleting document from database:', dbError);
+      throw new Error(dbError.message);
+    }
+
+    if (!count) {
+      throw new Error('Você não tem permissão para excluir este documento.');
+    }
+
+    // Then delete the file from storage
     const { error: storageError } = await supabase
       .storage
       .from('contract_documents')
       .remove([document.file_path]);
-      
-    if (storageError) {
-      logger.error('Error deleting document from storage:', storageError);
-      throw new Error(storageError.message);
-    }
 
-    // Then delete the metadata from the database
-    const { error: dbError } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', document.id);
-      
-    if (dbError) {
-      logger.error('Error deleting document from database:', dbError);
-      throw new Error(dbError.message);
+    if (storageError) {
+      // The metadata is already gone; log but don't fail the whole operation.
+      logger.error('Error deleting document file from storage:', storageError);
     }
 
     // Remove encryption key if it exists

@@ -219,14 +219,19 @@ export const updatePropertyCoordinates = async ({
  * Deletes a property
  */
 export const deleteProperty = async (id: string): Promise<void> => {
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('properties')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id);
 
   if (error) {
     logger.error('Error deleting property:', error);
     throw new Error(error.message);
+  }
+
+  // RLS silently filters rows the user cannot delete (0 rows, no error).
+  if (!count) {
+    throw new Error('Você não tem permissão para excluir este imóvel.');
   }
 };
 

@@ -36,7 +36,7 @@ const statusLabels: Record<string, string> = {
 
 const statusStyles: Record<string, string> = {
   rented: "border-[#6f8f74]/25 bg-[#6f8f74]/12 text-[#3f5f45]",
-  available: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  available: "border-[#4a7c59]/25 bg-[#4a7c59]/12 text-[#2f543a]",
   airbnb: "border-[#c4934f]/30 bg-[#c4934f]/14 text-[#7a5529]",
   maintenance: "border-amber-200 bg-amber-50 text-amber-800",
   sold: "border-stone-300 bg-stone-100 text-stone-700",
@@ -222,17 +222,18 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <Card className="premium-panel dark:premium-panel-dark h-full min-h-[280px] overflow-hidden rounded-[2rem]">
-              <CardHeader>
-                <CardTitle className="text-lg">Localização</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+            <Card className="premium-panel dark:premium-panel-dark relative h-full min-h-[280px] overflow-hidden rounded-[2rem]">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-black/45 via-black/20 to-transparent px-5 pb-8 pt-4">
+                <MapPin className="h-4 w-4 text-white drop-shadow" />
+                <CardTitle className="text-lg text-white drop-shadow">Localização</CardTitle>
+              </div>
+              <CardContent className="h-full p-0">
                 {isLoading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-full min-h-[360px] w-full" />
                 ) : property ? (
                   <PropertyDetailMap property={property} />
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center bg-muted">
+                  <div className="flex h-full min-h-[360px] items-center justify-center bg-muted">
                     <p className="text-muted-foreground">Propriedade não encontrada</p>
                   </div>
                 )}

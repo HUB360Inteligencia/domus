@@ -132,11 +132,11 @@ export function LocationAnalytics({ properties }: LocationAnalyticsProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'bg-green-500';
-      case 'rented': return 'bg-blue-500';
-      case 'airbnb': return 'bg-red-500';
-      case 'maintenance': return 'bg-yellow-500';
-      case 'sold': return 'bg-purple-500';
+      case 'available': return 'bg-[#4a7c59]';
+      case 'rented': return 'bg-[#6f8f74]';
+      case 'airbnb': return 'bg-[#c4934f]';
+      case 'maintenance': return 'bg-amber-500';
+      case 'sold': return 'bg-stone-500';
       default: return 'bg-gray-500';
     }
   };

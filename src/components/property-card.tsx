@@ -39,11 +39,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  available: 'bg-emerald-500',
-  rented: 'bg-blue-500',
-  airbnb: 'bg-red-500',
-  maintenance: 'bg-amber-500',
-  sold: 'bg-purple-500',
+  available: 'bg-[#4a7c59] border-[#4a7c59]',
+  rented: 'bg-[#6f8f74] border-[#6f8f74]',
+  airbnb: 'bg-[#c4934f] border-[#c4934f]',
+  maintenance: 'bg-amber-500 border-amber-500',
+  sold: 'bg-stone-500 border-stone-500',
 };
 
 export function PropertyCard({
@@ -91,7 +91,7 @@ export function PropertyCard({
           </Badge>
         </div>
         <div className="absolute top-2 left-2">
-          <Badge variant="secondary">
+          <Badge variant="outline" className="border-[#e5e0d8] bg-[#f5f2eb] text-[#242021] dark:border-white/10 dark:bg-white/10 dark:text-white font-medium shadow-sm">
             {PROPERTY_TYPE_LABELS[type] || type}
           </Badge>
         </div>

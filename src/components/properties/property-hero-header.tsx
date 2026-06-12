@@ -42,6 +42,7 @@ import { useProperties } from "@/hooks/use-properties";
 import { ActivityFormData } from "@/types/activity";
 import { ContractFormData } from "@/types/contract";
 import { formatCurrency } from "@/utils/currency";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -64,16 +65,18 @@ const propertyTypeLabels: Record<string, string> = {
   rural: "Rural",
 };
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  rented: { label: "Alugado", className: "border-[#6f8f74]/30 bg-[#6f8f74]/18 text-white" },
-  available: { label: "Disponível", className: "border-emerald-300/35 bg-emerald-500/16 text-white" },
-  airbnb: { label: "Airbnb", className: "border-[#c4934f]/35 bg-[#c4934f]/18 text-white" },
-  maintenance: { label: "Em manutenção", className: "border-amber-300/35 bg-amber-500/16 text-white" },
-  sold: { label: "Vendido", className: "border-stone-300/35 bg-stone-500/18 text-white" },
+const statusConfig: Record<string, { label: string; dot: string }> = {
+  rented:      { label: "Alugado",        dot: "bg-[#6f8f74]" },
+  available:   { label: "Disponível",      dot: "bg-[#4a7c59]" },
+  airbnb:      { label: "Airbnb",          dot: "bg-[#c4934f]" },
+  maintenance: { label: "Em manutenção",  dot: "bg-amber-400" },
+  sold:        { label: "Vendido",         dot: "bg-stone-400" },
 };
 
+const GLASS = "border border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm font-semibold";
+
 const getStatusConfig = (status?: string | null) =>
-  statusConfig[status || ""] || { label: status || "Sem status", className: "border-white/25 bg-white/14 text-white" };
+  statusConfig[status || ""] || { label: status || "Sem status", dot: "bg-white/60" };
 
 const getTypeLabel = (type?: string | null) => propertyTypeLabels[type || ""] || type || "N/A";
 
@@ -86,6 +89,9 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
   isDeleting,
 }) => {
   const [activeModal, setActiveModal] = useState<DetailModal>(null);
+  const { user } = useAuth();
+  // Viewers have read-only access; RLS also blocks writes server-side.
+  const canWrite = user?.role !== "viewer";
   const { categoryOptions } = useFinancialCategories();
   const { createTransaction, isCreating: isCreatingTransaction } = useFinancialTransactions();
   const { createActivity, isCreating: isCreatingActivity } = useActivityMutations();
@@ -179,18 +185,19 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={onBack}
-                  className="border border-white/18 bg-white/12 text-white hover:bg-white/18"
+                  className="border border-white/30 bg-white/15 backdrop-blur-md text-white hover:bg-white/25 shadow-sm"
                   aria-label="Voltar"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
 
+                {canWrite && (
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onEdit}
-                    className="border border-white/18 bg-white/12 text-white hover:bg-white/18"
+                    className="border border-white/30 bg-white/15 backdrop-blur-md text-white hover:bg-white/25 shadow-sm font-semibold"
                   >
                     <Edit className="h-4 w-4" />
                     Editar
@@ -200,7 +207,7 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="border border-white/18 bg-white/10 text-white hover:bg-white/18"
+                        className="border border-white/30 bg-white/15 backdrop-blur-md text-white hover:bg-red-500/40 shadow-sm font-semibold"
                       >
                         <Trash2 className="h-4 w-4" />
                         Excluir
@@ -226,18 +233,20 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
+                )}
               </div>
 
               <div>
                 <div className="mb-4 flex flex-wrap gap-2">
-                  <Badge variant="outline" className={cn("border backdrop-blur", status.className)}>
+                  <Badge variant="outline" className={cn(GLASS)}>
+                    <span className={cn("mr-1.5 h-1.5 w-1.5 rounded-full", status.dot)} />
                     {status.label}
                   </Badge>
-                  <Badge variant="outline" className="border-white/25 bg-white/14 text-white backdrop-blur">
+                  <Badge variant="outline" className={GLASS}>
                     {getTypeLabel(property?.type)}
                   </Badge>
                   {property?.tags?.slice(0, 2).map((tag) => (
-                    <Badge key={tag} variant="outline" className="border-white/20 bg-white/10 text-white/82">
+                    <Badge key={tag} variant="outline" className={GLASS}>
                       {tag}
                     </Badge>
                   ))}
@@ -252,10 +261,10 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <HeroFact icon={Ruler} label="Área" value={property?.area ? `${property.area} m²` : "N/A"} />
-                  <HeroFact icon={BedDouble} label="Quartos" value={property?.bedrooms ? String(property.bedrooms) : "N/A"} />
-                  <HeroFact icon={Bath} label="Banhos" value={property?.bathrooms ? String(property.bathrooms) : "N/A"} />
-                  <HeroFact icon={Car} label="Vagas" value={property?.garage_spots ? String(property.garage_spots) : "N/A"} />
+                  <HeroFact icon={Ruler}    label="Área"       value={property?.area         ? `${property.area} m²`          : "N/A"} />
+                  <HeroFact icon={BedDouble} label="Quartos"    value={property?.bedrooms     ? String(property.bedrooms)      : "N/A"} />
+                  <HeroFact icon={Bath}      label="Banheiros"  value={property?.bathrooms    ? String(property.bathrooms)     : "N/A"} />
+                  <HeroFact icon={Car}       label="Vagas"      value={property?.garage_spots ? String(property.garage_spots)  : "N/A"} />
                 </div>
               </div>
             </div>
@@ -363,10 +372,10 @@ function HeroFact({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-white/14 bg-white/10 px-3 py-2 text-white">
-      <Icon className="h-4 w-4 text-white/70" />
-      <span className="text-xs text-white/52">{label}</span>
-      <strong className="text-sm">{value}</strong>
+    <div className="flex items-center gap-2 rounded-2xl border border-white/30 bg-white/15 backdrop-blur-md px-3 py-2 text-white shadow-sm">
+      <Icon className="h-4 w-4 text-white/80" />
+      <span className="text-xs text-white/70">{label}</span>
+      <strong className="text-sm font-semibold">{value}</strong>
     </div>
   );
 }

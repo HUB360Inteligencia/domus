@@ -17,7 +17,7 @@ function AppInner() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <MapboxProvider>
-            <Toaster />
+            <Toaster closeButton />
             <AppRoutes />
           </MapboxProvider>
         </AuthProvider>

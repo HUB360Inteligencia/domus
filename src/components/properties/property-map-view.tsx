@@ -22,11 +22,11 @@ const PROPERTY_TYPE_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  available: '#10b981', // emerald
-  rented: '#3b82f6', // blue
-  airbnb: '#ef4444', // red
-  maintenance: '#f59e0b', // amber
-  sold: '#8b5cf6', // violet
+  available: '#4a7c59',
+  rented: '#6f8f74',
+  airbnb: '#c4934f',
+  maintenance: '#f59e0b',
+  sold: '#78716c',
 };
 
 export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) {
@@ -183,7 +183,7 @@ export function PropertyMapView({ properties, onSelect }: PropertyMapViewProps) 
           <h3 class="font-semibold text-sm mb-1">${property.title}</h3>
           <p class="text-xs text-gray-600 mb-2">${property.address}, ${property.city}</p>
           <div class="flex justify-between items-center mb-2">
-            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${getTypeLabel(property.type)}</span>
+            <span class="text-xs bg-[#f5f2eb] text-[#242021] border border-[#e5e0d8] px-2 py-1 rounded font-medium">${getTypeLabel(property.type)}</span>
             <span class="text-xs px-2 py-1 rounded text-white" style="background-color: ${STATUS_COLORS[property.status] || '#6b7280'}">${getStatusLabel(property.status)}</span>
           </div>
           <p class="font-semibold text-sm">${formatCurrency(property.value)}</p>

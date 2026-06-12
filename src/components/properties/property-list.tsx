@@ -53,31 +53,36 @@ const propertyTypeLabels: Record<string, string> = {
   rural: "Rural",
 };
 
-const statusConfig: Record<string, { label: string; className: string; dot: string }> = {
+const statusConfig: Record<string, { label: string; className: string; overlayClassName: string; dot: string }> = {
   available: {
     label: "Disponível",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    dot: "bg-emerald-500",
+    className: "border-[#4a7c59]/25 bg-[#4a7c59]/12 text-[#2f543a]",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
+    dot: "bg-[#4a7c59]",
   },
   rented: {
     label: "Alugado",
     className: "border-[#6f8f74]/25 bg-[#6f8f74]/12 text-[#3f5f45]",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
     dot: "bg-[#6f8f74]",
   },
   airbnb: {
     label: "Airbnb",
     className: "border-[#c4934f]/30 bg-[#c4934f]/14 text-[#7a5529]",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
     dot: "bg-[#c4934f]",
   },
   maintenance: {
     label: "Em manutenção",
-    className: "border-amber-200 bg-amber-50 text-amber-800",
-    dot: "bg-amber-500",
+    className: "border-amber-200/40 bg-amber-500/10 text-amber-800",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
+    dot: "bg-amber-400",
   },
   sold: {
     label: "Vendido",
     className: "border-stone-300 bg-stone-100 text-stone-700",
-    dot: "bg-stone-500",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
+    dot: "bg-stone-400",
   },
 };
 
@@ -95,6 +100,7 @@ const getStatusConfig = (status: string) =>
   statusConfig[status] || {
     label: status || "Sem status",
     className: "border-border bg-secondary text-secondary-foreground",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
     dot: "bg-muted-foreground",
   };
 
@@ -478,11 +484,11 @@ function PortfolioPropertyCard({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/12 to-transparent" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <Badge className={cn("border", status.className)}>
+          <Badge className={cn("border font-semibold", status.overlayClassName)}>
             <span className={cn("mr-1.5 h-1.5 w-1.5 rounded-full", status.dot)} />
             {status.label}
           </Badge>
-          <Badge variant="secondary" className="border border-white/20 bg-white/82 text-foreground">
+          <Badge className="border border-white/30 bg-white/15 backdrop-blur-md text-white font-medium shadow-sm">
             {propertyTypeLabels[property.type] || property.type}
           </Badge>
         </div>
