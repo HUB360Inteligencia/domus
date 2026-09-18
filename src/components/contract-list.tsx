@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import { parseDateOnly } from "@/lib/dates";
 
 // Configuration for status badges
 const statusConfig = {
@@ -73,7 +74,7 @@ export function ContractList({
   onDelete,
 }: ContractListProps) {
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseDateOnly(dateString);
     return new Intl.DateTimeFormat("pt-BR").format(date);
   };
 

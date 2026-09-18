@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useDrag } from 'react-dnd';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ActivityCardProps {
   activity: Activity;
@@ -51,7 +52,7 @@ export function ActivityCard({
 
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return '';
-    return format(new Date(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+    return format(parseDateOnly(dateStr), 'dd/MM/yyyy', { locale: ptBR });
   };
   
   const showExpenseButton = activity.status === 'completed' && 

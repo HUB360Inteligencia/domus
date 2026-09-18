@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PropertyFormData, Property } from '@/types/property';
+import { PropertyFormData, Property, PropertyImage } from '@/types/property';
 import { useProperties } from '@/hooks/use-properties';
 import { usePropertyFormSubmission } from '@/hooks/use-property-form-submission';
 import { PropertyBaseSelector } from './property-base-selector';
@@ -88,10 +88,10 @@ export function PropertyFormEnhanced({
         floor_number: initialData.floor_number || 0,
         furnished: initialData.furnished || 'not_furnished',
         features: (typeof initialData.features === 'object' && initialData.features !== null) 
-          ? initialData.features as Record<string, any>
+          ? initialData.features as Record<string, boolean>
           : {},
-        latitude: initialData.latitude || null,
-        longitude: initialData.longitude || null,
+        latitude: initialData.latitude ?? null,
+        longitude: initialData.longitude ?? null,
         purchase_date: initialData.purchase_date || null,
         purchase_value: initialData.purchase_value || null,
         tags: initialData.tags || null,
@@ -108,15 +108,24 @@ export function PropertyFormEnhanced({
     }
   }, [initialData]);
 
-  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
-    console.log(`Updating ${field}:`, value);
-    setFormData(prev => ({
-      ...prev,
+  const handleInputChange = useCallback((
+    field: keyof PropertyFormData,
+    value: PropertyFormData[keyof PropertyFormData],
+  ) => {
+    setFormData((previous) => ({
+      ...previous,
       [field]: value
     }));
-    // Clear any previous submission errors when user makes changes
-    if (submitError) setSubmitError(null);
-  };
+    setSubmitError(null);
+  }, [setSubmitError]);
+
+  const handleCoordsChange = useCallback((coords: { lat: number; lng: number }) => {
+    setFormData((previous) => ({
+      ...previous,
+      latitude: coords.lat,
+      longitude: coords.lng,
+    }));
+  }, []);
 
   const handleFeatureToggle = (feature: string) => {
     setSelectedFeatures(prev => {
@@ -135,12 +144,7 @@ export function PropertyFormEnhanced({
     });
   };
 
-  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
-    handleInputChange('latitude', coords.lat);
-    handleInputChange('longitude', coords.lng);
-  };
-
-  const handleImagesChange = (images: any[]) => {
+  const handleImagesChange = (images: PropertyImage[]) => {
     handleInputChange('images', images);
   };
 
@@ -165,7 +169,7 @@ export function PropertyFormEnhanced({
       floor_number: property.floor_number || 0,
       furnished: property.furnished || 'not_furnished',
       features: (typeof property.features === 'object' && property.features !== null) 
-        ? property.features as Record<string, any>
+        ? property.features as Record<string, boolean>
         : {},
       purchase_value: property.purchase_value || 0,
       tags: property.tags || null,
@@ -212,9 +216,9 @@ export function PropertyFormEnhanced({
       if (resultPropertyId) {
         onSuccess(resultPropertyId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Form submission error:', error);
-      setSubmitError(error.message || 'Erro inesperado ao salvar');
+      setSubmitError(error instanceof Error ? error.message : 'Erro inesperado ao salvar');
     }
   };
 

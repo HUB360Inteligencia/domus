@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { isPasswordRecoveryPending, UPDATE_PASSWORD_PATH } from "@/lib/password-recovery";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -12,15 +13,15 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { error } = await supabase.auth.getSession();
         
         if (error) {
           setError(error.message);
           return;
         }
 
-        // Redirect to home page if authentication was successful
-        navigate("/");
+        // Link de recuperação de senha: pedir a nova senha em vez de ir direto ao sistema
+        navigate(isPasswordRecoveryPending() ? UPDATE_PASSWORD_PATH : "/", { replace: true });
       } catch (err) {
         console.error("Error in auth callback:", err);
         setError("Ocorreu um erro durante o processo de autenticação");
@@ -32,7 +33,7 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-background premium-grid-lines p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <div className="space-y-2">
@@ -52,7 +53,7 @@ export default function AuthCallback() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background premium-grid-lines p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />

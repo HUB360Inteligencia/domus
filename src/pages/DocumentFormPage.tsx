@@ -1,174 +1,274 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, Upload, AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, FileCheck2, Loader2, Lock, Upload, X } from "lucide-react";
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { useContracts } from "@/hooks/use-contracts";
+import { MAX_DOCUMENT_SIZE_BYTES } from "@/api/documents";
+import {
+  ACCEPTED_DOCUMENT_TYPES,
+  DOCUMENT_CATEGORIES,
+  DOCUMENT_KIND_STYLES,
+  formatFileSize,
+  getDocumentKind,
+} from "@/components/documents/document-utils";
+import { cn } from "@/lib/utils";
 import { DocumentFormData } from "@/types/contract";
+
+const MIN_PASSWORD_LENGTH = 6;
+const stripExtension = (fileName: string) => fileName.replace(/\.[^.]+$/, "");
 
 export default function DocumentFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const contractId = queryParams.get("contract_id");
-  
-  const { contracts, uploadDocument, isLoadingContracts } = useContracts();
+  const contractIdFromUrl = new URLSearchParams(location.search).get("contract_id");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { contracts, uploadDocument } = useContracts();
 
   const [formData, setFormData] = useState<DocumentFormData>({
     name: "",
     file: null,
-    category: "geral",
-    contract_id: contractId || undefined,
-    is_encrypted: false
+    category: contractIdFromUrl ? "contrato" : "geral",
+    contract_id: contractIdFromUrl || undefined,
+    is_encrypted: false,
+    password: "",
   });
-  
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
-  
-  // Document categories
-  const documentCategories = [
-    { value: "geral", label: "Geral" },
-    { value: "contrato", label: "Contrato" },
-    { value: "identificacao", label: "Identificação" },
-    { value: "financeiro", label: "Financeiro" },
-    { value: "juridico", label: "Jurídico" },
-    { value: "imovel", label: "Imóvel" },
-  ];
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    
-    if (file) {
-      // Validate file size (limit to 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setFileError("O arquivo deve ter no máximo 10MB");
-        return;
-      }
-      
-      setFileError(null);
-      setFormData({
-        ...formData,
-        file,
-        name: formData.name || file.name // Use file name as default document name if empty
-      });
+  const returnPath = contractIdFromUrl ? `/contracts/${contractIdFromUrl}` : "/documents";
+  const sortedContracts = useMemo(
+    () => [...contracts].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")),
+    [contracts]
+  );
+
+  const selectFile = (file: File | null | undefined) => {
+    if (!file) return;
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      setFileError(`O arquivo deve ter no máximo ${formatFileSize(MAX_DOCUMENT_SIZE_BYTES)}.`);
+      return;
     }
+    if (file.size === 0) {
+      setFileError("O arquivo selecionado está vazio.");
+      return;
+    }
+
+    setFileError(null);
+    setFormData((previous) => ({
+      ...previous,
+      file,
+      name: previous.name.trim() ? previous.name : stripExtension(file.name),
+    }));
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    selectFile(event.dataTransfer.files?.[0]);
   };
 
-  const handleSelectChange = (field: string, value: string) => {
-    // Handle the special "none" value for contract selection
-    const finalValue = value === "none" ? undefined : value;
-    setFormData({ ...formData, [field]: finalValue });
-  };
+  const passwordError = (() => {
+    if (!formData.is_encrypted) return null;
+    if ((formData.password || "").length < MIN_PASSWORD_LENGTH) {
+      return `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+    }
+    if (passwordConfirmation && passwordConfirmation !== formData.password) {
+      return "As senhas não conferem.";
+    }
+    return null;
+  })();
 
-  const handleSwitchChange = (field: string, checked: boolean) => {
-    setFormData({ ...formData, [field]: checked });
-  };
+  const canSubmit =
+    !!formData.file &&
+    formData.name.trim().length > 0 &&
+    !isSubmitting &&
+    (!formData.is_encrypted || (!passwordError && passwordConfirmation === formData.password));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     if (!formData.file) {
-      setFileError("Por favor, selecione um arquivo");
+      setFileError("Selecione um arquivo para enviar.");
       return;
     }
-    
     if (!formData.name.trim()) {
-      toast.error("Por favor, informe um nome para o documento");
+      toast.error("Informe um nome para o documento.");
       return;
     }
-    
+    if (formData.is_encrypted && (passwordError || passwordConfirmation !== formData.password)) {
+      toast.error(passwordError || "Confirme a senha do documento.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      await uploadDocument(formData);
-      
-      // Redirect back to documents page or contract detail page if from there
-      if (contractId) {
-        navigate(`/contracts/detail?id=${contractId}`);
-      } else {
-        navigate("/documents");
-      }
-      
+      await uploadDocument({
+        ...formData,
+        password: formData.is_encrypted ? formData.password : undefined,
+      });
+      const destination = formData.contract_id ? `/contracts/${formData.contract_id}` : "/documents";
+      navigate(contractIdFromUrl ? returnPath : destination);
     } catch (error) {
+      // O toast de erro é exibido pela mutation (use-contract-mutations)
       console.error("Error uploading document:", error);
-      toast.error("Erro ao enviar documento. Por favor, tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const selectedKind = formData.file ? getDocumentKind(formData.file.type, formData.file.name) : null;
+  const SelectedIcon = selectedKind ? DOCUMENT_KIND_STYLES[selectedKind].icon : FileCheck2;
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Button variant="ghost" size="sm" onClick={() => navigate(returnPath)} className="-ml-2">
+        <ArrowLeft className="h-4 w-4" />
+        {contractIdFromUrl ? "Voltar ao contrato" : "Voltar aos documentos"}
+      </Button>
+
       <PageHeader
-        title="Novo Documento"
-        description="Faça upload de um novo documento para seu acervo."
+        title="Novo documento"
+        description="Envie um arquivo e, se quiser, vincule-o a um contrato de locação."
+        className="mb-0"
       />
 
-      <Card className="max-w-2xl mx-auto">
+      <Card>
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Informações do Documento</CardTitle>
-            <CardDescription>
-              Preencha os dados do documento e faça o upload do arquivo.
-            </CardDescription>
+            <CardTitle className="text-xl">Arquivo</CardTitle>
+            <CardDescription>PDF, imagens, planilhas e documentos de texto de até {formatFileSize(MAX_DOCUMENT_SIZE_BYTES)}.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Documento</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Ex: Contrato de Aluguel"
-                required
-              />
-            </div>
+            <input
+              ref={fileInputRef}
+              id="file"
+              type="file"
+              accept={ACCEPTED_DOCUMENT_TYPES}
+              className="hidden"
+              onChange={(event) => {
+                selectFile(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleSelectChange("category", value)}
+            {formData.file ? (
+              <div className="flex items-center gap-3 rounded-3xl border bg-muted/40 p-4">
+                <div className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-2xl", DOCUMENT_KIND_STYLES[selectedKind || "other"].className)}>
+                  <SelectedIcon className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{formData.file.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatFileSize(formData.file.size)}</p>
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  Trocar
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Remover arquivo"
+                  onClick={() => setFormData((previous) => ({ ...previous, file: null }))}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-10 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                  isDragging ? "border-accent bg-accent/10" : "border-border hover:border-accent/60 hover:bg-muted/40"
+                )}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {documentCategories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary dark:bg-white/10">
+                  <Upload className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-medium">
+                  {isDragging ? "Solte o arquivo aqui" : "Clique para selecionar ou arraste um arquivo"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, XLSX, JPG, PNG e outros</p>
+              </div>
+            )}
 
-            {contractId === null && contracts.length > 0 && (
+            {fileError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{fileError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="name">Nome do documento</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(event) => setFormData((previous) => ({ ...previous, name: event.target.value }))}
+                  placeholder="Ex.: Contrato de locação — Apto 302"
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="contract_id">Contrato Relacionado (Opcional)</Label>
+                <Label>Categoria</Label>
                 <Select
-                  value={formData.contract_id || "none"}
-                  onValueChange={(value) => handleSelectChange("contract_id", value)}
+                  value={formData.category}
+                  onValueChange={(value) => setFormData((previous) => ({ ...previous, category: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um contrato (opcional)" />
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Contrato relacionado (opcional)</Label>
+                <Select
+                  value={formData.contract_id || "none"}
+                  onValueChange={(value) =>
+                    setFormData((previous) => ({ ...previous, contract_id: value === "none" ? undefined : value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nenhum contrato" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nenhum contrato</SelectItem>
-                    {contracts.map((contract) => (
+                    {sortedContracts.map((contract) => (
                       <SelectItem key={contract.id} value={contract.id}>
                         {contract.title}
                       </SelectItem>
@@ -176,62 +276,70 @@ export default function DocumentFormPage() {
                   </SelectContent>
                 </Select>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 mb-2">
-                <Switch
-                  id="encryption"
-                  checked={formData.is_encrypted}
-                  onCheckedChange={(checked) => handleSwitchChange("is_encrypted", checked)}
-                />
-                <Label htmlFor="encryption">Criptografar Documento</Label>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                A criptografia adiciona uma camada extra de segurança aos seus documentos sensíveis.
-              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="file">Arquivo</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <Input
-                  id="file"
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
+            <div className="space-y-4 rounded-3xl border p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <Label htmlFor="encryption" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4 text-accent" />
+                    Proteger com senha
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    O arquivo é criptografado no seu navegador antes do envio. Só quem souber a senha consegue abri-lo.
+                  </p>
+                </div>
+                <Switch
+                  id="encryption"
+                  checked={!!formData.is_encrypted}
+                  onCheckedChange={(checked) => setFormData((previous) => ({ ...previous, is_encrypted: checked }))}
                 />
-                <label htmlFor="file" className="cursor-pointer">
-                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm font-medium">
-                    {formData.file
-                      ? `Arquivo selecionado: ${formData.file.name}`
-                      : "Clique para selecionar um arquivo ou arraste e solte aqui"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Suporta arquivos PDF, DOCX, XLSX, JPG, PNG (até 10MB)
-                  </p>
-                </label>
               </div>
-              {fileError && (
-                <Alert variant="destructive" className="mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{fileError}</AlertDescription>
-                </Alert>
+
+              {formData.is_encrypted && (
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="doc-password">Senha</Label>
+                      <Input
+                        id="doc-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={formData.password || ""}
+                        onChange={(event) => setFormData((previous) => ({ ...previous, password: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="doc-password-confirm">Confirmar senha</Label>
+                      <Input
+                        id="doc-password-confirm"
+                        type="password"
+                        autoComplete="new-password"
+                        value={passwordConfirmation}
+                        onChange={(event) => setPasswordConfirmation(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                  {passwordError && (formData.password || passwordConfirmation) && (
+                    <p className="text-xs text-destructive">{passwordError}</p>
+                  )}
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Guarde esta senha: ela não fica salva no sistema e, sem ela, não é possível recuperar o arquivo.
+                    </AlertDescription>
+                  </Alert>
+                </div>
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(contractId ? `/contracts/detail?id=${contractId}` : "/documents")}
-            >
+          <CardFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => navigate(returnPath)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || !formData.file}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Enviando..." : "Enviar Documento"}
+            <Button type="submit" disabled={!canSubmit}>
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {isSubmitting ? "Enviando..." : "Enviar documento"}
             </Button>
           </CardFooter>
         </form>

@@ -1,105 +1,79 @@
-
-import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import { PropertyDetail } from '@/components/properties/property-detail';
 import { useProperties } from '@/hooks/use-properties';
-import { toast } from 'sonner';
+import { useBackNavigation } from '@/hooks/use-back-navigation';
+import { fetchPropertyById } from '@/api/properties';
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { 
-    selectedProperty, 
-    setSelectedPropertyId, 
-    deleteProperty, 
-    isDeleting 
-  } = useProperties();
+  const goBack = useBackNavigation('/properties');
+  const { deleteProperty, isDeleting } = useProperties();
 
-  useEffect(() => {
-    if (id) {
-      setSelectedPropertyId(id);
-    } else {
-      navigate('/properties');
-    }
-  }, [id, setSelectedPropertyId, navigate]);
-
-  const handleBack = () => {
-    navigate('/properties');
-  };
+  const { data: property, isLoading, isError } = useQuery({
+    queryKey: ['property', id],
+    queryFn: () => fetchPropertyById(id || ''),
+    enabled: !!id,
+  });
 
   const handleEdit = () => {
-    if (!id) {
-      toast.error('ID do imóvel não encontrado');
-      return;
-    }
-    try {
-      console.log('Navigating to edit page with ID:', id);
-      navigate(`/properties/edit/${id}`);
-    } catch (error) {
-      console.error('Error navigating to edit page:', error);
-      toast.error('Erro ao navegar para página de edição');
-    }
+    if (!id) return;
+    navigate(`/properties/edit/${id}`);
   };
 
   const handleDelete = async () => {
-    if (!id) {
-      toast.error('ID do imóvel não encontrado');
-      return;
-    }
+    if (!id) return;
     try {
       await deleteProperty(id);
       toast.success('Imóvel excluído com sucesso');
-      navigate('/properties');
+      navigate('/properties', { replace: true });
     } catch (error) {
       console.error('Error deleting property:', error);
-      toast.error('Erro ao excluir imóvel');
+      toast.error(error instanceof Error ? `Erro ao excluir imóvel: ${error.message}` : 'Erro ao excluir imóvel');
     }
   };
 
-  if (!selectedProperty && id) {
+  if (isLoading) {
     return (
-      <div className="container py-4">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      <div className="flex flex-col items-center justify-center gap-3 py-24 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <p className="text-sm">Carregando imóvel...</p>
       </div>
     );
   }
 
-  if (!selectedProperty) {
+  if (!property || isError) {
     return (
-      <div className="container py-4">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Imóvel não encontrado</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-3xl bg-muted">
+          <Building2 className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h2 className="text-lg font-semibold">Imóvel não encontrado</h2>
+        <p className="mb-6 mt-2 max-w-md text-muted-foreground">
+          O imóvel solicitado não existe, foi excluído ou você não tem permissão para visualizá-lo.
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={goBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          <Button onClick={() => navigate('/properties')}>Ver todos os imóveis</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4 space-y-6">
+    <div className="space-y-6">
       <PropertyDetail
-        property={selectedProperty}
+        property={property}
         isLoading={false}
-        onBack={handleBack}
+        onBack={goBack}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isDeleting={isDeleting}

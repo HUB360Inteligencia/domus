@@ -100,6 +100,11 @@ export default {
 				'dark-glass-gradient': 'linear-gradient(135deg, rgba(0,10,35,0.7), rgba(2,21,82,0.5))',
 				'image-gradient': 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%)',
 			},
+			// Escala completa (0–100) para que modificadores como bg-white/14 ou text-white/68 sejam gerados.
+			// Sem isso o Tailwind ignora silenciosamente opacidades fora dos múltiplos de 5.
+			opacity: Object.fromEntries(
+				Array.from({ length: 101 }, (_, value) => [String(value), String(value / 100)])
+			),
 			boxShadow: {
 				'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.18)',
 				'glass-lg': '0 10px 40px 0 rgba(0, 0, 0, 0.25)',

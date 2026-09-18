@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Activity, ActivityFormData, ActivityStatus } from '@/types/activity';
 
 import { logger } from "@/lib/logger";
+import { toDateOnlyString } from "@/lib/dates";
 // Fetch all activities for the current user
 export async function fetchActivities(): Promise<Activity[]> {
   const { data, error } = await supabase
@@ -163,7 +164,7 @@ export async function convertActivityToExpense(activityId: string): Promise<{ ex
       amount: activity.actual_cost || activity.estimated_cost || 0,
       expense_type: 'maintenance',
       description: `${activity.title} - ${activity.description || ''}`,
-      paid_at: new Date().toISOString().split('T')[0],
+      paid_at: toDateOnlyString(new Date()),
       maintenance_details: activity.responsible_notes
     }])
     .select()

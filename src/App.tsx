@@ -8,6 +8,8 @@ import { AuthProvider } from '@/components/auth/auth-provider';
 import { MapboxProvider } from '@/contexts/MapboxContext';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AppRoutes } from '@/routes/AppRoutes';
+import { ConfirmProvider } from '@/components/ui/confirm-provider';
+import { PasswordRecoveryGate } from '@/components/auth/password-recovery-gate';
 
 function AppInner() {
   const location = useLocation();
@@ -17,8 +19,11 @@ function AppInner() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <MapboxProvider>
-            <Toaster closeButton />
-            <AppRoutes />
+            <ConfirmProvider>
+              <Toaster closeButton richColors />
+              <PasswordRecoveryGate />
+              <AppRoutes />
+            </ConfirmProvider>
           </MapboxProvider>
         </AuthProvider>
       </QueryClientProvider>

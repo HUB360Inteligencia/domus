@@ -1,7 +1,7 @@
-import { Building2, CalendarDays, Plus, Search } from "lucide-react";
+import { Building2, CalendarDays, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlobalSearch } from "@/components/layout/global-search";
 
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -32,7 +32,7 @@ export function AppHeader() {
           <Building2 className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
           <div className="min-w-0">
             <div className="text-[10px] font-semibold uppercase leading-none text-muted-foreground/70">
-              Organizacao
+              Organização
             </div>
             <div className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">
               {organizationName}
@@ -40,15 +40,7 @@ export function AppHeader() {
           </div>
         </div>
 
-        <div className="relative min-w-[180px] flex-1">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            name="global-search"
-            placeholder="Buscar imoveis, contratos, relatorios…"
-            className="h-11 rounded-2xl border-white/70 bg-white/75 pl-10 shadow-none dark:border-white/10 dark:bg-white/5"
-          />
-        </div>
+        <GlobalSearch />
 
         <Link
           to="/agenda"

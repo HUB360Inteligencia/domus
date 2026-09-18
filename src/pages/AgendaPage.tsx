@@ -173,19 +173,19 @@ export default function AgendaPage() {
           <SummaryTile
             label="Atrasados"
             value={String(summary.overdueCount)}
-            helper="pendencias fora do prazo"
+            helper="pendências fora do prazo"
             icon={<Clock3 className="h-5 w-5" />}
           />
           <SummaryTile
             label="A receber"
             value={formatCurrency(summary.receivableAmount)}
-            helper={`${summary.predictedReceipts} previsoes de contratos`}
+            helper={`${summary.predictedReceipts} previsões de contratos`}
             icon={<Landmark className="h-5 w-5" />}
           />
           <SummaryTile
             label="A pagar"
             value={formatCurrency(summary.payableAmount)}
-            helper="compromissos e despesas no periodo"
+            helper="compromissos e despesas no período"
             icon={<WalletCards className="h-5 w-5" />}
           />
         </div>
@@ -220,7 +220,7 @@ export default function AgendaPage() {
         <section className="premium-panel dark:premium-panel-dark rounded-2xl p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase text-accent">Proximos passos</div>
+              <div className="text-xs font-semibold uppercase text-accent">Próximos passos</div>
               <h2 className="mt-1 text-lg font-semibold text-foreground">Fila operacional</h2>
             </div>
             {isFetching && <span className="text-xs text-muted-foreground">Atualizando...</span>}

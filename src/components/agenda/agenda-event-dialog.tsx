@@ -114,7 +114,7 @@ export function AgendaEventDialog({
                 <SelectContent>
                   <SelectItem value="appointment">Compromisso</SelectItem>
                   <SelectItem value="task">Tarefa</SelectItem>
-                  <SelectItem value="maintenance">Manutencao</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
                   <SelectItem value="inspection">Vistoria</SelectItem>
                   <SelectItem value="receipt">Recebimento</SelectItem>
                   <SelectItem value="payment">Pagamento</SelectItem>
@@ -138,10 +138,10 @@ export function AgendaEventDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agenda-property">Imovel</Label>
+              <Label htmlFor="agenda-property">Imóvel</Label>
               <Select value={form.propertyId} onValueChange={(value) => setForm((current) => ({ ...current, propertyId: value }))}>
                 <SelectTrigger id="agenda-property">
-                  <SelectValue placeholder="Selecionar imovel" />
+                  <SelectValue placeholder="Selecionar imóvel" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sem vinculo</SelectItem>
@@ -200,13 +200,13 @@ export function AgendaEventDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="agenda-description">Descricao</Label>
+              <Label htmlFor="agenda-description">Descrição</Label>
               <Textarea
                 id="agenda-description"
                 name="agenda-description"
                 value={form.description}
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                placeholder="Detalhes, responsavel e observacoes"
+                placeholder="Detalhes, responsável e observações"
                 rows={4}
               />
             </div>

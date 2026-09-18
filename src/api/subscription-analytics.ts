@@ -1,4 +1,6 @@
 
+import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 import { logger } from "@/lib/logger";
@@ -75,9 +77,16 @@ export async function fetchSubscriptionAnalytics(): Promise<SubscriptionAnalytic
   // Calculate average revenue per user
   const averageRevenuePerUser = activeClients > 0 ? Math.round(currentMrr / activeClients) : 0;
 
-  // Generate historical MRR data - in a production app, this would come from historical records
-  // For now, we'll simulate it based on the current MRR
-  const historicalMrr = generateHistoricalMrrData(currentMrr);
+  // Histórico real: MRR das assinaturas vigentes no fim de cada mês (pelas datas de início/fim)
+  const { data: allSubscriptions, error: historyError } = await supabase
+    .from('subscriptions')
+    .select('status, starts_at, ends_at, plans ( price, interval )');
+
+  if (historyError) {
+    logger.error('Error fetching subscription history:', historyError);
+  }
+
+  const historicalMrr = buildHistoricalMrr(allSubscriptions || [], currentMrr);
   const mrrGrowthRate = historicalMrr.length >= 2 ? 
     calculateGrowthRate(historicalMrr[historicalMrr.length - 2].value, historicalMrr[historicalMrr.length - 1].value) : 0;
 
@@ -97,18 +106,61 @@ export async function fetchSubscriptionAnalytics(): Promise<SubscriptionAnalytic
 }
 
 // Helper function to calculate MRR from subscription data
+const monthlyPrice = (plan?: { price?: number | null; interval?: string | null } | null): number => {
+  const price = Number(plan?.price || 0);
+  const interval = (plan?.interval || 'month').toLowerCase();
+  if (['year', 'yearly', 'annual', 'anual'].includes(interval)) return price / 12;
+  if (['quarter', 'quarterly', 'trimestral'].includes(interval)) return price / 3;
+  if (['semester', 'semiannual', 'semestral'].includes(interval)) return price / 6;
+  return price;
+};
+
 function calculateMrrFromSubscriptions(subscriptions: any[]): number {
   return subscriptions.reduce((total, subscription) => {
     if (subscription.plans && subscription.status === 'active') {
-      const price = subscription.plans.price || 0;
-      // Convert to monthly if not already (assuming 'interval' is either 'month', 'year', etc.)
-      if (subscription.plans.interval === 'year') {
-        return total + (price / 12);
-      }
-      return total + price;
+      return total + monthlyPrice(subscription.plans);
     }
     return total;
   }, 0);
+}
+
+type SubscriptionHistoryRow = {
+  status: string;
+  starts_at: string;
+  ends_at: string | null;
+  plans: { price?: number | null; interval?: string | null } | null;
+};
+
+/** MRR dos últimos 6 meses a partir das datas das assinaturas (o mês atual usa o MRR vigente). */
+function buildHistoricalMrr(subscriptions: SubscriptionHistoryRow[], currentMrr: number): MrrData[] {
+  const now = new Date();
+  let previousValue: number | null = null;
+
+  return Array.from({ length: 6 }, (_, index) => {
+    const monthDate = startOfMonth(subMonths(now, 5 - index));
+    const isCurrentMonth = index === 5;
+    const reference = isCurrentMonth ? now : endOfMonth(monthDate);
+
+    const value = isCurrentMonth
+      ? currentMrr
+      : subscriptions.reduce((total, subscription) => {
+          const startsAt = new Date(subscription.starts_at);
+          if (Number.isNaN(startsAt.getTime()) || startsAt > reference) return total;
+          if (subscription.ends_at) {
+            if (new Date(subscription.ends_at) < reference) return total;
+          } else if (subscription.status !== 'active') {
+            // Cancelada sem data de término: não há como saber até quando esteve vigente
+            return total;
+          }
+          return total + monthlyPrice(subscription.plans);
+        }, 0);
+
+    const growth_rate = previousValue !== null ? calculateGrowthRate(previousValue, value) : 0;
+    previousValue = value;
+    const label = format(monthDate, 'MMM', { locale: ptBR });
+
+    return { month: label.charAt(0).toUpperCase() + label.slice(1), value: Math.round(value), growth_rate };
+  });
 }
 
 // Calculate MRR from active subscriptions
@@ -174,27 +226,6 @@ function getClientDistributionFromSubscriptions(subscriptions: any[]): { planNam
     planName,
     count: Number(count) // Ensure count is explicitly a number
   }));
-}
-
-// Helper function to generate historical MRR data (for demo purposes)
-// In a real app, this would come from stored historical records
-function generateHistoricalMrrData(currentMrr: number): MrrData[] {
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
-  const baseValue = Math.max(currentMrr * 0.7, 10000); // Starting at ~70% of current value
-  
-  let previousValue = baseValue;
-  return months.map((month, index) => {
-    // Generate somewhat realistic growth
-    const growthFactor = 1 + (Math.random() * 0.08 + 0.02); // 2-10% monthly growth
-    const value = index === months.length - 1 
-      ? currentMrr 
-      : Math.round(previousValue * growthFactor);
-    
-    const growth_rate = calculateGrowthRate(previousValue, value);
-    previousValue = value;
-    
-    return { month, value, growth_rate };
-  });
 }
 
 // Helper function to calculate growth rate between two values

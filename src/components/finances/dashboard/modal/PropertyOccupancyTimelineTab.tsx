@@ -7,6 +7,7 @@ import { usePropertyOccupancy } from '@/hooks/use-property-occupancy';
 import { Calendar, User, Clock, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/dates";
 
 interface PropertyOccupancyTimelineTabProps {
   property: PropertyAnalyticsData;
@@ -131,7 +132,7 @@ export function PropertyOccupancyTimelineTab({ property }: PropertyOccupancyTime
           ) : (
             <div className="space-y-4">
               {occupancyPeriods
-                .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+                .sort((a, b) => parseDateOnly(b.start_date).getTime() - parseDateOnly(a.start_date).getTime())
                 .map((period, index) => (
                   <div
                     key={period.id}
@@ -156,11 +157,11 @@ export function PropertyOccupancyTimelineTab({ property }: PropertyOccupancyTime
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>
                             <Calendar className="h-3 w-3 inline mr-1" />
-                            Início: {format(new Date(period.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                            Início: {format(parseDateOnly(period.start_date), 'dd/MM/yyyy', { locale: ptBR })}
                           </span>
                           {period.end_date && (
                             <span>
-                              Fim: {format(new Date(period.end_date), 'dd/MM/yyyy', { locale: ptBR })}
+                              Fim: {format(parseDateOnly(period.end_date), 'dd/MM/yyyy', { locale: ptBR })}
                             </span>
                           )}
                         </div>
@@ -178,9 +179,9 @@ export function PropertyOccupancyTimelineTab({ property }: PropertyOccupancyTime
                         </div>
                         <div className="font-semibold">
                           {period.end_date ? (
-                            `${Math.ceil((new Date(period.end_date).getTime() - new Date(period.start_date).getTime()) / (1000 * 60 * 60 * 24))} dias`
+                            `${Math.ceil((parseDateOnly(period.end_date).getTime() - parseDateOnly(period.start_date).getTime()) / (1000 * 60 * 60 * 24))} dias`
                           ) : (
-                            `${Math.ceil((new Date().getTime() - new Date(period.start_date).getTime()) / (1000 * 60 * 60 * 24))} dias`
+                            `${Math.ceil((new Date().getTime() - parseDateOnly(period.start_date).getTime()) / (1000 * 60 * 60 * 24))} dias`
                           )}
                         </div>
                       </div>
@@ -227,7 +228,7 @@ export function PropertyOccupancyTimelineTab({ property }: PropertyOccupancyTime
                       `${Math.round(
                         occupancyPeriods
                           .filter(p => p.end_date)
-                          .reduce((acc, p) => acc + Math.ceil((new Date(p.end_date!).getTime() - new Date(p.start_date).getTime()) / (1000 * 60 * 60 * 24)), 0) /
+                          .reduce((acc, p) => acc + Math.ceil((parseDateOnly(p.end_date!).getTime() - parseDateOnly(p.start_date).getTime()) / (1000 * 60 * 60 * 24)), 0) /
                         occupancyPeriods.filter(p => p.end_date).length
                       )} dias`
                     ) : 'N/A'}
@@ -240,7 +241,7 @@ export function PropertyOccupancyTimelineTab({ property }: PropertyOccupancyTime
                     {occupancyPeriods.length > 0 ? (
                       `${Math.max(
                         ...occupancyPeriods.map(p => 
-                          Math.ceil((new Date(p.end_date || new Date()).getTime() - new Date(p.start_date).getTime()) / (1000 * 60 * 60 * 24))
+                          Math.ceil(((p.end_date ? parseDateOnly(p.end_date) : new Date()).getTime() - parseDateOnly(p.start_date).getTime()) / (1000 * 60 * 60 * 24))
                         )
                       )} dias`
                     ) : 'N/A'}

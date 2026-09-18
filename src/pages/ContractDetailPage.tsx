@@ -1,287 +1,275 @@
-
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { 
-  ArrowLeft, 
-  Edit, 
-  FileText, 
-  Calendar, 
-  DollarSign, 
-  MapPin, 
-  User, 
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Building2,
+  Calendar,
+  Edit,
+  FileText,
   Phone,
-  Receipt
+  Receipt,
+  User,
+  WalletCards,
 } from 'lucide-react';
-import { useContracts } from '@/hooks/use-contracts';
+import { fetchContractById } from '@/api/contracts';
 import { ContractAdjustmentForm } from '@/components/contracts/contract-adjustment-form';
 import { ContractAdjustmentHistory } from '@/components/contracts/contract-adjustment-history';
 import { LinkedContactsSection } from '@/components/contacts/linked-contacts-section';
+import { ContractDocumentsSection } from '@/components/documents/contract-documents-section';
+import { useBackNavigation } from '@/hooks/use-back-navigation';
 import { formatCurrency } from '@/lib/format';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR, parseDateOnly } from '@/lib/dates';
+import { cn } from '@/lib/utils';
+import { isContractOverdueForRenewal } from '@/lib/contract-status';
+
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  active: { label: 'Ativo', className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' },
+  pending: { label: 'Pendente', className: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300' },
+  expired: { label: 'Expirado', className: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300' },
+  canceled: { label: 'Cancelado', className: 'border-border bg-muted text-muted-foreground' },
+  draft: { label: 'Rascunho', className: 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300' },
+};
+
+function InfoItem({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="mt-1 break-words text-sm font-medium">{children}</div>
+    </div>
+  );
+}
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { setSelectedContractId, selectedContract, isLoadingSelectedContract } = useContracts();
+  const goBack = useBackNavigation('/contracts');
 
-  React.useEffect(() => {
-    if (id) {
-      setSelectedContractId(id);
-    }
-  }, [id, setSelectedContractId]);
+  const { data: contract, isLoading, isError } = useQuery({
+    queryKey: ['contract', id],
+    queryFn: () => fetchContractById(id || ''),
+    enabled: !!id,
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      case 'canceled': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return 'Ativo';
-      case 'pending': return 'Pendente';
-      case 'expired': return 'Expirado';
-      case 'canceled': return 'Cancelado';
-      case 'draft': return 'Rascunho';
-      default: return status;
-    }
-  };
-
-  if (isLoadingSelectedContract) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-10 w-10" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-9 w-24 rounded-2xl" />
           <Skeleton className="h-8 w-64" />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </CardContent>
-          </Card>
+          {[0, 1].map((item) => (
+            <Card key={item}>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
-  if (!selectedContract) {
+  if (!contract || isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Contrato não encontrado</h3>
-        <p className="text-muted-foreground mb-4">
-          O contrato solicitado não existe ou você não tem permissão para visualizá-lo.
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-3xl bg-muted">
+          <FileText className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h3 className="mb-2 text-lg font-semibold">Contrato não encontrado</h3>
+        <p className="mb-6 max-w-md text-muted-foreground">
+          O contrato solicitado não existe, foi excluído ou você não tem permissão para visualizá-lo.
         </p>
-        <Button onClick={() => navigate('/contracts')}>
-          Voltar para Contratos
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={goBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          <Button onClick={() => navigate('/contracts')}>Ver todos os contratos</Button>
+        </div>
       </div>
     );
   }
+
+  const needsRenewal = isContractOverdueForRenewal(contract);
+  const status = needsRenewal
+    ? { label: 'Vencido — renovar', className: STATUS_STYLES.expired.className }
+    : STATUS_STYLES[contract.status] || { label: contract.status, className: 'border-border bg-muted' };
+  const endDate = parseDateOnly(contract.end_date);
+  const daysToEnd = Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const paymentDay = contract.payment_due_day || contract.payment_day;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/contracts')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <Button variant="outline" size="sm" onClick={goBack} className="mt-1 shrink-0">
+            <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{selectedContract.title}</h1>
-            <Badge className={getStatusColor(selectedContract.status)}>
-              {getStatusLabel(selectedContract.status)}
-            </Badge>
+          <div className="min-w-0">
+            <h1 className="break-words text-2xl font-semibold md:text-3xl">{contract.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className={cn('border', status.className)}>
+                {status.label}
+              </Badge>
+              {contract.status === 'active' && daysToEnd >= 0 && daysToEnd <= 60 && (
+                <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  Vence em {daysToEnd} {daysToEnd === 1 ? 'dia' : 'dias'}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
-        <Button onClick={() => navigate(`/contracts/edit/${selectedContract.id}`)}>
-          <Edit className="h-4 w-4 mr-2" />
+        <Button onClick={() => navigate(`/contracts/edit/${contract.id}`)} className="self-start">
+          <Edit className="h-4 w-4" />
           Editar
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Informações do Contrato */}
-        <Card>
+      {needsRenewal && (
+        <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+          A vigência terminou em {formatDateBR(contract.end_date)}, mas o contrato continua marcado como ativo. Edite o contrato para
+          registrar a renovação (nova data de término) ou altere o status para encerrado.
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="h-5 w-5 mr-2" />
-              Informações do Contrato
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <WalletCards className="h-5 w-5" />
+              Condições da locação
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Valor</label>
-                <p className="text-lg font-semibold">{formatCurrency(selectedContract.value)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Dia de Pagamento</label>
-                <p className="text-lg font-semibold">{selectedContract.payment_day}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Data de Início</label>
-                <p className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {format(new Date(selectedContract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Data de Término</label>
-                <p className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {format(new Date(selectedContract.end_date), 'dd/MM/yyyy', { locale: ptBR })}
-                </p>
-              </div>
-            </div>
-
-            {selectedContract.deposit_value && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Valor do Depósito</label>
-                <p className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  {formatCurrency(selectedContract.deposit_value)}
-                </p>
-              </div>
+          <CardContent className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <InfoItem label="Valor mensal">
+              <span className="text-lg font-semibold">{formatCurrency(contract.value)}</span>
+            </InfoItem>
+            <InfoItem label="Vencimento">Todo dia {paymentDay}</InfoItem>
+            {contract.deposit_value ? (
+              <InfoItem label="Caução / depósito">{formatCurrency(contract.deposit_value)}</InfoItem>
+            ) : null}
+            <InfoItem label="Início">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                {formatDateBR(contract.start_date)}
+              </span>
+            </InfoItem>
+            <InfoItem label="Término">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                {formatDateBR(contract.end_date)}
+              </span>
+            </InfoItem>
+            {contract.adjustment_index && (
+              <InfoItem label="Reajuste">
+                {contract.adjustment_index}
+                {contract.adjustment_date ? ` · ${formatDateBR(contract.adjustment_date)}` : ''}
+              </InfoItem>
             )}
           </CardContent>
         </Card>
 
-        {/* Informações do Inquilino */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Informações do Inquilino
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <User className="h-5 w-5" />
+              Locatário
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Nome</label>
-              <p className="text-lg font-semibold">{selectedContract.tenant_name}</p>
-            </div>
-            
-            {selectedContract.tenant_contact && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Contato</label>
-                <p className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2" />
-                  {selectedContract.tenant_contact}
-                </p>
-              </div>
+            <InfoItem label="Nome">
+              <span className="text-base font-semibold">{contract.tenant_name}</span>
+            </InfoItem>
+            {contract.tenant_contact && (
+              <InfoItem label="Contato">
+                <span className="inline-flex items-center gap-1.5">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  {contract.tenant_contact}
+                </span>
+              </InfoItem>
             )}
-            
-            {selectedContract.tenant_document && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Documento</label>
-                <p>{selectedContract.tenant_document}</p>
-              </div>
-            )}
+            {contract.tenant_document && <InfoItem label="Documento">{contract.tenant_document}</InfoItem>}
           </CardContent>
         </Card>
 
-        {/* Informações da Propriedade */}
-        {selectedContract.property && (
+        {contract.property && contract.property_id && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2" />
-                Propriedade
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Building2 className="h-5 w-5" />
+                Imóvel
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Título</label>
-                <p className="text-lg font-semibold">{selectedContract.property.title}</p>
-              </div>
-              
-              {selectedContract.property.address && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Endereço</label>
-                  <p>{selectedContract.property.address}</p>
+            <CardContent>
+              <Link
+                to={`/properties/${contract.property_id}`}
+                className="group block rounded-3xl border border-border/70 p-4 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold">{contract.property.title}</p>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </div>
-              )}
+                {contract.property.address && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {[contract.property.address, contract.property.city, contract.property.state].filter(Boolean).join(', ')}
+                  </p>
+                )}
+              </Link>
             </CardContent>
           </Card>
         )}
 
-        {/* Termos e Condições */}
-        {(selectedContract.terms || selectedContract.special_conditions) && (
-          <Card>
+        {(contract.terms || contract.special_conditions) && (
+          <Card className={contract.property ? 'lg:col-span-2' : 'lg:col-span-3'}>
             <CardHeader>
-              <CardTitle>Termos e Condições</CardTitle>
+              <CardTitle className="text-lg">Termos e condições</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedContract.terms && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Termos</label>
-                  <p className="whitespace-pre-wrap">{selectedContract.terms}</p>
-                </div>
+              {contract.terms && (
+                <InfoItem label="Termos">
+                  <p className="whitespace-pre-wrap font-normal">{contract.terms}</p>
+                </InfoItem>
               )}
-              
-              {selectedContract.special_conditions && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Condições Especiais</label>
-                  <p className="whitespace-pre-wrap">{selectedContract.special_conditions}</p>
-                </div>
+              {contract.special_conditions && (
+                <InfoItem label="Condições especiais">
+                  <p className="whitespace-pre-wrap font-normal">{contract.special_conditions}</p>
+                </InfoItem>
               )}
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Contatos vinculados */}
-      <LinkedContactsSection entity="contract" entityId={selectedContract.id} />
+      <ContractDocumentsSection contractId={contract.id} />
 
-      {/* Seção de Reajustes */}
-      <div className="space-y-6">
-        <Separator />
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Receipt className="h-5 w-5 mr-2" />
-                Reajustes de Contrato
-              </CardTitle>
-              <ContractAdjustmentForm 
-                contractId={selectedContract.id}
-                currentValue={selectedContract.value}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ContractAdjustmentHistory contractId={selectedContract.id} />
-          </CardContent>
-        </Card>
-      </div>
+      <LinkedContactsSection entity="contract" entityId={contract.id} />
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Receipt className="h-5 w-5" />
+              Reajustes do contrato
+            </CardTitle>
+            <ContractAdjustmentForm contractId={contract.id} currentValue={contract.value} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ContractAdjustmentHistory contractId={contract.id} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

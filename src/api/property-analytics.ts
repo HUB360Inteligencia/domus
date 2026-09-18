@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { fetchPropertyFinancialMetrics } from '@/api/property-financial-metrics';
+import { computePropertyFinancialMetrics } from '@/api/property-financial-metrics';
 
 import { logger } from "@/lib/logger";
 export interface PropertyAnalyticsData {
@@ -39,13 +39,11 @@ export const fetchPropertyAnalytics = async (filters?: PropertyAnalyticsFilters)
       throw new Error('User not authenticated');
     }
 
-    // Buscar propriedades básicas
+    // Imóveis visíveis ao usuário (a RLS já restringe à organização)
     let query = supabase
       .from('properties')
-      .select('id, title, type, city, neighborhood, status, value, purchase_value, total_investment')
-      .eq('user_id', session.data.session.user.id);
+      .select('id, title, type, city, neighborhood, status, value, purchase_value, total_investment');
 
-    // Aplicar filtros básicos
     if (filters?.city) {
       query = query.eq('city', filters.city);
     }
@@ -73,72 +71,81 @@ export const fetchPropertyAnalytics = async (filters?: PropertyAnalyticsFilters)
       return [];
     }
 
-    // Buscar dados financeiros para cada propriedade
-    const analyticsData: PropertyAnalyticsData[] = [];
+    // Busca em lote (uma consulta por tabela) em vez de N consultas por imóvel
+    const propertyIds = properties.map((property) => property.id);
+    const [transactionsResult, investmentsResult, contractsResult] = await Promise.all([
+      supabase
+        .from('financial_transactions')
+        .select('property_id, amount, transaction_type, transaction_date')
+        .in('property_id', propertyIds),
+      supabase
+        .from('property_investments')
+        .select('property_id, amount')
+        .in('property_id', propertyIds),
+      supabase
+        .from('contracts')
+        .select('property_id, start_date, end_date, status')
+        .in('property_id', propertyIds),
+    ]);
 
-    for (const property of properties) {
-      try {
-        const financialMetrics = await fetchPropertyFinancialMetrics(property.id);
-        
-        // Calcular Cap Rate (ROI anualizado baseado no valor de mercado)
-        const capRate = property.value > 0 ? (financialMetrics.netIncome / property.value) * 100 : 0;
-        
-        // Calcular Cash-on-Cash (ROI baseado no investimento inicial)
-        const totalInvested = property.purchase_value || property.total_investment || property.value;
-        const cashOnCash = totalInvested > 0 ? (financialMetrics.netIncome / totalInvested) * 100 : 0;
+    if (transactionsResult.error) throw transactionsResult.error;
+    if (investmentsResult.error) throw investmentsResult.error;
+    if (contractsResult.error) throw contractsResult.error;
 
-        // Calcular receita e despesa média mensal (últimos 12 meses)
-        const averageRevenue = financialMetrics.totalRevenue / 12;
-        const averageExpense = financialMetrics.totalExpenses / 12;
+    const groupByProperty = <T extends { property_id: string | null }>(rows: T[] | null) => {
+      const grouped = new Map<string, T[]>();
+      (rows || []).forEach((row) => {
+        if (!row.property_id) return;
+        const list = grouped.get(row.property_id) || [];
+        list.push(row);
+        grouped.set(row.property_id, list);
+      });
+      return grouped;
+    };
 
-        const analytics: PropertyAnalyticsData = {
-          id: property.id,
-          title: property.title,
-          type: property.type,
-          city: property.city,
-          neighborhood: property.neighborhood,
-          status: property.status,
-          marketValue: property.value,
-          monthlyROI: financialMetrics.monthlyProfitability,
-          vacancyRate: financialMetrics.vacancyRate,
-          averageRevenue,
-          totalInvestment: financialMetrics.totalInvestment,
-          capRate,
-          cashOnCash,
-          netIncome: financialMetrics.netIncome,
-          averageExpense
-        };
+    const transactionsByProperty = groupByProperty(transactionsResult.data);
+    const investmentsByProperty = groupByProperty(investmentsResult.data);
+    const contractsByProperty = groupByProperty(contractsResult.data);
+    const now = new Date();
 
-        // Aplicar filtros de ROI se especificados
-        if (filters?.minROI && analytics.monthlyROI < filters.minROI) continue;
-        if (filters?.maxROI && analytics.monthlyROI > filters.maxROI) continue;
+    const analyticsData: PropertyAnalyticsData[] = properties.map((property) => {
+      const metrics = computePropertyFinancialMetrics({
+        property,
+        transactions: transactionsByProperty.get(property.id) || [],
+        investments: investmentsByProperty.get(property.id) || [],
+        contracts: contractsByProperty.get(property.id) || [],
+        now,
+      });
+      const marketValue = Number(property.value || 0);
 
-        analyticsData.push(analytics);
-      } catch (error) {
-        logger.error(`Error fetching metrics for property ${property.id}:`, error);
-        // Continuar com dados básicos mesmo se as métricas falharem
-        const basicAnalytics: PropertyAnalyticsData = {
-          id: property.id,
-          title: property.title,
-          type: property.type,
-          city: property.city,
-          neighborhood: property.neighborhood,
-          status: property.status,
-          marketValue: property.value,
-          monthlyROI: 0,
-          vacancyRate: 0,
-          averageRevenue: 0,
-          totalInvestment: property.purchase_value || property.total_investment || property.value,
-          capRate: 0,
-          cashOnCash: 0,
-          netIncome: 0,
-          averageExpense: 0
-        };
-        analyticsData.push(basicAnalytics);
-      }
-    }
+      return {
+        id: property.id,
+        title: property.title,
+        type: property.type,
+        city: property.city,
+        neighborhood: property.neighborhood,
+        status: property.status,
+        marketValue,
+        monthlyROI: metrics.monthlyProfitability,
+        vacancyRate: metrics.vacancyRate,
+        averageRevenue: metrics.revenueLast12Months / 12,
+        totalInvestment: metrics.totalInvestment > 0 ? metrics.totalInvestment : metrics.capitalBase,
+        // Cap rate: resultado anual sobre o valor de mercado
+        capRate: marketValue > 0 ? (metrics.netIncomeLast12Months / marketValue) * 100 : 0,
+        // Cash-on-cash: resultado anual sobre o capital investido
+        cashOnCash: metrics.capitalBase > 0 ? (metrics.netIncomeLast12Months / metrics.capitalBase) * 100 : 0,
+        netIncome: metrics.netIncomeLast12Months,
+        averageExpense: metrics.expensesLast12Months / 12,
+      };
+    });
 
-    return analyticsData.sort((a, b) => b.monthlyROI - a.monthlyROI);
+    return analyticsData
+      .filter((analytics) => {
+        if (filters?.minROI != null && analytics.monthlyROI < filters.minROI) return false;
+        if (filters?.maxROI != null && analytics.monthlyROI > filters.maxROI) return false;
+        return true;
+      })
+      .sort((a, b) => b.monthlyROI - a.monthlyROI);
   } catch (error) {
     logger.error('Error fetching property analytics:', error);
     throw error;
@@ -154,8 +161,7 @@ export const getUniqueFilterOptions = async () => {
 
     const { data: properties, error } = await supabase
       .from('properties')
-      .select('city, neighborhood, type, status')
-      .eq('user_id', session.data.session.user.id);
+      .select('city, neighborhood, type, status');
 
     if (error) throw error;
 

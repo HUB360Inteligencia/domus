@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly } from "@/lib/dates";
 export interface RentalItem {
   id?: string;
   name: string;
@@ -72,7 +73,7 @@ export const useRentalHistory = (propertyId: string) => {
         }
 
         const monthYear = transaction.transaction_date 
-          ? new Date(transaction.transaction_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
+          ? parseDateOnly(transaction.transaction_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
           : 'Data não disponível';
 
         return {

@@ -18,6 +18,8 @@ import {
 import { toast } from 'sonner';
 import { formatCurrency } from '@/utils/currency';
 import { format } from 'date-fns';
+import { parseDateOnly } from "@/lib/dates";
+import { useConfirm } from "@/hooks/use-confirm";
 
 interface PropertyValuationManagerProps {
   property: Property | null | undefined;
@@ -44,6 +46,7 @@ export const PropertyValuationManager: React.FC<PropertyValuationManagerProps> =
   });
 
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const { data: valuations = [], isLoading } = useQuery({
     queryKey: ['property-valuations', property?.id],
@@ -132,8 +135,8 @@ export const PropertyValuationManager: React.FC<PropertyValuationManagerProps> =
     });
   };
 
-  const handleDeleteValuation = (valuationId: string) => {
-    if (confirm('Tem certeza que deseja remover esta avaliação?')) {
+  const handleDeleteValuation = async (valuationId: string) => {
+    if (await confirm({ title: 'Remover avaliação?', description: 'O histórico de valorização será recalculado sem ela.', destructive: true, confirmLabel: 'Remover' })) {
       deleteMutation.mutate(valuationId);
     }
   };
@@ -147,7 +150,7 @@ export const PropertyValuationManager: React.FC<PropertyValuationManagerProps> =
   }
 
   const sortedValuations = [...valuations].sort((a, b) => 
-    new Date(b.valuation_date).getTime() - new Date(a.valuation_date).getTime()
+    parseDateOnly(b.valuation_date).getTime() - parseDateOnly(a.valuation_date).getTime()
   );
 
   const latestValuation = sortedValuations[0];
@@ -364,7 +367,7 @@ export const PropertyValuationManager: React.FC<PropertyValuationManagerProps> =
                               {formatCurrency(valuation.value)}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(new Date(valuation.valuation_date), 'dd/MM/yyyy')}
+                              {format(parseDateOnly(valuation.valuation_date), 'dd/MM/yyyy')}
                             </div>
                           </div>
                           

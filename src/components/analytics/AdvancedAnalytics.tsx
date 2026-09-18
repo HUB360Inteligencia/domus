@@ -269,7 +269,7 @@ export function AdvancedAnalytics() {
             <p className="text-blue-700">
               {analyticsData.length > 0 && analyticsData[analyticsData.length - 1]?.profit > 0 
                 ? 'Seu portfólio está gerando lucro. Continue monitorando para identificar padrões sazonais.'
-                : 'Analise as despesas e considere otimizar custos para melhorar a rentabilidade.'}
+                : 'Análise as despesas e considere otimizar custos para melhorar a rentabilidade.'}
             </p>
           </div>
         </CardContent>

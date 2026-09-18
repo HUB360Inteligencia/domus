@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, Edit, Trash2, FileText } from 'lucide-react';
 import { FinancialTransaction } from '@/hooks/use-financial-transactions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ResizableTransactionTableProps {
   transactions: FinancialTransaction[];
@@ -45,7 +46,7 @@ export const ResizableTransactionTable: React.FC<ResizableTransactionTableProps>
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yy', { locale: ptBR });
+    return format(parseDateOnly(dateString), 'dd/MM/yy', { locale: ptBR });
   };
 
   const columns = [

@@ -12,6 +12,7 @@ import { TextareaField } from './form/textarea-field';
 import { SelectField } from './form/select-field';
 import { DateField } from './form/date-field';
 import { ActivityFormActions } from './form/activity-form-actions';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ActivityFormProps {
   initialData?: Partial<ActivityFormData>;
@@ -62,7 +63,7 @@ export function ActivityForm({
     activity_type: initialData?.activity_type || 'maintenance',
     status: initialData?.status || 'pending',
     priority: initialData?.priority || 'medium',
-    start_date: initialData?.start_date ? new Date(initialData.start_date) : null,
+    start_date: initialData?.start_date ? parseDateOnly(initialData.start_date) : null,
     due_date: initialData?.due_date ? new Date(initialData.due_date) : null,
     completed_at: initialData?.completed_at ? new Date(initialData.completed_at) : null,
     responsible_name: initialData?.responsible_name || '',

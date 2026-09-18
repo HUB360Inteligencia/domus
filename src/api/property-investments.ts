@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { uploadReceiptFile } from '@/api/receipts';
 import { PropertyInvestment, PropertyInvestmentFormData, InvestmentType } from '@/types/property-investment';
 
 import { logger } from "@/lib/logger";
@@ -60,30 +61,7 @@ export const createPropertyInvestment = async (
   }
 };
 
-export const uploadInvestmentReceipt = async (file: File): Promise<string> => {
-  const user = await supabase.auth.getUser();
-  if (!user.data.user) throw new Error('User not authenticated');
-
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-  const filePath = `${user.data.user.id}/${fileName}`;
-
-  const { error } = await supabase.storage
-    .from('investment_receipts')
-    .upload(filePath, file);
-
-  if (error) {
-    logger.error('Error uploading investment receipt:', error);
-    throw error;
-  }
-
-  // Get the public URL
-  const { data } = supabase.storage
-    .from('investment_receipts')
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
-};
+export const uploadInvestmentReceipt = (file: File): Promise<string> => uploadReceiptFile(file, 'investments');
 
 export const deletePropertyInvestment = async (investmentId: string): Promise<void> => {
   const { error } = await supabase

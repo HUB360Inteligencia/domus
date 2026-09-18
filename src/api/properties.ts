@@ -37,7 +37,7 @@ export const fetchProperties = async (): Promise<Property[]> => {
       ...item,
       status: item.status as PropertyStatus,
       furnished: item.furnished as FurnishedStatus,
-      features: item.features as any,
+      features: item.features as Property['features'],
       tags: item.tags || [],
       rental_value: item.rental_value || 0,
       land_area: item.land_area || 0
@@ -84,7 +84,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
-      features: data.features as any,
+      features: data.features as Property['features'],
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
@@ -128,7 +128,7 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
       ...data,
       status: data.status as PropertyStatus,
       furnished: data.furnished as FurnishedStatus,
-      features: data.features as any,
+      features: data.features as Property['features'],
       tags: data.tags || [],
       rental_value: data.rental_value || 0,
       land_area: data.land_area || 0
@@ -167,7 +167,7 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
       ...updatedData,
       status: updatedData.status as PropertyStatus,
       furnished: updatedData.furnished as FurnishedStatus,
-      features: updatedData.features as any,
+      features: updatedData.features as Property['features'],
       tags: updatedData.tags || [],
       rental_value: updatedData.rental_value || 0,
       land_area: updatedData.land_area || 0
@@ -210,7 +210,7 @@ export const updatePropertyCoordinates = async ({
     ...data,
     status: data.status as PropertyStatus,
     furnished: data.furnished as FurnishedStatus,
-    features: data.features as any,
+    features: data.features as Property['features'],
     tags: data.tags || []
   };
 };
@@ -297,7 +297,8 @@ export const geocodeAddress = async (
   propertyNumber?: string,
   city?: string,
   state?: string,
-  postalCode?: string
+  postalCode?: string,
+  signal?: AbortSignal,
 ): Promise<{ lat: number, lng: number } | null> => {
   try {
     logger.log('Geocoding address:', address);
@@ -318,8 +319,21 @@ export const geocodeAddress = async (
     const cacheKey = `geocode_${fullAddress.replace(/\s+/g, '_').toLowerCase()}`;
     const cachedResult = sessionStorage.getItem(cacheKey);
     if (cachedResult) {
-      logger.log('Using cached geocode result for:', fullAddress);
-      return JSON.parse(cachedResult);
+      const parsedResult = JSON.parse(cachedResult) as { lat?: unknown; lng?: unknown };
+      if (
+        typeof parsedResult.lat === 'number' &&
+        Number.isFinite(parsedResult.lat) &&
+        parsedResult.lat >= -90 &&
+        parsedResult.lat <= 90 &&
+        typeof parsedResult.lng === 'number' &&
+        Number.isFinite(parsedResult.lng) &&
+        parsedResult.lng >= -180 &&
+        parsedResult.lng <= 180
+      ) {
+        logger.log('Using cached geocode result for:', fullAddress);
+        return { lat: parsedResult.lat, lng: parsedResult.lng };
+      }
+      sessionStorage.removeItem(cacheKey);
     }
 
     // Use the same token source as the map (env var), falling back to any
@@ -343,7 +357,8 @@ export const geocodeAddress = async (
     });
 
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?${params.toString()}`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?${params.toString()}`,
+      { signal },
     );
 
     if (!response.ok) {
@@ -355,6 +370,19 @@ export const geocodeAddress = async (
     if (data.features && data.features.length > 0) {
       // Mapbox returns coordinates as [longitude, latitude].
       const [lng, lat] = data.features[0].center;
+      if (
+        typeof lat !== 'number' ||
+        !Number.isFinite(lat) ||
+        lat < -90 ||
+        lat > 90 ||
+        typeof lng !== 'number' ||
+        !Number.isFinite(lng) ||
+        lng < -180 ||
+        lng > 180
+      ) {
+        logger.error('Mapbox returned invalid coordinates for:', fullAddress);
+        return null;
+      }
       const result = { lat, lng };
 
       sessionStorage.setItem(cacheKey, JSON.stringify(result));
@@ -365,6 +393,7 @@ export const geocodeAddress = async (
     logger.log('No features returned from Mapbox Geocoding API for:', fullAddress);
     return null;
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return null;
     logger.error('Error geocoding address:', error);
     return null;
   }

@@ -4,6 +4,8 @@ import { useProperties } from '@/hooks/use-properties';
 import { useContracts } from '@/hooks/use-contracts';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useRentalAnalytics } from './use-rental-analytics';
+import { parseDateOnly } from "@/lib/dates";
+import { isContractInForce } from "@/lib/contract-status";
 
 export interface DashboardMetrics {
   // Portfólio de Imóveis
@@ -15,6 +17,9 @@ export interface DashboardMetrics {
   // Patrimônio
   totalPurchaseValue: number;
   totalMarketValue: number;
+  /** Custo de aquisição por imóvel da carteira (valor de mercado quando o custo não foi informado). */
+  investmentBase: number;
+  portfolioProperties: number;
   assetGrowthPercentage: number;
   
   // Performance Financeira - CORRIGIDO
@@ -56,7 +61,7 @@ export const useDashboardMetrics = (): DashboardMetrics => {
     const totalProperties = properties.length;
     const rentablePropertiesList = properties.filter(p => p.status !== 'sold');
     const rentablePropertyIds = new Set(rentablePropertiesList.map(p => p.id));
-    const activeContracts = contracts.filter(c => c.status === 'active');
+    const activeContracts = contracts.filter(c => isContractInForce(c));
     const rentedPropertyIds = new Set<string>();
 
     activeContracts.forEach(contract => {
@@ -73,12 +78,17 @@ export const useDashboardMetrics = (): DashboardMetrics => {
     const rentedProperties = rentedPropertyIds.size;
     const occupancyRate = rentableProperties > 0 ? (rentedProperties / rentableProperties) * 100 : 0;
 
-    // Calcular patrimônio
-    const totalPurchaseValue = properties.reduce((sum, p) => 
+    // Calcular patrimônio — imóveis vendidos não fazem mais parte da carteira
+    const portfolioProperties = rentablePropertiesList;
+    const totalPurchaseValue = portfolioProperties.reduce((sum, p) =>
       sum + (p.purchase_value || p.total_investment || 0), 0
     );
-    const totalMarketValue = properties.reduce((sum, p) => sum + (p.value || 0), 0);
-    const comparableProperties = properties.filter(p => (p.purchase_value || p.total_investment || 0) > 0);
+    const totalMarketValue = portfolioProperties.reduce((sum, p) => sum + (p.value || 0), 0);
+    // Base de capital para ROI: custo de aquisição de cada imóvel, ou valor de mercado quando o custo não foi informado
+    const investmentBase = portfolioProperties.reduce((sum, p) =>
+      sum + Number(p.purchase_value || p.total_investment || p.value || 0), 0
+    );
+    const comparableProperties = portfolioProperties.filter(p => (p.purchase_value || p.total_investment || 0) > 0);
     const comparablePurchaseValue = comparableProperties.reduce((sum, p) => 
       sum + (p.purchase_value || p.total_investment || 0), 0
     );
@@ -106,13 +116,13 @@ export const useDashboardMetrics = (): DashboardMetrics => {
     const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     
     const currentMonthTransactions = transactions.filter(t => {
-      const transactionDate = new Date(t.transaction_date);
+      const transactionDate = parseDateOnly(t.transaction_date);
       return transactionDate.getMonth() === currentMonth && 
              transactionDate.getFullYear() === currentYear;
     });
 
     const previousMonthTransactions = transactions.filter(t => {
-      const transactionDate = new Date(t.transaction_date);
+      const transactionDate = parseDateOnly(t.transaction_date);
       return transactionDate.getMonth() === previousMonth && 
              transactionDate.getFullYear() === previousYear;
     });
@@ -152,6 +162,8 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       occupancyRate,
       totalPurchaseValue,
       totalMarketValue,
+      investmentBase,
+      portfolioProperties: portfolioProperties.length,
       assetGrowthPercentage,
       totalRevenue,
       totalExpenses,

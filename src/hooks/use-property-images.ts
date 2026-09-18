@@ -42,10 +42,8 @@ export const usePropertyImages = (propertyId: string | null) => {
     }) => uploadPropertyImage(
       propertyId || '', 
       file, 
-      { 
-        description, 
-        is_primary: description ? false : undefined // Only override if explicitly set
-      }
+      // is_primary indefinido = a API marca como capa automaticamente quando é a primeira foto
+      { description }
     ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property-images', propertyId] });
@@ -109,24 +107,42 @@ export const usePropertyImages = (propertyId: string | null) => {
     },
   });
 
-  // Upload multiple images
+  // Upload multiple images — em sequência, para a definição da capa/ordem não disputar entre uploads
+  const [isUploadingBatch, setIsUploadingBatch] = useState(false);
   const uploadImages = useCallback(
-    async (files: File[]) => {
-      if (!propertyId) return;
+    async (files: File[], description?: string) => {
+      if (!propertyId || files.length === 0) return { uploaded: 0, failed: 0 };
 
-      const uploads = files.map(file => 
-        uploadImageMutation.mutateAsync({ file })
-      );
-
+      setIsUploadingBatch(true);
+      let uploaded = 0;
+      let failed = 0;
       try {
-        await Promise.all(uploads);
-        return true;
-      } catch (error) {
-        logger.error('Error uploading multiple images:', error);
-        return false;
+        for (const file of files) {
+          try {
+            await uploadPropertyImage(propertyId, file, { description });
+            uploaded += 1;
+          } catch (error) {
+            failed += 1;
+            logger.error('Error uploading image:', error);
+          }
+        }
+      } finally {
+        setIsUploadingBatch(false);
+        queryClient.invalidateQueries({ queryKey: ['property-images', propertyId] });
+        queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+        queryClient.invalidateQueries({ queryKey: ['properties'] });
       }
+
+      if (failed === 0) {
+        toast.success(uploaded === 1 ? 'Foto enviada com sucesso!' : `${uploaded} fotos enviadas com sucesso!`);
+      } else if (uploaded > 0) {
+        toast.warning(`${uploaded} de ${files.length} fotos enviadas. Tente novamente as que falharam.`);
+      } else {
+        toast.error('Não foi possível enviar as fotos. Verifique a conexão e tente novamente.');
+      }
+      return { uploaded, failed };
     },
-    [propertyId, uploadImageMutation]
+    [propertyId, queryClient]
   );
 
   // Reorder images
@@ -163,7 +179,7 @@ export const usePropertyImages = (propertyId: string | null) => {
   return {
     images,
     isLoadingImages,
-    isUploading: uploadImageMutation.isPending,
+    isUploading: uploadImageMutation.isPending || isUploadingBatch,
     isUpdating: setPrimaryMutation.isPending || updateOrderMutation.isPending || updateDescriptionMutation.isPending,
     isDeleting: deleteImageMutation.isPending,
     uploadImage: (file: File, description?: string) => 

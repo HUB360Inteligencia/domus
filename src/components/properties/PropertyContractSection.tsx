@@ -14,6 +14,7 @@ import { ContractForm } from '@/components/contracts/contract-form';
 import { ContractStatusSelect } from '@/components/contracts/ContractStatusSelect';
 import { useContractMutations } from '@/hooks/use-contract-mutations';
 import { RentalManagementModal, RentalHistoryTable, MonthlyAverageCard } from './rental-management';
+import { parseDateOnly } from "@/lib/dates";
 
 const statusStyles: Record<string, string> = {
   rented: "border-[#6f8f74]/25 bg-[#6f8f74]/12 text-[#3f5f45]",
@@ -180,13 +181,13 @@ export const PropertyContractSection: React.FC<PropertyContractSectionProps> = (
                     <div>
                       <p className="text-sm text-muted-foreground">Início</p>
                       <p className="font-medium">
-                        {new Date(contract.start_date).toLocaleDateString('pt-BR')}
+                        {parseDateOnly(contract.start_date).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Fim</p>
                       <p className="font-medium">
-                        {new Date(contract.end_date).toLocaleDateString('pt-BR')}
+                        {parseDateOnly(contract.end_date).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                   </div>

@@ -5,6 +5,7 @@ import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useContracts } from '@/hooks/use-contracts';
 import { addMonths, format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/dates";
 
 export interface ReportData {
   month: string;
@@ -57,8 +58,8 @@ export const useAdvancedReportsData = () => {
         const monthlyRevenue = transactions
           .filter(t => 
             t.transaction_type === 'income' && 
-            new Date(t.transaction_date) >= start && 
-            new Date(t.transaction_date) <= end
+            parseDateOnly(t.transaction_date) >= start && 
+            parseDateOnly(t.transaction_date) <= end
           )
           .reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -66,8 +67,8 @@ export const useAdvancedReportsData = () => {
         const monthlyExpenses = transactions
           .filter(t => 
             t.transaction_type === 'expense' && 
-            new Date(t.transaction_date) >= start && 
-            new Date(t.transaction_date) <= end
+            parseDateOnly(t.transaction_date) >= start && 
+            parseDateOnly(t.transaction_date) <= end
           )
           .reduce((sum, t) => sum + Number(t.amount), 0);
 

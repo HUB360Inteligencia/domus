@@ -18,6 +18,7 @@ import { FinancialSummaryCards } from '@/components/finances/financial-summary-c
 import { DeleteTransactionModal } from '@/components/finances/delete-transaction-modal';
 import { formatCurrency } from '@/utils/currency';
 import { Skeleton } from '@/components/ui/skeleton';
+import { parseDateOnly } from "@/lib/dates";
 
 interface PropertyTransactionsSectionProps {
   property: Property | null | undefined;
@@ -101,7 +102,7 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
   const { start: summaryStartDate, end: summaryEndDate } = getSummaryDates();
 
   const summaryTransactions = transactions.filter(t => {
-    const transactionDate = new Date(t.transaction_date);
+    const transactionDate = parseDateOnly(t.transaction_date);
     return transactionDate >= summaryStartDate && transactionDate <= summaryEndDate;
   });
 
@@ -117,7 +118,7 @@ export const PropertyTransactionsSection: React.FC<PropertyTransactionsSectionPr
 
   // Calculate period analysis
   const periodTransactions = periodStartDate && periodEndDate ? transactions.filter(t => {
-    const transactionDate = new Date(t.transaction_date);
+    const transactionDate = parseDateOnly(t.transaction_date);
     return transactionDate >= periodStartDate && transactionDate <= periodEndDate;
   }) : [];
 

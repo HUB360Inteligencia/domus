@@ -3,7 +3,7 @@ import { AgendaEvent, AgendaEventSource, AgendaEventStatus, AgendaEventType } fr
 export const agendaTypeLabels: Record<AgendaEventType, string> = {
   appointment: "Compromisso",
   task: "Tarefa",
-  maintenance: "Manutencao",
+  maintenance: "Manutenção",
   inspection: "Vistoria",
   document: "Documento",
   contract: "Contrato",
@@ -25,7 +25,7 @@ export const agendaSourceLabels: Record<AgendaEventSource, string> = {
 export const agendaStatusLabels: Record<AgendaEventStatus, string> = {
   scheduled: "Agendado",
   in_progress: "Em andamento",
-  completed: "Concluido",
+  completed: "Concluído",
   cancelled: "Cancelado",
   overdue: "Atrasado",
 };

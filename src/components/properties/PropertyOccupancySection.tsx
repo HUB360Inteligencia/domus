@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePropertyOccupancy } from '@/hooks/use-property-occupancy';
 import { usePropertyFinancialMetrics } from '@/hooks/use-property-financial-metrics';
+import { parseDateOnly } from "@/lib/dates";
 
 interface PropertyOccupancySectionProps {
   property: Property | null | undefined;
@@ -99,8 +100,8 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
 
   const getOccupancyStatusBadge = (period: any) => {
     const now = new Date();
-    const startDate = new Date(period.start_date);
-    const endDate = period.end_date ? new Date(period.end_date) : null;
+    const startDate = parseDateOnly(period.start_date);
+    const endDate = period.end_date ? parseDateOnly(period.end_date) : null;
 
     if (!endDate || endDate > now) {
       return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
@@ -111,8 +112,8 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
 
   const currentOccupancy = occupancyPeriods.find(period => {
     const now = new Date();
-    const startDate = new Date(period.start_date);
-    const endDate = period.end_date ? new Date(period.end_date) : null;
+    const startDate = parseDateOnly(period.start_date);
+    const endDate = period.end_date ? parseDateOnly(period.end_date) : null;
     return startDate <= now && (!endDate || endDate > now);
   });
 
@@ -259,8 +260,8 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
             <div className="flex justify-between items-center">
               <span>
                 Existe um contrato ativo para este imóvel com <strong>{activeContract.tenant_name}</strong>
-                {' '}de {format(new Date(activeContract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
-                {' '}até {format(new Date(activeContract.end_date), 'dd/MM/yyyy', { locale: ptBR })}.
+                {' '}de {format(parseDateOnly(activeContract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                {' '}até {format(parseDateOnly(activeContract.end_date), 'dd/MM/yyyy', { locale: ptBR })}.
               </span>
               {!currentOccupancy && (
                 <Button 
@@ -338,9 +339,9 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
                 </div>
                 <p className="font-medium">{currentOccupancy.tenant_name}</p>
                 <p className="text-sm text-muted-foreground">
-                  Desde {format(new Date(currentOccupancy.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  Desde {format(parseDateOnly(currentOccupancy.start_date), 'dd/MM/yyyy', { locale: ptBR })}
                   {currentOccupancy.end_date && 
-                    ` até ${format(new Date(currentOccupancy.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
+                    ` até ${format(parseDateOnly(currentOccupancy.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
                   }
                 </p>
                 {currentOccupancy.notes && (
@@ -385,9 +386,9 @@ export const PropertyOccupancySection: React.FC<PropertyOccupancySectionProps> =
                     </div>
                     <p className="font-medium">{period.tenant_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(period.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(parseDateOnly(period.start_date), 'dd/MM/yyyy', { locale: ptBR })}
                       {period.end_date && 
-                        ` - ${format(new Date(period.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
+                        ` - ${format(parseDateOnly(period.end_date), 'dd/MM/yyyy', { locale: ptBR })}`
                       }
                     </p>
                     {period.notes && (

@@ -4,6 +4,7 @@ import { Contract, ContractStatus, SignatureStatus } from '@/types/contract';
 import { Json } from '@/integrations/supabase/types';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
 // Helper function to convert Json to proper type
 const convertJsonToVariableRentValues = (jsonValue: Json | null) => {
   if (!jsonValue) return null;
@@ -47,8 +48,8 @@ export async function fetchContractStats(): Promise<ContractStats> {
   thirtyDaysFromNow.setDate(now.getDate() + 30);
   
   // Format dates for Supabase query
-  const today = now.toISOString().split('T')[0];
-  const thirtyDaysLater = thirtyDaysFromNow.toISOString().split('T')[0];
+  const today = toDateOnlyString(now);
+  const thirtyDaysLater = toDateOnlyString(thirtyDaysFromNow);
   
   // Get total contracts
   const { data: allContracts, error: totalError } = await supabase
@@ -167,7 +168,7 @@ export async function generateFinancialChartData(): Promise<any[]> {
   const chartData = months.map((monthData) => {
     // Sum contracts active in this month
     const monthlyIncome = contracts?.reduce((sum, contract) => {
-      const startDate = new Date(contract.start_date);
+      const startDate = parseDateOnly(contract.start_date);
       // Check if contract was active in this month
       if (startDate <= new Date(monthData.year, monthData.month, 1)) {
         return sum + (contract.value || 0);
@@ -204,8 +205,8 @@ export const fetchUpcomingEvents = async () => {
         id, title, end_date, status, property:properties(title)
       `)
       .eq('status', 'active')
-      .lte('end_date', thirtyDaysLater.toISOString().split('T')[0])
-      .gte('end_date', today.toISOString().split('T')[0])
+      .lte('end_date', toDateOnlyString(thirtyDaysLater))
+      .gte('end_date', toDateOnlyString(today))
       .order('end_date', { ascending: true });
 
     if (expiringError) {
@@ -246,7 +247,7 @@ export const fetchUpcomingEvents = async () => {
         title: contract.title,
         property_title: contract.property?.[0]?.title || 'Unknown Property',
         type: 'payment',
-        date: eventDate.toISOString().split('T')[0],
+        date: toDateOnlyString(eventDate),
         amount: contract.value
       };
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -258,7 +259,7 @@ export const fetchUpcomingEvents = async () => {
       property_title: contract.property?.[0]?.title || 'Unknown Property',
       type: 'expiration',
       date: contract.end_date,
-      daysRemaining: Math.ceil((new Date(contract.end_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      daysRemaining: Math.ceil((parseDateOnly(contract.end_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     }));
 
     return {

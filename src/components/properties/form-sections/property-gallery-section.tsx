@@ -6,26 +6,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Images, Upload, X, Star, GripVertical } from 'lucide-react';
+import { Images, Upload, X, Star, GripVertical, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { PropertyImage } from '@/types/property';
+
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 interface PropertyGallerySectionProps {
   images: PropertyImage[];
   onImagesChange: (images: PropertyImage[]) => void;
+  /** Na edição o imóvel já pode ter capa: fotos novas não viram principal automaticamente. */
+  isEditing?: boolean;
 }
 
-export function PropertyGallerySection({ images, onImagesChange }: PropertyGallerySectionProps) {
+export function PropertyGallerySection({ images, onImagesChange, isEditing = false }: PropertyGallerySectionProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newImages: PropertyImage[] = files.map(file => ({
-      name: file.name.split('.')[0],
+    const selected = Array.from(e.target.files || []);
+    const files = selected.filter(file => file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE_BYTES);
+    const rejected = selected.length - files.length;
+    if (rejected > 0) {
+      toast.error(`${rejected} arquivo(s) ignorado(s): envie apenas imagens de até 10MB.`);
+    }
+    const hasPrimary = images.some(img => img.is_primary);
+    const newImages: PropertyImage[] = files.map((file, index) => ({
+      name: file.name.replace(/\.[^.]+$/, ''),
       description: '',
       file,
       url: URL.createObjectURL(file),
-      is_primary: images.length === 0,
-      display_order: images.length
+      // Só a primeira foto de um cadastro novo vira capa automaticamente
+      is_primary: !isEditing && !hasPrimary && index === 0,
+      display_order: images.length + index
     }));
     
     onImagesChange([...images, ...newImages]);
@@ -40,10 +52,12 @@ export function PropertyGallerySection({ images, onImagesChange }: PropertyGalle
   };
 
   const removeImage = (index: number) => {
+    const removed = images[index];
+    if (removed?.url?.startsWith('blob:')) URL.revokeObjectURL(removed.url);
     const updatedImages = images.filter((_, i) => i !== index);
-    // Se removeu a imagem principal, define a primeira como principal
-    if (images[index]?.is_primary && updatedImages.length > 0) {
-      updatedImages[0].is_primary = true;
+    // Se removeu a imagem principal (cadastro novo), a primeira restante assume
+    if (removed?.is_primary && updatedImages.length > 0 && !isEditing) {
+      updatedImages[0] = { ...updatedImages[0], is_primary: true };
     }
     onImagesChange(updatedImages);
   };
@@ -93,6 +107,12 @@ export function PropertyGallerySection({ images, onImagesChange }: PropertyGalle
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isEditing && (
+          <p className="flex items-start gap-2 rounded-2xl bg-muted/60 p-3 text-sm text-muted-foreground">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+            As fotos já cadastradas ficam na aba "Fotos" do imóvel. Aqui você pode adicionar novas — marque a estrela para torná-la a capa.
+          </p>
+        )}
         <div>
           <Label htmlFor="image-upload">Adicionar Fotos</Label>
           <div className="flex items-center gap-2 mt-2">

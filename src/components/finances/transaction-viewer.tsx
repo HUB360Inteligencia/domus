@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FileText, Eye, Calendar, CreditCard, MapPin, Tag, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { parseDateOnly } from "@/lib/dates";
 
 interface TransactionViewerProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export const TransactionViewer: React.FC<TransactionViewerProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    return format(parseDateOnly(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
   // Parse rental details if it's a rental management transaction

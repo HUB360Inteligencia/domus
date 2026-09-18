@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
 export interface FinancialMetrics {
   totalRevenue: number;
   totalExpenses: number;
@@ -54,8 +55,8 @@ const getMonthDateRange = (monthsAgo: number = 0) => {
   const endDate = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 0);
   
   return {
-    start: startDate.toISOString().split('T')[0],
-    end: endDate.toISOString().split('T')[0]
+    start: toDateOnlyString(startDate),
+    end: toDateOnlyString(endDate)
   };
 };
 
@@ -202,7 +203,7 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
       .from('financial_transactions')
       .select('amount, transaction_type, transaction_date')
       .eq('user_id', session.data.session.user.id)
-      .gte('transaction_date', startDate.toISOString().split('T')[0])
+      .gte('transaction_date', toDateOnlyString(startDate))
       .order('transaction_date', { ascending: true });
 
     if (error) throw error;
@@ -223,7 +224,7 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
     }, {} as Record<string, { revenue: number; expenses: number }>);
 
     transactions?.forEach(transaction => {
-      const date = new Date(transaction.transaction_date);
+      const date = parseDateOnly(transaction.transaction_date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyData[monthKey]) {

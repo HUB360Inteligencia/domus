@@ -43,7 +43,7 @@ export function AgendaCalendarGrid({
     <section className="premium-panel dark:premium-panel-dark min-w-0 rounded-2xl p-3 shadow-sm md:p-4">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase text-accent">Calendario</div>
+          <div className="text-xs font-semibold uppercase text-accent">Calendário</div>
           <h2 className="mt-1 text-xl font-semibold capitalize text-foreground">
             {format(month, "MMMM yyyy", { locale: ptBR })}
           </h2>
@@ -52,7 +52,7 @@ export function AgendaCalendarGrid({
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl" onClick={() => onMonthChange(subMonths(month, 1))}>
             <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Mes anterior</span>
+            <span className="sr-only">Mês anterior</span>
           </Button>
           <Button variant="outline" className="h-10 rounded-xl px-3" onClick={() => onMonthChange(new Date())}>
             <CalendarDays className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function AgendaCalendarGrid({
           </Button>
           <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl" onClick={() => onMonthChange(addMonths(month, 1))}>
             <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Proximo mes</span>
+            <span className="sr-only">Próximo mês</span>
           </Button>
         </div>
       </div>

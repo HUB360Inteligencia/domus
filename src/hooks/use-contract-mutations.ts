@@ -1,5 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateFinancialData } from '@/lib/query-invalidation';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -39,6 +40,7 @@ export const useContractMutations = () => {
     mutationFn: createContract,
     onSuccess: async (newContract) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      void invalidateFinancialData(queryClient);
       queryClient.invalidateQueries({ queryKey: ['contracts', 'property', newContract.property_id] });
       
       // Se o contrato foi criado como pendente, criar uma atividade
@@ -75,6 +77,7 @@ export const useContractMutations = () => {
     mutationFn: updateContract,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      void invalidateFinancialData(queryClient);
       queryClient.invalidateQueries({ queryKey: ['contract', data.id] });
       toast.success('Contrato atualizado com sucesso!');
     },
@@ -87,6 +90,7 @@ export const useContractMutations = () => {
     mutationFn: deleteContract,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      void invalidateFinancialData(queryClient);
       toast.success('Contrato excluído com sucesso!');
     },
     onError: (error: any) => {
@@ -110,6 +114,7 @@ export const useContractMutations = () => {
     mutationFn: ({ id, status }: { id: string; status: any }) => updateContractStatus(id, status),
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      void invalidateFinancialData(queryClient);
       queryClient.invalidateQueries({ queryKey: ['contract', data.id] });
       queryClient.invalidateQueries({ queryKey: ['contracts', 'property', data.property_id] });
       
@@ -143,6 +148,7 @@ export const useContractMutations = () => {
     mutationFn: ({ id, status }: { id: string; status: any }) => updateSignatureStatus(id, status),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      void invalidateFinancialData(queryClient);
       queryClient.invalidateQueries({ queryKey: ['contract', data.id] });
       toast.success(`Status da assinatura alterado para: ${data.signature_status}`);
     },

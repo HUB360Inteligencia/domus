@@ -40,6 +40,7 @@ import {
 } from '@/types/contact';
 import { ContactStatusBadge } from './contact-status-badge';
 import { ContactRoleChips } from './contact-role-chips';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ContactDetailProps {
   contactId: string;
@@ -354,7 +355,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
                       <div className="min-w-0">
                         <p className="truncate font-medium">{tx.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(tx.transaction_date), 'dd/MM/yyyy', { locale: ptBR })}
+                          {format(parseDateOnly(tx.transaction_date), 'dd/MM/yyyy', { locale: ptBR })}
                           {' · '}
                           {tx.category}
                         </p>

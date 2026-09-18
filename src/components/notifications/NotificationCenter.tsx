@@ -73,7 +73,7 @@ const getRelatedLabel = (notification: Notification) => {
     case "contract":
       return "Contrato";
     case "property":
-      return "Imovel";
+      return "Imóvel";
     case "financial_transaction":
       return "Financeiro";
     case "document":
@@ -83,7 +83,11 @@ const getRelatedLabel = (notification: Notification) => {
   }
 };
 
-export const NotificationCenter = () => {
+// Varredura de vencimentos/lembretes: uma vez por sessão, mesmo com mais de um
+// NotificationCenter montado (header desktop + barra mobile).
+let hasSweptThisSession = false;
+
+export const NotificationCenter = ({ triggerClassName }: { triggerClassName?: string }) => {
   const {
     notifications,
     unreadCount,
@@ -100,10 +104,9 @@ export const NotificationCenter = () => {
   // checkExpirations is backed by a TanStack mutation whose object identity
   // changes on every render, so depending on it here would re-fire the effect
   // endlessly (each run invalidates ['notifications'] -> refetch -> re-render).
-  const hasSweptRef = React.useRef(false);
   React.useEffect(() => {
-    if (hasSweptRef.current) return;
-    hasSweptRef.current = true;
+    if (hasSweptThisSession) return;
+    hasSweptThisSession = true;
 
     void checkExpirations();
     void processDueAgendaReminders().then((processed) => {
@@ -119,7 +122,7 @@ export const NotificationCenter = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative h-11 w-11 rounded-2xl" aria-label="Notificacoes">
+        <Button variant="outline" size="icon" className={cn("relative h-11 w-11 rounded-2xl", triggerClassName)} aria-label="Notificações">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge
@@ -135,9 +138,9 @@ export const NotificationCenter = () => {
       <DropdownMenuContent align="end" className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl p-0">
         <div className="flex items-center justify-between gap-3 p-4">
           <div>
-            <h3 className="font-semibold text-foreground">Notificacoes</h3>
+            <h3 className="font-semibold text-foreground">Notificações</h3>
             <p className="text-xs text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} nao lida${unreadCount > 1 ? "s" : ""}` : "Tudo em dia"}
+              {unreadCount > 0 ? `${unreadCount} não lida${unreadCount > 1 ? "s" : ""}` : "Tudo em dia"}
             </p>
           </div>
           {unreadCount > 0 && (
@@ -169,7 +172,7 @@ export const NotificationCenter = () => {
           ) : notifications.length === 0 ? (
             <div className="flex min-h-[180px] flex-col items-center justify-center p-5 text-center text-muted-foreground">
               <Bell className="h-9 w-9 opacity-50" />
-              <p className="mt-3 text-sm font-medium text-foreground">Nenhuma notificacao</p>
+              <p className="mt-3 text-sm font-medium text-foreground">Nenhuma notificação</p>
               <p className="mt-1 text-xs">Lembretes da Agenda aparecem aqui dentro do Domus.</p>
             </div>
           ) : (
@@ -262,7 +265,7 @@ export const NotificationCenter = () => {
                           size="icon"
                           onClick={() => void deleteNotification(notification.id)}
                           className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive"
-                          aria-label="Excluir notificacao"
+                          aria-label="Excluir notificação"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

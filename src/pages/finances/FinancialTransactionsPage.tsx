@@ -102,15 +102,8 @@ export default function FinancialTransactionsPage() {
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
-    // If on specific tab, ensure transaction type matches
-    if (activeTab === 'income') {
-      data.transaction_type = 'income';
-    } else if (activeTab === 'expense') {
-      data.transaction_type = 'expense';
-    } else if (newTransactionType) {
-      data.transaction_type = newTransactionType;
-    }
-    
+    // O tipo vem do formulário: a aba ativa só define o valor inicial (via initialData),
+    // sem sobrescrever uma troca feita pelo usuário.
     try {
       if (selectedTransaction?.id) {
         await updateTransaction({ ...data, id: selectedTransaction.id });

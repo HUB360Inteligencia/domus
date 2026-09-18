@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { parseCurrencyInput, formatCurrency } from '@/utils/currency';
+import { parseDateOnly } from "@/lib/dates";
 
 interface PropertyInvestmentSectionProps {
   property: Property | null | undefined;
@@ -296,7 +297,7 @@ export const PropertyInvestmentSection: React.FC<PropertyInvestmentSectionProps>
                     </div>
                     <p className="text-sm text-muted-foreground">{investment.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(parseDateOnly(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

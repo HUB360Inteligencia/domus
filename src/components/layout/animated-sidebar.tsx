@@ -1,7 +1,7 @@
 
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, ChevronLeft, ChevronDown, LogOut, Bell } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth as useAuthHook } from "@/lib/auth";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface Links {
   label: string;
@@ -141,9 +143,6 @@ const DesktopSidebar = ({
   children,
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
-  const { open, setOpen, animate } = useSidebar();
-  const [hoveringToggle, setHoveringToggle] = useState(false);
-  
   return (
     <motion.div
       className={cn(
@@ -158,42 +157,8 @@ const DesktopSidebar = ({
       {...props}
     >
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        {children}
+        {children as React.ReactNode}
       </div>
-      
-      {/* Toggle button — hidden but preserved for future use */}
-      {false && animate && (
-        <div 
-          className="absolute -right-4 top-0 bottom-0 w-8 z-50 flex items-start pt-7"
-          onMouseEnter={() => setHoveringToggle(true)}
-          onMouseLeave={() => setHoveringToggle(false)}
-        >
-          <motion.button
-            onClick={() => setOpen(!open)}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-2xl cursor-pointer",
-              "border border-white/70 bg-white/90 text-sidebar-foreground",
-              "shadow-[0_14px_35px_-24px_rgba(31,27,24,0.9)] hover:shadow-xl",
-              "transition-colors duration-150",
-              "hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
-            )}
-            initial={false}
-            animate={{ 
-              opacity: hoveringToggle ? 1 : 0,
-              scale: hoveringToggle ? 1 : 0.8
-            }}
-            transition={{ duration: 0.15 }}
-            aria-label={open ? "Recolher menu" : "Expandir menu"}
-          >
-            <ChevronLeft 
-              className={cn(
-                "h-3.5 w-3.5 transition-transform duration-300 ease-out",
-                !open && "rotate-180"
-              )} 
-            />
-          </motion.button>
-        </div>
-      )}
     </motion.div>
   );
 };
@@ -225,13 +190,8 @@ const MobileSidebar = () => {
           <span className="font-semibold text-sm tracking-tight">Domus</span>
         </div>
 
-        {/* Right: Notification bell */}
-        <button
-          className="h-10 w-10 flex justify-center items-center rounded-xl hover:bg-sidebar-accent/60 active:scale-95 transition-all duration-150"
-          aria-label="Notificações"
-        >
-          <Bell className="text-sidebar-foreground h-[18px] w-[18px]" />
-        </button>
+        {/* Right: Notification center */}
+        <NotificationCenter triggerClassName="h-10 w-10 rounded-xl border-0 bg-transparent shadow-none hover:bg-sidebar-accent/60" />
       </div>
 
       {/* Mobile spacer for fixed header */}
@@ -295,6 +255,7 @@ const MobileSidebarFooter = () => {
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold truncate text-sidebar-foreground">{displayName}</p>
         </div>
+        <ThemeToggle />
         <button 
           onClick={() => { signOut(); setOpen(false); }}
           className="h-8 w-8 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all duration-200 flex-shrink-0"
@@ -393,7 +354,12 @@ const SectionDivider = () => {
 
 const SidebarMenuContent = () => {
   const location = useLocation();
-  const [financeSubmenuOpen, setFinanceSubmenuOpen] = useState(false);
+  const isFinanceRoute = location.pathname.startsWith('/finances');
+  const [financeSubmenuOpen, setFinanceSubmenuOpen] = useState(isFinanceRoute);
+
+  React.useEffect(() => {
+    if (isFinanceRoute) setFinanceSubmenuOpen(true);
+  }, [isFinanceRoute]);
   const { open, animate, setOpen } = useSidebar();
   const { user } = useAuthHook();
   
@@ -463,7 +429,11 @@ const SidebarMenuContent = () => {
           <SidebarLink 
             key={item.label} 
             link={item} 
-            isActive={location.pathname === item.href || (item.href === "/agenda" && location.pathname.startsWith("/activities")) || (item.href === "/contacts" && location.pathname.startsWith("/contacts"))}
+            isActive={
+              location.pathname === item.href ||
+              location.pathname.startsWith(`${item.href}/`) ||
+              (item.href === "/agenda" && location.pathname.startsWith("/activities"))
+            }
           />
         ))}
         
@@ -546,14 +516,27 @@ const SidebarMenuContent = () => {
         <>
       <SectionDivider />
       <SectionLabel label="Inteligência artificial" />
-      <SidebarLink 
-        link={{
-          label: "Assistente IA",
-          href: "/ai-assistant",
-          icon: <Sparkles className="h-5 w-5" />,
-        }}
-        isActive={location.pathname === "/ai-assistant"}
-      />
+      <SidebarTooltip label="Assistente IA — em breve" show={!open}>
+        <div
+          aria-disabled="true"
+          className={cn(
+            "flex h-11 cursor-not-allowed items-center gap-3 rounded-2xl text-sidebar-foreground/45",
+            open ? "px-3" : "px-0 justify-center"
+          )}
+        >
+          <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          {open && (
+            <>
+              <span className="text-[13px] leading-none">Assistente IA</span>
+              <span className="ml-auto rounded-full bg-sidebar-accent px-2 py-0.5 text-[10px] font-semibold uppercase text-sidebar-foreground/60">
+                Em breve
+              </span>
+            </>
+          )}
+        </div>
+      </SidebarTooltip>
         </>
       )}
 

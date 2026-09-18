@@ -96,7 +96,7 @@ export function LinkedContactsSection({ entity, entityId }: LinkedContactsSectio
         ) : (
           <div className="space-y-2">
             {links.map((link) => {
-              const contact = (link as { contact?: Contact }).contact;
+              const contact = (link as unknown as { contact?: Contact }).contact;
               return (
                 <div
                   key={link.id}

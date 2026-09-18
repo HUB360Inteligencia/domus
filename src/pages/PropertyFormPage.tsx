@@ -1,81 +1,85 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PropertyForm } from '@/components/properties/property-form';
-import { useProperties } from '@/hooks/use-properties';
-import { usePropertyFormSubmission } from '@/hooks/use-property-form-submission';
-import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
+import { PropertyForm } from '@/components/properties/property-form';
+import { usePropertyFormSubmission } from '@/hooks/use-property-form-submission';
+import { useBackNavigation } from '@/hooks/use-back-navigation';
+import { fetchPropertyById } from '@/api/properties';
 import { PropertyFormData } from '@/types/property';
 
 export default function PropertyFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  const { 
-    setSelectedPropertyId, 
-    selectedProperty, 
-    isLoading 
-  } = useProperties();
+  const isEditMode = Boolean(id);
+  const goBack = useBackNavigation(isEditMode ? `/properties/${id}` : '/properties');
 
   const { submitProperty, isSubmitting } = usePropertyFormSubmission();
 
-  // Load property data for editing
-  useEffect(() => {
-    if (id) {
-      console.log('Edit mode detected for property ID:', id);
-      setSelectedPropertyId(id);
-      setIsEditMode(true);
-    } else {
-      console.log('Create mode detected');
-      setIsEditMode(false);
-      setSelectedPropertyId(null);
-    }
-  }, [id, setSelectedPropertyId]);
+  const { data: property, isLoading, isError } = useQuery({
+    queryKey: ['property', id],
+    queryFn: () => fetchPropertyById(id || ''),
+    enabled: isEditMode,
+  });
 
   const handleSubmit = useCallback(async (data: PropertyFormData) => {
-    console.log('Property form submitted:', data);
-    
     try {
-      const result = await submitProperty(data, isEditMode, id);
-      
-      if (result) {
-        // Success - navigate back to properties list
-        navigate('/properties');
+      const savedId = await submitProperty(data, isEditMode, id);
+      if (savedId) {
+        // Abre o imóvel salvo para o usuário conferir, adicionar fotos, contratos etc.
+        navigate(`/properties/${savedId}`, { replace: true });
       }
-      // Error handling is done inside submitProperty hook
     } catch (error) {
       console.error('Error in form submission:', error);
-      toast.error('Erro inesperado ao salvar propriedade');
+      toast.error('Erro inesperado ao salvar o imóvel');
     }
   }, [submitProperty, isEditMode, id, navigate]);
 
-  const handleCancel = useCallback(() => {
-    navigate('/properties');
-  }, [navigate]);
-
-  // Show loading state only when necessary
-  if (isEditMode && isLoading && !selectedProperty) {
+  if (isEditMode && isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-12 w-12 animate-spin text-petroleum mb-4" />
+        <Loader2 className="mb-4 h-10 w-10 animate-spin text-accent" />
         <p className="text-muted-foreground">Carregando dados do imóvel...</p>
       </div>
     );
   }
 
+  if (isEditMode && (isError || !property)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <h2 className="text-lg font-semibold">Imóvel não encontrado</h2>
+        <p className="mb-6 mt-2 text-muted-foreground">Não foi possível carregar este imóvel para edição.</p>
+        <Button onClick={() => navigate('/properties')}>Ver todos os imóveis</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">
-        {isEditMode ? 'Editar Imóvel' : 'Novo Imóvel'}
-      </h1>
-      
+    <div className="mx-auto max-w-5xl space-y-6">
+      <Button variant="ghost" size="sm" onClick={goBack} className="-ml-2">
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Button>
+
+      <PageHeader
+        title={isEditMode ? 'Editar imóvel' : 'Novo imóvel'}
+        description={
+          isEditMode
+            ? property?.title
+            : 'Cadastre os dados, a localização e as fotos do imóvel.'
+        }
+        className="mb-0"
+      />
+
       <PropertyForm
-        key={selectedProperty?.id || 'new'}
-        initialData={isEditMode ? selectedProperty : undefined}
+        key={property?.id || 'new'}
+        initialData={isEditMode ? property : undefined}
         onSubmit={handleSubmit}
-        onCancel={handleCancel}
+        onCancel={goBack}
         isLoading={isSubmitting}
       />
     </div>

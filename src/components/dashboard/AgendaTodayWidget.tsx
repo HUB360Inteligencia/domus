@@ -208,7 +208,7 @@ export function AgendaTodayWidget() {
           <div className="flex min-h-[176px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 px-4 text-center text-muted-foreground">
             <CalendarClock className="mb-3 h-10 w-10 opacity-50" />
             <p className="text-sm">
-              {viewMode === "today" ? "Nada marcado para hoje" : "Sem eventos nos proximos 7 dias"}
+              {viewMode === "today" ? "Nada marcado para hoje" : "Sem eventos nos próximos 7 dias"}
             </p>
             <p className="mt-1 text-xs">{format(today, "dd/MM/yyyy")}</p>
           </div>

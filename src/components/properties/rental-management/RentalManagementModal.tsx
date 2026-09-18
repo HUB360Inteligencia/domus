@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toDateOnlyString } from "@/lib/dates";
 
 interface RentalItem {
   id: string;
@@ -219,7 +220,7 @@ export const RentalManagementModal: React.FC<RentalManagementModalProps> = ({
       // Usar o dia de vencimento do contrato ou dia 1 se não houver contrato
       const paymentDay = activeContract?.payment_day || 1;
       const transactionDate = new Date(selectedYear, selectedMonth, paymentDay);
-      const formattedDate = transactionDate.toISOString().split('T')[0];
+      const formattedDate = toDateOnlyString(transactionDate);
 
       const defaultCategory = categories.find(c => c.type === (balance >= 0 ? 'income' : 'expense'));
 

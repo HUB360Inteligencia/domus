@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Banknote, ImageIcon, Info, MapPin, Receipt, Ticket, TrendingUp, WalletCards, Activity, Users } from "lucide-react";
 import { LinkedContactsSection } from "@/components/contacts/linked-contacts-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,8 @@ const formatFeatureLabel = (feature: string) =>
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+const PROPERTY_TABS = ["overview", "financial", "transactions", "activities", "contracts", "contacts", "photos"];
+
 const getStatusLabel = (status?: string | null) => statusLabels[status || ""] || status || "N/A";
 
 export const PropertyDetail: React.FC<PropertyDetailProps> = ({
@@ -68,7 +71,15 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   onDelete,
   isDeleting,
 }) => {
-  const [activeTab, setActiveTab] = useState("overview");
+  // A aba ativa fica na URL (?tab=) para que "Voltar" de outra tela reabra a mesma aba
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = PROPERTY_TABS.includes(searchParams.get("tab") || "") ? (searchParams.get("tab") as string) : "overview";
+  const setActiveTab = (tab: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "overview") next.delete("tab");
+    else next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
 
   const featureItems = useMemo(() => {
     const features = property?.features;
@@ -137,7 +148,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         />
       </section>
 
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
         <TabsList className="premium-panel dark:premium-panel-dark grid h-auto grid-cols-2 gap-1 rounded-[2rem] p-1 md:grid-cols-7">
           <TabsTrigger value="overview" className="flex h-11 items-center gap-2 rounded-[1.5rem]">
             <Info className="h-4 w-4" />
@@ -335,7 +346,7 @@ function SnapshotCard({
       className={cn(
         "animate-rise rounded-[2rem] border p-5",
         featured
-          ? "premium-gradient text-primary-foreground shadow-[0_28px_75px_-48px_rgba(80,52,31,0.95)]"
+          ? "premium-gradient text-white shadow-[0_28px_75px_-48px_rgba(80,52,31,0.95)]"
           : "premium-panel dark:premium-panel-dark"
       )}
     >

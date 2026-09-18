@@ -1,17 +1,133 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { subMonths } from 'date-fns';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
+
 export interface PropertyFinancialMetrics {
+  /** Resultado líquido médio mensal dos últimos 12 meses sobre o capital investido (%). */
   monthlyProfitability: number;
+  /** Resultado líquido acumulado (todo o histórico) sobre o capital investido (%). */
   accumulatedROI: number;
+  /** Percentual de dias sem contrato nos últimos 12 meses. */
   vacancyRate: number;
+  /** Receita e despesa acumuladas (todo o histórico). */
   totalRevenue: number;
   totalExpenses: number;
   netIncome: number;
+  /** Receita, despesa e resultado dos últimos 12 meses. */
+  revenueLast12Months: number;
+  expensesLast12Months: number;
+  netIncomeLast12Months: number;
+  /** Valor de compra + investimentos adicionais. */
   totalInvestment: number;
+  /** Base usada nos percentuais: investimento total, ou valor de mercado quando não há custo cadastrado. */
+  capitalBase: number;
 }
+
+export interface PropertyFinancialInputs {
+  property: { purchase_value?: number | null; total_investment?: number | null; value?: number | null };
+  transactions: Array<{ amount: number | null; transaction_type: string; transaction_date: string }>;
+  investments: Array<{ amount: number | null }>;
+  contracts: Array<{ start_date: string; end_date: string | null; status: string }>;
+  now?: Date;
+}
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+const sumBy = <T,>(items: T[], pick: (item: T) => number) =>
+  items.reduce((sum, item) => sum + (Number(pick(item)) || 0), 0);
+
+/**
+ * Taxa de vacância dos últimos 12 meses, unindo os períodos de contrato para
+ * não contar em dobro dias cobertos por contratos sobrepostos.
+ */
+export const calculateVacancyRate = (
+  contracts: PropertyFinancialInputs['contracts'],
+  now: Date = new Date(),
+): number => {
+  const windowStart = subMonths(now, 12);
+  const totalDays = Math.max(1, Math.round((now.getTime() - windowStart.getTime()) / DAY_MS));
+
+  const intervals = contracts
+    .filter((contract) => contract.status !== 'cancelled' && contract.status !== 'canceled' && contract.status !== 'draft')
+    .map((contract) => {
+      const start = parseDateOnly(contract.start_date);
+      const end = contract.end_date ? parseDateOnly(contract.end_date) : now;
+      return [
+        Math.max(start.getTime(), windowStart.getTime()),
+        Math.min(end.getTime(), now.getTime()),
+      ] as const;
+    })
+    .filter(([start, end]) => Number.isFinite(start) && Number.isFinite(end) && start < end)
+    .sort((a, b) => a[0] - b[0]);
+
+  let occupiedMs = 0;
+  let cursorStart = -1;
+  let cursorEnd = -1;
+  for (const [start, end] of intervals) {
+    if (start > cursorEnd) {
+      if (cursorEnd > cursorStart) occupiedMs += cursorEnd - cursorStart;
+      cursorStart = start;
+      cursorEnd = end;
+    } else if (end > cursorEnd) {
+      cursorEnd = end;
+    }
+  }
+  if (cursorEnd > cursorStart) occupiedMs += cursorEnd - cursorStart;
+
+  const occupiedDays = Math.min(totalDays, occupiedMs / DAY_MS);
+  return Math.max(0, Math.min(100, ((totalDays - occupiedDays) / totalDays) * 100));
+};
+
+export const computePropertyFinancialMetrics = ({
+  property,
+  transactions,
+  investments,
+  contracts,
+  now = new Date(),
+}: PropertyFinancialInputs): PropertyFinancialMetrics => {
+  const oneYearAgo = subMonths(now, 12);
+
+  const income = transactions.filter((t) => t.transaction_type === 'income');
+  const expenses = transactions.filter((t) => t.transaction_type === 'expense');
+  const isRecent = (t: { transaction_date: string }) => {
+    const date = parseDateOnly(t.transaction_date);
+    return date >= oneYearAgo && date <= now;
+  };
+
+  const totalRevenue = sumBy(income, (t) => t.amount);
+  const totalExpenses = sumBy(expenses, (t) => t.amount);
+  const netIncome = totalRevenue - totalExpenses;
+
+  const revenueLast12Months = sumBy(income.filter(isRecent), (t) => t.amount);
+  const expensesLast12Months = sumBy(expenses.filter(isRecent), (t) => t.amount);
+  const netIncomeLast12Months = revenueLast12Months - expensesLast12Months;
+
+  const additionalInvestments = sumBy(investments, (inv) => inv.amount);
+  const totalInvestment = Number(property.purchase_value || 0) + additionalInvestments;
+  const capitalBase = totalInvestment > 0
+    ? totalInvestment
+    : Number(property.total_investment || property.value || 0);
+
+  const monthlyProfitability = capitalBase > 0 ? (netIncomeLast12Months / 12 / capitalBase) * 100 : 0;
+  const accumulatedROI = capitalBase > 0 ? (netIncome / capitalBase) * 100 : 0;
+  const vacancyRate = contracts.length > 0 ? calculateVacancyRate(contracts, now) : 100;
+
+  return {
+    monthlyProfitability,
+    accumulatedROI,
+    vacancyRate,
+    totalRevenue,
+    totalExpenses,
+    netIncome,
+    revenueLast12Months,
+    expensesLast12Months,
+    netIncomeLast12Months,
+    totalInvestment,
+    capitalBase,
+  };
+};
 
 export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise<PropertyFinancialMetrics> => {
   try {
@@ -20,109 +136,37 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
       throw new Error('User not authenticated');
     }
 
-    // Get property data first
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
-      .select('purchase_value, total_investment')
-      .eq('id', propertyId)
-      .single();
+    const [propertyResult, transactionsResult, investmentsResult, contractsResult] = await Promise.all([
+      supabase
+        .from('properties')
+        .select('purchase_value, total_investment, value')
+        .eq('id', propertyId)
+        .single(),
+      supabase
+        .from('financial_transactions')
+        .select('amount, transaction_type, transaction_date')
+        .eq('property_id', propertyId),
+      supabase
+        .from('property_investments')
+        .select('amount')
+        .eq('property_id', propertyId),
+      supabase
+        .from('contracts')
+        .select('start_date, end_date, status')
+        .eq('property_id', propertyId),
+    ]);
 
-    if (propertyError) throw propertyError;
+    if (propertyResult.error) throw propertyResult.error;
+    if (transactionsResult.error) throw transactionsResult.error;
+    if (investmentsResult.error) throw investmentsResult.error;
+    if (contractsResult.error) throw contractsResult.error;
 
-    // Get all financial transactions for this property
-    const { data: transactions, error: transactionsError } = await supabase
-      .from('financial_transactions')
-      .select('amount, transaction_type, transaction_date')
-      .eq('property_id', propertyId);
-
-    if (transactionsError) throw transactionsError;
-
-    // Get all investments for this property
-    const { data: investments, error: investmentsError } = await supabase
-      .from('property_investments')
-      .select('amount')
-      .eq('property_id', propertyId);
-
-    if (investmentsError) throw investmentsError;
-
-    // Get contracts for vacancy calculation (last 12 months)
-    const oneYearAgo = subMonths(new Date(), 12);
-    const { data: contracts, error: contractsError } = await supabase
-      .from('contracts')
-      .select('start_date, end_date, status')
-      .eq('property_id', propertyId)
-      .order('start_date', { ascending: true });
-
-    if (contractsError) throw contractsError;
-
-    // Calculate metrics
-    const totalRevenue = transactions?.filter(t => t.transaction_type === 'income')
-      .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
-
-    const totalExpenses = transactions?.filter(t => t.transaction_type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
-
-    const netIncome = totalRevenue - totalExpenses;
-
-    const additionalInvestments = investments?.reduce((sum, inv) => sum + (inv.amount || 0), 0) || 0;
-    const totalInvestment = (property?.purchase_value || property?.total_investment || 0) + additionalInvestments;
-
-    // Calculate monthly profitability (last 12 months average)
-    const recentTransactions = transactions?.filter(t => 
-      new Date(t.transaction_date) >= oneYearAgo
-    ) || [];
-
-    const recentRevenue = recentTransactions.filter(t => t.transaction_type === 'income')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const recentExpenses = recentTransactions.filter(t => t.transaction_type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const recentNetIncome = recentRevenue - recentExpenses;
-    
-    const monthlyProfitability = totalInvestment > 0 ? (recentNetIncome / 12 / totalInvestment) * 100 : 0;
-
-    // Calculate accumulated ROI
-    const accumulatedROI = totalInvestment > 0 ? (netIncome / totalInvestment) * 100 : 0;
-
-    // Calculate vacancy rate based on contracts (last 12 months)
-    let vacancyRate = 0;
-    if (contracts && contracts.length > 0) {
-      const now = new Date();
-      const oneYearAgoDate = subMonths(now, 12);
-
-      let totalDays = 365;
-      let occupiedDays = 0;
-
-      for (const contract of contracts) {
-        const startDate = new Date(contract.start_date);
-        const endDate = contract.end_date ? new Date(contract.end_date) : 
-          (contract.status === 'active' ? now : startDate); // Se ativo e sem data fim, considera até hoje
-        
-        // Only consider periods within the last year
-        const periodStart = startDate > oneYearAgoDate ? startDate : oneYearAgoDate;
-        const periodEnd = endDate < now ? endDate : now;
-        
-        if (periodStart < periodEnd) {
-          const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-          occupiedDays += daysInPeriod;
-        }
-      }
-
-      // Limit occupied days to total days to avoid over 100% occupancy
-      occupiedDays = Math.min(occupiedDays, totalDays);
-      vacancyRate = Math.max(0, Math.min(100, ((totalDays - occupiedDays) / totalDays) * 100));
-    } else {
-      vacancyRate = 100; // No contracts means 100% vacancy
-    }
-
-    return {
-      monthlyProfitability,
-      accumulatedROI,
-      vacancyRate,
-      totalRevenue,
-      totalExpenses,
-      netIncome,
-      totalInvestment
-    };
+    return computePropertyFinancialMetrics({
+      property: propertyResult.data,
+      transactions: transactionsResult.data || [],
+      investments: investmentsResult.data || [],
+      contracts: contractsResult.data || [],
+    });
   } catch (error) {
     logger.error('Error fetching property financial metrics:', error);
     throw error;
@@ -131,8 +175,8 @@ export const fetchPropertyFinancialMetrics = async (propertyId: string): Promise
 
 export const fetchActiveContractForProperty = async (propertyId: string) => {
   try {
-    const now = new Date().toISOString().split('T')[0];
-    
+    const now = toDateOnlyString(new Date());
+
     const { data: contract, error } = await supabase
       .from('contracts')
       .select('*')

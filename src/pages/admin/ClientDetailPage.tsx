@@ -30,6 +30,7 @@ import {
 import { ClientUsersList } from "@/components/client-users/client-users-list";
 import { ClientUserForm } from "@/components/client-users/client-user-form";
 import { SubscriptionManagement } from "@/components/subscriptions/subscription-management";
+import { parseDateOnly } from "@/lib/dates";
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -83,7 +84,7 @@ export default function ClientDetailPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    return format(parseDateOnly(dateString), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   };
 
   return (

@@ -11,6 +11,7 @@ import { Property } from '@/types/property';
 import { usePropertyValuations } from '@/hooks/use-property-valuations';
 import { formatCurrency, parseCurrencyToNumber } from '@/lib/format';
 import { toast } from 'sonner';
+import { toDateOnlyString } from "@/lib/dates";
 
 const valuationSchema = z.object({
   value: z.number().min(0, 'Valor deve ser positivo'),
@@ -41,7 +42,7 @@ export const PropertyValuationForm: React.FC<PropertyValuationFormProps> = ({
     resolver: zodResolver(valuationSchema),
     defaultValues: {
       value: property?.value || 0,
-      valuation_date: new Date().toISOString().split('T')[0],
+      valuation_date: toDateOnlyString(new Date()),
     },
   });
 

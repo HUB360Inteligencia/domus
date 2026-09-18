@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PropertyFormData } from '@/types/property';
 import { usePropertyMutationsEnhanced } from './use-property-mutations-enhanced';
@@ -9,6 +10,7 @@ import { logger } from "@/lib/logger";
 export const usePropertyFormSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createProperty, updateProperty } = usePropertyMutationsEnhanced();
+  const queryClient = useQueryClient();
 
   const validateFormData = (data: PropertyFormData): string[] => {
     const errors: string[] = [];
@@ -17,7 +19,7 @@ export const usePropertyFormSubmission = () => {
     if (!data.address?.trim()) errors.push('Endereço é obrigatório');
     if (!data.city?.trim()) errors.push('Cidade é obrigatória');
     if (!data.state?.trim()) errors.push('Estado é obrigatório');
-    if (!data.type?.trim()) errors.push('Tipo da propriedade é obrigatório');
+    if (!data.type?.trim()) errors.push('Tipo do imóvel é obrigatório');
     if (!data.status?.trim()) errors.push('Status é obrigatório');
     if (typeof data.value !== 'number' || data.value <= 0) {
       errors.push('Valor deve ser um número maior que zero');
@@ -53,8 +55,10 @@ export const usePropertyFormSubmission = () => {
     return sanitized;
   };
 
-  const uploadImages = async (propertyId: string, images: any[]): Promise<void> => {
-    if (!images || images.length === 0) return;
+  /** Envia as fotos em sequência (evita corrida na definição da foto principal). Retorna quantas falharam. */
+  const uploadImages = async (propertyId: string, images: any[]): Promise<number> => {
+    if (!images || images.length === 0) return 0;
+    let failures = 0;
 
     logger.log(`Uploading ${images.length} images for property ${propertyId}`);
     
@@ -69,10 +73,16 @@ export const usePropertyFormSubmission = () => {
         logger.log(`Image uploaded successfully: ${image.name}`);
       } catch (error) {
         logger.error(`Failed to upload image ${image.name}:`, error);
-        toast.error(`Erro ao enviar imagem ${image.name}`);
+        failures += 1;
+        toast.error(`Erro ao enviar a foto ${image.name}`);
         // Continue with other images even if one fails
       }
     }
+
+    queryClient.invalidateQueries({ queryKey: ['property-images', propertyId] });
+    queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    return failures;
   };
 
   const submitProperty = async (
@@ -107,23 +117,28 @@ export const usePropertyFormSubmission = () => {
         logger.log(`Updating property ${propertyId}...`);
         const updatedProperty = await updateProperty({ id: propertyId, ...propertyData });
         resultPropertyId = updatedProperty.id;
-        toast.success('Propriedade atualizada com sucesso!');
+        toast.success('Imóvel atualizado com sucesso!');
       } else {
         logger.log('Creating new property...');
         const newProperty = await createProperty(propertyData);
         resultPropertyId = newProperty.id;
-        toast.success('Propriedade criada com sucesso!');
+        toast.success('Imóvel cadastrado com sucesso!');
       }
 
       // Step 5: Upload images (separate operation)
       if (images && images.length > 0) {
         logger.log('Starting image upload process...');
         try {
-          await uploadImages(resultPropertyId, images);
-          toast.success('Imagens enviadas com sucesso!');
+          const pending = images.filter((image: any) => image.file).length;
+          const failures = await uploadImages(resultPropertyId, images);
+          if (pending > 0 && failures === 0) {
+            toast.success(pending === 1 ? 'Foto enviada com sucesso!' : `${pending} fotos enviadas com sucesso!`);
+          } else if (failures > 0 && failures < pending) {
+            toast.warning(`${pending - failures} de ${pending} fotos enviadas.`);
+          }
         } catch (error) {
           logger.error('Image upload failed:', error);
-          toast.warning('Propriedade salva, mas houve erro no upload das imagens');
+          toast.warning('Imóvel salvo, mas houve erro no envio das fotos');
         }
       }
 
@@ -133,7 +148,7 @@ export const usePropertyFormSubmission = () => {
       logger.error('Property submission failed:', error);
       
       // Provide more specific error messages
-      let errorMessage = 'Erro ao salvar propriedade';
+      let errorMessage = 'Erro ao salvar o imóvel';
       
       if (error.message?.includes('fetch')) {
         errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';

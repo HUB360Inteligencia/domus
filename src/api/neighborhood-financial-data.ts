@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
+import { toDateOnlyString } from "@/lib/dates";
 export interface NeighborhoodFinancialData {
   name: string;
   revenue: number;
@@ -41,7 +42,7 @@ export const fetchNeighborhoodFinancialData = async (): Promise<NeighborhoodFina
       .select('property_id, amount, transaction_type, transaction_date')
       .eq('user_id', session.data.session.user.id)
       .in('property_id', propertyIds)
-      .gte('transaction_date', twelveMonthsAgo.toISOString().split('T')[0]);
+      .gte('transaction_date', toDateOnlyString(twelveMonthsAgo));
 
     if (transactionsError) throw transactionsError;
 

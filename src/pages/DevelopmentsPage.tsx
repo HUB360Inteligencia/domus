@@ -56,7 +56,7 @@ export default function DevelopmentsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-petroleum" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -162,7 +162,7 @@ export default function DevelopmentsPage() {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="sm">
-                    <Link to={`/developments/${development.id}/edit`}>
+                    <Link to={`/developments/edit/${development.id}`}>
                       <TrendingUp className="h-4 w-4" />
                     </Link>
                   </Button>

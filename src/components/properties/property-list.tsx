@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PropertyCoverImage } from "@/components/properties/property-cover-image";
 import {
   AlertCircle,
   BarChart3,
@@ -206,7 +207,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
         </Alert>
       )}
 
-      <section className="premium-gradient animate-rise overflow-hidden rounded-[2.5rem] p-5 text-primary-foreground shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-7">
+      <section className="premium-gradient animate-rise overflow-hidden rounded-[2.5rem] p-5 text-white shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-7">
         <div className="grid gap-7 xl:grid-cols-[0.95fr_1.05fr]">
           <div className="flex min-h-[250px] flex-col justify-between gap-8">
             <div>
@@ -471,17 +472,16 @@ function PortfolioPropertyCard({
       className="premium-panel dark:premium-panel-dark group animate-rise overflow-hidden rounded-[2rem] p-0 text-left transition-[transform,box-shadow] duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-secondary">
-        {property.image_url ? (
-          <img
-            src={property.image_url}
-            alt={property.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#242021_0%,#5a3827_58%,#c4934f_100%)]">
-            <Building className="h-12 w-12 text-white/45" />
-          </div>
-        )}
+        <PropertyCoverImage
+          src={property.image_url}
+          alt={property.title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          fallback={
+            <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#242021_0%,#5a3827_58%,#c4934f_100%)]">
+              <Building className="h-12 w-12 text-white/45" />
+            </div>
+          }
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/12 to-transparent" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
           <Badge className={cn("border font-semibold", status.overlayClassName)}>
@@ -547,13 +547,16 @@ function PortfolioPropertyListItem({ property, onSelect }: { property: Property;
       className="premium-panel dark:premium-panel-dark group flex w-full flex-col gap-4 rounded-[2rem] p-4 text-left transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 md:flex-row md:items-center"
     >
       <div className="relative h-28 w-full overflow-hidden rounded-3xl bg-secondary md:w-40">
-        {property.image_url ? (
-          <img src={property.image_url} alt={property.title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#242021,#c4934f)]">
-            <Building className="h-8 w-8 text-white/45" />
-          </div>
-        )}
+        <PropertyCoverImage
+          src={property.image_url}
+          alt={property.title}
+          className="h-full w-full object-cover"
+          fallback={
+            <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#242021,#c4934f)]">
+              <Building className="h-8 w-8 text-white/45" />
+            </div>
+          }
+        />
       </div>
 
       <div className="min-w-0 flex-1">

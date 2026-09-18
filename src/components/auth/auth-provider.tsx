@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { markPasswordRecovery } from '@/lib/password-recovery';
 import { AuthContext, AuthUser, fetchCurrentUserRole, fetchUserProfile, fetchUserRole } from '@/lib/auth';
 import type { UserRole } from '@/lib/auth';
 import { Session } from '@supabase/supabase-js';
@@ -112,7 +113,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logger.error('Error refreshing user data:', error);
       if (String(error).includes('401') || String(error).includes('Unauthorized')) {
         handleSessionError();
+        return;
       }
+      // Falha transitória (rede, perfil ausente...): libera o app com o mínimo em vez de
+      // deixar o ProtectedRoute girando para sempre com sessão válida e usuário nulo.
+      setUser((previous) => previous ?? {
+        id: currentSession.user.id,
+        email: currentSession.user.email,
+        profile: null,
+        role: 'user',
+      });
     }
   }, [prefetchPermissions]);
 
@@ -127,12 +137,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let mounted = true;
+    let unsubscribe: (() => void) | null = null;
 
     async function getInitialSession() {
       setIsLoading(true);
       try {
         // Set up auth state listener FIRST to avoid missing auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          if (!mounted) return;
           devLog('Auth state changed:', event);
 
           if (mounted) {
@@ -153,8 +165,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           } else if (event === 'TOKEN_REFRESHED') {
             devLog('Token refreshed successfully');
+          } else if (event === 'PASSWORD_RECOVERY') {
+            // Link de "esqueci minha senha": o PasswordRecoveryGate leva à tela de nova senha
+            markPasswordRecovery();
+            window.dispatchEvent(new Event('domus:password-recovery'));
           }
         });
+        unsubscribe = () => subscription.unsubscribe();
 
         // THEN check for existing session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -170,9 +187,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setIsLoading(false);
         }
 
-        return () => {
-          subscription.unsubscribe();
-        };
+        if (!mounted) unsubscribe?.();
       } catch (error) {
         logger.error('Error getting initial session:', error);
         if (mounted) {
@@ -185,6 +200,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false;
+      unsubscribe?.();
     };
   }, [refreshUserData]);
 

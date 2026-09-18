@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Receipt, Trash2, Filter, SortAsc, SortDesc, Search, Eye } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { parseDateOnly } from "@/lib/dates";
 
 interface InvestmentHistoryTableProps {
   property: Property | null | undefined;
@@ -58,7 +59,7 @@ export const InvestmentHistoryTable: React.FC<InvestmentHistoryTableProps> = ({
   };
 
   const filteredAndSortedInvestments = useMemo(() => {
-    let filtered = investments.filter(investment => {
+    const filtered = investments.filter(investment => {
       const matchesSearch = 
         investment.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         typeLabels[investment.investment_type]?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -75,8 +76,8 @@ export const InvestmentHistoryTable: React.FC<InvestmentHistoryTableProps> = ({
 
       switch (sortField) {
         case 'date':
-          aValue = new Date(a.investment_date).getTime();
-          bValue = new Date(b.investment_date).getTime();
+          aValue = parseDateOnly(a.investment_date).getTime();
+          bValue = parseDateOnly(b.investment_date).getTime();
           break;
         case 'amount':
           aValue = a.amount;
@@ -229,7 +230,7 @@ export const InvestmentHistoryTable: React.FC<InvestmentHistoryTableProps> = ({
                     <p className="text-sm text-muted-foreground mb-1">{investment.description}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                    {format(parseDateOnly(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
                   </p>
                 </div>
                 

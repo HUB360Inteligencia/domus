@@ -13,6 +13,7 @@ import { Property } from '@/types/property';
 import { PropertyInvestment } from '@/types/property-investment';
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { formatCurrency } from '@/utils/currency';
+import { parseDateOnly } from "@/lib/dates";
 
 interface InvestmentsListProps {
   property: Property | null | undefined;
@@ -133,7 +134,7 @@ export const InvestmentsList: React.FC<InvestmentsListProps> = ({
                     </span>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                    {format(parseDateOnly(investment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -197,7 +198,7 @@ export const InvestmentsList: React.FC<InvestmentsListProps> = ({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Data do Investimento</label>
                 <p className="font-medium">
-                  {format(new Date(selectedInvestment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(parseDateOnly(selectedInvestment.investment_date), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               </div>
               

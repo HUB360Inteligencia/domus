@@ -7,6 +7,7 @@ import { Activity } from '@/types/activity';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
 
 interface ActivityCalendarProps {
   activities: Activity[];
@@ -39,7 +40,7 @@ export function ActivityCalendar({
     return activities.filter(activity => {
       if (!activity.start_date && !activity.due_date) return false;
       
-      const startDate = activity.start_date ? new Date(activity.start_date) : null;
+      const startDate = activity.start_date ? parseDateOnly(activity.start_date) : null;
       const dueDate = activity.due_date ? new Date(activity.due_date) : null;
       
       return (startDate && startDate >= start && startDate <= end) ||
@@ -59,7 +60,7 @@ export function ActivityCalendar({
   
   // Get activities for a specific date
   const getActivitiesForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toDateOnlyString(date);
     
     return activities.filter(activity => {
       const startDateStr = activity.start_date ? activity.start_date.split('T')[0] : null;

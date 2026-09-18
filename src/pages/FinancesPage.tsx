@@ -57,6 +57,8 @@ import { useProperties } from "@/hooks/use-properties";
 import { useContracts } from "@/hooks/use-contracts";
 import { formatCurrency } from "@/utils/currency";
 import { cn } from "@/lib/utils";
+import { toDateOnlyString } from "@/lib/dates";
+import { isContractInForce } from "@/lib/contract-status";
 
 type TransactionTypeFilter = "all" | "income" | "expense";
 type NewTransactionType = "income" | "expense" | undefined;
@@ -102,7 +104,7 @@ const makeTransactionDefaults = (type: "income" | "expense"): TransactionFormDat
   category: "",
   subcategory: null,
   description: "",
-  transaction_date: new Date().toISOString().split("T")[0],
+  transaction_date: toDateOnlyString(new Date()),
   payment_method: null,
   recurring: false,
   recurring_frequency: null,
@@ -156,7 +158,7 @@ export default function FinancesPage() {
   );
 
   const activeContracts = useMemo(
-    () => contracts.filter((contract) => contract.status === "active"),
+    () => contracts.filter((contract) => isContractInForce(contract)),
     [contracts],
   );
 
@@ -309,7 +311,7 @@ export default function FinancesPage() {
           net,
           roi: value > 0 ? (net / value) * 100 : 0,
           expected: expectedByProperty.get(property.id) || 0,
-          status: expectedByProperty.has(property.id) ? "rented" : "open",
+          status: (expectedByProperty.has(property.id) ? "rented" : "open") as PropertyPerformance["status"],
         };
       })
       .filter((property) => property.revenue !== 0 || property.expenses !== 0 || property.expected !== 0)

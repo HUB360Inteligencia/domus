@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { removeReceiptFile } from '@/api/receipts';
+import { invalidateFinancialData } from '@/lib/query-invalidation';
 import { toast } from 'sonner';
 
 import { logger } from "@/lib/logger";
@@ -107,19 +109,27 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         query = query.lte('amount', filters.maxAmount);
       }
       
-      // Order by transaction date (newest first)
-      query = query.order('transaction_date', { ascending: false });
+      // Order by transaction date (newest first); id garante ordem estável entre páginas
+      query = query.order('transaction_date', { ascending: false }).order('id', { ascending: true });
 
-      const { data, error } = await query;
+      // O PostgREST devolve no máximo 1000 linhas por requisição: busca todas as páginas
+      // para que totais e gráficos não fiquem truncados em silêncio.
+      const PAGE_SIZE = 1000;
+      const rows: NonNullable<Awaited<typeof query>['data']> = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await query.range(from, from + PAGE_SIZE - 1);
 
-      if (error) {
-        logger.error('Error fetching financial transactions:', error);
-        toast.error('Falha ao buscar transações');
-        return [];
+        if (error) {
+          logger.error('Error fetching financial transactions:', error);
+          toast.error('Falha ao buscar transações');
+          return rows;
+        }
+
+        rows.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
       }
 
-      // Incluir todas as transações - removido o filtro que excluía rental-management
-      return data || [];
+      return rows;
     }
   });
 
@@ -160,7 +170,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       return data[0];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
+      void invalidateFinancialData(queryClient);
       toast.success('Transação criada com sucesso');
     },
     onError: (error) => {
@@ -188,7 +198,7 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
       return data[0];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
+      void invalidateFinancialData(queryClient);
       toast.success('Transação atualizada com sucesso');
     },
     onError: (error) => {
@@ -213,20 +223,6 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         logger.error('Error getting transaction before delete:', getError);
       }
       
-      // If there's a receipt, delete it from storage
-      if (transaction?.receipt_url) {
-        const receiptPath = transaction.receipt_url.split('/').pop();
-        if (receiptPath) {
-          const { error: storageError } = await supabase.storage
-            .from('transaction_receipts')
-            .remove([receiptPath]);
-            
-          if (storageError) {
-            logger.error('Error deleting receipt from storage:', storageError);
-          }
-        }
-      }
-
       // Delete the transaction from the database
       const { error } = await supabase
         .from('financial_transactions')
@@ -239,10 +235,13 @@ export const useFinancialTransactions = (initialFilters: TransactionFilters = {}
         throw error;
       }
 
+      // Só depois de apagar o lançamento removemos o arquivo do comprovante
+      await removeReceiptFile(transaction?.receipt_url);
+
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
+      void invalidateFinancialData(queryClient);
       toast.success('Transação excluída com sucesso');
     },
     onError: (error) => {

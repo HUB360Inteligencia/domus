@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { subMonths, format } from 'date-fns';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly } from "@/lib/dates";
 export interface PropertyTransaction {
   id: string;
   name: string;
@@ -53,7 +54,7 @@ export const usePropertyTransactions = (propertyId: string | null, months: numbe
 
     // Agrupar por mês
     const monthlyTotals = transactions.reduce((acc, transaction) => {
-      const monthKey = format(new Date(transaction.transaction_date), 'yyyy-MM');
+      const monthKey = format(parseDateOnly(transaction.transaction_date), 'yyyy-MM');
       acc[monthKey] = (acc[monthKey] || 0) + transaction.amount;
       return acc;
     }, {} as Record<string, number>);
@@ -67,8 +68,8 @@ export const usePropertyTransactions = (propertyId: string | null, months: numbe
   // Obter receitas mensais detalhadas
   const getMonthlyRevenues = (): MonthlyRevenue[] => {
     const monthlyData = transactions.reduce((acc, transaction) => {
-      const monthKey = format(new Date(transaction.transaction_date), 'yyyy-MM');
-      const monthName = format(new Date(transaction.transaction_date), 'MMM/yyyy');
+      const monthKey = format(parseDateOnly(transaction.transaction_date), 'yyyy-MM');
+      const monthName = format(parseDateOnly(transaction.transaction_date), 'MMM/yyyy');
       
       if (!acc[monthKey]) {
         acc[monthKey] = {

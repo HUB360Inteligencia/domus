@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useDashboardMetrics } from '@/hooks/use-dashboard-metrics';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { formatCurrency } from '@/utils/currency';
+import { parseDateOnly } from "@/lib/dates";
 
 export function MiniTrendsWidget() {
   const { transactions } = useFinancialTransactions();
@@ -13,7 +14,7 @@ export function MiniTrendsWidget() {
     const currentYear = new Date().getFullYear();
     
     const yearTransactions = transactions.filter(t => {
-      const transactionDate = new Date(t.transaction_date);
+      const transactionDate = parseDateOnly(t.transaction_date);
       return transactionDate.getFullYear() === currentYear;
     });
 

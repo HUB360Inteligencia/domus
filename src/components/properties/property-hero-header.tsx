@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { PropertyCoverImage } from "@/components/properties/property-cover-image";
 import {
   ArrowLeft,
   Bath,
@@ -167,16 +168,20 @@ export const PropertyHeroHeader: React.FC<PropertyHeroHeaderProps> = ({
 
   return (
     <>
-      <section className="premium-gradient animate-rise overflow-hidden rounded-[2.5rem] p-4 text-primary-foreground shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-5">
+      <section className="premium-gradient animate-rise overflow-hidden rounded-[2.5rem] p-4 text-white shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-5">
         <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr]">
           <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-secondary">
-            {property?.image_url ? (
-              <img src={property.image_url} alt={property.title} className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,#242021_0%,#5a3827_55%,#c4934f_100%)]">
-                <Building2 className="h-24 w-24 text-white/28" />
-              </div>
-            )}
+            <PropertyCoverImage
+              src={property?.image_url}
+              alt={property?.title || "Imóvel"}
+              loading="eager"
+              className="absolute inset-0 h-full w-full object-cover"
+              fallback={
+                <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(135deg,#242021_0%,#5a3827_55%,#c4934f_100%)]">
+                  <Building2 className="h-24 w-24 text-white/28" />
+                </div>
+              }
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/22 to-black/18" />
 
             <div className="relative z-10 flex h-full min-h-[360px] flex-col justify-between p-4 md:p-6">

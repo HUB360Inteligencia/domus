@@ -33,6 +33,7 @@ import { useProperties } from "@/hooks/use-properties";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
+import { parseDateOnly } from "@/lib/dates";
 
 const chartColors = ["#c4934f", "#6f8f74", "#9f5d4c", "#4f6f85", "#242021", "#d9b979"];
 const DASHBOARD_PERIOD_MONTHS = 7;
@@ -44,8 +45,8 @@ const translatePropertyType = (type: string) => {
     commercial: "Comercial",
     land: "Terreno",
     studio: "Studio",
-    office: "Escritorio",
-    warehouse: "Galpao",
+    office: "Escritório",
+    warehouse: "Galpão",
     store: "Loja",
     rural: "Rural",
   };
@@ -151,7 +152,7 @@ function MetricCard({
       className={cn(
         "animate-rise rounded-[2rem] border p-5 transition-[background-color,border-color,box-shadow,transform] duration-300 hover:-translate-y-1",
         featured
-          ? "premium-gradient text-primary-foreground shadow-[0_28px_75px_-48px_rgba(80,52,31,0.95)]"
+          ? "premium-gradient text-white shadow-[0_28px_75px_-48px_rgba(80,52,31,0.95)]"
           : "premium-panel dark:premium-panel-dark"
       )}
     >
@@ -261,7 +262,7 @@ export default function Dashboard() {
   const summarizeTransactions = React.useCallback((startDate: Date, endDate: Date) => {
     const summary = transactions.reduce(
       (acc, transaction) => {
-        const transactionDate = new Date(transaction.transaction_date);
+        const transactionDate = parseDateOnly(transaction.transaction_date);
 
         if (transactionDate < startDate || transactionDate > endDate) {
           return acc;
@@ -287,7 +288,7 @@ export default function Dashboard() {
   }, [transactions]);
 
   const propertyTypesData = React.useMemo(() => {
-    const typeCount = properties.reduce((acc, property) => {
+    const typeCount = properties.filter((property) => property.status !== "sold").reduce((acc, property) => {
       const type = translatePropertyType(property.type);
       acc[type] = (acc[type] || 0) + 1;
       return acc;
@@ -310,7 +311,7 @@ export default function Dashboard() {
     return months.map((monthDate) => {
       const revenue = transactions
         .filter((transaction) => {
-          const date = new Date(transaction.transaction_date);
+          const date = parseDateOnly(transaction.transaction_date);
           return (
             date.getMonth() === monthDate.getMonth() &&
             date.getFullYear() === monthDate.getFullYear() &&
@@ -321,7 +322,7 @@ export default function Dashboard() {
 
       const expenses = transactions
         .filter((transaction) => {
-          const date = new Date(transaction.transaction_date);
+          const date = parseDateOnly(transaction.transaction_date);
           return (
             date.getMonth() === monthDate.getMonth() &&
             date.getFullYear() === monthDate.getFullYear() &&
@@ -373,11 +374,11 @@ export default function Dashboard() {
   }, [summarizeTransactions]);
 
   const topProperties = React.useMemo(
-    () => [...properties].sort((a, b) => Number(b.value || 0) - Number(a.value || 0)).slice(0, 5),
+    () => properties.filter((property) => property.status !== "sold").sort((a, b) => Number(b.value || 0) - Number(a.value || 0)).slice(0, 5),
     [properties]
   );
 
-  const roiBase = metrics.totalPurchaseValue || metrics.totalMarketValue;
+  const roiBase = metrics.investmentBase;
   const averageMonthlyROI = roiBase > 0
     ? (periodSummary.balance / roiBase / DASHBOARD_PERIOD_MONTHS) * 100
     : 0;
@@ -403,7 +404,7 @@ export default function Dashboard() {
   const roiSparkline = monthlyCashFlowData.map((item) =>
     roiBase > 0 ? (item.balance / roiBase) * 100 : 0
   );
-  const valuedProperties = properties.filter((property) => Number(property.value || 0) > 0).length;
+  const valuedProperties = properties.filter((property) => property.status !== "sold" && Number(property.value || 0) > 0).length;
 
   const kpiCards: MetricCardProps[] = [
     {
@@ -422,7 +423,7 @@ export default function Dashboard() {
         },
         {
           label: "Ativos avaliados",
-          value: `${valuedProperties}/${metrics.totalProperties}`,
+          value: `${valuedProperties}/${metrics.portfolioProperties}`,
         },
       ],
       featured: true,
@@ -462,7 +463,7 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-[1540px] space-y-5 pb-8">
       <section className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-        <div className="premium-gradient animate-rise relative overflow-hidden rounded-[2.5rem] p-5 text-primary-foreground shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-7">
+        <div className="premium-gradient animate-rise relative overflow-hidden rounded-[2.5rem] p-5 text-white shadow-[0_34px_90px_-58px_rgba(31,27,24,0.95)] md:p-7">
           <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
           <div className="relative z-10 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="flex flex-col justify-between gap-6">

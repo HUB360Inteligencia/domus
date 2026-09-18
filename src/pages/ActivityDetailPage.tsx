@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { parseDateOnly } from "@/lib/dates";
 
 export default function ActivityDetailPage() {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ export default function ActivityDetailPage() {
   // Helper function to format date
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return '--';
-    return format(new Date(dateStr), "PPP", { locale: ptBR });
+    return format(parseDateOnly(dateStr), "PPP", { locale: ptBR });
   };
   
   // Find related property and contract

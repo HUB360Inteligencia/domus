@@ -8,6 +8,7 @@ import { useContractAdjustments } from '@/hooks/use-contract-adjustments';
 import { formatCurrency } from '@/lib/format';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ContractAdjustmentHistoryProps {
   contractId: string;
@@ -86,7 +87,7 @@ export function ContractAdjustmentHistory({ contractId }: ContractAdjustmentHist
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">
-                      {format(new Date(adjustment.adjustment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(parseDateOnly(adjustment.adjustment_date), 'dd/MM/yyyy', { locale: ptBR })}
                     </span>
                   </div>
                   {adjustment.applied_index && (

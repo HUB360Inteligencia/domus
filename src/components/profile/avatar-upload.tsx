@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useProfile } from '@/hooks/use-profile';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -30,9 +31,11 @@ export function AvatarUpload() {
 
   function validateAndUpload(file: File) {
     if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast.error('Formato não suportado. Use JPG, PNG, WEBP ou GIF.');
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
+      toast.error('A imagem deve ter no máximo 5MB.');
       return;
     }
 

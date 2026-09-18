@@ -17,7 +17,7 @@ type RawContact = Record<string, unknown> & { contact_roles?: unknown[] };
 const mapRawToContact = (raw: RawContact): Contact => {
   const { contact_roles, ...rest } = raw;
   return {
-    ...(rest as Contact),
+    ...(rest as unknown as Contact),
     roles: (contact_roles as ContactRole[] | undefined)?.filter((r) => !r.deleted_at) ?? [],
   };
 };

@@ -11,6 +11,7 @@ import { Loader2, Plus, Calculator } from 'lucide-react';
 import { ContractAdjustmentFormData } from '@/types/contract-adjustment';
 import { useContractAdjustments } from '@/hooks/use-contract-adjustments';
 import { formatCurrency } from '@/lib/format';
+import { toDateOnlyString } from "@/lib/dates";
 
 interface ContractAdjustmentFormProps {
   contractId: string;
@@ -25,7 +26,7 @@ export function ContractAdjustmentForm({ contractId, currentValue }: ContractAdj
   const [formData, setFormData] = useState<Partial<ContractAdjustmentFormData>>({
     contract_id: contractId,
     old_value: currentValue,
-    adjustment_date: new Date().toISOString().split('T')[0],
+    adjustment_date: toDateOnlyString(new Date()),
     applied_index: 'IPCA',
   });
 
@@ -38,7 +39,7 @@ export function ContractAdjustmentForm({ contractId, currentValue }: ContractAdj
         old_value: currentValue,
         new_value: adjustmentType === 'value' ? formData.new_value : undefined,
         adjustment_percentage: adjustmentType === 'percentage' ? formData.adjustment_percentage : undefined,
-        adjustment_date: formData.adjustment_date || new Date().toISOString().split('T')[0],
+        adjustment_date: formData.adjustment_date || toDateOnlyString(new Date()),
         adjustment_reason: formData.adjustment_reason,
         applied_index: formData.applied_index,
       });
@@ -47,7 +48,7 @@ export function ContractAdjustmentForm({ contractId, currentValue }: ContractAdj
       setFormData({
         contract_id: contractId,
         old_value: currentValue,
-        adjustment_date: new Date().toISOString().split('T')[0],
+        adjustment_date: toDateOnlyString(new Date()),
         applied_index: 'IPCA',
       });
     } catch (error) {

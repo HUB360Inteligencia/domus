@@ -57,6 +57,8 @@ import { useProperties } from "@/hooks/use-properties";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { Contract, ContractStatus } from "@/types/contract";
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
+import { getEffectiveContractStatus, isContractInForce } from "@/lib/contract-status";
 
 type PaymentState = "paid" | "late" | "due" | "scheduled" | "inactive";
 type StatusFilter = "all" | ContractStatus;
@@ -64,6 +66,9 @@ type PaymentFilter = "all" | PaymentState | "expiring";
 
 interface EnrichedContract {
   contract: Contract;
+  /** "expired" quando o cadastro diz ativo mas a vigência já terminou */
+  effectiveStatus: ContractStatus;
+  inForce: boolean;
   propertyTitle: string;
   location: string;
   paymentDate: Date | null;
@@ -98,12 +103,12 @@ const paymentLabels: Record<PaymentState, string> = {
   late: "Em atraso",
   due: "Vence em breve",
   scheduled: "A vencer",
-  inactive: "Fora da vigencia",
+  inactive: "Fora da vigência",
 };
 
 const formatDate = (date: Date | string | null) => {
   if (!date) return "-";
-  const parsedDate = typeof date === "string" ? new Date(date) : date;
+  const parsedDate = parseDateOnly(date);
   if (Number.isNaN(parsedDate.getTime())) return "-";
   return new Intl.DateTimeFormat("pt-BR").format(parsedDate);
 };
@@ -128,7 +133,7 @@ const getLastDayOfMonth = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
 const getPaymentDateForMonth = (contract: Contract, baseDate: Date) => {
-  if (contract.status !== "active") return null;
+  if (!isContractInForce(contract, baseDate)) return null;
   const paymentDay = contract.payment_due_day || contract.payment_day || 1;
   const day = Math.min(paymentDay, getLastDayOfMonth(baseDate));
   return new Date(baseDate.getFullYear(), baseDate.getMonth(), day);
@@ -156,7 +161,7 @@ const buildPaymentInitialData = (
   categoryId: string,
 ): TransactionFormData => {
   const today = new Date();
-  const propertyName = enriched.propertyTitle || "imovel";
+  const propertyName = enriched.propertyTitle || "imóvel";
 
   return {
     name: `Aluguel ${formatMonth(today)} - ${propertyName}`,
@@ -165,7 +170,7 @@ const buildPaymentInitialData = (
     category: categoryId,
     subcategory: null,
     description: `Recebimento referente ao contrato ${enriched.contract.title} com ${enriched.contract.tenant_name}.`,
-    transaction_date: today.toISOString().split("T")[0],
+    transaction_date: toDateOnlyString(today),
     payment_method: null,
     recurring: false,
     recurring_frequency: null,
@@ -235,7 +240,9 @@ const ContractsPage: React.FC = () => {
 
     return contracts.map((contract) => {
       const property = contract.property;
-      const propertyTitle = property?.title || "Imovel nao vinculado";
+      const inForce = isContractInForce(contract, today);
+      const effectiveStatus = getEffectiveContractStatus(contract, today) as ContractStatus;
+      const propertyTitle = property?.title || "Imóvel não vinculado";
       const location = [property?.neighborhood, property?.city].filter(Boolean).join(", ");
       const paymentDate = getPaymentDateForMonth(contract, today);
       const receivedThisMonth = contract.property_id
@@ -243,8 +250,8 @@ const ContractsPage: React.FC = () => {
         : 0;
       const hasPayment = contract.value > 0 && receivedThisMonth >= contract.value * 0.75;
       const daysUntilPayment = paymentDate ? diffInDays(today, paymentDate) : null;
-      const endDate = new Date(contract.end_date);
-      const startDate = new Date(contract.start_date);
+      const endDate = parseDateOnly(contract.end_date);
+      const startDate = parseDateOnly(contract.start_date);
       const daysUntilEnd = Number.isNaN(endDate.getTime()) ? null : diffInDays(today, endDate);
       const duration = Math.max(endDate.getTime() - startDate.getTime(), 1);
       const elapsed = today.getTime() - startDate.getTime();
@@ -253,7 +260,7 @@ const ContractsPage: React.FC = () => {
         : clamp((elapsed / duration) * 100);
 
       let paymentState: PaymentState = "inactive";
-      if (contract.status === "active" && paymentDate) {
+      if (inForce && paymentDate) {
         if (hasPayment) paymentState = "paid";
         else if (daysUntilPayment !== null && daysUntilPayment < 0) paymentState = "late";
         else if (daysUntilPayment !== null && daysUntilPayment <= 5) paymentState = "due";
@@ -262,6 +269,8 @@ const ContractsPage: React.FC = () => {
 
       return {
         contract,
+        effectiveStatus,
+        inForce,
         propertyTitle,
         location,
         paymentDate,
@@ -271,13 +280,13 @@ const ContractsPage: React.FC = () => {
         daysUntilEnd,
         termProgress,
         receivedThisMonth,
-        expectedMonthlyValue: contract.status === "active" ? contract.value || 0 : 0,
+        expectedMonthlyValue: inForce ? contract.value || 0 : 0,
       };
     });
   }, [contracts, currentMonth, today, transactions]);
 
   const summary = useMemo(() => {
-    const active = enrichedContracts.filter((item) => item.contract.status === "active");
+    const active = enrichedContracts.filter((item) => item.inForce);
     const expiringSoon = active.filter(
       (item) => item.daysUntilEnd !== null && item.daysUntilEnd >= 0 && item.daysUntilEnd <= 60,
     );
@@ -293,13 +302,16 @@ const ContractsPage: React.FC = () => {
       total: enrichedContracts.length,
       active: active.length,
       pending: enrichedContracts.filter((item) => item.contract.status === "pending").length,
+      needsRenewal: enrichedContracts.filter((item) => item.contract.status === "active" && item.effectiveStatus === "expired").length,
       expiringSoon: expiringSoon.length,
       latePayments: latePayments.length,
       attention: latePayments.length + dueSoon.length + expiringSoon.length,
       expectedMonthlyRevenue,
       receivedThisMonth,
       collectionRate,
-      occupancyRate: properties.length > 0 ? clamp((active.length / properties.length) * 100) : 0,
+      occupancyRate: properties.length > 0
+        ? clamp((new Set(active.map((item) => item.contract.property_id).filter(Boolean)).size / properties.length) * 100)
+        : 0,
     };
   }, [enrichedContracts, properties.length]);
 
@@ -307,7 +319,7 @@ const ContractsPage: React.FC = () => {
     const events: TimelineEvent[] = [];
 
     enrichedContracts.forEach((item) => {
-      if (item.contract.status === "active" && item.paymentDate) {
+      if (item.inForce && item.paymentDate) {
         events.push({
           id: `${item.contract.id}-payment`,
           title: item.paymentState === "paid" ? "Pagamento registrado" : "Pagamento do aluguel",
@@ -326,7 +338,7 @@ const ContractsPage: React.FC = () => {
       }
 
       if (
-        item.contract.status === "active" &&
+        item.inForce &&
         item.daysUntilEnd !== null &&
         item.daysUntilEnd >= 0 &&
         item.daysUntilEnd <= 90
@@ -335,14 +347,14 @@ const ContractsPage: React.FC = () => {
           id: `${item.contract.id}-expiration`,
           title: "Contrato perto do vencimento",
           subtitle: `${item.contract.tenant_name} - ${item.propertyTitle}`,
-          date: new Date(item.contract.end_date),
+          date: parseDateOnly(item.contract.end_date),
           tone: item.daysUntilEnd <= 30 ? "danger" : "warning",
           icon: TimerReset,
         });
       }
 
       if (item.contract.adjustment_date) {
-        const adjustmentDate = new Date(item.contract.adjustment_date);
+        const adjustmentDate = parseDateOnly(item.contract.adjustment_date);
         const daysUntilAdjustment = diffInDays(today, adjustmentDate);
         if (!Number.isNaN(adjustmentDate.getTime()) && daysUntilAdjustment >= 0 && daysUntilAdjustment <= 90) {
           events.push({
@@ -369,7 +381,7 @@ const ContractsPage: React.FC = () => {
           return false;
         }
 
-        if (statusFilter !== "all" && item.contract.status !== statusFilter) {
+        if (statusFilter !== "all" && item.effectiveStatus !== statusFilter) {
           return false;
         }
 
@@ -388,7 +400,7 @@ const ContractsPage: React.FC = () => {
           if (item.paymentState === "late") return 0;
           if (item.paymentState === "due") return 1;
           if (item.daysUntilEnd !== null && item.daysUntilEnd <= 60 && item.daysUntilEnd >= 0) return 2;
-          if (item.contract.status === "active") return 3;
+          if (item.inForce) return 3;
           return 4;
         };
 
@@ -397,11 +409,6 @@ const ContractsPage: React.FC = () => {
   }, [enrichedContracts, paymentFilter, searchTerm, statusFilter]);
 
   const handleView = (contract: Contract) => {
-    if (contract.property_id) {
-      navigate(`/properties/${contract.property_id}?tab=contracts&contractId=${contract.id}`);
-      return;
-    }
-
     navigate(`/contracts/${contract.id}`);
   };
 
@@ -433,7 +440,7 @@ const ContractsPage: React.FC = () => {
   if (isLoadingContracts) {
     return (
       <div className="space-y-6">
-        <div className="premium-panel animate-pulse rounded-[2rem] p-8">
+        <div className="premium-panel dark:premium-panel-dark animate-pulse rounded-[2rem] p-8">
           <div className="h-8 w-64 rounded-full bg-muted" />
           <div className="mt-6 grid gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((item) => (
@@ -563,9 +570,37 @@ const ContractsPage: React.FC = () => {
         />
       </section>
 
+      {summary.needsRenewal > 0 && (
+        <div className="flex flex-col gap-3 rounded-[2rem] border border-rose-200 bg-rose-50 p-4 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <TimerReset className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">
+                {summary.needsRenewal === 1
+                  ? "1 contrato ativo já passou da data de término"
+                  : `${summary.needsRenewal} contratos ativos já passaram da data de término`}
+              </p>
+              <p className="text-sm opacity-80">
+                Eles não entram em cobranças, ocupação e ROI até serem renovados (nova data de término) ou encerrados.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="shrink-0 rounded-2xl border-rose-300 bg-white/70 text-rose-900 hover:bg-white dark:border-rose-500/40 dark:bg-transparent dark:text-rose-100"
+            onClick={() => {
+              setStatusFilter("expired");
+              setPaymentFilter("all");
+            }}
+          >
+            Ver contratos vencidos
+          </Button>
+        </div>
+      )}
+
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-5">
-          <div className="premium-panel rounded-[2rem] p-4">
+          <div className="premium-panel dark:premium-panel-dark rounded-[2rem] p-4">
             <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_auto]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -573,12 +608,12 @@ const ContractsPage: React.FC = () => {
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Buscar por contrato, inquilino, imóvel ou endereço"
-                  className="h-12 rounded-2xl border-transparent bg-white/70 pl-11 shadow-sm"
+                  className="h-12 rounded-2xl border-transparent bg-white/70 pl-11 shadow-sm dark:bg-white/5"
                 />
               </div>
 
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                <SelectTrigger className="h-12 rounded-2xl border-transparent bg-white/70 shadow-sm">
+                <SelectTrigger className="h-12 rounded-2xl border-transparent bg-white/70 shadow-sm dark:bg-white/5">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -592,7 +627,7 @@ const ContractsPage: React.FC = () => {
               </Select>
 
               <Select value={paymentFilter} onValueChange={(value) => setPaymentFilter(value as PaymentFilter)}>
-                <SelectTrigger className="h-12 rounded-2xl border-transparent bg-white/70 shadow-sm">
+                <SelectTrigger className="h-12 rounded-2xl border-transparent bg-white/70 shadow-sm dark:bg-white/5">
                   <SelectValue placeholder="Pagamento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -612,7 +647,7 @@ const ContractsPage: React.FC = () => {
                   setStatusFilter("all");
                   setPaymentFilter("all");
                 }}
-                className="h-12 rounded-2xl border-stone-200 bg-white/70 px-5"
+                className="h-12 rounded-2xl border-stone-200 bg-white/70 px-5 dark:border-white/10 dark:bg-white/5"
               >
                 Limpar
               </Button>
@@ -620,7 +655,7 @@ const ContractsPage: React.FC = () => {
           </div>
 
           {filteredContracts.length === 0 ? (
-            <div className="premium-panel flex min-h-[340px] flex-col items-center justify-center rounded-[2rem] p-8 text-center">
+            <div className="premium-panel dark:premium-panel-dark flex min-h-[340px] flex-col items-center justify-center rounded-[2rem] p-8 text-center">
               <div className="rounded-3xl bg-stone-950 p-4 text-white">
                 <FileText className="h-8 w-8" />
               </div>
@@ -781,27 +816,30 @@ function ContractOperationCard({
 }: ContractOperationCardProps) {
   const { contract } = item;
   const paymentTone = {
-    paid: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    late: "border-rose-200 bg-rose-50 text-rose-800",
-    due: "border-amber-200 bg-amber-50 text-amber-800",
-    scheduled: "border-stone-200 bg-stone-50 text-stone-700",
-    inactive: "border-stone-200 bg-stone-100 text-stone-500",
+    paid: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200",
+    late: "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200",
+    due: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200",
+    scheduled: "border-stone-200 bg-stone-50 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-white/70",
+    inactive: "border-stone-200 bg-stone-100 text-stone-500 dark:border-white/10 dark:bg-white/5 dark:text-white/50",
   }[item.paymentState];
-  const statusTone = contract.status === "active"
-    ? "bg-stone-950 text-white"
-    : contract.status === "pending"
-      ? "bg-amber-100 text-amber-800"
-      : "bg-stone-100 text-stone-600";
+  const isOverdueRenewal = contract.status === "active" && item.effectiveStatus === "expired";
+  const statusTone = isOverdueRenewal
+    ? "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-500/20 dark:text-rose-200"
+    : item.effectiveStatus === "active"
+      ? "bg-stone-950 text-white dark:bg-white/90 dark:text-stone-950"
+      : item.effectiveStatus === "pending"
+        ? "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-500/20 dark:text-amber-200"
+        : "bg-stone-100 text-stone-600 hover:bg-stone-100 dark:bg-white/10 dark:text-white/70";
 
   return (
-    <article className="premium-panel overflow-hidden rounded-[2rem] p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-stone-950/10">
+    <article className="premium-panel dark:premium-panel-dark overflow-hidden rounded-[2rem] p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-stone-950/10">
       <div className="grid gap-5 xl:grid-cols-[1fr_280px]">
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={cn("rounded-full px-3 py-1 hover:bg-stone-950", statusTone)}>
-                  {statusLabels[contract.status]}
+                <Badge className={cn("rounded-full px-3 py-1", statusTone)}>
+                  {isOverdueRenewal ? "Vencido — renovar" : statusLabels[item.effectiveStatus]}
                 </Badge>
                 <Badge variant="outline" className={cn("rounded-full px-3 py-1", paymentTone)}>
                   {item.paymentLabel}
@@ -843,7 +881,7 @@ function ContractOperationCard({
               <span>Progresso do contrato</span>
               <span>{item.termProgress.toFixed(0)}%</span>
             </div>
-            <div className="h-2 rounded-full bg-stone-200/80">
+            <div className="h-2 rounded-full bg-stone-200/80 dark:bg-white/10">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-stone-950 via-stone-700 to-amber-500"
                 style={{ width: `${item.termProgress}%` }}
@@ -852,7 +890,7 @@ function ContractOperationCard({
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-stone-200/70 bg-white/70 p-4">
+        <div className="rounded-[1.5rem] border border-stone-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
             Ações rápidas
           </p>
@@ -862,11 +900,11 @@ function ContractOperationCard({
               <ReceiptText className="mr-2 h-4 w-4" />
               Registrar pagamento
             </Button>
-            <Button variant="outline" onClick={onView} className="h-11 justify-start rounded-2xl bg-white/70">
+            <Button variant="outline" onClick={onView} className="h-11 justify-start rounded-2xl bg-white/70 dark:bg-white/5">
               <Eye className="mr-2 h-4 w-4" />
-              Ver imóvel/contrato
+              Ver contrato
             </Button>
-            <Button variant="outline" onClick={onEdit} className="h-11 justify-start rounded-2xl bg-white/70">
+            <Button variant="outline" onClick={onEdit} className="h-11 justify-start rounded-2xl bg-white/70 dark:bg-white/5">
               <Pencil className="mr-2 h-4 w-4" />
               Editar contrato
             </Button>

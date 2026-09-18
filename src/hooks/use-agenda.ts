@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { isSameDay, parseISO, startOfDay } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateFinancialData } from "@/lib/query-invalidation";
 import { toast } from "sonner";
 
 import {
@@ -117,7 +118,7 @@ export function useAgenda(range: AgendaDateRange) {
       toast.success("Evento criado na agenda");
     },
     onError: () => {
-      toast.error("Nao foi possivel criar o evento");
+      toast.error("Não foi possível criar o evento");
     },
   });
 
@@ -125,12 +126,11 @@ export function useAgenda(range: AgendaDateRange) {
     mutationFn: (expectedPaymentId: string) => recordExpectedContractPayment(expectedPaymentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agenda-events"] });
-      queryClient.invalidateQueries({ queryKey: ["financial-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] });
+      void invalidateFinancialData(queryClient);
       toast.success("Recebimento registrado no financeiro");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o recebimento");
+      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o recebimento");
     },
   });
 

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PropertyOccupancyPeriod, PropertyOccupancyFormData, OccupancyType } from '@/types/property-occupancy';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly } from "@/lib/dates";
 export const fetchPropertyOccupancyPeriods = async (propertyId: string): Promise<PropertyOccupancyPeriod[]> => {
   try {
     const { data, error } = await supabase
@@ -126,8 +127,8 @@ export const calculateVacancyRate = async (propertyId: string): Promise<number> 
         return; // Skip vacant and maintenance periods
       }
       
-      const startDate = new Date(period.start_date);
-      const endDate = period.end_date ? new Date(period.end_date) : today;
+      const startDate = parseDateOnly(period.start_date);
+      const endDate = period.end_date ? parseDateOnly(period.end_date) : today;
       
       // Only consider the part of the period that falls within the last year
       const effectiveStartDate = startDate > oneYearAgo ? startDate : oneYearAgo;

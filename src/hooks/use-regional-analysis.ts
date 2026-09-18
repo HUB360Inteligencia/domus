@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useProperties } from '@/hooks/use-properties';
 import { useContracts } from '@/hooks/use-contracts';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
+import { isContractInForce } from "@/lib/contract-status";
 
 export interface RegionalData {
   regiao: string;
@@ -42,7 +43,7 @@ export const useRegionalAnalysis = () => {
 
       // Calcular ocupação
       const activeContracts = contracts.filter(c => 
-        c.status === 'active' && 
+        isContractInForce(c) &&
         regionProperties.some(p => p.id === c.property_id)
       );
       const ocupacao = regionProperties.length > 0 ? (activeContracts.length / regionProperties.length) * 100 : 0;
@@ -106,7 +107,7 @@ export const useRegionalAnalysis = () => {
   const occupancyData = useMemo(() => {
     if (!properties || !contracts) return [];
 
-    const activeContracts = contracts.filter(c => c.status === 'active').length;
+    const activeContracts = contracts.filter(c => isContractInForce(c)).length;
     const occupancyRate = properties.length > 0 ? (activeContracts / properties.length) * 100 : 0;
 
     return [

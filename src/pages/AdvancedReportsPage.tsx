@@ -15,32 +15,35 @@ export default function AdvancedReportsPage() {
   const defaultTab = searchParams.get('tab') || 'dashboard';
 
   return (
-    <div className="container py-6">
+    <div className="space-y-6">
       <PageHeader
-        title="Relatórios e Análises Avançadas"
-        description="Sistema completo de relatórios personalizáveis e análises avançadas dos seus investimentos imobiliários"
+        title="Relatórios e análises"
+        description="Indicadores executivos, relatórios personalizados e análises da carteira."
       >
         <Button variant="outline" asChild>
-          <Link to="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Dashboard
+          <Link to="/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+            Dashboard
           </Link>
         </Button>
       </PageHeader>
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-1">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Dashboard Executivo
+            <Target className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Dashboard executivo</span>
+            <span className="sm:hidden">Executivo</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Relatórios Personalizados
+            <BarChart3 className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Relatórios personalizados</span>
+            <span className="sm:hidden">Relatórios</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Análises Avançadas
+            <TrendingUp className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Análises avançadas</span>
+            <span className="sm:hidden">Análises</span>
           </TabsTrigger>
         </TabsList>
 

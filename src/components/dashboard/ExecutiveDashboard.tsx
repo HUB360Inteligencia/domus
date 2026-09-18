@@ -14,7 +14,7 @@ import {
   BarChart3,
   ArrowRight
 } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useRealRentalData } from '@/hooks/use-real-rental-data';
 import { useRegionalAnalysis } from '@/hooks/use-regional-analysis';
 
@@ -41,14 +41,14 @@ export function ExecutiveDashboard() {
   // Preparar dados para o gráfico de performance
   const monthlyPerformance = analyticsData.map(data => ({
     mes: data.month,
-    receita: data.revenue,
-    meta: data.revenue * 0.9, // Meta seria 90% da receita atual (exemplo)
+    receita: data.received,
+    meta: data.revenue, // receita prevista pelos contratos vigentes no mês
     ocupacao: data.occupancy
   }));
 
   // Preparar dados de composição do portfolio baseado em dados reais
   const portfolioComposition = propertyTypeAnalysis.map((item, index) => {
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    const colors = ['#c4934f', '#6f8f74', '#4f6f85', '#9f5d4c', '#242021'];
     const totalQuantity = propertyTypeAnalysis.reduce((sum, p) => sum + p.quantidade, 0);
     const percentage = totalQuantity > 0 ? (item.quantidade / totalQuantity) * 100 : 0;
     
@@ -119,23 +119,24 @@ export function ExecutiveDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Performance vs Metas
+              Recebido x previsto
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthlyPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(120,110,100,0.18)" />
                 <XAxis dataKey="mes" />
                 <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
                 <Tooltip 
                   formatter={(value: number, name: string) => [
                     formatCurrency(value), 
-                    name === 'receita' ? 'Receita Real' : 'Meta'
+                    name === 'receita' ? 'Recebido' : 'Previsto (contratos)'
                   ]}
                 />
-                <Bar dataKey="meta" fill="#e5e7eb" name="meta" />
-                <Bar dataKey="receita" fill="#3b82f6" name="receita" />
+                <Legend formatter={(value) => (value === 'receita' ? 'Recebido' : 'Previsto (contratos)')} />
+                <Bar dataKey="meta" fill="#d9c7ad" name="meta" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="receita" fill="#c4934f" name="receita" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

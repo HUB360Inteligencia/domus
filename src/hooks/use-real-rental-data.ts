@@ -6,10 +6,14 @@ import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useGoals } from '@/hooks/use-goals';
 import { addMonths, format, startOfMonth, endOfMonth, isAfter, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from "@/lib/dates";
+import { isContractInForce } from "@/lib/contract-status";
 
 export interface RealAnalyticsData {
   month: string;
   revenue: number;
+  /** Entradas efetivamente lançadas no mês */
+  received: number;
   expenses: number;
   profit: number;
   occupancy: number;
@@ -55,9 +59,10 @@ export const useRealRentalData = () => {
     return last6Months.map(({ month, start, end }) => {
       // Contratos ativos no período
       const activeContractsInPeriod = contracts.filter(contract =>
-        contract.status === 'active' &&
-        new Date(contract.start_date) <= end &&
-        new Date(contract.end_date) >= start
+        // Vigência pelas datas: contratos hoje "expired" também ocuparam meses passados
+        (contract.status === 'active' || contract.status === 'expired') &&
+        parseDateOnly(contract.start_date) <= end &&
+        parseDateOnly(contract.end_date) >= start
       );
 
       // Receita mensal baseada em valores de aluguel dos contratos ativos
@@ -74,12 +79,21 @@ export const useRealRentalData = () => {
         return sum + rentalValue;
       }, 0);
 
+      // Receita efetivamente recebida no período (lançamentos de entrada)
+      const receivedRevenue = transactions
+        .filter(t =>
+          t.transaction_type === 'income' &&
+          parseDateOnly(t.transaction_date) >= start &&
+          parseDateOnly(t.transaction_date) <= end
+        )
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
       // Despesas do período
       const monthlyExpenses = transactions
         .filter(t => 
           t.transaction_type === 'expense' && 
-          new Date(t.transaction_date) >= start && 
-          new Date(t.transaction_date) <= end
+          parseDateOnly(t.transaction_date) >= start && 
+          parseDateOnly(t.transaction_date) <= end
         )
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -97,8 +111,10 @@ export const useRealRentalData = () => {
       return {
         month,
         revenue: monthlyRevenue,
+        received: receivedRevenue,
         expenses: monthlyExpenses,
-        profit: monthlyRevenue - monthlyExpenses,
+        // Resultado realizado: o que entrou menos o que saiu (não mistura previsto com realizado)
+        profit: receivedRevenue - monthlyExpenses,
         occupancy: Math.round(occupancyRate),
         activeContracts: activeContractsInPeriod.length,
         marketValue: totalMarketValue
@@ -116,7 +132,7 @@ export const useRealRentalData = () => {
       const thirtyDaysFromNow = addMonths(now, 1);
       
       const expiringContracts = contracts.filter(contract => {
-        const endDate = new Date(contract.end_date);
+        const endDate = parseDateOnly(contract.end_date);
         return isAfter(endDate, now) && isBefore(endDate, thirtyDaysFromNow);
       });
 
@@ -132,7 +148,7 @@ export const useRealRentalData = () => {
       // Verificar se meta de ocupação foi atingida
       if (properties && goals) {
         const occupancyGoal = goals.find(g => g.goal_type === 'occupancy');
-        const activeContracts = contracts.filter(c => c.status === 'active').length;
+        const activeContracts = contracts.filter(c => isContractInForce(c)).length;
         const occupancyRate = properties.length > 0 ? (activeContracts / properties.length) * 100 : 0;
 
         if (occupancyGoal && occupancyRate >= occupancyGoal.target_value) {
@@ -160,19 +176,20 @@ export const useRealRentalData = () => {
       let unit = '';
 
       switch (goal.goal_type) {
-        case 'occupancy':
-          const activeContracts = contracts.filter(c => c.status === 'active').length;
+        case 'occupancy': {
+          const activeContracts = contracts.filter(c => isContractInForce(c)).length;
           current = properties.length > 0 ? (activeContracts / properties.length) * 100 : 0;
           unit = '%';
           break;
+        }
         case 'revenue':
           current = contracts
-            .filter(c => c.status === 'active')
+            .filter(c => isContractInForce(c))
             .reduce((sum, c) => sum + Number(c.value || 0), 0);
           unit = 'R$';
           break;
         case 'active_contracts':
-          current = contracts.filter(c => c.status === 'active').length;
+          current = contracts.filter(c => isContractInForce(c)).length;
           unit = 'contratos';
           break;
       }
@@ -199,8 +216,7 @@ export const useRealRentalData = () => {
     const latest = analyticsData[analyticsData.length - 1];
     const previous = analyticsData[analyticsData.length - 2];
 
-    const totalRevenue = analyticsData.reduce((sum, item) => sum + item.revenue, 0);
-    const revenueChange = previous ? ((latest.revenue - previous.revenue) / (previous.revenue || 1)) * 100 : 0;
+    const revenueChange = previous ? ((latest.received - previous.received) / (previous.received || 1)) * 100 : 0;
 
     const occupancyChange = previous ? (latest.occupancy - previous.occupancy) : 0;
 
@@ -209,8 +225,8 @@ export const useRealRentalData = () => {
 
     return [
       {
-        title: 'Receita de Locações',
-        value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(latest.revenue),
+        title: 'Receita recebida no mês',
+        value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(latest.received),
         change: `${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}%`,
         trend: revenueChange >= 0 ? 'up' : 'down',
         icon: 'DollarSign',
@@ -218,8 +234,8 @@ export const useRealRentalData = () => {
       {
         title: 'Contratos Ativos',
         value: latest.activeContracts.toString(),
-        change: `${properties?.length || 0} propriedades`,
-        trend: 'up',
+        change: `${properties?.length || 0} imóveis`,
+        trend: 'neutral',
         icon: 'Building',
       },
       {
@@ -230,7 +246,7 @@ export const useRealRentalData = () => {
         icon: 'Users',
       },
       {
-        title: 'Lucro Líquido',
+        title: 'Resultado do mês',
         value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(latest.profit),
         change: `${profitChange >= 0 ? '+' : ''}${profitChange.toFixed(1)}%`,
         trend: profitChange >= 0 ? 'up' : 'down',

@@ -13,6 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useActivityMutations } from "@/hooks/use-activity-mutations";
 import { ActivityForm } from "@/components/activities/activity-form";
 import { Activity as ActivityType } from "@/types/activity";
+import { parseDateOnly } from "@/lib/dates";
+import { useConfirm } from "@/hooks/use-confirm";
 
 interface PropertyActivitiesSectionProps {
   property: Property | null | undefined;
@@ -30,10 +32,11 @@ export const PropertyActivitiesSection: React.FC<PropertyActivitiesSectionProps>
   });
 
   const { deleteActivity, updateActivity, isUpdating } = useActivityMutations();
+  const confirm = useConfirm();
   const [editingActivity, setEditingActivity] = useState<ActivityType | null>(null);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Deseja realmente excluir esta atividade?")) {
+    if (await confirm({ title: "Excluir atividade?", description: "Esta ação não pode ser desfeita.", destructive: true })) {
       await deleteActivity(id);
     }
   };
@@ -175,7 +178,7 @@ export const PropertyActivitiesSection: React.FC<PropertyActivitiesSectionProps>
             <ActivityForm
               initialData={{
                 ...editingActivity,
-                start_date: editingActivity.start_date ? new Date(editingActivity.start_date) : undefined,
+                start_date: editingActivity.start_date ? parseDateOnly(editingActivity.start_date) : undefined,
                 due_date: editingActivity.due_date ? new Date(editingActivity.due_date) : undefined,
                 completed_at: editingActivity.completed_at ? new Date(editingActivity.completed_at) : undefined,
               } as any}

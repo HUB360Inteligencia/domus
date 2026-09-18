@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen overflow-hidden bg-background premium-grid-lines px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-7xl items-center gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="premium-gradient relative hidden min-h-[720px] overflow-hidden rounded-[2.5rem] p-10 text-primary-foreground shadow-[0_40px_90px_-55px_rgba(31,27,24,0.95)] lg:block">
+        <section className="premium-gradient relative hidden min-h-[720px] overflow-hidden rounded-[2.5rem] p-10 text-white shadow-[0_40px_90px_-55px_rgba(31,27,24,0.95)] lg:block">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           <div className="relative z-10 flex h-full flex-col justify-between">
             <div>
@@ -49,14 +49,14 @@ export default function LoginPage() {
                 Controle patrimonial com leitura executiva.
               </h1>
               <p className="mt-5 max-w-lg text-sm leading-6 text-white/68">
-                Uma entrada direta para acompanhar ativos, contratos, finanças e sinais de performance em uma experiencia mais precisa.
+                Uma entrada direta para acompanhar ativos, contratos, finanças e sinais de performance em uma experiência mais precisa.
               </p>
             </div>
 
             <div className="grid grid-cols-[0.9fr_1.1fr] gap-4">
               <div className="rounded-[2rem] border border-white/15 bg-white/10 p-5">
                 <div className="mb-8 flex items-center justify-between">
-                  <span className="text-xs uppercase text-white/55">Ocupacao</span>
+                  <span className="text-xs uppercase text-white/55">Ocupação</span>
                   <ShieldCheck className="h-5 w-5 text-white/75" />
                 </div>
                 <p className="text-5xl font-semibold">87%</p>
@@ -87,12 +87,12 @@ export default function LoginPage() {
         <section className="mx-auto w-full max-w-md">
           <div className="premium-panel dark:premium-panel-dark animate-rise rounded-[2.5rem] p-6 backdrop-blur-xl sm:p-8">
             <div className="mb-8">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-3xl premium-gradient text-primary-foreground shadow-[0_20px_45px_-24px_rgba(80,52,31,0.85)]">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-3xl premium-gradient text-white shadow-[0_20px_45px_-24px_rgba(80,52,31,0.85)]">
                 <img src="/brand/domus-symbol-white.svg" alt="" className="h-8 w-8" aria-hidden="true" />
               </div>
               <h2 className="text-3xl font-semibold">Entrar</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Acesse sua area de gestao patrimonial.
+                Acesse sua área de gestão patrimonial.
               </p>
             </div>
 
@@ -113,7 +113,12 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link to="/reset-password" className="text-xs font-medium text-muted-foreground hover:text-accent">
+                    Esqueci minha senha
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   name="password"
@@ -133,7 +138,7 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 rounded-3xl border border-white/70 bg-white/50 p-4 text-center text-sm text-muted-foreground dark:border-white/10 dark:bg-white/5">
-              Nao tem uma conta?{" "}
+              Não tem uma conta?{" "}
               <Link to="/register" className="font-semibold text-foreground hover:text-accent">
                 Cadastre-se
               </Link>

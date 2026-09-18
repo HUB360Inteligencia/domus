@@ -9,6 +9,7 @@ import {
   deletePropertyValuation 
 } from '@/api/property-valuations';
 import { PropertyValuation } from '@/types/property';
+import { parseDateOnly } from "@/lib/dates";
 
 export const usePropertyValuations = (propertyId: string | null) => {
   const queryClient = useQueryClient();
@@ -72,7 +73,7 @@ export const usePropertyValuations = (propertyId: string | null) => {
   // Get the latest valuation
   const latestValuation = valuations.length > 0
     ? valuations.reduce((latest, current) => {
-        return new Date(current.valuation_date) > new Date(latest.valuation_date) 
+        return parseDateOnly(current.valuation_date) > parseDateOnly(latest.valuation_date) 
           ? current 
           : latest;
       }, valuations[0])

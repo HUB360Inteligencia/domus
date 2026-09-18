@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Property } from '@/types/property';
 import { PropertyValuation } from '@/types/property';
 import { calculateAppreciation, formatAppreciation } from '@/utils/currency';
+import { parseDateOnly } from "@/lib/dates";
 
 interface UsePropertyAppreciationProps {
   property: Property | null | undefined;
@@ -23,7 +24,7 @@ export const usePropertyAppreciation = ({ property, valuations }: UsePropertyApp
     // Get the latest valuation or use property value
     const latestValuation = valuations.length > 0
       ? valuations.reduce((latest, current) => {
-          return new Date(current.valuation_date) > new Date(latest.valuation_date) 
+          return parseDateOnly(current.valuation_date) > parseDateOnly(latest.valuation_date) 
             ? current 
             : latest;
         }, valuations[0])

@@ -1,8 +1,22 @@
+import { parseDateOnly } from "@/lib/dates";
 
-export const formatCurrency = (value: number | string): string => {
-  const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) : value;
-  
-  if (isNaN(numericValue)) return 'R$ 0,00';
+const toNumericValue = (value: number | string | null | undefined): number => {
+  if (typeof value === 'number') return value;
+  if (value === null || value === undefined) return NaN;
+
+  const trimmed = value.trim();
+  // Números "de máquina" (ex.: vindos do banco ou de toFixed) usam ponto decimal.
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
+
+  const isNegative = /^-|^\(.*\)$/.test(trimmed) || /-\s*R?\$/.test(trimmed);
+  const parsed = parseCurrencyToNumber(trimmed);
+  return isNegative ? -Math.abs(parsed) : parsed;
+};
+
+export const formatCurrency = (value: number | string | null | undefined): string => {
+  const numericValue = toNumericValue(value);
+
+  if (!Number.isFinite(numericValue)) return 'R$ 0,00';
   
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -59,7 +73,7 @@ export const parseCurrencyToNumber = (value: string): number => {
 export const formatDate = (date: string | Date): string => {
   if (!date) return '';
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = parseDateOnly(date);
   
   if (isNaN(dateObj.getTime())) return '';
   

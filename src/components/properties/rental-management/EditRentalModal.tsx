@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toDateOnlyString } from "@/lib/dates";
 
 interface EditRentalModalProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export const EditRentalModal: React.FC<EditRentalModalProps> = ({
         amount: Math.abs(balance),
         transaction_type: balance >= 0 ? 'income' : 'expense',
         category: defaultCategory?.id || '',
-        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_date: toDateOnlyString(new Date()),
         description: JSON.stringify(updatedRentalDetails),
       });
 

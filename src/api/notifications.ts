@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
 export interface Notification {
   id: string;
   user_id: string;
@@ -161,14 +162,14 @@ export const checkContractExpirations = async (): Promise<void> => {
       .select('id, title, end_date, property_id')
       .eq('user_id', session.data.session.user.id)
       .eq('status', 'active')
-      .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0]);
+      .lte('end_date', toDateOnlyString(thirtyDaysFromNow));
 
     if (error) throw error;
 
     // Create notifications for each expiring contract
     for (const contract of contracts || []) {
       const daysUntilExpiration = Math.ceil(
-        (new Date(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        (parseDateOnly(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       );
 
       if (daysUntilExpiration <= 30 && daysUntilExpiration > 0) {
@@ -180,7 +181,9 @@ export const checkContractExpirations = async (): Promise<void> => {
           .eq('related_to', 'contract')
           .eq('related_id', contract.id)
           .eq('type', 'warning')
-          .single();
+          // limit+maybeSingle: com .single(), 2+ avisos existentes geravam erro e mais uma duplicata
+          .limit(1)
+          .maybeSingle();
 
         if (!existingNotification) {
           await createNotification({

@@ -1,143 +1,132 @@
-
-import React, { useState } from 'react';
-import { Upload, X, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useRef, useState } from 'react';
+import { ExternalLink, FileText, Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RECEIPT_ACCEPT, uploadReceiptFile, validateReceiptFile } from '@/api/receipts';
+import { cn } from '@/lib/utils';
 
 interface ReceiptUploadFieldProps {
   value?: string | null;
   onChange: (url: string | null) => void;
   disabled?: boolean;
+  /** Oculte quando o campo já estiver dentro de um FormItem com rótulo próprio. */
+  hideLabel?: boolean;
 }
 
-export function ReceiptUploadField({ value, onChange, disabled }: ReceiptUploadFieldProps) {
+export function ReceiptUploadField({ value, onChange, disabled, hideLabel = false }: ReceiptUploadFieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const upload = async (file?: File | null) => {
     if (!file) return;
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Apenas imagens (JPEG, PNG) e PDFs são permitidos');
-      return;
-    }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('O arquivo deve ter no máximo 5MB');
+    const validationError = validateReceiptFile(file);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
     try {
       setIsUploading(true);
-
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) {
-        toast.error('Usuário não autenticado');
-        return;
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `${user.data.user.id}/${fileName}`;
-
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('transaction_receipts')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading receipt:', uploadError);
-        toast.error('Erro ao fazer upload do recibo');
-        return;
-      }
-
-      // Get the public URL
-      const { data } = supabase.storage
-        .from('transaction_receipts')
-        .getPublicUrl(filePath);
-
-      onChange(data.publicUrl);
-      toast.success('Recibo enviado com sucesso');
+      const url = await uploadReceiptFile(file, 'transactions');
+      onChange(url);
+      toast.success('Comprovante anexado');
     } catch (error) {
       console.error('Receipt upload error:', error);
-      toast.error('Erro ao fazer upload do recibo');
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar o comprovante');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemove = () => {
-    onChange(null);
-  };
-
-  const handleViewReceipt = () => {
-    if (value) {
-      window.open(value, '_blank');
-    }
-  };
+  const isPdf = value?.toLowerCase().split('?')[0].endsWith('.pdf');
 
   return (
     <div className="space-y-2">
-      <Label>Recibo/Comprovante</Label>
+      {!hideLabel && <Label>Recibo/Comprovante</Label>}
+
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        accept={RECEIPT_ACCEPT}
+        onChange={(event) => {
+          void upload(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+        disabled={disabled || isUploading}
+      />
+
       {value ? (
-        <div className="flex items-center gap-2 p-3 border rounded-md bg-gray-50">
-          <FileText className="h-4 w-4 text-gray-500" />
-          <span className="text-sm text-gray-700 flex-1">Recibo anexado</span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleViewReceipt}
-          >
-            Ver
+        <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 p-3">
+          {isPdf ? (
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#9f5d4c]/12 text-[#9f5d4c]">
+              <FileText className="h-5 w-5" />
+            </div>
+          ) : (
+            <img src={value} alt="Comprovante" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+          )}
+          <span className="flex-1 text-sm font-medium">Comprovante anexado</span>
+          <Button type="button" variant="outline" size="sm" asChild>
+            <a href={value} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" />
+              Ver
+            </a>
           </Button>
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            onClick={handleRemove}
+            size="icon"
+            onClick={() => onChange(null)}
             disabled={disabled}
+            aria-label="Remover comprovante"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       ) : (
-        <div className="border-2 border-dashed border-gray-300 rounded-md p-6">
-          <div className="text-center">
-            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-            <div className="mt-4">
-              <Label htmlFor="receipt-upload" className="cursor-pointer">
-                <span className="mt-2 block text-sm font-medium text-gray-900">
-                  Clique para enviar ou arraste e solte
-                </span>
-                <span className="mt-1 block text-xs text-gray-500">
-                  PNG, JPG ou PDF até 5MB
-                </span>
-              </Label>
-              <Input
-                id="receipt-upload"
-                type="file"
-                className="hidden"
-                accept="image/jpeg,image/png,image/jpg,application/pdf"
-                onChange={handleFileUpload}
-                disabled={disabled || isUploading}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-      {isUploading && (
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 text-sm text-gray-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-            Enviando recibo...
-          </div>
+        <div
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-disabled={disabled || isUploading}
+          onClick={() => !disabled && !isUploading && inputRef.current?.click()}
+          onKeyDown={(event) => {
+            if ((event.key === 'Enter' || event.key === ' ') && !disabled && !isUploading) {
+              event.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            if (!disabled) setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDragging(false);
+            if (!disabled && !isUploading) void upload(event.dataTransfer.files?.[0]);
+          }}
+          className={cn(
+            'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+            disabled || isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-accent/60 hover:bg-muted/40',
+            isDragging ? 'border-accent bg-accent/10' : 'border-border'
+          )}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="h-7 w-7 animate-spin text-accent" />
+              <span className="mt-2 text-sm text-muted-foreground">Enviando comprovante...</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-7 w-7 text-muted-foreground" />
+              <span className="mt-2 text-sm font-medium">Clique para enviar ou arraste o arquivo</span>
+              <span className="mt-0.5 text-xs text-muted-foreground">PNG, JPG ou PDF até 5MB</span>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -21,7 +21,7 @@ export function AgendaFilters({ filters, propertyOptions, onChange }: AgendaFilt
             autoComplete="off"
             value={filters.search || ""}
             onChange={(event) => onChange({ ...filters, search: event.target.value })}
-            placeholder="Buscar por evento, imovel, contrato..."
+            placeholder="Buscar por evento, imóvel, contrato..."
             className="h-11 rounded-xl border-white/70 bg-white/70 pl-9 dark:border-white/10 dark:bg-white/5"
           />
         </div>
@@ -35,7 +35,7 @@ export function AgendaFilters({ filters, propertyOptions, onChange }: AgendaFilt
             <SelectItem value="receipt">Recebimentos</SelectItem>
             <SelectItem value="payment">Pagamentos</SelectItem>
             <SelectItem value="contract">Contratos</SelectItem>
-            <SelectItem value="maintenance">Manutencao</SelectItem>
+            <SelectItem value="maintenance">Manutenção</SelectItem>
             <SelectItem value="inspection">Vistorias</SelectItem>
             <SelectItem value="task">Tarefas</SelectItem>
             <SelectItem value="appointment">Compromissos</SelectItem>
@@ -63,17 +63,17 @@ export function AgendaFilters({ filters, propertyOptions, onChange }: AgendaFilt
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="scheduled">Agendado</SelectItem>
             <SelectItem value="overdue">Atrasado</SelectItem>
-            <SelectItem value="completed">Concluido</SelectItem>
+            <SelectItem value="completed">Concluído</SelectItem>
             <SelectItem value="in_progress">Em andamento</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={filters.propertyId || "all"} onValueChange={(value) => onChange({ ...filters, propertyId: value as AgendaFiltersState["propertyId"] })}>
           <SelectTrigger className="h-11 rounded-xl border-white/70 bg-white/70 dark:border-white/10 dark:bg-white/5">
-            <SelectValue placeholder="Imovel" />
+            <SelectValue placeholder="Imóvel" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os imoveis</SelectItem>
+            <SelectItem value="all">Todos os imóveis</SelectItem>
             {propertyOptions.map((property) => (
               <SelectItem key={property.value} value={property.value}>
                 {property.label}

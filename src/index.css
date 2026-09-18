@@ -111,7 +111,9 @@
     box-shadow: 0 24px 70px -42px rgba(31, 27, 24, 0.72);
   }
 
-  .premium-panel-dark {
+  .premium-panel-dark,
+  /* Qualquer premium-panel fica escuro no tema escuro, mesmo sem a classe dark:premium-panel-dark */
+  .dark .premium-panel {
     background:
       linear-gradient(145deg, rgba(32, 28, 27, 0.96), rgba(22, 24, 30, 0.9));
     border: 1px solid rgba(196, 153, 85, 0.18);
@@ -202,4 +204,60 @@
       animation: none;
     }
   }
+}
+
+/*
+ * Compatibilidade do tema escuro para classes "claras" usadas sem variante dark:.
+ * :where(.dark) mantém especificidade de uma classe, então qualquer dark:... explícito
+ * no componente continua vencendo; estas regras só cobrem o que ficou sem tratamento.
+ */
+:where(.dark) .bg-white { background-color: hsl(var(--card)); }
+:where(.dark) .bg-white\/40, :where(.dark) .bg-white\/45, :where(.dark) .bg-white\/50,
+:where(.dark) .bg-white\/55, :where(.dark) .bg-white\/60, :where(.dark) .bg-white\/65,
+:where(.dark) .bg-white\/70, :where(.dark) .bg-white\/75, :where(.dark) .bg-white\/80,
+:where(.dark) .bg-white\/85, :where(.dark) .bg-white\/90, :where(.dark) .bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+:where(.dark) .border-white\/50, :where(.dark) .border-white\/55, :where(.dark) .border-white\/60,
+:where(.dark) .border-white\/65, :where(.dark) .border-white\/70, :where(.dark) .border-white\/75,
+:where(.dark) .border-white\/80 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+:where(.dark) .bg-gray-50, :where(.dark) .bg-gray-100, :where(.dark) .bg-stone-50,
+:where(.dark) .bg-stone-100, :where(.dark) .bg-slate-50, :where(.dark) .bg-slate-100 {
+  background-color: hsl(var(--muted));
+}
+:where(.dark) .text-gray-900, :where(.dark) .text-gray-800, :where(.dark) .text-gray-700,
+:where(.dark) .text-stone-900, :where(.dark) .text-stone-800, :where(.dark) .text-stone-700,
+:where(.dark) .text-slate-900, :where(.dark) .text-slate-800, :where(.dark) .text-slate-700 {
+  color: hsl(var(--foreground));
+}
+:where(.dark) .text-gray-600, :where(.dark) .text-gray-500, :where(.dark) .text-gray-400,
+:where(.dark) .text-stone-600, :where(.dark) .text-stone-500, :where(.dark) .text-slate-600,
+:where(.dark) .text-slate-500 {
+  color: hsl(var(--muted-foreground));
+}
+:where(.dark) .border-gray-100, :where(.dark) .border-gray-200, :where(.dark) .border-gray-300,
+:where(.dark) .border-stone-200, :where(.dark) .border-slate-200 {
+  border-color: hsl(var(--border));
+}
+:where(.dark) .bg-green-50, :where(.dark) .bg-green-100, :where(.dark) .bg-emerald-50, :where(.dark) .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.14); }
+:where(.dark) .bg-red-50, :where(.dark) .bg-red-100, :where(.dark) .bg-rose-50, :where(.dark) .bg-rose-100 { background-color: rgba(244, 63, 94, 0.14); }
+:where(.dark) .bg-yellow-50, :where(.dark) .bg-yellow-100, :where(.dark) .bg-amber-50, :where(.dark) .bg-amber-100 { background-color: rgba(245, 158, 11, 0.14); }
+:where(.dark) .bg-blue-50, :where(.dark) .bg-blue-100, :where(.dark) .bg-sky-50, :where(.dark) .bg-sky-100 { background-color: rgba(56, 189, 248, 0.14); }
+:where(.dark) .bg-purple-50, :where(.dark) .bg-purple-100, :where(.dark) .bg-indigo-50, :where(.dark) .bg-indigo-100 { background-color: rgba(139, 92, 246, 0.16); }
+:where(.dark) .text-green-800, :where(.dark) .text-green-700, :where(.dark) .text-green-600, :where(.dark) .text-emerald-800, :where(.dark) .text-emerald-700 { color: rgb(110, 231, 183); }
+:where(.dark) .text-red-800, :where(.dark) .text-red-700, :where(.dark) .text-red-600, :where(.dark) .text-rose-800, :where(.dark) .text-rose-700 { color: rgb(253, 164, 175); }
+:where(.dark) .text-yellow-800, :where(.dark) .text-yellow-700, :where(.dark) .text-amber-800, :where(.dark) .text-amber-700 { color: rgb(252, 211, 77); }
+:where(.dark) .text-blue-800, :where(.dark) .text-blue-700, :where(.dark) .text-blue-600, :where(.dark) .text-sky-800, :where(.dark) .text-sky-700 { color: rgb(125, 211, 252); }
+:where(.dark) .text-purple-800, :where(.dark) .text-purple-700, :where(.dark) .text-indigo-800 { color: rgb(196, 181, 253); }
+:where(.dark) .border-green-200, :where(.dark) .border-emerald-200, :where(.dark) .border-red-200, :where(.dark) .border-rose-200,
+:where(.dark) .border-yellow-200, :where(.dark) .border-amber-200, :where(.dark) .border-blue-200, :where(.dark) .border-sky-200 {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+:where(.dark) .hover\:bg-white:hover, :where(.dark) .hover\:bg-white\/60:hover, :where(.dark) .hover\:bg-white\/70:hover,
+:where(.dark) .hover\:bg-white\/80:hover, :where(.dark) .hover\:bg-white\/85:hover, :where(.dark) .hover\:bg-white\/90:hover,
+:where(.dark) .hover\:bg-gray-50:hover, :where(.dark) .hover\:bg-gray-100:hover, :where(.dark) .hover\:bg-stone-50:hover,
+:where(.dark) .hover\:bg-stone-100:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }

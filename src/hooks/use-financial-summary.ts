@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useFinancialTransactions } from './use-financial-transactions';
+import { parseDateOnly } from "@/lib/dates";
 
 interface FinancialSummaryData {
   totalIncome: number;
@@ -41,7 +42,7 @@ export const useFinancialSummary = (period: string) => {
       }
 
       const filteredTransactions = transactions.filter(t => {
-        const transactionDate = new Date(t.transaction_date);
+        const transactionDate = parseDateOnly(t.transaction_date);
         return transactionDate >= startDate && transactionDate <= endDate;
       });
 

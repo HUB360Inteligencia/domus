@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
+import { parseDateOnly, toMonthKey } from "@/lib/dates";
 export interface PortfolioTimelineData {
   date: string;
   totalValue: number;
@@ -56,7 +57,7 @@ export const usePortfolioTimeline = () => {
           
           const propertiesAtDate = properties.filter(p => {
             if (!p.purchase_date) return false;
-            return new Date(p.purchase_date) <= endOfMonth;
+            return parseDateOnly(p.purchase_date) <= endOfMonth;
           });
 
           let totalValue = 0;
@@ -64,7 +65,7 @@ export const usePortfolioTimeline = () => {
             // Buscar a avaliação mais recente até a data alvo
             const propertyValuations = valuations?.filter(v => 
               v.property_id === property.id && 
-              new Date(v.valuation_date) <= endOfMonth
+              parseDateOnly(v.valuation_date) <= endOfMonth
             ) || [];
 
             let propertyValue = property.value || 0;
@@ -72,7 +73,7 @@ export const usePortfolioTimeline = () => {
             if (propertyValuations.length > 0) {
               // Usar a avaliação mais recente
               const latestValuation = propertyValuations.reduce((latest, current) => 
-                new Date(current.valuation_date) > new Date(latest.valuation_date) 
+                parseDateOnly(current.valuation_date) > parseDateOnly(latest.valuation_date) 
                   ? current 
                   : latest
               );
@@ -89,7 +90,7 @@ export const usePortfolioTimeline = () => {
           });
 
           timeline.push({
-            date: targetDate.toISOString().slice(0, 7), // YYYY-MM
+            date: toMonthKey(targetDate), // YYYY-MM
             totalValue,
             properties: propertiesWithValues
           });

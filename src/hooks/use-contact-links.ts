@@ -15,14 +15,14 @@ import {
   PropertyLinkInput,
   ContractLinkInput,
 } from '@/api/contact-links';
-import { ContactLinkEntity } from '@/types/contact';
+import { ContactContractLink, ContactLinkEntity, ContactPropertyLink } from '@/types/contact';
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 /** Vínculos de um imóvel ou contrato (para as fichas de imóvel/contrato). */
 export const useEntityContacts = (entity: ContactLinkEntity, entityId?: string) => {
-  return useQuery({
+  return useQuery<Array<ContactPropertyLink | ContactContractLink>>({
     queryKey: ['contact-links', entity, entityId],
     queryFn: () =>
       entity === 'property'

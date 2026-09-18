@@ -36,7 +36,7 @@ import { PropertyImage } from '@/types/property-image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface PropertyImageGalleryProps {
   propertyId: string | null;
@@ -57,7 +57,7 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
     images,
     isLoadingImages,
     isUploading,
-    uploadImage,
+    uploadImages,
     setAsPrimary,
     deleteImage,
     updateDescription,
@@ -73,6 +73,7 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<PropertyImage | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imageToDelete, setImageToDelete] = useState<PropertyImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -110,7 +111,13 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
+      const files = Array.from(e.target.files).filter(
+        (file) => file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
+      );
+      if (files.length === 0) {
+        e.target.value = '';
+        return;
+      }
       setSelectedFiles(files);
       setIsUploadDialogOpen(true);
       e.target.value = ''; // Reset input
@@ -120,16 +127,12 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
   const handleUploadSubmit = async (values: z.infer<typeof uploadFormSchema>) => {
     if (selectedFiles.length === 0) return;
 
-    try {
-      for (const file of selectedFiles) {
-        await uploadImage(file, values.description || values.name);
-      }
+    // uploadImages envia em sequência e mostra um único aviso com o resultado
+    const { failed } = await uploadImages(selectedFiles, values.description?.trim() || values.name.trim());
+    if (failed === 0) {
       setIsUploadDialogOpen(false);
       setSelectedFiles([]);
       uploadForm.reset();
-      toast.success(`${selectedFiles.length} imagem(ns) enviada(s) com sucesso!`);
-    } catch (error) {
-      toast.error('Erro ao enviar imagens');
     }
   };
   
@@ -148,9 +151,7 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
   };
   
   const handleDelete = (image: PropertyImage) => {
-    if (window.confirm('Tem certeza que deseja excluir esta imagem?')) {
-      deleteImage(image.id);
-    }
+    setImageToDelete(image);
   };
   
   return (
@@ -225,7 +226,7 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
                 )}
 
                 {/* Action buttons — discreet, top-right corner */}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                   {!image.is_primary && (
                     <button
                       type="button"
@@ -457,6 +458,22 @@ export const PropertyImageGallery = ({ propertyId, isLoading }: PropertyImageGal
           )}
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        open={!!imageToDelete}
+        onOpenChange={(open) => !open && setImageToDelete(null)}
+        title="Excluir foto?"
+        description={
+          imageToDelete?.is_primary
+            ? 'Esta é a foto de capa. A próxima foto da galeria passará a ser a capa do imóvel.'
+            : 'A foto será removida permanentemente da galeria.'
+        }
+        confirmLabel="Excluir"
+        destructive
+        onConfirm={() => {
+          if (imageToDelete) deleteImage(imageToDelete.id);
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { PropertyFormData, Property, PropertyImage } from '@/types/property';
@@ -87,10 +87,10 @@ export function PropertyForm({
         floor_number: initialData.floor_number || 0,
         furnished: initialData.furnished || 'not_furnished',
         features: (typeof initialData.features === 'object' && initialData.features !== null) 
-          ? initialData.features as Record<string, any>
+          ? initialData.features as Record<string, boolean>
           : {},
-        latitude: initialData.latitude || null,
-        longitude: initialData.longitude || null,
+        latitude: initialData.latitude ?? null,
+        longitude: initialData.longitude ?? null,
         purchase_date: initialData.purchase_date || null,
         purchase_value: initialData.purchase_value || null,
         tags: initialData.tags || null,
@@ -107,13 +107,23 @@ export function PropertyForm({
     }
   }, [initialData]);
 
-  const handleInputChange = (field: keyof PropertyFormData, value: any) => {
-    console.log(`Updating ${field}:`, value);
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
+  const handleInputChange = useCallback((
+    field: keyof PropertyFormData,
+    value: PropertyFormData[keyof PropertyFormData],
+  ) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
     }));
-  };
+  }, []);
+
+  const handleCoordsChange = useCallback((coords: { lat: number; lng: number }) => {
+    setFormData((previous) => ({
+      ...previous,
+      latitude: coords.lat,
+      longitude: coords.lng,
+    }));
+  }, []);
 
   const handleFeatureToggle = (feature: string) => {
     setSelectedFeatures(prev => {
@@ -130,11 +140,6 @@ export function PropertyForm({
       handleInputChange('features', featuresObject);
       return newFeatures;
     });
-  };
-
-  const handleCoordsChange = (coords: { lat: number; lng: number }) => {
-    handleInputChange('latitude', coords.lat);
-    handleInputChange('longitude', coords.lng);
   };
 
   const handleImagesChange = (images: PropertyImage[]) => {
@@ -170,7 +175,7 @@ export function PropertyForm({
       floor_number: property.floor_number || 0,
       furnished: property.furnished || 'not_furnished',
       features: (typeof property.features === 'object' && property.features !== null) 
-        ? property.features as Record<string, any>
+        ? property.features as Record<string, boolean>
         : {},
       purchase_value: property.purchase_value || 0,
       tags: property.tags || null,
@@ -242,6 +247,7 @@ export function PropertyForm({
       <PropertyGallerySection
         images={formData.images || []}
         onImagesChange={handleImagesChange}
+        isEditing={!!initialData}
       />
 
       <div className="flex justify-end space-x-4">

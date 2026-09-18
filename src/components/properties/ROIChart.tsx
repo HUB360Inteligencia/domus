@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Property } from '@/types/property';
 import { PropertyInvestment } from '@/types/property-investment';
+import { parseDateOnly } from "@/lib/dates";
 
 interface ROIChartProps {
   property: Property | null | undefined;
@@ -41,7 +42,7 @@ export const ROIChart: React.FC<ROIChartProps> = ({ property, investments, isLoa
     // Sort investments by date
     const sortedInvestments = [...investments]
       .filter(inv => inv.investment_type !== 'purchase') // Exclude purchase to avoid double counting
-      .sort((a, b) => new Date(a.investment_date).getTime() - new Date(b.investment_date).getTime());
+      .sort((a, b) => parseDateOnly(a.investment_date).getTime() - parseDateOnly(b.investment_date).getTime());
     
     sortedInvestments.forEach(inv => {
       runningInvestmentTotal += inv.amount;

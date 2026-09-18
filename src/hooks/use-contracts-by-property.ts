@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Contract } from '@/types/contract';
 
 import { logger } from "@/lib/logger";
+import { isContractInForce } from "@/lib/contract-status";
 export const useContractsByProperty = (propertyId: string | null) => {
   const { data: contracts = [], isLoading, refetch } = useQuery({
     queryKey: ['contracts', 'property', propertyId],
@@ -27,7 +28,8 @@ export const useContractsByProperty = (propertyId: string | null) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const activeContract = contracts.find(contract => contract.status === 'active');
+  // Contrato vigente hoje (um "ativo" com término no passado não conta para ROI/ocupação)
+  const activeContract = contracts.find(contract => isContractInForce(contract));
   
   return {
     contracts,

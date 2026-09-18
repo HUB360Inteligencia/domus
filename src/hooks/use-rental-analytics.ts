@@ -4,6 +4,7 @@ import { useRentalHistory } from './use-rental-history';
 import { useProperties } from './use-properties';
 import { useFinancialTransactions } from './use-financial-transactions';
 import { subMonths, startOfMonth, endOfMonth, format } from 'date-fns';
+import { parseDateOnly } from "@/lib/dates";
 
 export interface RentalAnalytics {
   monthlyROI: {
@@ -39,7 +40,7 @@ export const useRentalAnalytics = (): RentalAnalytics => {
       
       // Processar todas as transações
       transactions.forEach(transaction => {
-        const monthKey = format(new Date(transaction.transaction_date), 'yyyy-MM');
+        const monthKey = format(parseDateOnly(transaction.transaction_date), 'yyyy-MM');
         
         if (!balances[monthKey]) {
           balances[monthKey] = {
@@ -132,7 +133,7 @@ export const useRentalAnalytics = (): RentalAnalytics => {
 
       // Calcular saldo do último mês para este tipo
       const typeLastMonthTransactions = typeTransactions.filter(t => 
-        format(new Date(t.transaction_date), 'yyyy-MM') === lastMonth
+        format(parseDateOnly(t.transaction_date), 'yyyy-MM') === lastMonth
       );
       const typeLastMonthRevenue = typeLastMonthTransactions
         .filter(t => t.transaction_type === 'income')
@@ -144,13 +145,13 @@ export const useRentalAnalytics = (): RentalAnalytics => {
 
       // Calcular média dos últimos 12 meses para este tipo
       const typeLast12MonthsTransactions = typeTransactions.filter(t => 
-        last12Months.includes(format(new Date(t.transaction_date), 'yyyy-MM'))
+        last12Months.includes(format(parseDateOnly(t.transaction_date), 'yyyy-MM'))
       );
       
       // Agrupar por mês
       const typeMonthlyBalances: Record<string, number> = {};
       typeLast12MonthsTransactions.forEach(t => {
-        const monthKey = format(new Date(t.transaction_date), 'yyyy-MM');
+        const monthKey = format(parseDateOnly(t.transaction_date), 'yyyy-MM');
         if (!typeMonthlyBalances[monthKey]) {
           typeMonthlyBalances[monthKey] = 0;
         }

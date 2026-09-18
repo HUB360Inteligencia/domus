@@ -18,6 +18,7 @@ import { usePropertyFinancialMetrics } from '@/hooks/use-property-financial-metr
 import { usePropertyAppreciation } from '@/hooks/use-property-appreciation';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { formatCurrency, parseCurrencyInput } from '@/utils/currency';
+import { parseDateOnly } from "@/lib/dates";
 
 interface PropertyFinancialSectionProps {
   property: Property | null | undefined;
@@ -104,7 +105,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
   // Calculate latest valuation value
   const latestValuation = valuations.length > 0
     ? valuations.reduce((latest, current) => {
-        return new Date(current.valuation_date) > new Date(latest.valuation_date) 
+        return parseDateOnly(current.valuation_date) > parseDateOnly(latest.valuation_date) 
           ? current 
           : latest;
       }, valuations[0])
@@ -201,7 +202,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
         {renderFinancialCard(
           'Valor Atual de Mercado',
           formatCurrency(currentMarketValue),
-          latestValuation ? `Atualizado em ${format(new Date(latestValuation.valuation_date), 'dd/MM/yyyy', { locale: ptBR })}` : 'Valor estimado',
+          latestValuation ? `Atualizado em ${format(parseDateOnly(latestValuation.valuation_date), 'dd/MM/yyyy', { locale: ptBR })}` : 'Valor estimado',
           true
         )}
         
@@ -209,7 +210,7 @@ export const PropertyFinancialSection: React.FC<PropertyFinancialSectionProps> =
           'Valor de Aquisição',
           formatCurrency(purchaseValue),
           property?.purchase_date 
-            ? `Adquirido em ${format(new Date(property.purchase_date), 'dd/MM/yyyy', { locale: ptBR })}` 
+            ? `Adquirido em ${format(parseDateOnly(property.purchase_date), 'dd/MM/yyyy', { locale: ptBR })}` 
             : 'Data não informada'
         )}
         

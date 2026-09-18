@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PropertyValuation } from "@/types/property";
 
 import { logger } from "@/lib/logger";
+import { toDateOnlyString } from "@/lib/dates";
 /**
  * Fetches all valuations for a property
  */
@@ -32,7 +33,7 @@ export const fetchPropertyValuations = async (propertyId: string): Promise<Prope
 export const createPropertyValuation = async (
   propertyId: string, 
   value: number, 
-  valuationDate: string = new Date().toISOString().split('T')[0], 
+  valuationDate: string = toDateOnlyString(new Date()), 
   notes?: string
 ): Promise<PropertyValuation> => {
   const user = await supabase.auth.getUser();

@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp } from 'lucide-react';
 import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { formatCurrency } from '@/utils/currency';
+import { toMonthKey } from "@/lib/dates";
 
 export function CashFlowAnalysisWidget() {
   const { transactions } = useFinancialTransactions();
@@ -16,7 +17,7 @@ export function CashFlowAnalysisWidget() {
     
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+      const monthKey = toMonthKey(date); // YYYY-MM
       
       const monthTransactions = transactions.filter(t => 
         t.transaction_date.startsWith(monthKey)

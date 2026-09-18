@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePropertyInvestments } from '@/hooks/use-property-investments';
 import { Property } from '@/types/property';
 import { InvestmentType } from '@/types/property-investment';
-import { Upload } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { RECEIPT_ACCEPT, validateReceiptFile } from '@/api/receipts';
+import { toDateOnlyString } from "@/lib/dates";
 
 const investmentSchema = z.object({
   investment_type: z.enum(['purchase', 'improvement', 'renovation', 'maintenance', 'other'] as const),
@@ -43,7 +46,7 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
   } = useForm<InvestmentFormData>({
     resolver: zodResolver(investmentSchema),
     defaultValues: {
-      investment_date: new Date().toISOString().split('T')[0],
+      investment_date: toDateOnlyString(new Date()),
     },
   });
 
@@ -79,9 +82,15 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setReceiptFile(file);
+    event.target.value = '';
+    if (!file) return;
+    // Valida antes de enviar: um comprovante inválido impediria o registro do investimento
+    const validationError = validateReceiptFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
     }
+    setReceiptFile(file);
   };
 
   return (
@@ -150,21 +159,32 @@ export const PropertyInvestmentForm: React.FC<PropertyInvestmentFormProps> = ({
         <div>
           <Label htmlFor="receipt">Comprovante (opcional)</Label>
           <div className="mt-1">
-            <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-              <div className="space-y-1 text-center">
-                <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                <div className="text-sm text-gray-600">
-                  {receiptFile ? receiptFile.name : 'Clique para fazer upload do comprovante'}
+            <label className="flex h-28 w-full cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-border transition-colors hover:border-accent/60 hover:bg-muted/40">
+              <div className="space-y-1 px-4 text-center">
+                <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
+                <div className="truncate text-sm font-medium">
+                  {receiptFile ? receiptFile.name : 'Clique para anexar o comprovante'}
                 </div>
+                <div className="text-xs text-muted-foreground">JPG, PNG ou PDF até 5MB</div>
               </div>
               <input
                 id="receipt"
                 type="file"
                 className="hidden"
-                accept="image/*,.pdf"
+                accept={RECEIPT_ACCEPT}
                 onChange={handleFileChange}
               />
             </label>
+            {receiptFile && (
+              <button
+                type="button"
+                onClick={() => setReceiptFile(null)}
+                className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-3 w-3" />
+                Remover comprovante
+              </button>
+            )}
           </div>
         </div>
 

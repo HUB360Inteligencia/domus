@@ -24,10 +24,12 @@ import {
   useFinancialCategories,
 } from "@/hooks/use-financial-categories";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/hooks/use-confirm";
 
 export function CategoryManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<FinancialCategory | null>(null);
+  const confirm = useConfirm();
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     type: "expense",
@@ -96,14 +98,18 @@ export function CategoryManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm("Deseja excluir esta categoria?");
+    const confirmed = await confirm({
+      title: "Excluir categoria?",
+      description: "Lançamentos já registrados continuam existindo, mas perdem esta categoria.",
+      destructive: true,
+    });
     if (!confirmed) return;
 
     await deleteCategory(id);
   };
 
-  const incomeCategories = categories.filter((category) => category.type === "income");
-  const expenseCategories = categories.filter((category) => category.type === "expense");
+  const incomeCategories = categories.filter((category) => category.type === "income") as FinancialCategory[];
+  const expenseCategories = categories.filter((category) => category.type === "expense") as FinancialCategory[];
 
   return (
     <div className="space-y-6">

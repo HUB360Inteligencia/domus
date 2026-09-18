@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Edit, Trash2, ArrowLeft, Building2, MapPin, Calendar, Ruler } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { parseDateOnly } from "@/lib/dates";
 
 export default function DevelopmentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +66,7 @@ export default function DevelopmentDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-petroleum" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -102,7 +103,7 @@ export default function DevelopmentDetailPage() {
         </div>
         <div className="flex space-x-2">
           <Button asChild variant="outline">
-            <Link to={`/developments/${development.id}/edit`}>
+            <Link to={`/developments/edit/${development.id}`}>
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Link>
@@ -206,14 +207,14 @@ export default function DevelopmentDetailPage() {
             {development.planned_start_date && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Início Previsto</label>
-                <p className="text-sm">{new Date(development.planned_start_date).toLocaleDateString('pt-BR')}</p>
+                <p className="text-sm">{parseDateOnly(development.planned_start_date).toLocaleDateString('pt-BR')}</p>
               </div>
             )}
             
             {development.planned_end_date && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Término Previsto</label>
-                <p className="text-sm">{new Date(development.planned_end_date).toLocaleDateString('pt-BR')}</p>
+                <p className="text-sm">{parseDateOnly(development.planned_end_date).toLocaleDateString('pt-BR')}</p>
               </div>
             )}
           </CardContent>

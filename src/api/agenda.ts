@@ -165,7 +165,7 @@ const mapManualEvent = (
     contractTitle,
     reminderAt: reminder?.remind_at ?? null,
     reminderStatus: (reminder?.status as AgendaEvent["reminderStatus"]) ?? null,
-    metadata: event.metadata ?? {},
+    metadata: (event.metadata as Record<string, unknown> | null) ?? {},
   };
 };
 
@@ -259,7 +259,7 @@ const buildFallbackContractReceiptEvents = (
           source: "contract",
           sourceId: contract.id,
           title: `Recebimento previsto - ${contract.property?.title || contract.title}`,
-          description: contract.tenant_name ? `Locatario: ${contract.tenant_name}` : "Recebimento previsto do contrato ativo.",
+          description: contract.tenant_name ? `Locatário: ${contract.tenant_name}` : "Recebimento previsto do contrato ativo.",
           type: "receipt",
           status: reconciled ? "completed" : withOverdue("scheduled", startsAt),
           priority: reconciled ? "low" : "high",
@@ -289,8 +289,8 @@ const buildFallbackContractReceiptEvents = (
           id: `contract-end-${contract.id}`,
           source: "contract",
           sourceId: contract.id,
-          title: `Vencimento de locacao - ${contract.property?.title || contract.title}`,
-          description: contract.tenant_name ? `Contrato com ${contract.tenant_name}` : "Contrato ativo proximo ao vencimento.",
+          title: `Vencimento de locação - ${contract.property?.title || contract.title}`,
+          description: contract.tenant_name ? `Contrato com ${contract.tenant_name}` : "Contrato ativo próximo ao vencimento.",
           type: "contract",
           status: withOverdue("scheduled", endDate.toISOString()),
           priority: "high",
@@ -331,7 +331,7 @@ const mapExpectedPaymentEvent = (
     sourceId: payment.id,
     title: `Recebimento previsto - ${payment.property?.title || payment.contract?.title || "Contrato"}`,
     description: payment.contract?.tenant_name
-      ? `Locatario: ${payment.contract.tenant_name}`
+      ? `Locatário: ${payment.contract.tenant_name}`
       : "Recebimento previsto do contrato ativo.",
     type: "receipt",
     status: reconciled ? "completed" : withOverdue("scheduled", startsAt),
@@ -367,8 +367,8 @@ const buildContractEndEvents = (contracts: ContractScheduleRow[], range: AgendaD
       id: `contract-end-${contract.id}`,
       source: "contract" as const,
       sourceId: contract.id,
-      title: `Vencimento de locacao - ${contract.property?.title || contract.title}`,
-      description: contract.tenant_name ? `Contrato com ${contract.tenant_name}` : "Contrato ativo proximo ao vencimento.",
+      title: `Vencimento de locação - ${contract.property?.title || contract.title}`,
+      description: contract.tenant_name ? `Contrato com ${contract.tenant_name}` : "Contrato ativo próximo ao vencimento.",
       type: "contract" as const,
       status: withOverdue("scheduled", endDate.toISOString()),
       priority: "high" as const,
@@ -419,7 +419,7 @@ export async function recordExpectedContractPayment(expectedPaymentId: string): 
     logger.error("Error recording expected contract payment:", error);
 
     if (isMissingSchemaError(error)) {
-      throw new Error("A migration da Agenda ainda nao foi aplicada ao banco.");
+      throw new Error("A migration da Agenda ainda não foi aplicada ao banco.");
     }
 
     throw new Error(error.message);
@@ -530,7 +530,7 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
 
 export async function createAgendaEvent(input: AgendaEventInput): Promise<AgendaEvent> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error("Usuario nao autenticado");
+  if (userError || !userData.user) throw new Error("Usuário não autenticado");
 
   const clientId = await getCurrentUserClientId();
   const startsAt = parseISO(input.startsAt);
@@ -571,7 +571,7 @@ export async function createAgendaEvent(input: AgendaEventInput): Promise<Agenda
       .insert({
         event_id: data.id,
         user_id: userData.user.id,
-        remind_at: reminderAt.toISOString(),
+        remind_at: remindAt.toISOString(),
         offset_minutes: input.reminderMinutesBefore,
         channel: "in_app",
       })

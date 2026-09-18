@@ -31,6 +31,8 @@ import { MaskedDateInput, convertToISODate, convertFromISODate } from '@/compone
 
 interface ContractFormEnhancedProps {
   initialData?: Contract | null;
+  /** Imóvel pré-selecionado ao criar um contrato a partir da ficha do imóvel. */
+  defaultPropertyId?: string | null;
   onSuccess: (contractId: string) => void;
   onCancel: () => void;
 }
@@ -100,6 +102,7 @@ const formSchema = z.object({
 
 export function ContractFormEnhanced({ 
   initialData, 
+  defaultPropertyId,
   onSuccess, 
   onCancel 
 }: ContractFormEnhancedProps) {
@@ -114,7 +117,7 @@ export function ContractFormEnhanced({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || '',
-      property_id: initialData?.property_id || null,
+      property_id: initialData?.property_id || defaultPropertyId || null,
       tenant_name: initialData?.tenant_name || '',
       tenant_document: initialData?.tenant_document || null,
       tenant_contact: initialData?.tenant_contact || null,

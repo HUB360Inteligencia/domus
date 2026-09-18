@@ -128,14 +128,18 @@ export interface Document {
   created_at: string;
   updated_at: string;
   user_id: string;
+  client_id?: string | null;
+  contact_id?: string | null;
 }
 
 export interface DocumentFormData {
   name: string;
-  file: File;
+  file: File | null;
   category: string;
   contract_id?: string | null;
   is_encrypted?: boolean;
+  /** Senha usada para criptografar no navegador (nunca é enviada ao servidor). */
+  password?: string;
 }
 
 export interface ContractTemplate {

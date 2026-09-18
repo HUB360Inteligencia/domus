@@ -3,12 +3,26 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Monitor, Moon, Sun, XCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
+
+const ENVIRONMENT_CHECKS = [
+  { label: "Supabase (banco e autenticação)", configured: Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) },
+  { label: "Mapbox (mapas e geolocalização)", configured: Boolean(import.meta.env.VITE_MAPBOX_TOKEN) },
+];
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark", label: "Escuro", icon: Moon },
+  { value: "system", label: "Seguir o sistema", icon: Monitor },
+] as const;
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   
   // Verificar se o usuário é system_admin (Dono do SaaS)
   const isSystemAdmin = user?.role === 'system_admin';
@@ -54,9 +68,30 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Separator />
-              <p className="py-8 text-center text-muted-foreground">
-                Configurações gerais serão implementadas em breve. Tokens de infraestrutura (como Mapbox) foram migrados para Variáveis de Ambiente (.env) por segurança.
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Chaves de infraestrutura ficam nas variáveis de ambiente (.env / painel de deploy), não no banco, por segurança.
+                </p>
+                <ul className="divide-y divide-border rounded-3xl border">
+                  {ENVIRONMENT_CHECKS.map((check) => (
+                    <li key={check.label} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                      <span>{check.label}</span>
+                      {check.configured ? (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="h-4 w-4" /> Configurado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+                          <XCircle className="h-4 w-4" /> Ausente
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  Ambiente: {import.meta.env.MODE === "production" ? "Produção" : "Desenvolvimento"}
+                </p>
+              </div>
             </div>
           </TabsContent>
           
@@ -69,9 +104,24 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Separator />
-              <p className="py-8 text-center text-muted-foreground">
-                Configurações de aparência serão implementadas em breve.
-              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTheme(value)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 rounded-3xl border p-5 text-sm font-medium transition-colors",
+                      theme === value ? "border-accent bg-accent/10" : "hover:bg-muted/60"
+                    )}
+                    aria-pressed={theme === value}
+                  >
+                    <Icon className="h-6 w-6" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">A preferência fica salva neste navegador.</p>
             </div>
           </TabsContent>
         </div>

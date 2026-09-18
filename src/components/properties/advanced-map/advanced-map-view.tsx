@@ -1,196 +1,125 @@
-
 import { useState } from 'react';
-import { Property } from '@/types/property';
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import type { Property } from '@/types/property';
 import { PropertyClusterMap } from './property-cluster-map';
 import { PropertyHeatmap } from './property-heatmap';
 import { LocationAnalytics } from './location-analytics';
-import { AdvancedMapControls } from './advanced-map-controls';
+import { AdvancedMapControls, type AdvancedMapViewMode } from './advanced-map-controls';
 import { useMapbox } from '@/contexts/MapboxContext';
-import { useMapboxLoader } from '@/hooks/use-mapbox-loader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import type { HeatmapMetric } from '@/lib/property-map-data';
+import type { MapLayerVisibility } from '@/lib/mapbox-map';
 
 interface AdvancedMapViewProps {
   properties: Property[];
   onSelect: (id: string) => void;
 }
 
+const DEFAULT_LAYERS: MapLayerVisibility = {
+  properties: true,
+  boundaries: true,
+  poi: true,
+  transit: true,
+};
+
 export function AdvancedMapView({ properties, onSelect }: AdvancedMapViewProps) {
-  const [viewMode, setViewMode] = useState<'cluster' | 'heatmap' | 'analytics'>('cluster');
+  const [viewMode, setViewMode] = useState<AdvancedMapViewMode>('cluster');
   const [showClustering, setShowClustering] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [heatmapMetric, setHeatmapMetric] = useState<'value' | 'density' | 'roi'>('value');
+  const [heatmapMetric, setHeatmapMetric] = useState<HeatmapMetric>('value');
   const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/streets-v12');
-  const [layers, setLayers] = useState({
-    properties: true,
-    boundaries: false,
-    poi: false,
-    transit: false
-  });
+  const [layers, setLayers] = useState<MapLayerVisibility>(DEFAULT_LAYERS);
+  const [fitRequestId, setFitRequestId] = useState(0);
+  const { isReady, isLoading, error, retryInitialization } = useMapbox();
 
-  const { isReady, error: mapboxError, retryInitialization } = useMapbox();
-  const { isLoaded: mapboxLoaded, isLoading: mapboxLoading, error: loaderError, retryLoad } = useMapboxLoader();
-
-  const handleLayerToggle = (layer: keyof typeof layers) => {
-    setLayers(prev => ({
-      ...prev,
-      [layer]: !prev[layer]
-    }));
+  const handleLayerToggle = (layer: keyof MapLayerVisibility) => {
+    setLayers((current) => ({ ...current, [layer]: !current[layer] }));
   };
 
-  const handleRetry = () => {
-    console.log('AdvancedMapView: Retrying initialization');
-    retryInitialization();
-    retryLoad();
-  };
+  const controls = (
+    <AdvancedMapControls
+      viewMode={viewMode}
+      onViewModeChange={setViewMode}
+      showClustering={showClustering}
+      onClusteringChange={setShowClustering}
+      showHeatmap={showHeatmap}
+      onHeatmapChange={setShowHeatmap}
+      heatmapMetric={heatmapMetric}
+      onHeatmapMetricChange={setHeatmapMetric}
+      mapStyle={mapStyle}
+      onMapStyleChange={setMapStyle}
+      layers={layers}
+      onLayerToggle={handleLayerToggle}
+      onFitProperties={() => setFitRequestId((requestId) => requestId + 1)}
+    />
+  );
 
-  // Check if we're still loading
-  if (!isReady || mapboxLoading || !mapboxLoaded) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <Card className="w-96">
+      <div className="flex h-full items-center justify-center rounded-lg bg-muted p-4">
+        <Card className="w-96 max-w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Carregando Mapa Avançado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div>• Inicializando configurações...</div>
-              <div>• Carregando biblioteca Mapbox...</div>
-              <div>• Preparando componentes...</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Check for errors
-  if (mapboxError || loaderError) {
-    return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Erro no Mapa Avançado
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Erro no mapa avançado
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              {mapboxError || loaderError}
-            </div>
-            <div className="space-y-2">
-              <Button onClick={handleRetry} size="sm" className="w-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Tentar Novamente
-              </Button>
-              <div className="text-xs text-muted-foreground text-center">
-                Verifique se o token Mapbox está configurado corretamente
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button onClick={retryInitialization} size="sm" className="w-full">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Tentar novamente
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const renderMapContent = () => {
-    try {
-      switch (viewMode) {
-        case 'cluster':
-          return (
-            <PropertyClusterMap
-              properties={properties}
-              onSelect={onSelect}
-              showClustering={showClustering}
-              showHeatmap={showHeatmap}
-            />
-          );
-        case 'heatmap':
-          return (
-            <PropertyHeatmap
-              properties={properties}
-              metric={heatmapMetric}
-              onMetricChange={setHeatmapMetric}
-            />
-          );
-        case 'analytics':
-          return (
-            <LocationAnalytics properties={properties} />
-          );
-        default:
-          return (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-muted-foreground">Modo de visualização não suportado</div>
-            </div>
-          );
-      }
-    } catch (error) {
-      console.error('AdvancedMapView: Error rendering content:', error);
-      return (
-        <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                Erro na Renderização
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground mb-4">
-                Erro ao renderizar o componente do mapa
-              </div>
-              <Button onClick={() => window.location.reload()} size="sm" className="w-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Recarregar Página
-              </Button>
-            </CardContent>
-          </Card>
+  if (isLoading || !isReady) {
+    return (
+      <div className="flex h-full items-center justify-center rounded-lg bg-muted">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground">Carregando mapa avançado...</span>
+      </div>
+    );
+  }
+
+  if (viewMode === 'analytics') {
+    return (
+      <div className="flex h-full flex-col overflow-hidden">
+        <div className="shrink-0 p-4 pb-2">{controls}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-2">
+          <LocationAnalytics properties={properties} />
         </div>
-      );
-    }
-  };
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full">
-      {/* Map/Analytics Content */}
-      <div className="h-full">
-        {renderMapContent()}
-      </div>
-
-      {/* Controls Panel */}
-      {viewMode !== 'analytics' && (
-        <div className="absolute top-4 left-4 z-10">
-          <AdvancedMapControls
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showClustering={showClustering}
-            onClusteringChange={setShowClustering}
-            showHeatmap={showHeatmap}
-            onHeatmapChange={setShowHeatmap}
-            heatmapMetric={heatmapMetric}
-            onHeatmapMetricChange={setHeatmapMetric}
-            mapStyle={mapStyle}
-            onMapStyleChange={setMapStyle}
-            layers={layers}
-            onLayerToggle={handleLayerToggle}
-          />
-        </div>
+      {viewMode === 'cluster' ? (
+        <PropertyClusterMap
+          properties={properties}
+          onSelect={onSelect}
+          showClustering={showClustering}
+          showHeatmap={showHeatmap}
+          mapStyle={mapStyle}
+          layers={layers}
+          fitRequestId={fitRequestId}
+        />
+      ) : (
+        <PropertyHeatmap
+          properties={properties}
+          metric={heatmapMetric}
+          mapStyle={mapStyle}
+          layers={layers}
+          fitRequestId={fitRequestId}
+        />
       )}
 
-      {/* Debug info in development */}
-      {import.meta.env.DEV && (
-        <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs p-2 rounded">
-          <div>Ready: {isReady ? 'Yes' : 'No'}</div>
-          <div>Loaded: {mapboxLoaded ? 'Yes' : 'No'}</div>
-          <div>Properties: {properties.length}</div>
-          <div>Mode: {viewMode}</div>
-        </div>
-      )}
+      <div className="absolute left-4 top-4 z-20">{controls}</div>
     </div>
   );
 }

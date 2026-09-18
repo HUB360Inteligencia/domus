@@ -1,101 +1,135 @@
-
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Property } from '@/types/property';
-import { MapPin, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2, MapPin, RefreshCw } from 'lucide-react';
+import type { Property } from '@/types/property';
 import { useMapbox } from '@/contexts/MapboxContext';
+import { Button } from '@/components/ui/button';
+import { createPropertyPopupContent } from '@/lib/property-map-dom';
+import { hasValidCoordinates } from '@/lib/property-map-data';
 
 interface PropertyDetailMapProps {
   property: Property;
 }
 
-export const PropertyDetailMap: React.FC<PropertyDetailMapProps> = ({ property }) => {
+export function PropertyDetailMap({ property }: PropertyDetailMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const { token, isConfigured } = useMapbox();
-
-  const hasCoords =
-    typeof property.latitude === 'number' &&
-    typeof property.longitude === 'number' &&
-    !Number.isNaN(property.latitude) &&
-    !Number.isNaN(property.longitude);
+  const { token, isConfigured, isLoading: isContextLoading, error: contextError } = useMapbox();
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const hasCoordinates = hasValidCoordinates(property);
 
   useEffect(() => {
-    if (!isConfigured || !token || !hasCoords || !mapContainer.current) return;
+    if (!token || !hasCoordinates || !mapContainer.current) return;
 
-    const center: [number, number] = [property.longitude as number, property.latitude as number];
+    setIsMapLoaded(false);
+    setMapError(null);
     mapboxgl.accessToken = token;
+    const center: [number, number] = [property.longitude, property.latitude];
+    const mapInstance = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center,
+      zoom: 15,
+      attributionControl: false,
+    });
+    map.current = mapInstance;
+    let didLoad = false;
+    mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    const popupHtml = `
-      <div class="p-2">
-        <h3 class="font-semibold text-sm">${property.title}</h3>
-        <p class="text-xs text-gray-600">${property.address}</p>
-        ${property.neighborhood ? `<p class="text-xs text-gray-500">${property.neighborhood}</p>` : ''}
-      </div>
-    `;
+    marker.current = new mapboxgl.Marker({ color: '#3b82f6', scale: 1.2 })
+      .setLngLat(center)
+      .setPopup(
+        new mapboxgl.Popup({ offset: 25 }).setDOMContent(
+          createPropertyPopupContent({
+            id: property.id,
+            title: property.title,
+            address: property.address,
+            city: property.city,
+            value: property.value,
+            status: property.status,
+            type: property.type,
+          }),
+        ),
+      )
+      .addTo(mapInstance);
 
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center,
-        zoom: 15,
-        attributionControl: false,
-      });
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      marker.current = new mapboxgl.Marker({ color: '#3b82f6', scale: 1.2 })
-        .setLngLat(center)
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupHtml))
-        .addTo(map.current);
-      // Garante o redimensionamento correto quando o container acabou de aparecer.
-      map.current.on('load', () => map.current?.resize());
-    } else {
-      map.current.flyTo({ center, zoom: 15, duration: 800 });
-      marker.current?.setLngLat(center);
-      marker.current?.setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupHtml));
-    }
-  }, [token, isConfigured, hasCoords, property.latitude, property.longitude, property.title, property.address, property.neighborhood]);
+    mapInstance.on('load', () => {
+      didLoad = true;
+      setMapError(null);
+      mapInstance.resize();
+      setIsMapLoaded(true);
+    });
+    mapInstance.on('error', (event) => {
+      if (didLoad) return;
+      setMapError(event.error?.message || 'Erro ao carregar o mapa do imóvel.');
+      setIsMapLoaded(false);
+    });
 
-  // Destrói o mapa ao desmontar.
-  useEffect(() => {
     return () => {
-      map.current?.remove();
-      map.current = null;
+      marker.current?.remove();
       marker.current = null;
+      mapInstance.remove();
+      map.current = null;
     };
-  }, []);
+  }, [hasCoordinates, property, retryKey, token]);
 
-  if (!hasCoords) {
-    return (
-      <div className="h-full min-h-[360px] w-full bg-muted flex items-center justify-center">
-        <div className="text-center">
-          <MapPin className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground">Coordenadas não disponíveis</p>
-          <p className="text-sm text-muted-foreground">
-            Adicione as coordenadas do imóvel para visualizar o mapa
-          </p>
-        </div>
-      </div>
-    );
+  if (!hasCoordinates) {
+    return <DetailMapStatus icon={MapPin} message="Adicione coordenadas válidas para visualizar o mapa." />;
   }
 
-  if (!isConfigured) {
-    return (
-      <div className="h-full min-h-[360px] w-full">
-        <Alert className="h-full flex items-center justify-center">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="ml-2">
-            Token do Mapbox não configurado. Configure o token nas configurações do sistema.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (isContextLoading) {
+    return <DetailMapStatus icon={Loader2} message="Carregando configurações do mapa..." isAnimated />;
+  }
+
+  if (!isConfigured || !token) {
+    return <DetailMapStatus icon={AlertCircle} message={contextError || 'Token do Mapbox não configurado.'} />;
   }
 
   return (
-    <div ref={mapContainer} className="h-full min-h-[360px] w-full" />
+    <div className="relative h-full min-h-[360px] w-full overflow-hidden">
+      <div ref={mapContainer} className="h-full min-h-[360px] w-full" />
+      {!isMapLoaded && !mapError && (
+        <DetailMapOverlay icon={Loader2} message="Carregando mapa..." isAnimated />
+      )}
+      {mapError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/90 p-4 text-center">
+          <AlertCircle className="mb-3 h-10 w-10 text-destructive" />
+          <p className="text-sm text-muted-foreground">{mapError}</p>
+          <Button className="mt-4" size="sm" onClick={() => setRetryKey((key) => key + 1)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+    </div>
   );
-};
+}
+
+function DetailMapStatus({
+  icon: Icon,
+  message,
+  isAnimated = false,
+}: {
+  icon: typeof MapPin;
+  message: string;
+  isAnimated?: boolean;
+}) {
+  return (
+    <div className="flex h-full min-h-[360px] w-full flex-col items-center justify-center bg-muted p-4 text-center">
+      <Icon className={`mb-3 h-10 w-10 text-muted-foreground ${isAnimated ? 'animate-spin' : ''}`} />
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+function DetailMapOverlay(props: Parameters<typeof DetailMapStatus>[0]) {
+  return (
+    <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm">
+      <DetailMapStatus {...props} />
+    </div>
+  );
+}

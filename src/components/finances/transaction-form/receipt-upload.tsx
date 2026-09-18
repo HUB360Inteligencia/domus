@@ -19,6 +19,7 @@ export function ReceiptUpload({ form }: ReceiptUploadProps) {
           <FormLabel>Recibo/Comprovante</FormLabel>
           <FormControl>
             <ReceiptUploadField
+              hideLabel
               value={field.value}
               onChange={field.onChange}
             />

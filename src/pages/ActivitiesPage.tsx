@@ -25,6 +25,7 @@ import { ActivityBoard } from "@/components/activities/activity-board";
 import { ActivityList } from "@/components/activities/activity-list";
 import { ActivityFiltersBar } from "@/components/activities/activity-filters";
 import { ActivityCalendar } from "@/components/activities/activity-calendar";
+import { toDateOnlyString } from "@/lib/dates";
 
 export default function ActivitiesPage() {
   const navigate = useNavigate();
@@ -176,7 +177,7 @@ export default function ActivitiesPage() {
             onSelect={handleSelectActivity}
             onDateSelect={(date) => {
               // Navigate to new activity form with the selected date pre-filled
-              const dateStr = date.toISOString().split('T')[0];
+              const dateStr = toDateOnlyString(date);
               navigate(`/activities/new?date=${dateStr}`);
             }}
           />

@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, eachMonthOfInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PropertyOccupancyPeriod, OccupancyType } from '@/types/property-occupancy';
+import { parseDateOnly } from "@/lib/dates";
 
 interface OccupancyCalendarProps {
   occupancyPeriods: PropertyOccupancyPeriod[];
@@ -50,8 +51,8 @@ export const OccupancyCalendar: React.FC<OccupancyCalendarProps> = ({
         
         // Find if any occupancy period covers this day
         for (const period of occupancyPeriods) {
-          const startDate = new Date(period.start_date);
-          const endDate = period.end_date ? new Date(period.end_date) : new Date();
+          const startDate = parseDateOnly(period.start_date);
+          const endDate = period.end_date ? parseDateOnly(period.end_date) : new Date();
           
           if (currentDate >= startDate && currentDate <= endDate) {
             // This day is covered by an occupancy period

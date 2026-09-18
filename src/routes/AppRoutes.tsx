@@ -43,6 +43,7 @@ const Login = lazyWithRetry(() => import("@/pages/auth/Login"));
 const Register = lazyWithRetry(() => import("@/pages/auth/Register"));
 const AuthCallback = lazyWithRetry(() => import("@/pages/auth/AuthCallback"));
 const ResetPassword = lazyWithRetry(() => import("@/pages/auth/ResetPassword"));
+const UpdatePassword = lazyWithRetry(() => import("@/pages/auth/UpdatePassword"));
 
 // Lazy imports - Páginas de finanças
 const FinanceDashboardPage = lazyWithRetry(() => import("@/pages/finances/FinanceDashboardPage"));
@@ -130,6 +131,7 @@ export function AppRoutes() {
       <Route path="/register" element={<Suspense fallback={<PageLoader />}><Register /></Suspense>} />
       <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
       <Route path="/auth/callback" element={<Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>} />
+      <Route path="/auth/update-password" element={<Suspense fallback={<PageLoader />}><UpdatePassword /></Suspense>} />
 
       {/* Página inicial - sem layout */}
       <Route path="/" element={<Suspense fallback={<PageLoader />}><Index /></Suspense>} />

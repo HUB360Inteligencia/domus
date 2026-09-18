@@ -1,9 +1,11 @@
 
 import { ReactNode, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { AppSidebar } from "./animated-sidebar";
 import { AppHeader } from "./app-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ForcePasswordChange } from "@/components/auth/force-password-change";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +15,7 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { session } = useAuth();
+  const location = useLocation();
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
@@ -33,7 +36,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex flex-col flex-1 min-w-0">
           <AppHeader />
           <main className="flex-1 px-3 py-4 md:px-6 lg:px-8">
-            {children}
+            <ErrorBoundary variant="page" resetKey={location.pathname}>
+              {children}
+            </ErrorBoundary>
           </main>
           <footer className="mx-3 mb-3 rounded-3xl border border-white/60 bg-white/55 px-3 py-3 text-center text-xs text-muted-foreground shadow-sm backdrop-blur md:mx-6 md:mb-6 md:px-6 dark:border-white/10 dark:bg-white/5">
             &copy; {new Date().getFullYear()} Sistema de Gestão Patrimonial - Admin. Todos os direitos reservados.
