@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ReceiptUpload } from './receipt-upload';
+import { PAYMENT_METHOD_OPTIONS } from '@/lib/payment-methods';
 
 interface MobileFieldsProps {
   form: UseFormReturn<TransactionFormData>;
@@ -49,14 +50,11 @@ export function MobileFields({ form, properties = [] }: MobileFieldsProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="transferencia">Transferência</SelectItem>
-                <SelectItem value="boleto">Boleto</SelectItem>
-                <SelectItem value="cheque">Cheque</SelectItem>
-                <SelectItem value="outros">Outros</SelectItem>
+                {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />

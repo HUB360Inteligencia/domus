@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   Building, 
+  LandPlot,
   CalendarDays,
   FileText, 
   Users, 
@@ -376,6 +377,11 @@ const SidebarMenuContent = () => {
       label: "Imóveis",
       href: "/properties",
       icon: <Building className="h-5 w-5" />,
+    },
+    {
+      label: "Incorporações",
+      href: "/developments",
+      icon: <LandPlot className="h-5 w-5" />,
     },
     {
       label: "Locações",

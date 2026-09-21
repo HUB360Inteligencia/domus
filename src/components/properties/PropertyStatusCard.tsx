@@ -33,6 +33,12 @@ export const PropertyStatusCard: React.FC<PropertyStatusCardProps> = ({
           color: 'bg-blue-100 text-blue-800 border-blue-200',
           icon: <Clock className="h-4 w-4" />
         };
+      case 'reserved':
+        return {
+          label: 'Reservado',
+          color: 'bg-violet-100 text-violet-800 border-violet-200',
+          icon: <Clock className="h-4 w-4" />
+        };
       case 'airbnb':
         return {
           label: 'Airbnb',

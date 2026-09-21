@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { MapboxProvider } from '@/contexts/MapboxContext';
+import { OwnershipViewProvider } from '@/contexts/OwnershipViewContext';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { ConfirmProvider } from '@/components/ui/confirm-provider';
@@ -19,11 +20,13 @@ function AppInner() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <MapboxProvider>
-            <ConfirmProvider>
-              <Toaster closeButton richColors />
-              <PasswordRecoveryGate />
-              <AppRoutes />
-            </ConfirmProvider>
+            <OwnershipViewProvider>
+              <ConfirmProvider>
+                <Toaster closeButton richColors />
+                <PasswordRecoveryGate />
+                <AppRoutes />
+              </ConfirmProvider>
+            </OwnershipViewProvider>
           </MapboxProvider>
         </AuthProvider>
       </QueryClientProvider>

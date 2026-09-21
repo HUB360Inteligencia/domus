@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchFinancialMetrics, fetchMonthlyFinancialData, fetchPropertyFinancialRanking } from '@/api/financial-dashboard';
 import { fetchNeighborhoodFinancialData } from '@/api/neighborhood-financial-data';
 import { PropertyRankingItem } from '@/types/financial-ranking';
+import { useOwnershipView } from '@/contexts/OwnershipViewContext';
 
 export const useFinancialDashboard = () => {
   // State for UI controls
@@ -12,16 +13,21 @@ export const useFinancialDashboard = () => {
   const [neighborhoodRankingType, setNeighborhoodRankingType] = useState<'revenue' | 'count'>('revenue');
   const [chartViewMode, setChartViewMode] = useState<'patrimony' | 'roi'>('patrimony');
 
+  // O modo entra na chave da consulta: bruto e minha cota são resultados diferentes
+  // e cada um fica no seu cache.
+  const { mode, shares } = useOwnershipView();
+  const appliedShares = mode === 'mine' ? shares : undefined;
+
   // Fetch financial metrics
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
-    queryKey: ['financial-metrics'],
-    queryFn: fetchFinancialMetrics,
+    queryKey: ['financial-metrics', mode],
+    queryFn: () => fetchFinancialMetrics(appliedShares),
   });
 
   // Fetch monthly data
   const { data: monthlyData = [], isLoading: isLoadingMonthly } = useQuery({
-    queryKey: ['monthly-financial-data'],
-    queryFn: () => fetchMonthlyFinancialData(12),
+    queryKey: ['monthly-financial-data', mode],
+    queryFn: () => fetchMonthlyFinancialData(12, appliedShares),
   });
 
   // Fetch property rankings

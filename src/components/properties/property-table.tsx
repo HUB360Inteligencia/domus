@@ -44,6 +44,7 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   available: 'Disponível',
+  reserved: 'Reservado',
   rented: 'Alugado',
   airbnb: 'Airbnb',
   maintenance: 'Em manutenção',
@@ -52,6 +53,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   available: 'bg-[#4a7c59] border-[#4a7c59]',
+  reserved: 'bg-[#8a6fa8] border-[#8a6fa8]',
   rented: 'bg-[#6f8f74] border-[#6f8f74]',
   airbnb: 'bg-[#c4934f] border-[#c4934f]',
   maintenance: 'bg-amber-500 border-amber-500',
@@ -191,6 +193,7 @@ export function PropertyTable({ properties, onSelect, onEdit, onDelete }: Proper
               <SelectItem value="available">Disponível</SelectItem>
               <SelectItem value="rented">Alugado</SelectItem>
               <SelectItem value="airbnb">Airbnb</SelectItem>
+              <SelectItem value="reserved">Reservado</SelectItem>
               <SelectItem value="maintenance">Em manutenção</SelectItem>
               <SelectItem value="sold">Vendido</SelectItem>
             </SelectContent>

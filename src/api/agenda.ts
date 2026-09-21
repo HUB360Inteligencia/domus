@@ -88,6 +88,10 @@ type ExpectedPaymentRow = Tables<"contract_expected_payments"> & {
   property?: { title?: string | null } | null;
 };
 
+type PurchaseInstallmentRow = Tables<"property_purchase_installments"> & {
+  property?: { title?: string | null } | null;
+};
+
 type QueryError = { code?: string; message: string };
 
 const isMissingSchemaError = (error: QueryError | null | undefined) => {
@@ -221,6 +225,44 @@ const mapFinancialEvent = (transaction: FinancialScheduleRow): AgendaEvent => {
     isVirtual: true,
     metadata: {
       recurring: transaction.recurring,
+    },
+  };
+};
+
+/**
+ * Parcela da aquisição do imóvel: aparece como pagamento previsto até receber baixa
+ * (a baixa é feita na ficha do imóvel e cria a despesa real).
+ */
+const mapPurchaseInstallmentEvent = (installment: PurchaseInstallmentRow): AgendaEvent => {
+  const startsAt = dateAtNoon(installment.due_date).toISOString();
+  const paid = installment.status === "paid";
+  const isDownPayment = installment.installment_number === 0;
+  const label = isDownPayment ? "Entrada da compra" : `Parcela ${installment.installment_number} da compra`;
+
+  return {
+    id: `purchase-installment-${installment.id}`,
+    source: "financial",
+    sourceId: installment.id,
+    title: `${label} - ${installment.property?.title || "imóvel"}`,
+    description: isDownPayment
+      ? "Entrada/sinal da aquisição do imóvel."
+      : "Parcela da aquisição do imóvel.",
+    type: "payment",
+    status: paid ? "completed" : withOverdue("scheduled", startsAt),
+    priority: paid ? "low" : "high",
+    startsAt,
+    allDay: true,
+    amount: Number(installment.amount),
+    cashflowDirection: "payable",
+    propertyId: installment.property_id,
+    propertyTitle: installment.property?.title ?? null,
+    financialTransactionId: installment.financial_transaction_id,
+    isVirtual: true,
+    isPredicted: !paid,
+    isReconciled: paid,
+    metadata: {
+      purchaseInstallmentId: installment.id,
+      installmentNumber: installment.installment_number,
     },
   };
 };
@@ -434,7 +476,7 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
 
   await generateExpectedPayments(range);
 
-  const [manual, reminders, activities, contracts, expectedPayments, transactions] = await Promise.all([
+  const [manual, reminders, activities, contracts, expectedPayments, transactions, purchaseInstallments] = await Promise.all([
     supabase
       .from("agenda_events")
       .select("*,property:properties(title),contract:contracts(title)")
@@ -466,6 +508,13 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
       .select("id,name,description,amount,transaction_type,transaction_date,property_id,recurring,property:properties(title)")
       .gte("transaction_date", format(range.start, "yyyy-MM-dd"))
       .lte("transaction_date", format(range.end, "yyyy-MM-dd")),
+    supabase
+      .from("property_purchase_installments")
+      .select("*,property:properties(title)")
+      .neq("status", "cancelled")
+      .gte("due_date", format(range.start, "yyyy-MM-dd"))
+      .lte("due_date", format(range.end, "yyyy-MM-dd"))
+      .order("due_date", { ascending: true }),
   ]);
 
   const errors = [
@@ -474,12 +523,13 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
     { source: 'activities', err: activities.error },
     { source: 'contracts', err: contracts.error },
     { source: 'expectedPayments', err: expectedPayments.error },
-    { source: 'transactions', err: transactions.error }
+    { source: 'transactions', err: transactions.error },
+    { source: 'purchaseInstallments', err: purchaseInstallments.error }
   ].filter(e => e.err);
 
   const criticalErrors = errors.filter(e => {
     // Ignore PGRST205 (table does not exist) for agenda_events and reminders as they might not be migrated yet
-    if (isMissingSchemaError(e.err) && (e.source === 'manual' || e.source === 'reminders' || e.source === 'expectedPayments')) {
+    if (isMissingSchemaError(e.err) && (e.source === 'manual' || e.source === 'reminders' || e.source === 'expectedPayments' || e.source === 'purchaseInstallments')) {
       return false;
     }
     return true;
@@ -505,6 +555,8 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
     ? expectedReceiptEvents
     : buildFallbackContractReceiptEvents(contractRows, transactionRows, range);
   const contractsData = [...contractReceiptEvents, ...buildContractEndEvents(contractRows, range)];
+  const purchaseInstallmentsData = ((purchaseInstallments.data || []) as unknown as PurchaseInstallmentRow[])
+    .map(mapPurchaseInstallmentEvent);
 
   const propertyTitles = new Map<string, string>();
   const contractTitles = new Map<string, string>();
@@ -523,7 +575,13 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
     ),
   );
 
-  return [...manualData, ...activitiesData, ...transactionsData, ...contractsData].sort(
+  return [
+    ...manualData,
+    ...activitiesData,
+    ...transactionsData,
+    ...contractsData,
+    ...purchaseInstallmentsData,
+  ].sort(
     (a, b) => parseISO(a.startsAt).getTime() - parseISO(b.startsAt).getTime(),
   );
 }

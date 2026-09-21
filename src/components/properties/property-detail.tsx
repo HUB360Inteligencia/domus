@@ -9,6 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { PropertyDetailMap } from "./property-detail-map";
 import { PropertyFinancialInvestmentSection } from "./PropertyFinancialInvestmentSection";
+import { PropertyPurchaseTermsSection } from "./PropertyPurchaseTermsSection";
+import { OwnershipStakesSection } from "@/components/ownership/ownership-stakes-section";
+import { Link } from "react-router-dom";
+import { useDevelopments } from "@/hooks/use-developments";
 import { PropertyTransactionsSection } from "./PropertyTransactionsSection";
 import { PropertyImageGallery } from "./PropertyImageGallery";
 import { PropertyHeroHeader } from "./property-hero-header";
@@ -73,6 +77,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 }) => {
   // A aba ativa fica na URL (?tab=) para que "Voltar" de outra tela reabra a mesma aba
   const [searchParams, setSearchParams] = useSearchParams();
+  const { data: developments = [] } = useDevelopments();
+  const development = property?.development_id
+    ? developments.find((item) => item.id === property.development_id)
+    : undefined;
   const activeTab = PROPERTY_TABS.includes(searchParams.get("tab") || "") ? (searchParams.get("tab") as string) : "overview";
   const setActiveTab = (tab: string) => {
     const next = new URLSearchParams(searchParams);
@@ -210,6 +218,18 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
                         {getStatusLabel(property?.status)}
                       </Badge>
                     </div>
+                    {property?.development_id && (
+                      <div className="flex items-center justify-between rounded-3xl border border-white/60 bg-white/55 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                        <span className="text-muted-foreground">Loteamento</span>
+                        <Link
+                          to={`/developments/${property.development_id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {development?.name ?? "Ver empreendimento"}
+                        </Link>
+                      </div>
+                    )}
+                    {property?.block && <PropertyInfoRow label="Quadra" value={property.block} />}
                     <PropertyInfoRow label="Área" value={property?.area ? `${property.area} m²` : "N/A"} />
                     <PropertyInfoRow label="Quartos" value={property?.bedrooms ? String(property.bedrooms) : "N/A"} />
                     <PropertyInfoRow label="Banheiros" value={property?.bathrooms ? String(property.bathrooms) : "N/A"} />
@@ -300,8 +320,20 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           </div>
         </TabsContent>
 
-        <TabsContent value="financial">
+        <TabsContent value="financial" className="space-y-5">
           <PropertyFinancialInvestmentSection property={property} isLoading={isLoading} />
+          <PropertyPurchaseTermsSection property={property} isLoading={isLoading} />
+          {property && (
+            <OwnershipStakesSection
+              target={{ kind: "property", id: property.id }}
+              referenceValue={property.value}
+              inheritanceNote={
+                property.development_id
+                  ? `Sem participação própria: este lote herda a sociedade de ${development?.name ?? "seu loteamento"}.`
+                  : undefined
+              }
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="transactions">

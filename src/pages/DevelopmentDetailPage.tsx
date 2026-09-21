@@ -10,12 +10,17 @@ import { Edit, Trash2, ArrowLeft, Building2, MapPin, Calendar, Ruler } from 'luc
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateOnly } from "@/lib/dates";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DevelopmentLotsSection } from '@/components/developments/development-lots-section';
+import { OwnershipStakesSection } from '@/components/ownership/ownership-stakes-section';
+import { useDevelopmentLots } from '@/hooks/use-development-lots';
 
 export default function DevelopmentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: development, isLoading } = useDevelopment(id || '');
   const deleteDevelopment = useDeleteDevelopment();
+  const { totals } = useDevelopmentLots(id || '');
 
   const handleDelete = async () => {
     if (!id) return;
@@ -137,6 +142,14 @@ export default function DevelopmentDetailPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          <TabsTrigger value="lots">Lotes</TabsTrigger>
+          <TabsTrigger value="partners">Sociedade</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
@@ -231,6 +244,19 @@ export default function DevelopmentDetailPage() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="lots">
+          <DevelopmentLotsSection development={development} />
+        </TabsContent>
+
+        <TabsContent value="partners">
+          <OwnershipStakesSection
+            target={{ kind: 'development', id: development.id }}
+            referenceValue={totals?.totalMarketValue}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

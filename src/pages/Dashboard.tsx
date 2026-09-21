@@ -34,6 +34,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { parseDateOnly } from "@/lib/dates";
+import { OwnershipViewToggle } from "@/components/ownership/ownership-view-toggle";
 
 const chartColors = ["#c4934f", "#6f8f74", "#9f5d4c", "#4f6f85", "#242021", "#d9b979"];
 const DASHBOARD_PERIOD_MONTHS = 7;
@@ -475,6 +476,7 @@ export default function Dashboard() {
                 <p className="mt-4 max-w-lg text-sm leading-6 text-white/66">
                   Indicadores, fluxo financeiro e composição do portfólio em uma leitura rápida.
                 </p>
+                <OwnershipViewToggle className="mt-5 rounded-2xl border border-white/18 bg-white/12 p-1" />
               </div>
 
               <div className="flex flex-wrap gap-3">

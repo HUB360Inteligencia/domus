@@ -1514,6 +1514,7 @@ export type Database = {
         Row: {
           address: string
           city: string
+          client_id: string | null
           created_at: string
           current_phase: string
           description: string | null
@@ -1535,6 +1536,7 @@ export type Database = {
         Insert: {
           address: string
           city: string
+          client_id?: string | null
           created_at?: string
           current_phase?: string
           description?: string | null
@@ -1556,6 +1558,7 @@ export type Database = {
         Update: {
           address?: string
           city?: string
+          client_id?: string | null
           created_at?: string
           current_phase?: string
           description?: string | null
@@ -1893,6 +1896,80 @@ export type Database = {
         }
         Relationships: []
       }
+      ownership_stakes: {
+        Row: {
+          client_id: string | null
+          contact_id: string | null
+          created_at: string
+          development_id: string | null
+          id: string
+          is_self: boolean
+          notes: string | null
+          percentage: number
+          property_id: string | null
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          development_id?: string | null
+          id?: string
+          is_self?: boolean
+          notes?: string | null
+          percentage: number
+          property_id?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          development_id?: string | null
+          id?: string
+          is_self?: boolean
+          notes?: string | null
+          percentage?: number
+          property_id?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_stakes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_stakes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_stakes_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_stakes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string | null
@@ -2002,26 +2079,37 @@ export type Database = {
           area: number | null
           bathrooms: number | null
           bedrooms: number | null
+          block: string | null
           city: string
           client_id: string | null
           complement: string | null
           condo_fee: number | null
           created_at: string
+          creditor_name: string | null
           description: string | null
+          development_id: string | null
+          down_payment: number | null
           features: Json | null
+          first_installment_date: string | null
           floor_number: number | null
           furnished: string | null
           garage_spots: number | null
           id: string
           image_url: string | null
+          installment_amount: number | null
+          installment_frequency: string | null
+          installments_count: number | null
           land_area: number | null
           last_valuation_date: string | null
           latitude: number | null
           longitude: number | null
           monthly_return_rate: number | null
           neighborhood: string | null
+          payment_type: string | null
           property_number: string | null
           purchase_date: string | null
+          purchase_index: string | null
+          purchase_notes: string | null
           purchase_value: number | null
           rental_value: number | null
           square_meter_value: number | null
@@ -2048,26 +2136,37 @@ export type Database = {
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
+          block?: string | null
           city: string
           client_id?: string | null
           complement?: string | null
           condo_fee?: number | null
           created_at?: string
+          creditor_name?: string | null
           description?: string | null
+          development_id?: string | null
+          down_payment?: number | null
           features?: Json | null
+          first_installment_date?: string | null
           floor_number?: number | null
           furnished?: string | null
           garage_spots?: number | null
           id?: string
           image_url?: string | null
+          installment_amount?: number | null
+          installment_frequency?: string | null
+          installments_count?: number | null
           land_area?: number | null
           last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null
           monthly_return_rate?: number | null
           neighborhood?: string | null
+          payment_type?: string | null
           property_number?: string | null
           purchase_date?: string | null
+          purchase_index?: string | null
+          purchase_notes?: string | null
           purchase_value?: number | null
           rental_value?: number | null
           square_meter_value?: number | null
@@ -2094,26 +2193,37 @@ export type Database = {
           area?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
+          block?: string | null
           city?: string
           client_id?: string | null
           complement?: string | null
           condo_fee?: number | null
           created_at?: string
+          creditor_name?: string | null
           description?: string | null
+          development_id?: string | null
+          down_payment?: number | null
           features?: Json | null
+          first_installment_date?: string | null
           floor_number?: number | null
           furnished?: string | null
           garage_spots?: number | null
           id?: string
           image_url?: string | null
+          installment_amount?: number | null
+          installment_frequency?: string | null
+          installments_count?: number | null
           land_area?: number | null
           last_valuation_date?: string | null
           latitude?: number | null
           longitude?: number | null
           monthly_return_rate?: number | null
           neighborhood?: string | null
+          payment_type?: string | null
           property_number?: string | null
           purchase_date?: string | null
+          purchase_index?: string | null
+          purchase_notes?: string | null
           purchase_value?: number | null
           rental_value?: number | null
           square_meter_value?: number | null
@@ -2329,6 +2439,79 @@ export type Database = {
           },
           {
             foreignKeyName: "property_occupancy_periods_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_purchase_installments: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          due_date: string
+          financial_transaction_id: string | null
+          id: string
+          installment_number: number
+          metadata: Json
+          notes: string | null
+          paid_date: string | null
+          property_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          due_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          installment_number: number
+          metadata?: Json
+          notes?: string | null
+          paid_date?: string | null
+          property_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          due_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          installment_number?: number
+          metadata?: Json
+          notes?: string | null
+          paid_date?: string | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_purchase_installments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_purchase_installments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_purchase_installments_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -2576,6 +2759,18 @@ export type Database = {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      development_lot_totals: {
+        Args: { p_development_id: string }
+        Returns: {
+          total_lots: number
+          sold_lots: number
+          reserved_lots: number
+          available_lots: number
+          total_land_area: number
+          total_market_value: number
+          sold_value: number
+        }[]
+      }
       generate_contract_expected_payments: {
         Args: { p_from_month: string; p_through_month: string }
         Returns: number
@@ -2589,6 +2784,18 @@ export type Database = {
       process_due_agenda_reminders: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      generate_property_purchase_installments: {
+        Args: { p_property_id: string }
+        Returns: number
+      }
+      record_property_purchase_installment: {
+        Args: {
+          p_installment_id: string
+          p_paid_date?: string | null
+          p_payment_method?: string | null
+        }
+        Returns: string
       }
       record_expected_contract_payment: {
         Args: {

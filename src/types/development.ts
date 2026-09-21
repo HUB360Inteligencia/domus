@@ -2,6 +2,7 @@
 export interface Development {
   id: string;
   user_id: string;
+  client_id?: string | null;
   name: string;
   type: 'residential_building' | 'commercial_building' | 'horizontal_condominium' | 'subdivision';
   address: string;

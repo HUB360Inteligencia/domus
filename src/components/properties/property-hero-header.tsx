@@ -69,6 +69,7 @@ const propertyTypeLabels: Record<string, string> = {
 const statusConfig: Record<string, { label: string; dot: string }> = {
   rented:      { label: "Alugado",        dot: "bg-[#6f8f74]" },
   available:   { label: "Disponível",      dot: "bg-[#4a7c59]" },
+  reserved:    { label: "Reservado",       dot: "bg-[#8a6fa8]" },
   airbnb:      { label: "Airbnb",          dot: "bg-[#c4934f]" },
   maintenance: { label: "Em manutenção",  dot: "bg-amber-400" },
   sold:        { label: "Vendido",         dot: "bg-stone-400" },

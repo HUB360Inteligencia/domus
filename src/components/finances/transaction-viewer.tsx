@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { FileText, Eye, Calendar, CreditCard, MapPin, Tag, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { parseDateOnly } from "@/lib/dates";
+import { formatPaymentMethod } from "@/lib/payment-methods";
 
 interface TransactionViewerProps {
   isOpen: boolean;
@@ -105,7 +106,7 @@ export const TransactionViewer: React.FC<TransactionViewerProps> = ({
                     <CreditCard className="h-3 w-3" />
                     Forma de Pagamento
                   </label>
-                  <p className="text-sm capitalize">{transaction.payment_method}</p>
+                  <p className="text-sm">{formatPaymentMethod(transaction.payment_method)}</p>
                 </div>
               )}
             </div>

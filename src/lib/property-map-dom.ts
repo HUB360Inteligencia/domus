@@ -13,6 +13,7 @@ export interface PropertyPopupData {
 
 const STATUS_LABELS: Record<string, string> = {
   available: 'Disponível',
+  reserved: 'Reservado',
   rented: 'Alugado',
   airbnb: 'Airbnb',
   maintenance: 'Em manutenção',

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FurnishedStatus, Property, PropertyFormData, PropertyStatus } from "@/types/property";
+import { toPurchaseTerms } from "@/types/property-purchase";
 import { handleAuthError } from "@/utils/auth-utils";
 
 import { logger } from "@/lib/logger";
@@ -36,6 +37,8 @@ export const fetchProperties = async (): Promise<Property[]> => {
     return (data || []).map(item => ({
       ...item,
       status: item.status as PropertyStatus,
+
+      ...toPurchaseTerms(item),
       furnished: item.furnished as FurnishedStatus,
       features: item.features as Property['features'],
       tags: item.tags || [],
@@ -83,6 +86,8 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     return data ? {
       ...data,
       status: data.status as PropertyStatus,
+
+      ...toPurchaseTerms(data),
       furnished: data.furnished as FurnishedStatus,
       features: data.features as Property['features'],
       tags: data.tags || [],
@@ -127,6 +132,8 @@ export const createProperty = async (propertyData: PropertyFormData): Promise<Pr
     return {
       ...data,
       status: data.status as PropertyStatus,
+
+      ...toPurchaseTerms(data),
       furnished: data.furnished as FurnishedStatus,
       features: data.features as Property['features'],
       tags: data.tags || [],
@@ -166,6 +173,8 @@ export const updateProperty = async (propertyData: PropertyFormData & { id: stri
     return {
       ...updatedData,
       status: updatedData.status as PropertyStatus,
+
+      ...toPurchaseTerms(updatedData),
       furnished: updatedData.furnished as FurnishedStatus,
       features: updatedData.features as Property['features'],
       tags: updatedData.tags || [],
@@ -209,6 +218,8 @@ export const updatePropertyCoordinates = async ({
   return {
     ...data,
     status: data.status as PropertyStatus,
+
+    ...toPurchaseTerms(data),
     furnished: data.furnished as FurnishedStatus,
     features: data.features as Property['features'],
     tags: data.tags || []

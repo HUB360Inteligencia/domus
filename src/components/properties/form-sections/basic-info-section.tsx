@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Home } from 'lucide-react';
 import { PropertyFormData, PropertyStatus, PropertyType } from '@/types/property';
+import { useDevelopments } from '@/hooks/use-developments';
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartamento' },
@@ -18,6 +19,7 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 
 const PROPERTY_STATUSES: { value: PropertyStatus; label: string }[] = [
   { value: 'available', label: 'Disponível' },
+  { value: 'reserved', label: 'Reservado' },
   { value: 'airbnb', label: 'Airbnb' },
   { value: 'maintenance', label: 'Manutenção' },
   { value: 'sold', label: 'Vendido' },
@@ -25,10 +27,14 @@ const PROPERTY_STATUSES: { value: PropertyStatus; label: string }[] = [
 
 interface BasicInfoSectionProps {
   formData: PropertyFormData;
-  onInputChange: (field: keyof PropertyFormData, value: any) => void;
+  onInputChange: (field: keyof PropertyFormData, value: PropertyFormData[keyof PropertyFormData]) => void;
 }
 
 export function BasicInfoSection({ formData, onInputChange }: BasicInfoSectionProps) {
+  const { data: developments = [] } = useDevelopments();
+  // Quadra só faz sentido para lote de loteamento.
+  const showBlock = !!formData.development_id && formData.type === 'land';
+
   return (
     <Card>
       <CardHeader>
@@ -65,6 +71,42 @@ export function BasicInfoSection({ formData, onInputChange }: BasicInfoSectionPr
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="development_id">Loteamento / Empreendimento</Label>
+            <Select
+              value={formData.development_id || 'none'}
+              onValueChange={(value) =>
+                onInputChange('development_id', value === 'none' ? null : value)
+              }
+            >
+              <SelectTrigger id="development_id">
+                <SelectValue placeholder="Nenhum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {developments.map((development) => (
+                  <SelectItem key={development.id} value={development.id}>
+                    {development.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showBlock && (
+            <div>
+              <Label htmlFor="block">Quadra</Label>
+              <Input
+                id="block"
+                value={formData.block || ''}
+                onChange={(e) => onInputChange('block', e.target.value || null)}
+                placeholder="Ex: A"
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

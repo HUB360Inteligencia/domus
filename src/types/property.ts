@@ -1,7 +1,9 @@
 
 import { Json } from '@/integrations/supabase/types';
+import { PropertyPurchaseTerms } from '@/types/property-purchase';
 
-export type PropertyStatus = 'available' | 'rented' | 'airbnb' | 'maintenance' | 'sold';
+// 'reserved' existe para lotes de loteamento com proposta aceita e venda não fechada.
+export type PropertyStatus = 'available' | 'reserved' | 'rented' | 'airbnb' | 'maintenance' | 'sold';
 
 export type PropertyType = 'apartment' | 'house' | 'commercial' | 'land' | 'rural';
 
@@ -31,7 +33,7 @@ export interface PropertyImage {
   display_order?: number;
 }
 
-export interface Property {
+export interface Property extends PropertyPurchaseTerms {
   id: string;
   title: string;
   description?: string;
@@ -48,6 +50,10 @@ export interface Property {
   rental_value?: number; // Valor de aluguel
   area?: number; // Área construída
   land_area?: number; // Área do terreno
+  /** Loteamento/empreendimento que agrupa este imóvel. */
+  development_id?: string | null;
+  /** Quadra do lote; o número do lote fica em property_number. */
+  block?: string | null;
   bedrooms?: number;
   bathrooms?: number;
   garage_spots?: number;
@@ -72,7 +78,7 @@ export interface Property {
   vacancy_rate?: number | null;
 }
 
-export interface PropertyFormData {
+export interface PropertyFormData extends PropertyPurchaseTerms {
   title: string;
   description: string;
   address: string;
@@ -88,6 +94,10 @@ export interface PropertyFormData {
   rental_value?: number; // Valor de aluguel
   area?: number; // Área construída
   land_area?: number; // Área do terreno
+  /** Loteamento/empreendimento que agrupa este imóvel. */
+  development_id?: string | null;
+  /** Quadra do lote; o número do lote fica em property_number. */
+  block?: string | null;
   bedrooms?: number;
   bathrooms?: number;
   garage_spots?: number;

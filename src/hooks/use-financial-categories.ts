@@ -34,6 +34,8 @@ const DEFAULT_INCOME_CATEGORIES = [
 
 // Categorias padrão de despesa para imóveis
 const DEFAULT_EXPENSE_CATEGORIES = [
+  'Aquisição de Imóvel',
+  'Financiamento',
   'Manutenção',
   'Reforma',
   'IPTU',

@@ -6,6 +6,7 @@ import { useFinancialTransactions } from '@/hooks/use-financial-transactions';
 import { useRentalAnalytics } from './use-rental-analytics';
 import { parseDateOnly } from "@/lib/dates";
 import { isContractInForce } from "@/lib/contract-status";
+import { useOwnershipView } from "@/contexts/OwnershipViewContext";
 
 export interface DashboardMetrics {
   // Portfólio de Imóveis
@@ -51,12 +52,39 @@ export interface DashboardMetrics {
 }
 
 export const useDashboardMetrics = (): DashboardMetrics => {
-  const { properties } = useProperties();
+  const { properties: grossProperties } = useProperties();
   const { contracts } = useContracts();
-  const { transactions } = useFinancialTransactions();
+  const { transactions: grossTransactions } = useFinancialTransactions();
   const rentalAnalytics = useRentalAnalytics();
+  const { mode, factorFor } = useOwnershipView();
 
   return useMemo(() => {
+    // Na visão "minha cota", valores de imóvel e de transação entram já rateados
+    // pela participação do titular. Contagens (quantos imóveis, ocupação) não mudam:
+    // 40 lotes continuam sendo 40 mesmo numa sociedade 50/50. Percentuais de ROI
+    // também não, porque a cota escala numerador e denominador na mesma proporção.
+    const properties =
+      mode === "gross"
+        ? grossProperties
+        : grossProperties.map((property) => {
+            const factor = factorFor(property.id);
+            return {
+              ...property,
+              value: Number(property.value || 0) * factor,
+              purchase_value: property.purchase_value == null ? property.purchase_value : Number(property.purchase_value) * factor,
+              total_investment: property.total_investment == null ? property.total_investment : Number(property.total_investment) * factor,
+              rental_value: property.rental_value == null ? property.rental_value : Number(property.rental_value) * factor,
+            };
+          });
+
+    const transactions =
+      mode === "gross"
+        ? grossTransactions
+        : grossTransactions.map((transaction) => ({
+            ...transaction,
+            amount: Number(transaction.amount || 0) * factorFor(transaction.property_id),
+          }));
+
     // Calcular métricas do portfólio
     const totalProperties = properties.length;
     const rentablePropertiesList = properties.filter(p => p.status !== 'sold');
@@ -174,5 +202,5 @@ export const useDashboardMetrics = (): DashboardMetrics => {
       expensesTrend,
       profitTrend
     };
-  }, [properties, contracts, transactions, rentalAnalytics]);
+  }, [grossProperties, contracts, grossTransactions, rentalAnalytics, mode, factorFor]);
 };

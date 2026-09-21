@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Filter,
   Home,
+  LandPlot,
+  Layers,
   LayoutGrid,
   LayoutList,
   Map as MapIcon,
@@ -21,6 +23,7 @@ import {
   TrendingUp,
   WalletCards,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Property } from "@/types/property";
 import { PropertyTable } from "./property-table";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PropertyMapView } from "./property-map-view";
 import { AdvancedMapView } from "./advanced-map/advanced-map-view";
 import { formatCurrency } from "@/utils/currency";
+import { useDevelopments } from "@/hooks/use-developments";
+import { useOwnershipView } from "@/contexts/OwnershipViewContext";
+import { OwnershipViewToggle } from "@/components/ownership/ownership-view-toggle";
 import { cn } from "@/lib/utils";
 
 interface PropertyListProps {
@@ -60,6 +66,12 @@ const statusConfig: Record<string, { label: string; className: string; overlayCl
     className: "border-[#4a7c59]/25 bg-[#4a7c59]/12 text-[#2f543a]",
     overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
     dot: "bg-[#4a7c59]",
+  },
+  reserved: {
+    label: "Reservado",
+    className: "border-[#8a6fa8]/25 bg-[#8a6fa8]/12 text-[#4e3d63]",
+    overlayClassName: "border-white/30 bg-white/15 backdrop-blur-md text-white shadow-sm",
+    dot: "bg-[#8a6fa8]",
   },
   rented: {
     label: "Alugado",
@@ -89,6 +101,36 @@ const statusConfig: Record<string, { label: string; className: string; overlayCl
 
 const isViewMode = (value: string): value is ViewMode => viewModes.includes(value as ViewMode);
 
+interface PropertyGroup {
+  id: string;
+  label: string;
+  properties: Property[];
+}
+
+/** Cabeçalho de um grupo de imóveis, com o total do grupo à direita. */
+function GroupHeading({ group }: { group: PropertyGroup }) {
+  const total = group.properties.reduce((sum, property) => sum + Number(property.value || 0), 0);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+      <div className="flex items-center gap-2">
+        {group.id ? (
+          <Link
+            to={`/developments/${group.id}`}
+            className="text-base font-semibold hover:underline"
+          >
+            {group.label}
+          </Link>
+        ) : (
+          <span className="text-base font-semibold text-muted-foreground">{group.label}</span>
+        )}
+        <Badge variant="secondary">{group.properties.length}</Badge>
+      </div>
+      <span className="text-sm text-muted-foreground">{formatCurrency(total)}</span>
+    </div>
+  );
+}
+
 const compactCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -110,8 +152,16 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [filterDevelopment, setFilterDevelopment] = useState<string | null>(null);
+  const [groupByDevelopment, setGroupByDevelopment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { data: developments = [] } = useDevelopments();
+  const { mode, factorFor } = useOwnershipView();
+  const developmentNames = useMemo(
+    () => new Map(developments.map((development) => [development.id, development.name])),
+    [developments]
+  );
 
   useEffect(() => {
     if (!error) return undefined;
@@ -145,18 +195,32 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
       const matchesSearch = normalizedSearch ? searchableText.includes(normalizedSearch) : true;
       const matchesType = filterType ? property.type === filterType : true;
       const matchesStatus = filterStatus ? property.status === filterStatus : true;
+      // "none" isola os imóveis fora de qualquer loteamento.
+      const matchesDevelopment = !filterDevelopment
+        ? true
+        : filterDevelopment === "none"
+          ? !property.development_id
+          : property.development_id === filterDevelopment;
 
-      return matchesSearch && matchesType && matchesStatus;
+      return matchesSearch && matchesType && matchesStatus && matchesDevelopment;
     });
-  }, [filterStatus, filterType, properties, searchTerm]);
+  }, [filterDevelopment, filterStatus, filterType, properties, searchTerm]);
 
   const summary = useMemo(() => {
-    const totalValue = properties.reduce((sum, property) => sum + Number(property.value || 0), 0);
-    const rentableProperties = properties.filter((property) => property.status !== "sold");
+    const totalValue = properties.reduce(
+      (sum, property) => sum + Number(property.value || 0) * factorFor(property.id),
+      0
+    );
+    const rentableProperties = properties.filter(
+      (property) => property.status !== "sold" && property.status !== "reserved"
+    );
     const occupiedProperties = rentableProperties.filter(
       (property) => property.status === "rented" || property.status === "airbnb"
     );
-    const monthlyRent = properties.reduce((sum, property) => sum + Number(property.rental_value || 0), 0);
+    const monthlyRent = properties.reduce(
+      (sum, property) => sum + Number(property.rental_value || 0) * factorFor(property.id),
+      0
+    );
     const averageValue = properties.length > 0 ? totalValue / properties.length : 0;
     const occupancyRate = rentableProperties.length > 0
       ? (occupiedProperties.length / rentableProperties.length) * 100
@@ -171,12 +235,36 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
       occupiedProperties: occupiedProperties.length,
       rentableProperties: rentableProperties.length,
     };
-  }, [properties]);
+  }, [properties, factorFor]);
 
-  const activeFiltersCount = [searchTerm.trim(), filterType, filterStatus].filter(Boolean).length;
+  const groupedProperties = useMemo(() => {
+    const buckets = new Map<string, Property[]>();
+
+    for (const property of filteredProperties) {
+      const key = property.development_id || "";
+      const bucket = buckets.get(key);
+      if (bucket) bucket.push(property);
+      else buckets.set(key, [property]);
+    }
+
+    return [...buckets.entries()]
+      .map(([id, items]) => ({
+        id,
+        label: id ? developmentNames.get(id) ?? "Loteamento removido" : "Sem loteamento",
+        properties: items,
+      }))
+      .sort((a, b) => {
+        if (!a.id) return 1;
+        if (!b.id) return -1;
+        return a.label.localeCompare(b.label, "pt-BR");
+      });
+  }, [developmentNames, filteredProperties]);
+
+  const activeFiltersCount = [searchTerm.trim(), filterType, filterStatus, filterDevelopment].filter(Boolean).length;
   const maxPropertyValue = Math.max(...filteredProperties.map((property) => Number(property.value || 0)), 1);
 
   const clearFilters = () => {
+    setFilterDevelopment(null);
     setSearchTerm("");
     setFilterType(null);
     setFilterStatus(null);
@@ -238,7 +326,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
           <div className="grid gap-3 sm:grid-cols-2">
             <PortfolioMetric
               icon={WalletCards}
-              label="Patrimônio"
+              label={mode === "mine" ? "Patrimônio (minha cota)" : "Patrimônio"}
               value={compactCurrency(summary.totalValue)}
               detail={`${summary.totalProperties} ativos cadastrados`}
               featured
@@ -277,7 +365,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:w-[620px] xl:grid-cols-3">
             <Select value={filterType || "all"} onValueChange={(value) => setFilterType(value === "all" ? null : value)}>
               <SelectTrigger className="h-12 rounded-2xl border-white/70 bg-white/70 dark:border-white/10 dark:bg-white/5">
                 <Filter className="mr-2 h-4 w-4 text-accent" />
@@ -303,16 +391,51 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
                 <SelectItem value="available">Disponível</SelectItem>
                 <SelectItem value="rented">Alugado</SelectItem>
                 <SelectItem value="airbnb">Airbnb</SelectItem>
+                <SelectItem value="reserved">Reservado</SelectItem>
                 <SelectItem value="maintenance">Em manutenção</SelectItem>
                 <SelectItem value="sold">Vendido</SelectItem>
               </SelectContent>
             </Select>
+
+            {developments.length > 0 && (
+              <Select
+                value={filterDevelopment || "all"}
+                onValueChange={(value) => setFilterDevelopment(value === "all" ? null : value)}
+              >
+                <SelectTrigger className="h-12 rounded-2xl border-white/70 bg-white/70 dark:border-white/10 dark:bg-white/5">
+                  <LandPlot className="mr-2 h-4 w-4 text-accent" />
+                  <SelectValue placeholder="Loteamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os loteamentos</SelectItem>
+                  <SelectItem value="none">Sem loteamento</SelectItem>
+                  {developments.map((development) => (
+                    <SelectItem key={development.id} value={development.id}>
+                      {development.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 xl:justify-end">
             {activeFiltersCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Limpar filtros
+              </Button>
+            )}
+
+            <OwnershipViewToggle className="rounded-2xl border border-white/70 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5" />
+
+            {developments.length > 0 && (viewMode === "card" || viewMode === "list") && (
+              <Button
+                variant={groupByDevelopment ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setGroupByDevelopment((previous) => !previous)}
+              >
+                <Layers className="h-4 w-4" />
+                Agrupar por loteamento
               </Button>
             )}
 
@@ -359,7 +482,25 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
             </div>
           )}
 
-          {viewMode === "card" && (
+          {viewMode === "card" && (groupByDevelopment ? (
+            <div className="space-y-8">
+              {groupedProperties.map((group) => (
+                <div key={group.id || "none"} className="space-y-3">
+                  <GroupHeading group={group} />
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {group.properties.map((property) => (
+                      <PortfolioPropertyCard
+                        key={property.id}
+                        property={property}
+                        maxValue={maxPropertyValue}
+                        onSelect={() => onSelect(property.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {filteredProperties.map((property) => (
                 <PortfolioPropertyCard
@@ -370,9 +511,26 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
                 />
               ))}
             </div>
-          )}
+          ))}
 
-          {viewMode === "list" && (
+          {viewMode === "list" && (groupByDevelopment ? (
+            <div className="space-y-8">
+              {groupedProperties.map((group) => (
+                <div key={group.id || "none"} className="space-y-3">
+                  <GroupHeading group={group} />
+                  <div className="space-y-3">
+                    {group.properties.map((property) => (
+                      <PortfolioPropertyListItem
+                        key={property.id}
+                        property={property}
+                        onSelect={() => onSelect(property.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
             <div className="space-y-3">
               {filteredProperties.map((property) => (
                 <PortfolioPropertyListItem
@@ -382,7 +540,7 @@ export function PropertyList({ properties, isLoading, onSelect, onAddNew }: Prop
                 />
               ))}
             </div>
-          )}
+          ))}
 
           {viewMode === "map" && (
             <div className="premium-panel dark:premium-panel-dark h-[640px] overflow-hidden rounded-[2rem] p-3">

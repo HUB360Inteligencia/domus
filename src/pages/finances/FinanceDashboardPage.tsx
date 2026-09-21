@@ -13,6 +13,7 @@ import { PropertyAnalyticsSummary } from '@/components/finances/dashboard/Proper
 import { PropertyDetailModal } from '@/components/finances/dashboard/PropertyDetailModal';
 import { usePropertyAnalytics } from '@/hooks/use-property-analytics';
 import { PropertyAnalyticsData } from '@/api/property-analytics';
+import { OwnershipViewToggle } from '@/components/ownership/ownership-view-toggle';
 
 export default function FinanceDashboardPage() {
   const [selectedProperty, setSelectedProperty] = useState<PropertyAnalyticsData | null>(null);
@@ -40,9 +41,12 @@ export default function FinanceDashboardPage() {
 
   return (
     <div className="container py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Financeiro</h1>
-        <p className="text-gray-600">Análises avançadas e insights financeiros detalhados</p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Financeiro</h1>
+          <p className="text-gray-600">Análises avançadas e insights financeiros detalhados</p>
+        </div>
+        <OwnershipViewToggle className="rounded-2xl border border-border bg-card p-1" />
       </div>
 
       {/* Grid Layout - Dashboard Analítico */}

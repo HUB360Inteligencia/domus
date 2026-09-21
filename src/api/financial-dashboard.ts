@@ -2,6 +2,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from "@/lib/logger";
 import { parseDateOnly, toDateOnlyString } from "@/lib/dates";
+
+/**
+ * Mapa imovel -> fracao pertencente ao titular (0-1), montado em
+ * `src/lib/ownership.ts`. Ausente ou sem a chave = 1 (valor bruto), para estas
+ * consultas seguirem funcionando sem sociedade cadastrada.
+ */
+export type OwnershipShares = Map<string, number> | undefined;
+
+const share = (shares: OwnershipShares, propertyId?: string | null): number =>
+  shares && propertyId ? shares.get(propertyId) ?? 1 : 1;
 export interface FinancialMetrics {
   totalRevenue: number;
   totalExpenses: number;
@@ -60,13 +70,13 @@ const getMonthDateRange = (monthsAgo: number = 0) => {
   };
 };
 
-const calculateMonthlyReturn = async (userId: string, monthsAgo: number = 0) => {
+const calculateMonthlyReturn = async (userId: string, monthsAgo: number = 0, shares?: OwnershipShares) => {
   const { start, end } = getMonthDateRange(monthsAgo);
   
   // Fetch income for the specific month
   const { data: incomeData, error: incomeError } = await supabase
     .from('financial_transactions')
-    .select('amount')
+    .select('amount, property_id')
     .eq('user_id', userId)
     .eq('transaction_type', 'income')
     .gte('transaction_date', start)
@@ -77,7 +87,7 @@ const calculateMonthlyReturn = async (userId: string, monthsAgo: number = 0) => 
   // Fetch expenses for the specific month
   const { data: expenseData, error: expenseError } = await supabase
     .from('financial_transactions')
-    .select('amount')
+    .select('amount, property_id')
     .eq('user_id', userId)
     .eq('transaction_type', 'expense')
     .gte('transaction_date', start)
@@ -85,13 +95,13 @@ const calculateMonthlyReturn = async (userId: string, monthsAgo: number = 0) => 
 
   if (expenseError) throw expenseError;
 
-  const income = incomeData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-  const expenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+  const income = incomeData?.reduce((sum, item) => sum + (item.amount || 0) * share(shares, item.property_id), 0) || 0;
+  const expenses = expenseData?.reduce((sum, item) => sum + (item.amount || 0) * share(shares, item.property_id), 0) || 0;
   
   return { income, expenses, netIncome: income - expenses };
 };
 
-export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
+export const fetchFinancialMetrics = async (shares?: OwnershipShares): Promise<FinancialMetrics> => {
   try {
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
@@ -101,10 +111,10 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
     const userId = session.data.session.user.id;
 
     // Fetch current month data
-    const currentMonth = await calculateMonthlyReturn(userId, 0);
+    const currentMonth = await calculateMonthlyReturn(userId, 0, shares);
     
     // Fetch previous month data
-    const previousMonth = await calculateMonthlyReturn(userId, 1);
+    const previousMonth = await calculateMonthlyReturn(userId, 1, shares);
 
     // Fetch property data
     const { data: propertiesData, error: propertiesError } = await supabase
@@ -119,8 +129,8 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
     const occupancyRate = totalProperties > 0 ? (occupiedProperties / totalProperties) * 100 : 0;
 
     // Calculate additional dashboard metrics
-    const totalAcquisitionValue = propertiesData?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
-    const totalMarketValue = propertiesData?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
+    const totalAcquisitionValue = propertiesData?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0) * share(shares, p.id), 0) || 0;
+    const totalMarketValue = propertiesData?.reduce((sum, p) => sum + (p.value || 0) * share(shares, p.id), 0) || 0;
     const totalBookValue = totalMarketValue;
 
     // Calculate ROI percentages
@@ -142,7 +152,7 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
           acc[type] = { count: 0, totalROI: 0, totalInvestment: 0 };
         }
         acc[type].count += 1;
-        const investment = property.purchase_value || property.total_investment || property.value || 1;
+        const investment = (property.purchase_value || property.total_investment || property.value || 1) * share(shares, property.id);
         acc[type].totalInvestment += investment;
         return acc;
       }, {} as Record<string, { count: number; totalROI: number; totalInvestment: number }>);
@@ -182,7 +192,7 @@ export const fetchFinancialMetrics = async (): Promise<FinancialMetrics> => {
   }
 };
 
-export const fetchMonthlyFinancialData = async (months: number = 12): Promise<MonthlyFinancialData[]> => {
+export const fetchMonthlyFinancialData = async (months: number = 12, shares?: OwnershipShares): Promise<MonthlyFinancialData[]> => {
   try {
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
@@ -201,7 +211,7 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
 
     const { data: transactions, error } = await supabase
       .from('financial_transactions')
-      .select('amount, transaction_type, transaction_date')
+      .select('amount, transaction_type, transaction_date, property_id')
       .eq('user_id', session.data.session.user.id)
       .gte('transaction_date', toDateOnlyString(startDate))
       .order('transaction_date', { ascending: true });
@@ -211,11 +221,11 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
     // Get property values for market data
     const { data: properties } = await supabase
       .from('properties')
-      .select('value, purchase_value, total_investment')
+      .select('id, value, purchase_value, total_investment')
       .eq('user_id', session.data.session.user.id);
 
-    const totalMarketValue = properties?.reduce((sum, p) => sum + (p.value || 0), 0) || 0;
-    const totalAcquisitionValue = properties?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0), 0) || 0;
+    const totalMarketValue = properties?.reduce((sum, p) => sum + (p.value || 0) * share(shares, p.id), 0) || 0;
+    const totalAcquisitionValue = properties?.reduce((sum, p) => sum + (p.purchase_value || p.total_investment || 0) * share(shares, p.id), 0) || 0;
 
     // Group by month and keep empty months visible for honest chart continuity.
     const monthlyData = monthWindows.reduce((acc, month) => {
@@ -231,10 +241,12 @@ export const fetchMonthlyFinancialData = async (months: number = 12): Promise<Mo
         return;
       }
 
+      const amount = (transaction.amount || 0) * share(shares, transaction.property_id);
+
       if (transaction.transaction_type === 'income') {
-        monthlyData[monthKey].revenue += transaction.amount || 0;
+        monthlyData[monthKey].revenue += amount;
       } else {
-        monthlyData[monthKey].expenses += transaction.amount || 0;
+        monthlyData[monthKey].expenses += amount;
       }
     });
 
