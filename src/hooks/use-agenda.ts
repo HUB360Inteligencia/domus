@@ -10,13 +10,34 @@ import {
   processDueAgendaReminders,
   recordExpectedContractPayment,
 } from "@/api/agenda";
+import { recordPurchaseInstallment } from "@/api/property-purchase-installments";
+import { recordObligationPayment } from "@/api/property-obligations";
 import {
   AgendaDateRange,
   AgendaEvent,
   AgendaEventInput,
   AgendaFilters,
+  AgendaSettlement,
   AgendaSummary,
 } from "@/types/agenda";
+
+/** Baixa pelo RPC de cada tipo de item previsto. Data de hoje e valor cheio. */
+const settle = async (settlement: AgendaSettlement): Promise<unknown> => {
+  switch (settlement.kind) {
+    case "rent":
+      return recordExpectedContractPayment(settlement.id);
+    case "purchase_installment":
+      return recordPurchaseInstallment(settlement.id);
+    case "obligation_installment":
+      return recordObligationPayment(settlement.id);
+  }
+};
+
+const settledMessage = (settlement: AgendaSettlement) => {
+  if (settlement.kind === "rent") return "Recebimento registrado no financeiro";
+  if (settlement.confirmOnly) return "Pagamento do inquilino confirmado";
+  return "Pagamento registrado no financeiro";
+};
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
 
@@ -122,15 +143,19 @@ export function useAgenda(range: AgendaDateRange) {
     },
   });
 
-  const recordExpectedPaymentMutation = useMutation({
-    mutationFn: (expectedPaymentId: string) => recordExpectedContractPayment(expectedPaymentId),
-    onSuccess: () => {
+  const settleMutation = useMutation({
+    mutationFn: (event: AgendaEvent) => {
+      if (!event.settlement) throw new Error("Este item não aceita baixa pela Agenda");
+      return settle(event.settlement);
+    },
+    onSuccess: (_data, event) => {
       queryClient.invalidateQueries({ queryKey: ["agenda-events"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       void invalidateFinancialData(queryClient);
-      toast.success("Recebimento registrado no financeiro");
+      if (event.settlement) toast.success(settledMessage(event.settlement));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o recebimento");
+      toast.error(error instanceof Error ? error.message : "Não foi possível registrar a baixa");
     },
   });
 
@@ -145,10 +170,9 @@ export function useAgenda(range: AgendaDateRange) {
     isFetching,
     createEvent: createEventMutation.mutateAsync,
     isCreatingEvent: createEventMutation.isPending,
-    recordExpectedPayment: recordExpectedPaymentMutation.mutateAsync,
-    recordingExpectedPaymentId: recordExpectedPaymentMutation.isPending
-      ? recordExpectedPaymentMutation.variables
-      : null,
-    isRecordingExpectedPayment: recordExpectedPaymentMutation.isPending,
+    settleEvent: settleMutation.mutateAsync,
+    /** id do evento em baixa agora, para o botão certo mostrar o carregamento. */
+    settlingEventId: settleMutation.isPending ? settleMutation.variables?.id ?? null : null,
+    isSettling: settleMutation.isPending,
   };
 }

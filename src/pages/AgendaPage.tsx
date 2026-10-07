@@ -21,7 +21,7 @@ import { useAgenda } from "@/hooks/use-agenda";
 import { useContracts } from "@/hooks/use-contracts";
 import { useProperties } from "@/hooks/use-properties";
 import { formatCurrency } from "@/lib/format";
-import { AgendaEventInput } from "@/types/agenda";
+import { AgendaEvent, AgendaEventInput } from "@/types/agenda";
 
 function SummaryTile({
   label,
@@ -75,8 +75,8 @@ export default function AgendaPage() {
     isFetching,
     createEvent,
     isCreatingEvent,
-    recordExpectedPayment,
-    recordingExpectedPaymentId,
+    settleEvent,
+    settlingEventId,
   } = useAgenda(range);
 
   const { properties } = useProperties();
@@ -129,9 +129,13 @@ export default function AgendaPage() {
     if (!open && routeRequestsNewEvent) navigate("/agenda", { replace: true });
   };
 
-  const handleRecordExpectedPayment = async (event: { expectedPaymentId?: string | null }) => {
-    if (!event.expectedPaymentId) return;
-    await recordExpectedPayment(event.expectedPaymentId);
+  const handleSettle = async (event: AgendaEvent) => {
+    if (!event.settlement) return;
+    try {
+      await settleEvent(event);
+    } catch {
+      // O hook já notifica o erro.
+    }
   };
 
   return (
@@ -210,8 +214,8 @@ export default function AgendaPage() {
           <AgendaDayPanel
             date={selectedDate}
             events={selectedEvents}
-            onRecordExpectedPayment={handleRecordExpectedPayment}
-            recordingExpectedPaymentId={recordingExpectedPaymentId}
+            onSettle={handleSettle}
+            settlingEventId={settlingEventId}
           />
         </div>
       )}

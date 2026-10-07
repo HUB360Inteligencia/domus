@@ -9,15 +9,15 @@ import { AgendaEventCard } from "./agenda-event-card";
 interface AgendaDayPanelProps {
   date: Date;
   events: AgendaEvent[];
-  onRecordExpectedPayment?: (event: AgendaEvent) => void;
-  recordingExpectedPaymentId?: string | null;
+  onSettle?: (event: AgendaEvent) => void;
+  settlingEventId?: string | null;
 }
 
 export function AgendaDayPanel({
   date,
   events,
-  onRecordExpectedPayment,
-  recordingExpectedPaymentId,
+  onSettle,
+  settlingEventId,
 }: AgendaDayPanelProps) {
   const sortedEvents = [...events].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 
@@ -42,10 +42,8 @@ export function AgendaDayPanel({
               <AgendaEventCard
                 key={event.id}
                 event={event}
-                onRecordExpectedPayment={onRecordExpectedPayment}
-                isRecordingExpectedPayment={Boolean(
-                  event.expectedPaymentId && recordingExpectedPaymentId === event.expectedPaymentId,
-                )}
+                onSettle={onSettle}
+                isSettling={settlingEventId === event.id}
               />
             ))}
           </div>

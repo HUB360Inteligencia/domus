@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CurrencyInput } from '@/components/ui/currency-input';
-import { DollarSign, Handshake } from 'lucide-react';
+import { DollarSign, Handshake, PieChart } from 'lucide-react';
 import { PropertyFormData } from '@/types/property';
 import {
   INSTALLMENT_FREQUENCY_LABELS,
@@ -20,13 +20,22 @@ import {
   hasInstallmentSchedule,
 } from '@/types/property-purchase';
 import { formatCurrency } from '@/lib/format';
+import { ShareInput } from '@/components/ownership/share-input';
 
 interface FinancialSectionProps {
   formData: PropertyFormData;
   onInputChange: (field: keyof PropertyFormData, value: PropertyFormData[keyof PropertyFormData]) => void;
+  /**
+   * Participação atual do titular (0–100), já com a herança do loteamento.
+   * O campo mostra este valor até o usuário mexer; só então `ownership_share` é gravado.
+   */
+  currentOwnershipShare?: number;
 }
 
-export function FinancialSection({ formData, onInputChange }: FinancialSectionProps) {
+export function FinancialSection({ formData, onInputChange, currentOwnershipShare = 100 }: FinancialSectionProps) {
+  const ownershipShare =
+    formData.ownership_share !== undefined ? formData.ownership_share : currentOwnershipShare;
+  const marketValue = Number(formData.value) || 0;
   const showSchedule = hasInstallmentSchedule(formData.payment_type);
 
   const downPayment = Number(formData.down_payment) || 0;
@@ -94,6 +103,30 @@ export function FinancialSection({ formData, onInputChange }: FinancialSectionPr
               placeholder="R$ 0,00"
             />
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <PieChart className="h-4 w-4" />
+            Sua participação no imóvel
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ShareInput
+              id="ownership_share"
+              percentage={ownershipShare}
+              onPercentageChange={(value) => onInputChange('ownership_share', value)}
+              referenceValue={marketValue}
+              referenceLabel="valor de mercado"
+            />
+            <p className="text-xs text-muted-foreground md:pt-2">
+              Dono de só uma parte? Informe em % ou pelo valor da sua cota em reais. Os painéis passam a
+              oferecer a visão "Minha cota" com o valor proporcional. Sócios com nome ficam na aba
+              Financeiro &gt; Sociedade.
+            </p>
+          </div>
+          {ownershipShare != null && (ownershipShare <= 0 || ownershipShare > 100) && (
+            <p className="text-xs text-destructive">A participação deve ficar entre 0,01% e 100%.</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

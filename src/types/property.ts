@@ -112,6 +112,11 @@ export interface PropertyFormData extends PropertyPurchaseTerms {
   square_meter_value?: number | null;
   tags?: string[] | null;
   images?: PropertyImage[];
+  /**
+   * Só do formulário: participação do titular (0–100). Não é coluna de `properties`;
+   * ao salvar vira a fatia própria em `ownership_stakes`. Ausente = não mexer.
+   */
+  ownership_share?: number | null;
 }
 
 export interface PropertyValuation {

@@ -20,6 +20,10 @@ const FINANCIAL_DERIVED_PREFIXES = [
   "property-active-contract",
   "upcoming-events",
   "contract-stats",
+  // Baixas feitas pela Agenda mudam o cronograma exibido na ficha do imóvel.
+  "property-purchase-installments",
+  "property-obligations",
+  "portfolio-position",
 ];
 
 const matchesPrefix = (key: unknown) =>

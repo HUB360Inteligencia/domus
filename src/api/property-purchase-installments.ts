@@ -120,3 +120,24 @@ export async function deletePurchaseSchedule(propertyId: string): Promise<void> 
     throw new Error(error.message);
   }
 }
+
+/**
+ * Parcelas da compra ainda em aberto em todo o portfólio — o saldo devedor que
+ * separa o valor de mercado do patrimônio líquido.
+ */
+export async function fetchOutstandingPurchaseInstallments(): Promise<
+  Array<{ property_id: string; amount: number; due_date: string }>
+> {
+  const { data, error } = await supabase
+    .from('property_purchase_installments')
+    .select('property_id,amount,due_date')
+    .eq('status', 'pending');
+
+  if (error) {
+    if (isMissingPurchaseSchema(error)) return [];
+    logger.error('Erro ao buscar saldo devedor das compras:', error);
+    throw new Error(error.message);
+  }
+
+  return (data || []).map((row) => ({ ...row, amount: Number(row.amount) || 0 }));
+}

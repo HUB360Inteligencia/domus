@@ -254,6 +254,7 @@ export default function DevelopmentDetailPage() {
           <OwnershipStakesSection
             target={{ kind: 'development', id: development.id }}
             referenceValue={totals?.totalMarketValue}
+            referenceLabel="valor dos lotes"
           />
         </TabsContent>
       </Tabs>

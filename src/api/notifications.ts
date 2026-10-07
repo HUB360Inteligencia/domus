@@ -10,6 +10,8 @@ export interface Notification {
   type: 'info' | 'warning' | 'error' | 'success';
   related_to?: string;
   related_id?: string;
+  /** Rota que resolve o aviso; tem prioridade sobre related_to/related_id. */
+  action_url?: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -200,4 +202,26 @@ export const checkContractExpirations = async (): Promise<void> => {
     logger.error('Failed to check contract expirations:', err);
     throw err;
   }
+};
+
+/**
+ * Varredura de vencimentos no banco (migration 20261007000100): aluguel a receber
+ * ou atrasado, parcela da compra e contas do imóvel (IPTU, condomínio...) a
+ * vencer ou vencidas. Idempotente — cada item gera no máximo um aviso "a vencer"
+ * e um "vencido". Também marca como lidos os avisos de itens já resolvidos.
+ *
+ * Sem a migration aplicada devolve 0 em silêncio: o resto do sino continua funcionando.
+ */
+export const processPropertyDueAlerts = async (daysAhead = 5): Promise<number> => {
+  const { data, error } = await supabase.rpc('process_property_due_alerts', { p_days_ahead: daysAhead });
+
+  if (error) {
+    const missing =
+      ['PGRST202', 'PGRST205', '42883', '42P01'].includes(error.code ?? '') ||
+      /process_property_due_alerts/.test(error.message || '');
+    if (!missing) logger.error('Failed to process due alerts:', error);
+    return 0;
+  }
+
+  return data ?? 0;
 };

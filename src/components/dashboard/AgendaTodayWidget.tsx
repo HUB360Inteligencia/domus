@@ -41,17 +41,17 @@ const eventTone = (event: AgendaEvent) => {
 
 function AgendaRow({
   event,
-  onRecordExpectedPayment,
-  recordingExpectedPaymentId,
+  onSettle,
+  settlingEventId,
 }: {
   event: AgendaEvent;
-  onRecordExpectedPayment: (event: AgendaEvent) => void;
-  recordingExpectedPaymentId?: string | null;
+  onSettle: (event: AgendaEvent) => void;
+  settlingEventId?: string | null;
 }) {
   const Icon = eventIcon(event);
   const date = parseISO(event.startsAt);
-  const canRecord = event.type === "receipt" && event.isPredicted && !event.isReconciled && event.expectedPaymentId;
-  const isRecording = Boolean(event.expectedPaymentId && recordingExpectedPaymentId === event.expectedPaymentId);
+  const canRecord = !event.isReconciled && Boolean(event.settlement);
+  const isRecording = settlingEventId === event.id;
 
   return (
     <div className="flex w-full items-center justify-between gap-3 rounded-3xl border border-white/60 bg-white/55 px-3 py-3 text-left transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-white/85 dark:border-white/10 dark:bg-white/5">
@@ -88,7 +88,7 @@ function AgendaRow({
           size="sm"
           className="h-9 shrink-0 rounded-2xl px-3"
           disabled={isRecording}
-          onClick={() => onRecordExpectedPayment(event)}
+          onClick={() => onSettle(event)}
         >
           {isRecording ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           Baixar
@@ -114,8 +114,8 @@ export function AgendaTodayWidget() {
   const {
     events,
     isLoading,
-    recordExpectedPayment,
-    recordingExpectedPaymentId,
+    settleEvent,
+    settlingEventId,
   } = useAgenda(range);
 
   const todayEvents = React.useMemo(
@@ -148,9 +148,13 @@ export function AgendaTodayWidget() {
 
   const displayEvents = (viewMode === "today" ? todayEvents : upcomingEvents).slice(0, 5);
 
-  const handleRecordExpectedPayment = async (event: AgendaEvent) => {
-    if (!event.expectedPaymentId) return;
-    await recordExpectedPayment(event.expectedPaymentId);
+  const handleSettle = async (event: AgendaEvent) => {
+    if (!event.settlement) return;
+    try {
+      await settleEvent(event);
+    } catch {
+      // O hook já notifica o erro.
+    }
   };
 
   if (isLoading) {
@@ -217,8 +221,8 @@ export function AgendaTodayWidget() {
             <AgendaRow
               key={event.id}
               event={event}
-              onRecordExpectedPayment={handleRecordExpectedPayment}
-              recordingExpectedPaymentId={recordingExpectedPaymentId}
+              onSettle={handleSettle}
+              settlingEventId={settlingEventId}
             />
           ))
         )}

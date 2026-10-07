@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PropertyFormData, Property, PropertyImage } from '@/types/property';
 import { useProperties } from '@/hooks/use-properties';
 import { PropertyBaseSelector } from './property-base-selector';
@@ -10,6 +11,7 @@ import { CEPFirstLocationSection } from './form-sections/cep-first-location-sect
 import { FinancialSection } from './form-sections/financial-section';
 import { DynamicCharacteristicsSection } from './form-sections/dynamic-characteristics-section';
 import { PropertyGallerySection } from './form-sections/property-gallery-section';
+import { useOwnershipView } from '@/contexts/OwnershipViewContext';
 
 interface PropertyFormProps {
   initialData?: Property | null;
@@ -25,7 +27,12 @@ export function PropertyForm({
   isLoading = false 
 }: PropertyFormProps) {
   const { properties } = useProperties();
+  const { shares } = useOwnershipView();
   const [selectedBasePropertyId, setSelectedBasePropertyId] = useState<string | null>(null);
+  // Fatia atual do titular (com herança do loteamento); 100 num imóvel novo.
+  const currentOwnershipShare = initialData?.id
+    ? Math.round((shares.get(initialData.id) ?? 1) * 1000000) / 10000
+    : 100;
   
   const [formData, setFormData] = useState<PropertyFormData>({
     title: '',
@@ -235,6 +242,12 @@ export function PropertyForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Submitting form data:', formData);
+
+    const share = formData.ownership_share;
+    if (share !== undefined && (share == null || share <= 0 || share > 100)) {
+      toast.error('Informe uma participação entre 0,01% e 100%.');
+      return;
+    }
     
     // Para manter compatibilidade, se há uma imagem principal, passa como imageFile
     const primaryImage = formData.images?.find(img => img.is_primary);
@@ -268,6 +281,7 @@ export function PropertyForm({
       <FinancialSection
         formData={formData}
         onInputChange={handleInputChange}
+        currentOwnershipShare={currentOwnershipShare}
       />
       
       <DynamicCharacteristicsSection

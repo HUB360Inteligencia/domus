@@ -16,6 +16,7 @@ import {
   LayoutList,
   Map as MapIcon,
   MapPin,
+  PieChart,
   Plus,
   Search,
   SlidersHorizontal,
@@ -107,9 +108,43 @@ interface PropertyGroup {
   properties: Property[];
 }
 
+const formatSharePercent = (share: number) =>
+  `${(share * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
+/** Fração do titular no imóvel (1 = inteiro), com a herança do loteamento resolvida. */
+function useOwnShare(propertyId: string) {
+  const { shares } = useOwnershipView();
+  return shares.get(propertyId) ?? 1;
+}
+
+/** Selo "Sua cota 50%" — só aparece quando o imóvel não é 100% do titular. */
+function OwnShareBadge({ share, overlay = false }: { share: number; overlay?: boolean }) {
+  if (share >= 0.9999) return null;
+
+  return (
+    <Badge
+      className={cn(
+        "gap-1 border font-medium",
+        overlay
+          ? "border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-md"
+          : "border-primary/25 bg-primary/10 text-primary"
+      )}
+      title="Sua participação neste imóvel"
+    >
+      <PieChart className="h-3 w-3" />
+      Sua cota {formatSharePercent(share)}
+    </Badge>
+  );
+}
+
 /** Cabeçalho de um grupo de imóveis, com o total do grupo à direita. */
 function GroupHeading({ group }: { group: PropertyGroup }) {
-  const total = group.properties.reduce((sum, property) => sum + Number(property.value || 0), 0);
+  // Mesmo critério do resumo do topo: no modo "minha cota", o total já vem rateado.
+  const { factorFor } = useOwnershipView();
+  const total = group.properties.reduce(
+    (sum, property) => sum + Number(property.value || 0) * factorFor(property.id),
+    0
+  );
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-1">
@@ -618,6 +653,7 @@ function PortfolioPropertyCard({
   onSelect: () => void;
 }) {
   const status = getStatusConfig(property.status);
+  const share = useOwnShare(property.id);
   const marketValue = Number(property.value || 0);
   const rentValue = Number(property.rental_value || 0);
   const valueWidth = Math.max((marketValue / maxValue) * 100, 6);
@@ -649,6 +685,7 @@ function PortfolioPropertyCard({
           <Badge className="border border-white/30 bg-white/15 backdrop-blur-md text-white font-medium shadow-sm">
             {propertyTypeLabels[property.type] || property.type}
           </Badge>
+          <OwnShareBadge share={share} overlay />
         </div>
         <div className="absolute bottom-4 left-4 right-4">
           <p className="line-clamp-1 text-xs text-white/70">
@@ -665,6 +702,11 @@ function PortfolioPropertyCard({
           <div>
             <p className="text-xs text-muted-foreground">Valor de mercado</p>
             <p className="mt-1 text-2xl font-semibold">{formatCurrency(marketValue)}</p>
+            {share < 0.9999 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sua cota: <strong className="text-foreground">{formatCurrency(marketValue * share)}</strong>
+              </p>
+            )}
           </div>
           <ChevronRight className="mt-3 h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
         </div>
@@ -696,6 +738,7 @@ function PortfolioPropertyCard({
 
 function PortfolioPropertyListItem({ property, onSelect }: { property: Property; onSelect: () => void }) {
   const status = getStatusConfig(property.status);
+  const share = useOwnShare(property.id);
   const marketValue = Number(property.value || 0);
 
   return (
@@ -721,6 +764,7 @@ function PortfolioPropertyListItem({ property, onSelect }: { property: Property;
         <div className="mb-2 flex flex-wrap gap-2">
           <Badge className={cn("border", status.className)}>{status.label}</Badge>
           <Badge variant="outline">{propertyTypeLabels[property.type] || property.type}</Badge>
+          <OwnShareBadge share={share} />
         </div>
         <h3 className="truncate text-lg font-semibold">{property.title}</h3>
         <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
@@ -735,6 +779,9 @@ function PortfolioPropertyListItem({ property, onSelect }: { property: Property;
         <div>
           <p className="text-xs text-muted-foreground">Valor</p>
           <p className="font-semibold">{formatCurrency(marketValue)}</p>
+          {share < 0.9999 && (
+            <p className="text-xs text-muted-foreground">Sua cota {formatCurrency(marketValue * share)}</p>
+          )}
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Área</p>

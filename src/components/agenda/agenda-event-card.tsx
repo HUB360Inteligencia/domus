@@ -13,12 +13,27 @@ import { agendaSourceLabels, agendaStatusLabels, agendaTypeLabels, getAgendaEven
 interface AgendaEventCardProps {
   event: AgendaEvent;
   compact?: boolean;
-  onRecordExpectedPayment?: (event: AgendaEvent) => void;
-  isRecordingExpectedPayment?: boolean;
+  onSettle?: (event: AgendaEvent) => void;
+  isSettling?: boolean;
 }
+
+const settleLabel = (event: AgendaEvent) => {
+  if (event.settlement?.kind === "rent") return "Registrar recebimento";
+  if (event.settlement?.confirmOnly) return "Confirmar pagamento";
+  return "Registrar pagamento";
+};
+
+const openLabel = (event: AgendaEvent) => (event.source === "contract" ? "Abrir contrato" : "Abrir imóvel");
 
 function getEventUrl(event: AgendaEvent): string | null {
   if (event.source === "activity") return null;
+  // Parcela da compra e conta do imóvel são resolvidas na ficha do imóvel.
+  if (event.metadata?.obligationInstallmentId && event.propertyId) {
+    return `/properties/${event.propertyId}?tab=obligations`;
+  }
+  if (event.metadata?.purchaseInstallmentId && event.propertyId) {
+    return `/properties/${event.propertyId}?tab=financial`;
+  }
   if (event.source === "contract" && (event.contractId || event.sourceId)) {
     return `/contracts/${event.contractId || event.sourceId}`;
   }
@@ -30,18 +45,12 @@ function getEventUrl(event: AgendaEvent): string | null {
 export function AgendaEventCard({
   event,
   compact = false,
-  onRecordExpectedPayment,
-  isRecordingExpectedPayment = false,
+  onSettle,
+  isSettling = false,
 }: AgendaEventCardProps) {
   const tone = getAgendaEventTone(event);
   const url = getEventUrl(event);
-  const canRecordExpectedPayment =
-    !compact &&
-    event.type === "receipt" &&
-    event.isPredicted &&
-    !event.isReconciled &&
-    Boolean(event.expectedPaymentId) &&
-    Boolean(onRecordExpectedPayment);
+  const canSettle = !compact && !event.isReconciled && Boolean(event.settlement) && Boolean(onSettle);
 
   const content = (
     <>
@@ -118,29 +127,29 @@ export function AgendaEventCard({
           </span>
         </div>
 
-        {canRecordExpectedPayment && (
+        {canSettle && (
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               size="sm"
               className="h-9 rounded-lg"
-              disabled={isRecordingExpectedPayment}
+              disabled={isSettling}
               onClick={(clickEvent) => {
                 clickEvent.preventDefault();
                 clickEvent.stopPropagation();
-                onRecordExpectedPayment?.(event);
+                onSettle?.(event);
               }}
             >
-              {isRecordingExpectedPayment ? (
+              {isSettling ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <CircleDollarSign className="h-4 w-4" />
               )}
-              Registrar recebimento
+              {settleLabel(event)}
             </Button>
             {url && (
               <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" asChild>
-                <Link to={url}>Abrir contrato</Link>
+                <Link to={url}>{openLabel(event)}</Link>
               </Button>
             )}
           </div>
@@ -151,7 +160,7 @@ export function AgendaEventCard({
 
   const baseClassName = "group relative block overflow-hidden rounded-lg border border-white/70 bg-white/78 p-3 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10";
 
-  if (url && !canRecordExpectedPayment) {
+  if (url && !canSettle) {
     return (
       <Link to={url} className={baseClassName}>
         {content}

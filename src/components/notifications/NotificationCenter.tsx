@@ -9,14 +9,17 @@ import {
   Check,
   CheckCheck,
   CheckCircle,
+  CircleDollarSign,
   ExternalLink,
   Info,
+  ReceiptText,
   Trash2,
+  WalletCards,
   XCircle,
 } from "lucide-react";
 
 import { processDueAgendaReminders } from "@/api/agenda";
-import { Notification } from "@/api/notifications";
+import { Notification, processPropertyDueAlerts } from "@/api/notifications";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,9 +33,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
 
+// Avisos de vencimento: o tom vem do tipo (warning = a vencer, error = vencido).
+const dueToneClass = (notification: Notification) =>
+  notification.type === "error" ? "text-rose-600" : "text-amber-600";
+
 const getNotificationIcon = (notification: Notification) => {
   if (notification.related_to === "agenda_event") {
     return <CalendarClock className="h-4 w-4 text-accent" />;
+  }
+  if (notification.related_to === "rent_payment") {
+    return <CircleDollarSign className={cn("h-4 w-4", dueToneClass(notification))} />;
+  }
+  if (notification.related_to === "obligation_installment") {
+    return <ReceiptText className={cn("h-4 w-4", dueToneClass(notification))} />;
+  }
+  if (notification.related_to === "purchase_installment") {
+    return <WalletCards className={cn("h-4 w-4", dueToneClass(notification))} />;
   }
 
   switch (notification.type) {
@@ -48,6 +64,7 @@ const getNotificationIcon = (notification: Notification) => {
 };
 
 const getNotificationUrl = (notification: Notification) => {
+  if (notification.action_url) return notification.action_url;
   if (!notification.related_to || !notification.related_id) return null;
 
   switch (notification.related_to) {
@@ -78,6 +95,12 @@ const getRelatedLabel = (notification: Notification) => {
       return "Financeiro";
     case "document":
       return "Documento";
+    case "rent_payment":
+      return "Aluguel";
+    case "purchase_installment":
+      return "Compra do imóvel";
+    case "obligation_installment":
+      return "Contas do imóvel";
     default:
       return "Domus";
   }
@@ -109,8 +132,10 @@ export const NotificationCenter = ({ triggerClassName }: { triggerClassName?: st
     hasSweptThisSession = true;
 
     void checkExpirations();
-    void processDueAgendaReminders().then((processed) => {
-      if (processed > 0) void refetchNotifications();
+    void Promise.all([processDueAgendaReminders(), processPropertyDueAlerts()]).then(() => {
+      // A varredura de vencimentos também marca como lidos avisos já resolvidos,
+      // então recarrega mesmo quando nada novo foi criado.
+      void refetchNotifications();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -173,7 +198,7 @@ export const NotificationCenter = ({ triggerClassName }: { triggerClassName?: st
             <div className="flex min-h-[180px] flex-col items-center justify-center p-5 text-center text-muted-foreground">
               <Bell className="h-9 w-9 opacity-50" />
               <p className="mt-3 text-sm font-medium text-foreground">Nenhuma notificação</p>
-              <p className="mt-1 text-xs">Lembretes da Agenda aparecem aqui dentro do Domus.</p>
+              <p className="mt-1 text-xs">Lembretes da Agenda, aluguéis e contas a vencer aparecem aqui.</p>
             </div>
           ) : (
             <div className="space-y-2 p-2">

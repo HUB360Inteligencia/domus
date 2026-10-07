@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Banknote, ImageIcon, Info, MapPin, Receipt, Ticket, TrendingUp, WalletCards, Activity, Users } from "lucide-react";
+import { Banknote, ImageIcon, Info, MapPin, Receipt, ReceiptText, Ticket, TrendingUp, WalletCards, Activity, Users } from "lucide-react";
 import { LinkedContactsSection } from "@/components/contacts/linked-contacts-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,8 @@ import { PropertyDetailMap } from "./property-detail-map";
 import { PropertyFinancialInvestmentSection } from "./PropertyFinancialInvestmentSection";
 import { PropertyPurchaseTermsSection } from "./PropertyPurchaseTermsSection";
 import { OwnershipStakesSection } from "@/components/ownership/ownership-stakes-section";
+import { PropertyObligationsSection } from "./obligations/PropertyObligationsSection";
+import { useOwnershipView } from "@/contexts/OwnershipViewContext";
 import { Link } from "react-router-dom";
 import { useDevelopments } from "@/hooks/use-developments";
 import { PropertyTransactionsSection } from "./PropertyTransactionsSection";
@@ -56,6 +58,9 @@ const formatMoney = (value: number | null | undefined) => {
   }).format(value);
 };
 
+const formatPercent = (value: number) =>
+  `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
 const formatFeatureLabel = (feature: string) =>
   feature
     .replace(/_/g, " ")
@@ -63,7 +68,7 @@ const formatFeatureLabel = (feature: string) =>
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const PROPERTY_TABS = ["overview", "financial", "transactions", "activities", "contracts", "contacts", "photos"];
+const PROPERTY_TABS = ["overview", "financial", "obligations", "transactions", "activities", "contracts", "contacts", "photos"];
 
 const getStatusLabel = (status?: string | null) => statusLabels[status || ""] || status || "N/A";
 
@@ -78,6 +83,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   // A aba ativa fica na URL (?tab=) para que "Voltar" de outra tela reabra a mesma aba
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: developments = [] } = useDevelopments();
+  const { shares } = useOwnershipView();
   const development = property?.development_id
     ? developments.find((item) => item.id === property.development_id)
     : undefined;
@@ -116,6 +122,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   const rentValue = Number(property?.rental_value || 0);
   const appreciation = investmentBase > 0 ? ((marketValue - investmentBase) / investmentBase) * 100 : null;
   const monthlyYield = marketValue > 0 && rentValue > 0 ? (rentValue / marketValue) * 100 : null;
+  // Fração do titular (com herança do loteamento). Sempre visível aqui, independente
+  // do alternador dos painéis: na ficha do imóvel o usuário quer ver as duas coisas.
+  const ownShare = property?.id ? shares.get(property.id) ?? 1 : 1;
+  const hasPartialShare = ownShare < 0.9999;
 
   return (
     <div className="space-y-6">
@@ -133,7 +143,11 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           icon={WalletCards}
           label="Valor de mercado"
           value={formatMoney(property?.value)}
-          detail="Referência atual cadastrada"
+          detail={
+            hasPartialShare
+              ? `Sua cota (${formatPercent(ownShare * 100)}): ${formatMoney(marketValue * ownShare)}`
+              : "Referência atual cadastrada"
+          }
           featured
         />
         <SnapshotCard
@@ -157,7 +171,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
       </section>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="premium-panel dark:premium-panel-dark grid h-auto grid-cols-2 gap-1 rounded-[2rem] p-1 md:grid-cols-7">
+        <TabsList className="premium-panel dark:premium-panel-dark grid h-auto grid-cols-2 gap-1 rounded-[2rem] p-1 sm:grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="overview" className="flex h-11 items-center gap-2 rounded-[1.5rem]">
             <Info className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -167,6 +181,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             <Banknote className="h-4 w-4" />
             <span className="hidden sm:inline">Financeiro</span>
             <span className="inline sm:hidden">Finan.</span>
+          </TabsTrigger>
+          <TabsTrigger value="obligations" className="flex h-11 items-center gap-2 rounded-[1.5rem]">
+            <ReceiptText className="h-4 w-4" />
+            <span>Contas</span>
           </TabsTrigger>
           <TabsTrigger value="transactions" className="flex h-11 items-center gap-2 rounded-[1.5rem]">
             <Receipt className="h-4 w-4" />
@@ -334,6 +352,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
               }
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="obligations">
+          <PropertyObligationsSection property={property} isLoading={isLoading} />
         </TabsContent>
 
         <TabsContent value="transactions">

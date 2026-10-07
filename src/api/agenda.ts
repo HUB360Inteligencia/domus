@@ -92,6 +92,17 @@ type PurchaseInstallmentRow = Tables<"property_purchase_installments"> & {
   property?: { title?: string | null } | null;
 };
 
+type ObligationInstallmentRow = Tables<"property_obligation_installments"> & {
+  obligation?: {
+    title?: string | null;
+    obligation_type?: string | null;
+    paid_by?: string | null;
+    frequency?: string | null;
+    installments_count?: number | null;
+  } | null;
+  property?: { title?: string | null } | null;
+};
+
 type QueryError = { code?: string; message: string };
 
 const isMissingSchemaError = (error: QueryError | null | undefined) => {
@@ -257,12 +268,59 @@ const mapPurchaseInstallmentEvent = (installment: PurchaseInstallmentRow): Agend
     propertyId: installment.property_id,
     propertyTitle: installment.property?.title ?? null,
     financialTransactionId: installment.financial_transaction_id,
+    settlement: installment.status === "pending" ? { kind: "purchase_installment", id: installment.id } : null,
     isVirtual: true,
     isPredicted: !paid,
     isReconciled: paid,
     metadata: {
       purchaseInstallmentId: installment.id,
       installmentNumber: installment.installment_number,
+    },
+  };
+};
+
+/**
+ * Vencimento de conta do imóvel (IPTU, condomínio...). Conta paga pelo inquilino
+ * aparece para confirmação, sem entrar no "a pagar" do proprietário.
+ */
+const mapObligationInstallmentEvent = (installment: ObligationInstallmentRow): AgendaEvent => {
+  const startsAt = dateAtNoon(installment.due_date).toISOString();
+  const paid = installment.status === "paid";
+  const tenantPays = installment.obligation?.paid_by === "tenant";
+  const total = installment.obligation?.installments_count ?? null;
+  const label = installment.obligation?.title || "Conta do imóvel";
+  const suffix = total && total > 1 ? ` (${installment.installment_number}/${total})` : "";
+
+  return {
+    id: `obligation-installment-${installment.id}`,
+    source: "financial",
+    sourceId: installment.id,
+    title: `${label}${suffix} - ${installment.property?.title || "imóvel"}`,
+    description: tenantPays
+      ? "Pago pelo inquilino: confirme que foi quitado."
+      : "Conta do imóvel com vencimento previsto.",
+    type: "payment",
+    status: paid ? "completed" : withOverdue("scheduled", startsAt),
+    priority: paid ? "low" : tenantPays ? "medium" : "high",
+    startsAt,
+    allDay: true,
+    amount: Number(installment.paid_amount ?? installment.amount),
+    cashflowDirection: tenantPays ? null : "payable",
+    propertyId: installment.property_id,
+    propertyTitle: installment.property?.title ?? null,
+    financialTransactionId: installment.financial_transaction_id,
+    settlement:
+      installment.status === "pending"
+        ? { kind: "obligation_installment", id: installment.id, confirmOnly: tenantPays }
+        : null,
+    isVirtual: true,
+    isPredicted: !paid,
+    isReconciled: paid,
+    metadata: {
+      obligationInstallmentId: installment.id,
+      obligationId: installment.obligation_id,
+      obligationType: installment.obligation?.obligation_type ?? null,
+      paidBy: installment.obligation?.paid_by ?? "owner",
     },
   };
 };
@@ -388,6 +446,7 @@ const mapExpectedPaymentEvent = (
     contractTitle: payment.contract?.title ?? null,
     tenantName: payment.contract?.tenant_name ?? null,
     expectedPaymentId: payment.id,
+    settlement: reconciled ? null : { kind: "rent", id: payment.id },
     financialTransactionId: payment.financial_transaction_id,
     isVirtual: true,
     isPredicted: true,
@@ -476,7 +535,7 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
 
   await generateExpectedPayments(range);
 
-  const [manual, reminders, activities, contracts, expectedPayments, transactions, purchaseInstallments] = await Promise.all([
+  const [manual, reminders, activities, contracts, expectedPayments, transactions, purchaseInstallments, obligationInstallments] = await Promise.all([
     supabase
       .from("agenda_events")
       .select("*,property:properties(title),contract:contracts(title)")
@@ -515,6 +574,13 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
       .gte("due_date", format(range.start, "yyyy-MM-dd"))
       .lte("due_date", format(range.end, "yyyy-MM-dd"))
       .order("due_date", { ascending: true }),
+    supabase
+      .from("property_obligation_installments")
+      .select("*,obligation:property_obligations(title,obligation_type,paid_by,frequency,installments_count),property:properties(title)")
+      .neq("status", "cancelled")
+      .gte("due_date", format(range.start, "yyyy-MM-dd"))
+      .lte("due_date", format(range.end, "yyyy-MM-dd"))
+      .order("due_date", { ascending: true }),
   ]);
 
   const errors = [
@@ -524,12 +590,13 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
     { source: 'contracts', err: contracts.error },
     { source: 'expectedPayments', err: expectedPayments.error },
     { source: 'transactions', err: transactions.error },
-    { source: 'purchaseInstallments', err: purchaseInstallments.error }
+    { source: 'purchaseInstallments', err: purchaseInstallments.error },
+    { source: 'obligationInstallments', err: obligationInstallments.error }
   ].filter(e => e.err);
 
   const criticalErrors = errors.filter(e => {
     // Ignore PGRST205 (table does not exist) for agenda_events and reminders as they might not be migrated yet
-    if (isMissingSchemaError(e.err) && (e.source === 'manual' || e.source === 'reminders' || e.source === 'expectedPayments' || e.source === 'purchaseInstallments')) {
+    if (isMissingSchemaError(e.err) && (e.source === 'manual' || e.source === 'reminders' || e.source === 'expectedPayments' || e.source === 'purchaseInstallments' || e.source === 'obligationInstallments')) {
       return false;
     }
     return true;
@@ -557,6 +624,8 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
   const contractsData = [...contractReceiptEvents, ...buildContractEndEvents(contractRows, range)];
   const purchaseInstallmentsData = ((purchaseInstallments.data || []) as unknown as PurchaseInstallmentRow[])
     .map(mapPurchaseInstallmentEvent);
+  const obligationInstallmentsData = ((obligationInstallments.data || []) as unknown as ObligationInstallmentRow[])
+    .map(mapObligationInstallmentEvent);
 
   const propertyTitles = new Map<string, string>();
   const contractTitles = new Map<string, string>();
@@ -581,6 +650,7 @@ export async function fetchAgendaEvents(range: AgendaDateRange): Promise<AgendaE
     ...transactionsData,
     ...contractsData,
     ...purchaseInstallmentsData,
+    ...obligationInstallmentsData,
   ].sort(
     (a, b) => parseISO(a.startsAt).getTime() - parseISO(b.startsAt).getTime(),
   );

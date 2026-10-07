@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  amountFromPercentage,
   buildShareMap,
+  hasFractionalShare,
   hasPartners,
+  percentageFromAmount,
   partnersPercentageOf,
   selfPercentageOf,
   shareFactor,
@@ -172,5 +175,40 @@ describe('hasPartners', () => {
     expect(hasPartners([stake({ is_self: true, percentage: 100 })])).toBe(false);
     expect(hasPartners([stake({ contact_id: 'c1', percentage: 10 })])).toBe(true);
     expect(hasPartners([])).toBe(false);
+  });
+});
+
+describe('hasFractionalShare', () => {
+  it('detecta imóvel com só a fatia própria abaixo de 100%', () => {
+    // Caso da sugestão de usuário: "tenho 50% do imóvel", sem cadastrar o outro dono.
+    const shares = buildShareMap([{ id: 'p-1' }], [stake({ property_id: 'p-1', is_self: true, percentage: 50 })]);
+
+    expect(hasPartners([stake({ property_id: 'p-1', is_self: true, percentage: 50 })])).toBe(false);
+    expect(hasFractionalShare(shares)).toBe(true);
+  });
+
+  it('é false quando todo imóvel é 100% do titular', () => {
+    expect(hasFractionalShare(new Map([['p-1', 1], ['p-2', 1]]))).toBe(false);
+    expect(hasFractionalShare(new Map())).toBe(false);
+  });
+});
+
+describe('percentageFromAmount / amountFromPercentage', () => {
+  it('converte o valor da cota em percentual do valor de referência', () => {
+    expect(percentageFromAmount(250000, 500000)).toBe(50);
+    expect(percentageFromAmount(100000, 300000)).toBe(33.3333);
+  });
+
+  it('limita a 0–100 e devolve null sem referência', () => {
+    expect(percentageFromAmount(900000, 500000)).toBe(100);
+    expect(percentageFromAmount(-10, 500000)).toBe(0);
+    expect(percentageFromAmount(1000, 0)).toBeNull();
+    expect(percentageFromAmount(1000, null)).toBeNull();
+  });
+
+  it('faz o caminho inverso em reais', () => {
+    expect(amountFromPercentage(50, 500000)).toBe(250000);
+    expect(amountFromPercentage(33.3333, 300000)).toBe(99999.9);
+    expect(amountFromPercentage(50, null)).toBe(0);
   });
 });

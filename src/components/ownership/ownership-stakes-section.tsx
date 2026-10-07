@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Handshake, Plus, Trash2, UserRound } from 'lucide-react';
+import { AlertTriangle, Check, Handshake, Pencil, Plus, Trash2, UserRound, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +28,7 @@ import { useOwnershipStakes } from '@/hooks/use-ownership-stakes';
 import { useContacts } from '@/hooks/use-contacts';
 import { formatCurrency } from '@/lib/format';
 import { FULL_SHARE, type StakeTarget } from '@/lib/ownership';
+import { ShareInput } from './share-input';
 
 interface OwnershipStakesSectionProps {
   target: StakeTarget;
@@ -36,6 +36,8 @@ interface OwnershipStakesSectionProps {
   referenceValue?: number | null;
   /** Texto explicando de onde vem a herança, quando houver. */
   inheritanceNote?: string;
+  /** Como chamar o valor de referência ("valor de mercado", "VGV"). */
+  referenceLabel?: string;
 }
 
 const SELF_OPTION = '__self__';
@@ -44,12 +46,16 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
   target,
   referenceValue,
   inheritanceNote,
+  referenceLabel = 'valor de mercado',
 }) => {
-  const { stakes, balance, isLoading, addStake, isAdding, removeStake } = useOwnershipStakes(target);
+  const { stakes, balance, isLoading, addStake, isAdding, removeStake, updateStake, isUpdating } =
+    useOwnershipStakes(target);
   const { contacts = [] } = useContacts();
 
   const [contactId, setContactId] = useState<string>(SELF_OPTION);
-  const [percentage, setPercentage] = useState('');
+  const [percentage, setPercentage] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingPercentage, setEditingPercentage] = useState<number | null>(null);
 
   // Um contato só entra uma vez no mesmo alvo (índice único no banco).
   const availableContacts = useMemo(() => {
@@ -58,9 +64,10 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
   }, [contacts, stakes]);
 
   const hasSelfRow = stakes.some((stake) => stake.is_self);
-  const parsedPercentage = Number(String(percentage).replace(',', '.'));
+  const parsedPercentage = Number(percentage) || 0;
   const isValidPercentage = parsedPercentage > 0 && parsedPercentage <= FULL_SHARE;
   const wouldExceed = balance.total + (isValidPercentage ? parsedPercentage : 0) > FULL_SHARE;
+  const isValidEdit = !!editingPercentage && editingPercentage > 0 && editingPercentage <= FULL_SHARE;
 
   const handleAdd = async () => {
     if (!isValidPercentage) return;
@@ -69,8 +76,23 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
         contactId: contactId === SELF_OPTION ? null : contactId,
         percentage: parsedPercentage,
       });
-      setPercentage('');
+      setPercentage(null);
       setContactId(SELF_OPTION);
+    } catch {
+      // O hook já notifica o erro.
+    }
+  };
+
+  const startEdit = (id: string, current: number) => {
+    setEditingId(id);
+    setEditingPercentage(current);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !isValidEdit) return;
+    try {
+      await updateStake({ id: editingId, changes: { percentage: editingPercentage! } });
+      setEditingId(null);
     } catch {
       // O hook já notifica o erro.
     }
@@ -89,7 +111,7 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
         <CardDescription>
           {stakes.length === 0
             ? inheritanceNote ||
-              'Sem sócios cadastrados: o bem é considerado 100% seu nos relatórios.'
+              'Sem participações cadastradas: o bem é considerado 100% seu nos relatórios.'
             : 'O percentual daqui alimenta a visão "minha cota" nos painéis.'}
         </CardDescription>
       </CardHeader>
@@ -136,7 +158,37 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
 
             {stakes.length > 0 && (
               <div className="space-y-2">
-                {stakes.map((stake) => (
+                {stakes.map((stake) =>
+                  editingId === stake.id ? (
+                    <div
+                      key={stake.id}
+                      className="flex flex-col gap-3 rounded-lg border border-primary/40 bg-primary/5 p-3 sm:flex-row sm:items-start"
+                    >
+                      <div className="flex min-w-0 items-center gap-2 sm:w-40 sm:pt-2">
+                        <UserRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium">
+                          {stake.is_self ? 'Você' : stake.contact?.display_name ?? 'Sócio removido'}
+                        </span>
+                      </div>
+                      <ShareInput
+                        id={`stake_edit_${stake.id}`}
+                        percentage={editingPercentage}
+                        onPercentageChange={setEditingPercentage}
+                        referenceValue={referenceValue}
+                        referenceLabel={referenceLabel}
+                        className="flex-1"
+                      />
+                      <div className="flex shrink-0 gap-1">
+                        <Button size="sm" onClick={saveEdit} disabled={!isValidEdit || isUpdating}>
+                          <Check className="h-4 w-4" />
+                          Salvar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} aria-label="Cancelar edição">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                   <div
                     key={stake.id}
                     className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
@@ -149,7 +201,7 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
                       {stake.is_self && <Badge variant="secondary">Própria</Badge>}
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-1 sm:gap-3">
                       <div className="text-right">
                         <p className="font-semibold">
                           {Number(stake.percentage).toLocaleString('pt-BR', {
@@ -164,9 +216,18 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
                         )}
                       </div>
 
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Editar participação"
+                        onClick={() => startEdit(stake.id, Number(stake.percentage))}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" aria-label="Remover participação">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -190,11 +251,19 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
                       </AlertDialog>
                     </div>
                   </div>
-                ))}
+                  )
+                )}
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-[1fr_140px_auto]">
+            {stakes.length === 0 && (
+              <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                Tem só uma parte deste bem? Escolha <strong>Você</strong> e informe sua participação em % ou
+                pelo valor em reais — não é preciso cadastrar o outro dono.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-[1fr_240px_auto]">
               <div>
                 <Label htmlFor="stake_contact">Sócio</Label>
                 <Select value={contactId} onValueChange={setContactId}>
@@ -215,20 +284,18 @@ export const OwnershipStakesSection: React.FC<OwnershipStakesSectionProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="stake_percentage">Percentual</Label>
-                <Input
+                <Label htmlFor="stake_percentage">Participação</Label>
+                <ShareInput
                   id="stake_percentage"
-                  type="number"
-                  min="0.01"
-                  max="100"
-                  step="0.01"
-                  value={percentage}
-                  onChange={(e) => setPercentage(e.target.value)}
+                  percentage={percentage}
+                  onPercentageChange={setPercentage}
+                  referenceValue={referenceValue}
+                  referenceLabel={referenceLabel}
                   placeholder={balance.remaining > 0 ? String(balance.remaining) : '0'}
                 />
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-start sm:pt-6">
                 <Button
                   onClick={handleAdd}
                   disabled={!isValidPercentage || isAdding || (contactId === SELF_OPTION && hasSelfRow)}

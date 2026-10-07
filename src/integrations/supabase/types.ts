@@ -1862,6 +1862,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_url: string | null
           created_at: string
           id: string
           is_read: boolean | null
@@ -1873,6 +1874,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          action_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
@@ -1884,6 +1886,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          action_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
@@ -2446,6 +2449,182 @@ export type Database = {
           },
         ]
       }
+      property_obligation_installments: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          due_date: string
+          financial_transaction_id: string | null
+          id: string
+          installment_number: number
+          metadata: Json
+          notes: string | null
+          obligation_id: string
+          paid_amount: number | null
+          paid_date: string | null
+          property_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          due_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          installment_number: number
+          metadata?: Json
+          notes?: string | null
+          obligation_id: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          property_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          due_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          installment_number?: number
+          metadata?: Json
+          notes?: string | null
+          obligation_id?: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_obligation_installments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_obligation_installments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_obligation_installments_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "property_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_obligation_installments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_obligations: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          creditor_name: string | null
+          end_date: string | null
+          first_due_date: string
+          frequency: string
+          id: string
+          installment_amount: number | null
+          installments_count: number | null
+          metadata: Json
+          notes: string | null
+          obligation_type: string
+          paid_by: string
+          property_id: string
+          reference_code: string | null
+          reference_year: number | null
+          reminder_days: number
+          status: string
+          title: string
+          total_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          creditor_name?: string | null
+          end_date?: string | null
+          first_due_date: string
+          frequency?: string
+          id?: string
+          installment_amount?: number | null
+          installments_count?: number | null
+          metadata?: Json
+          notes?: string | null
+          obligation_type?: string
+          paid_by?: string
+          property_id: string
+          reference_code?: string | null
+          reference_year?: number | null
+          reminder_days?: number
+          status?: string
+          title: string
+          total_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          creditor_name?: string | null
+          end_date?: string | null
+          first_due_date?: string
+          frequency?: string
+          id?: string
+          installment_amount?: number | null
+          installments_count?: number | null
+          metadata?: Json
+          notes?: string | null
+          obligation_type?: string
+          paid_by?: string
+          property_id?: string
+          reference_code?: string | null
+          reference_year?: number | null
+          reminder_days?: number
+          status?: string
+          title?: string
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_obligations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_obligations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_purchase_installments: {
         Row: {
           amount: number
@@ -2783,6 +2962,24 @@ export type Database = {
       }
       process_due_agenda_reminders: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      generate_property_obligation_installments: {
+        Args: { p_obligation_id: string; p_rebuild?: boolean }
+        Returns: number
+      }
+      record_property_obligation_payment: {
+        Args: {
+          p_installment_id: string
+          p_paid_date?: string | null
+          p_paid_amount?: number | null
+          p_payment_method?: string | null
+          p_create_transaction?: boolean
+        }
+        Returns: string | null
+      }
+      process_property_due_alerts: {
+        Args: { p_days_ahead?: number }
         Returns: number
       }
       generate_property_purchase_installments: {

@@ -142,6 +142,36 @@ export const shareFactor = (
   return shares.get(propertyId) ?? 1;
 };
 
-/** true quando existe ao menos uma participação de terceiro — só então o alternador importa. */
+/** true quando existe ao menos uma participação de terceiro. */
 export const hasPartners = (stakes: OwnershipStake[]): boolean =>
   stakes.some((stake) => !stake.is_self);
+
+/**
+ * true quando algum imóvel não é 100% do titular — seja por sócio cadastrado, seja
+ * por fatia própria menor que 100 ("tenho 50% deste imóvel", sem cadastrar o outro
+ * dono). É o que decide se o alternador "minha cota" tem algo a mostrar.
+ */
+export const hasFractionalShare = (shares: Map<string, number>): boolean => {
+  for (const share of shares.values()) {
+    if (share < 1 - 1e-9) return true;
+  }
+  return false;
+};
+
+/** Precisão da coluna `ownership_stakes.percentage` (numeric(7,4)). */
+const roundPercentage = (value: number) => Math.round(value * 10000) / 10000;
+
+/**
+ * Percentual (0–100) equivalente a um valor em reais sobre o valor de referência.
+ * É o caminho de quem pensa "minha parte vale R$ 250 mil" em vez de "50%".
+ * null quando não há referência para converter.
+ */
+export const percentageFromAmount = (amount: number, referenceValue?: number | null): number | null => {
+  const reference = Number(referenceValue) || 0;
+  if (reference <= 0) return null;
+  return roundPercentage(Math.min(Math.max((Number(amount) || 0) / reference, 0), 1) * FULL_SHARE);
+};
+
+/** Valor em reais de um percentual sobre o valor de referência. */
+export const amountFromPercentage = (percentage: number, referenceValue?: number | null): number =>
+  Math.round(((Number(referenceValue) || 0) * (Number(percentage) || 0)) / FULL_SHARE * 100) / 100;

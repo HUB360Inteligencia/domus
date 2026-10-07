@@ -35,6 +35,8 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { parseDateOnly } from "@/lib/dates";
 import { OwnershipViewToggle } from "@/components/ownership/ownership-view-toggle";
+import { PortfolioPositionCard } from "@/components/dashboard/PortfolioPositionCard";
+import { useOwnershipView } from "@/contexts/OwnershipViewContext";
 
 const chartColors = ["#c4934f", "#6f8f74", "#9f5d4c", "#4f6f85", "#242021", "#d9b979"];
 const DASHBOARD_PERIOD_MONTHS = 7;
@@ -256,8 +258,34 @@ function PanelHeader({
 export default function Dashboard() {
   const { user } = useAuth();
   const metrics = useDashboardMetrics();
-  const { properties } = useProperties();
-  const { transactions } = useFinancialTransactions();
+  const { properties: grossProperties } = useProperties();
+  const { transactions: grossTransactions } = useFinancialTransactions();
+  const { mode, factorFor } = useOwnershipView();
+
+  // Mesma regra de useDashboardMetrics: na visão "minha cota", valores de imóvel e de
+  // transação entram rateados. Sem isso o fluxo de caixa saía bruto enquanto a base do
+  // ROI saía rateada, e o ROI do modo "minha cota" ficava inflado.
+  const transactions = React.useMemo(
+    () =>
+      mode === "gross"
+        ? grossTransactions
+        : grossTransactions.map((transaction) => ({
+            ...transaction,
+            amount: Number(transaction.amount || 0) * factorFor(transaction.property_id),
+          })),
+    [grossTransactions, mode, factorFor]
+  );
+
+  const properties = React.useMemo(
+    () =>
+      mode === "gross"
+        ? grossProperties
+        : grossProperties.map((property) => ({
+            ...property,
+            value: Number(property.value || 0) * factorFor(property.id),
+          })),
+    [grossProperties, mode, factorFor]
+  );
   const greeting = `${getTimeGreeting()}, ${getFirstName(user?.profile?.first_name, user?.email)}`;
 
   const summarizeTransactions = React.useCallback((startDate: Date, endDate: Date) => {
@@ -593,6 +621,8 @@ export default function Dashboard() {
           <MetricCard key={card.title} {...card} />
         ))}
       </section>
+
+      <PortfolioPositionCard marketValue={metrics.totalMarketValue} />
 
       <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="premium-panel dark:premium-panel-dark animate-rise rounded-[2.5rem] p-5">

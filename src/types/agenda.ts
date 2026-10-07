@@ -16,6 +16,19 @@ export type AgendaEventStatus = "scheduled" | "in_progress" | "completed" | "can
 export type AgendaEventPriority = "low" | "medium" | "high";
 export type AgendaCashflowDirection = "receivable" | "payable";
 
+/**
+ * Item previsto que aceita baixa direto da Agenda: recebimento de aluguel,
+ * parcela da compra ou conta do imóvel. Cada tipo tem seu RPC de baixa.
+ */
+export type AgendaSettlementKind = "rent" | "purchase_installment" | "obligation_installment";
+
+export interface AgendaSettlement {
+  kind: AgendaSettlementKind;
+  id: string;
+  /** Conta paga pelo inquilino: a baixa só confirma, sem lançar despesa. */
+  confirmOnly?: boolean;
+}
+
 export interface AgendaEvent {
   id: string;
   source: AgendaEventSource;
@@ -36,6 +49,8 @@ export interface AgendaEvent {
   contractTitle?: string | null;
   tenantName?: string | null;
   expectedPaymentId?: string | null;
+  /** Presente enquanto o item previsto está em aberto e pode receber baixa. */
+  settlement?: AgendaSettlement | null;
   financialTransactionId?: string | null;
   reminderAt?: string | null;
   reminderStatus?: "pending" | "sent" | "dismissed" | null;

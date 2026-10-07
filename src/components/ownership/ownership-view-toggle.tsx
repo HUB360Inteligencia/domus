@@ -12,13 +12,13 @@ interface OwnershipViewToggleProps {
 /**
  * Alterna entre o valor cheio do ativo e a fatia do titular.
  *
- * Só aparece quando existe alguma participação de terceiro cadastrada: sem
- * sócios as duas visões dão o mesmo número, e o controle seria ruído.
+ * Só aparece quando algum imóvel não é 100% do titular: sem isso as duas visões
+ * dão o mesmo número, e o controle seria ruído.
  */
 export const OwnershipViewToggle: React.FC<OwnershipViewToggleProps> = ({ className }) => {
-  const { mode, setMode, hasAnyPartner } = useOwnershipView();
+  const { mode, setMode, hasSharedOwnership } = useOwnershipView();
 
-  if (!hasAnyPartner) return null;
+  if (!hasSharedOwnership) return null;
 
   return (
     <TooltipProvider>

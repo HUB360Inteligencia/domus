@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { PropertyFormData } from '@/types/property';
 import { usePropertyMutationsEnhanced } from './use-property-mutations-enhanced';
 import { uploadPropertyImage as apiUploadPropertyImage } from '@/api/property-images';
+import { setOwnSharePercentage } from '@/api/ownership-stakes';
 
 import { logger } from "@/lib/logger";
 export const usePropertyFormSubmission = () => {
@@ -105,8 +106,8 @@ export const usePropertyFormSubmission = () => {
       logger.log('Sanitizing form data...');
       const sanitizedData = sanitizeFormData(data);
       
-      // Step 3: Prepare data for submission (remove images from main data)
-      const { images, ...propertyData } = sanitizedData;
+      // Step 3: Prepare data for submission (remove images and form-only fields from main data)
+      const { images, ownership_share: ownershipShare, ...propertyData } = sanitizedData;
       
       logger.log('Property data to submit:', propertyData);
 
@@ -125,7 +126,25 @@ export const usePropertyFormSubmission = () => {
         toast.success('Imóvel cadastrado com sucesso!');
       }
 
-      // Step 5: Upload images (separate operation)
+      // Step 5: Participação do titular (só quando o campo foi alterado no formulário)
+      if (ownershipShare != null) {
+        try {
+          await setOwnSharePercentage(resultPropertyId, Number(ownershipShare), {
+            developmentId: propertyData.development_id ?? null,
+          });
+          queryClient.invalidateQueries({ queryKey: ['ownership-stakes'] });
+          queryClient.invalidateQueries({ queryKey: ['ownership-stakes-all'] });
+        } catch (error) {
+          logger.error('Failed to save ownership share:', error);
+          toast.warning(
+            `Imóvel salvo, mas a participação não foi gravada: ${
+              error instanceof Error ? error.message : 'erro inesperado'
+            }. Ajuste na aba Financeiro > Sociedade.`
+          );
+        }
+      }
+
+      // Step 6: Upload images (separate operation)
       if (images && images.length > 0) {
         logger.log('Starting image upload process...');
         try {

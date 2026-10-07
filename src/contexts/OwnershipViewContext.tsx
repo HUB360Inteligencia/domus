@@ -2,7 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useAuth } from '@/lib/auth';
 import { usePropertyQueries } from '@/hooks/use-property-queries';
 import { useAllOwnershipStakes } from '@/hooks/use-ownership-stakes';
-import { buildShareMap, hasPartners, shareFactor, type OwnershipViewMode } from '@/lib/ownership';
+import {
+  buildShareMap,
+  hasFractionalShare,
+  hasPartners,
+  shareFactor,
+  type OwnershipViewMode,
+} from '@/lib/ownership';
 
 const STORAGE_KEY = 'domus.ownership-view-mode';
 
@@ -14,8 +20,11 @@ interface OwnershipViewContextType {
   shares: Map<string, number>;
   /** Fator a aplicar a um valor do imóvel no modo atual: 1 no modo bruto. */
   factorFor: (propertyId?: string | null) => number;
-  /** false quando ninguém cadastrou sócio — aí o alternador não tem o que mostrar. */
-  hasAnyPartner: boolean;
+  /**
+   * true quando algum imóvel não é 100% do titular (sócio cadastrado ou fatia própria
+   * menor que 100). false = as duas visões dão o mesmo número e o alternador some.
+   */
+  hasSharedOwnership: boolean;
   isLoading: boolean;
 }
 
@@ -48,7 +57,12 @@ export function OwnershipViewProvider({ children }: { children: React.ReactNode 
   }, [mode]);
 
   const shares = useMemo(() => buildShareMap(properties, stakes), [properties, stakes]);
-  const hasAnyPartner = useMemo(() => hasPartners(stakes), [stakes]);
+  // Só a fatia própria ("tenho 50%") já basta: antes o alternador exigia um sócio
+  // cadastrado como contato e sumia justamente nesse caso.
+  const hasSharedOwnership = useMemo(
+    () => hasPartners(stakes) || hasFractionalShare(shares),
+    [stakes, shares]
+  );
 
   const setMode = useCallback((next: OwnershipViewMode) => setModeState(next), []);
   const toggleMode = useCallback(
@@ -62,8 +76,8 @@ export function OwnershipViewProvider({ children }: { children: React.ReactNode 
   );
 
   const value = useMemo(
-    () => ({ mode, setMode, toggleMode, shares, factorFor, hasAnyPartner, isLoading }),
-    [mode, setMode, toggleMode, shares, factorFor, hasAnyPartner, isLoading]
+    () => ({ mode, setMode, toggleMode, shares, factorFor, hasSharedOwnership, isLoading }),
+    [mode, setMode, toggleMode, shares, factorFor, hasSharedOwnership, isLoading]
   );
 
   return <OwnershipViewContext.Provider value={value}>{children}</OwnershipViewContext.Provider>;
@@ -86,7 +100,7 @@ export function useOwnershipView(): OwnershipViewContextType {
       toggleMode: () => undefined,
       shares: new Map(),
       factorFor: () => 1,
-      hasAnyPartner: false,
+      hasSharedOwnership: false,
       isLoading: false,
     };
   }

@@ -125,6 +125,40 @@ export async function updateStake(
   return data as unknown as OwnershipStake;
 }
 
+/**
+ * Grava a participação do próprio titular num imóvel, vinda do cadastro do imóvel.
+ *
+ * - 100% num imóvel avulso sem sócios: remove a fatia própria (sem linha = 100%).
+ * - 100% num lote: grava 100 explícito, senão o lote voltaria a herdar a
+ *   sociedade do loteamento.
+ * - Demais valores: atualiza a fatia própria ou cria uma.
+ */
+export async function setOwnSharePercentage(
+  propertyId: string,
+  percentage: number,
+  options: { developmentId?: string | null } = {}
+): Promise<void> {
+  const value = Math.min(Math.max(Number(percentage) || 0, 0), 100);
+  if (value <= 0) throw new Error('A participação precisa ser maior que zero.');
+
+  const target: StakeTarget = { kind: 'property', id: propertyId };
+  const stakes = await fetchStakes(target);
+  const own = stakes.find((stake) => stake.is_self);
+  const hasThirdParties = stakes.some((stake) => !stake.is_self);
+
+  if (value >= 100 && !hasThirdParties && !options.developmentId) {
+    if (own) await deleteStake(own.id);
+    return;
+  }
+
+  if (own) {
+    if (Math.abs(Number(own.percentage) - value) > 1e-6) await updateStake(own.id, { percentage: value });
+    return;
+  }
+
+  await createStake(target, { contactId: null, percentage: value });
+}
+
 export async function deleteStake(id: string): Promise<void> {
   const { error } = await supabase.from('ownership_stakes').delete().eq('id', id);
 
